@@ -1,0 +1,27 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #090909;
+  --surface: #0f0f0f;
+  --card: #141414;
+  --border: #1e1e1e;
+  --gold: #c9a84c;
+  --green: #22c55e;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  --text: #e0d9d0;
+  --muted: #4a4540;
+  --mono: 'DM Mono', monospace;
+  --sans: 'Sora', sans-serif;
+}
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  /* spazio per tab bar fissa in basso */
+  padding-bottom: 70px;
+}
+input, button, select, textarea { font-family: var(--sans); }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
