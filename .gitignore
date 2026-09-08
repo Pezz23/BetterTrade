@@ -1,0 +1,19 @@
+# Dipendenze
+node_modules/
+
+# Segreti — MAI committare (il repo è pubblico)
+.env
+.env.*
+!.env.example
+
+# Build
+dist/
+.vercel/
+
+# Cache locale di BTScout (22 MB di partite, si rigenera con dump-locale.js)
+.cache/
+btscout/.cache/
+
+# Sistema
+.DS_Store
+*.log
