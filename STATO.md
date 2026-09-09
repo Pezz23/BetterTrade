@@ -4,7 +4,7 @@
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
 **Ultimo aggiornamento:** 9 settembre 2026
-**Fase corrente:** saldi allineati — prossimo passo: **confronto con l'Excel**
+**Fase corrente:** numeri chiusi — prossimo passo: **l'archivio dentro l'app**
 
 ---
 
@@ -12,8 +12,8 @@
 
 Due pezzi nello stesso repo: **l'app** (`bettertrade/`, React+Vite+Supabase) e
 **l'archivio** (`btscout/`, 38.613 partite su Neon). Non sono ancora collegati.
-La sicurezza è chiusa e i saldi sono allineati (€3.955,66 aggregati). Adesso si
-costruisce: verifica dei numeri contro l'Excel, archivio dentro l'app, e alla
+La sicurezza è chiusa e i numeri sono la situazione di partenza ufficiale
+(€3.955,66 aggregati). Adesso si costruisce: l'archivio dentro l'app, e alla
 fine la compilazione automatica delle schedine.
 
 **Nessuno sta usando l'app in questo momento** — quindi si può cambiare in
@@ -31,7 +31,7 @@ dentro l'app, e solo alla fine il motore che propone.
 
 ---
 
-## 🟠 1. Sistemare i numeri del database
+## ✅ 1. Numeri del database — chiuso
 
 ### Fatto il 9 settembre
 
@@ -62,17 +62,19 @@ dentro l'app, e solo alla fine il motore che propone.
 Botturi ha solo la 25/26 perché è entrato in corsa; Laboratorio non segue gli
 anni. Entrambe le cose sono corrette, non anomalie.
 
-### Da fare
+### Deciso il 9 settembre — questa sezione è chiusa
 
-- [ ] **Confronto riga per riga con l'Excel** — è il prossimo passo. Da capire
-      com'è strutturato il file per costruire il confronto.
-- [ ] **Verificare le tre giornate contese** (24/25 sett. 7 e 24, 25/26 sett. 7):
-      l'Excel dice se aveva ragione MNM o Bermani.
-- [ ] **Inserire i movimenti mancanti.** Oggi ce ne sono solo tre, tutti su
-      Laboratorio. I versamenti degli altri utenti non sono mai stati registrati:
-      finché mancano, il capitale iniziale è l'unico appiglio.
-- [ ] **Decidere se vietare i bankroll negativi** a livello di database
-      (`check (bankroll >= 0)`) o tenerli come segnale d'allarme.
+**I numeri attuali sono la situazione di partenza ufficiale.** L'Excel era
+gestito a mano e conteneva errori: non si fa nessun confronto riga per riga, e
+non si va a cercare quale lato avesse ragione sulle giornate contese. €21 di
+scarto su €6.400 non cambiano niente.
+
+**Nessun movimento è mai stato fatto dopo la creazione degli utenti**, tranne
+quelli su Laboratorio: l'assenza di versamenti non è un dato mancante, è la
+realtà. Il totale €3.955,66 è il saldo vero sul conto.
+
+- [ ] Unico residuo: **decidere se vietare i bankroll negativi** a livello di
+      database (`check (bankroll >= 0)`) o tenerli come segnale d'allarme.
 
 ### Strumenti costruiti per questo lavoro
 
@@ -82,9 +84,11 @@ node --env-file=.env scripts/verifica-coerenza.js      # iniziale+movimenti+gior
 node --env-file=.env scripts/confronta-utenti.js A B   # differenze fra due utenti
 node --env-file=.env scripts/allinea-utenti.js  A B    # allinea (prova a vuoto)
 node --env-file=.env scripts/allinea-totale.js  3955.66
+node --env-file=.env scripts/prova-permessi.js Bermani <pw> MNM <pw>
 ```
 
-Tutti girano a vuoto per default: scrivono solo con `--esegui`.
+Tutti quelli che scrivono girano a vuoto per default: solo con `--esegui`
+modificano davvero.
 
 ---
 
@@ -214,6 +218,19 @@ erano l'impalcatura del vecchio login, che interrogava `users` dal browser.
       `index.css`, che il JSX non usava mai, e ~130 colori scritti a mano.
       Ora `src/theme.js` è l'unica definizione, `src/components/ui.jsx` raccoglie
       i pezzi ricorrenti, e nelle pagine non resta nessun colore hardcoded.
+
+### Permessi e ricalcolo — 9 settembre 2026
+
+- [x] **Regressione trovata e chiusa.** Con RLS attiva un utente normale poteva
+      registrare un proprio movimento ma **non** scrivere `users.bankroll`: la
+      modifica veniva bloccata in silenzio (zero righe, nessun errore) e il
+      saldo restava fermo. Ora il ricalcolo passa da `ricalcola_bankroll()`
+      lato database: si può chiedere il ricalcolo, non imporre un numero.
+- [x] **La formula del bankroll vive in un posto solo**, il database. La copia
+      JavaScript è stata rimossa.
+- [x] **`scripts/prova-permessi.js`** — verifica cosa ogni ruolo può e non può
+      fare. 16 controlli, tutti verdi. **Da rilanciare dopo ogni modifica alle
+      policy.**
 
 ### Numeri — 9 settembre 2026
 

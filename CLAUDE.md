@@ -76,6 +76,11 @@ servono a nascondere i bottoni, **non a proteggere**: la protezione è la policy
 Se aggiungi una tabella, aggiungi la sua policy — senza, non è leggibile da
 nessuno tranne la `service_role`.
 
+**Il bankroll non si scrive nemmeno da admin:** si chiama la funzione
+`ricalcola_bankroll(uuid)` (sql/04), che gira in `security definer`, legge le
+fonti e scrive lei. Un utente può ricalcolare solo il proprio, un admin quello
+di chiunque. Nessuno può imporre un numero — solo farlo ricalcolare.
+
 ### 5. La chiave `service_role` non entra nel browser
 
 Bypassa ogni regola. Sta in `.env` (gitignorato) e la usano solo gli script Node.
@@ -133,6 +138,11 @@ tengono — sono appena stati messi a posto e non c'entrano con il problema.
 - **`bankroll_iniziale` può contenere un saldo residuo.** È successo con MNM:
   106,11 al posto di 3000, con 85 giornate e 25k di volume. Se un bankroll è
   negativo o assurdo, guarda prima lì.
+- **RLS blocca in silenzio, non con un errore.** Una `update` che nessuna policy
+  permette modifica zero righe e non solleva nulla. È già successo: un utente
+  normale registrava il movimento e il saldo restava fermo. Dopo ogni modifica
+  alle policy, lancia `scripts/prova-permessi.js` — controlla cosa ogni ruolo
+  può e non può fare, e sarebbe bastato la prima volta.
 - **Nel convertire i colori, `rgba()` e `#hex` dello stesso nome sono tinte
   diverse.** `rgba(59,130,246)` è `#3b82f6`, non il `#60a5fa` usato per il testo.
   Sono token separati in `theme.js` (`bluPieno`, `giallo`, `celestePieno`).
@@ -149,6 +159,7 @@ node --env-file=.env scripts/backup.js             # PRIMA di ogni modifica ai d
 node --env-file=.env scripts/saldi.js              # riepilogo saldi
 node --env-file=.env scripts/verifica-coerenza.js  # invariante del bankroll
 node --env-file=.env scripts/stato-migrazione.js   # stato della sicurezza
+node --env-file=.env scripts/prova-permessi.js Bermani <pw> MNM <pw>   # RLS
 
 node --env-file=.env scripts/confronta-utenti.js MarcoM Christian
 node --env-file=.env scripts/allinea-utenti.js  MarcoM Christian [--esegui]
