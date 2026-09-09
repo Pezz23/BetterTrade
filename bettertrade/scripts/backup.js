@@ -11,21 +11,23 @@
 //
 // .env richiesto (nella cartella bettertrade/):
 //   VITE_SUPABASE_URL=https://xxxx.supabase.co
-//   VITE_SUPABASE_ANON_KEY=eyJ...
+//   SUPABASE_SERVICE_KEY=eyJ...
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY;
+// Con RLS attiva la chiave anon non legge più niente: un backup fatto con
+// quella tornerebbe vuoto senza dare errore. Serve la service_role.
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error('✗ Mancano VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY.');
-  console.error('  Crea bettertrade/.env e rilancia con: node --env-file=.env scripts/backup.js');
+  console.error('✗ Mancano VITE_SUPABASE_URL / SUPABASE_SERVICE_KEY in .env');
+  console.error('  La service_role sta in: Supabase → Settings → API → service_role');
   process.exit(1);
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
 
 // Tutte le tabelle che l'app usa. `users` per prima: è la più importante.
 const TABELLE = ['users', 'movimenti', 'giornate', 'griglia', 'impostazioni', 'inserite'];
@@ -68,6 +70,11 @@ for (const tabella of TABELLE) {
 writeFileSync(new URL('_manifest.json', dir), JSON.stringify({ data: new Date().toISOString(), url: SUPABASE_URL, esiti }, null, 2));
 
 console.log(`\n${totale} righe salvate in backup/${stamp}/`);
+
+if (totale === 0) {
+  console.log('\n⚠️  Backup VUOTO: nessuna riga scaricata. Non fidarti di questo backup.');
+  process.exit(1);
+}
 
 const falliti = esiti.filter(e => e.errore);
 if (falliti.length) {
