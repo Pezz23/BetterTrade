@@ -5,15 +5,10 @@
 // Da rilanciare ogni volta che si importa una stagione nuova. Non "passa" o
 // "fallisce": stampa i numeri e segnala i sospetti, poi si guardano.
 
-import { neon } from '@neondatabase/serverless';
+import { sql, chiudi } from '../lib/db.js';
 import { CAMPIONATI, STAGIONI } from './import-storico.js';
 
-const sql = neon(process.env.DATABASE_URL);
 
-if (!process.env.DATABASE_URL) {
-  console.error('DATABASE_URL mancante.');
-  process.exit(1);
-}
 
 // 1. Quante partite per stagione e campionato, e quante hanno le quote.
 console.log('=== Conteggi e copertura quote ===');
@@ -82,3 +77,6 @@ const [{ assurde }] = await sql`
   WHERE ps_1 <= 1 OR ps_x <= 1 OR ps_2 <= 1 OR ps_1 > 100 OR ps_x > 100 OR ps_2 > 100
 `;
 console.log(`\nQuote fuori scala (<=1 o >100): ${assurde}`);
+
+// La connessione è un socket aperto: senza chiuderla lo script non termina.
+await chiudi();

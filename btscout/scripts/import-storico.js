@@ -5,7 +5,7 @@
 // È idempotente: rilanciarlo non duplica nulla e aggiorna le partite già
 // presenti. Serve per la stagione in corso, che cambia ogni settimana.
 
-import { neon } from '@neondatabase/serverless';
+import { sql, chiudi } from '../lib/db.js';
 import { pathToFileURL } from 'node:url';
 
 export const CAMPIONATI = {
@@ -64,41 +64,11 @@ function normalizzaSquadra(nome, div) {
   return ALIAS[div]?.[nome] ?? nome;
 }
 
-async function creaSchema(sql) {
-  // La tabella è interamente ricostruibile dai CSV: a ogni import la si rifà da
-  // zero. Semplifica i cambi di schema (aggiungere colonne non richiede ALTER) e
-  // il rebuild costa un paio di minuti. NB: tocca solo `partite`, mai la chat.
-  await sql`DROP TABLE IF EXISTS partite`;
-  await sql`
-    CREATE TABLE partite (
-      id SERIAL PRIMARY KEY,
-      div TEXT NOT NULL,
-      campionato TEXT NOT NULL,
-      stagione TEXT NOT NULL,
-      data DATE NOT NULL,
-      casa TEXT NOT NULL,
-      trasferta TEXT NOT NULL,
-      gol_casa INT NOT NULL,
-      gol_trasferta INT NOT NULL,
-      esito CHAR(1) NOT NULL,
-      tiri_casa INT, tiri_trasf INT,
-      tirip_casa INT, tirip_trasf INT,
-      angoli_casa INT, angoli_trasf INT,
-      gialli_casa INT, gialli_trasf INT,
-      rossi_casa INT, rossi_trasf INT,
-      gol1t_casa INT, gol1t_trasf INT,
-      ps_1 REAL, ps_x REAL, ps_2 REAL,
-      avg_1 REAL, avg_x REAL, avg_2 REAL,
-      max_1 REAL, max_x REAL, max_2 REAL,
-      b365_1 REAL, b365_x REAL, b365_2 REAL,
-      avg_over25 REAL, avg_under25 REAL,
-      b365_over25 REAL, b365_under25 REAL,
-      UNIQUE (div, stagione, data, casa, trasferta)
-    )
-  `;
-  await sql`CREATE INDEX partite_data_idx ON partite (data)`;
-  await sql`CREATE INDEX partite_squadre_idx ON partite (div, casa, trasferta)`;
-}
+// Lo schema NON sta più qui. Prima questa funzione faceva `DROP TABLE partite`
+// a ogni import e la ricreava: comodo finché il database era di questi script
+// soli. Ora la tabella vive nel database dell'app, con le sue policy di lettura,
+// e cancellarla porterebbe via anche quelle. Lo schema è in
+// bettertrade/sql/05-partite.sql, e si cambia da lì.
 
 // I CSV usano dd/mm/yy sulle stagioni vecchie e dd/mm/yyyy su quelle recenti.
 // Interpretare "17/08/24" come 1924 passerebbe inosservato fino al backtest.
@@ -174,41 +144,43 @@ export function estrai(righe, stagione, div) {
   return { partite, scartate };
 }
 
-async function salva(sql, partite) {
-  // Un INSERT per partita sarebbe ~35.000 round-trip HTTP verso Neon. A blocchi
-  // di 200 l'import sta in qualche minuto invece che in un'ora.
-  const BLOCCO = 200;
+// Le colonne della tabella, nell'ordine in cui si scrivono.
+const COLONNE_DB = [
+  'div', 'campionato', 'stagione', 'data', 'casa', 'trasferta',
+  'gol_casa', 'gol_trasferta', 'esito',
+  'tiri_casa', 'tiri_trasf', 'tirip_casa', 'tirip_trasf',
+  'angoli_casa', 'angoli_trasf', 'gialli_casa', 'gialli_trasf',
+  'rossi_casa', 'rossi_trasf', 'gol1t_casa', 'gol1t_trasf',
+  'ps_1', 'ps_x', 'ps_2', 'avg_1', 'avg_x', 'avg_2',
+  'max_1', 'max_x', 'max_2', 'b365_1', 'b365_x', 'b365_2',
+  'avg_over25', 'avg_under25', 'b365_over25', 'b365_under25',
+];
+
+async function salva(partite) {
+  // Un INSERT per partita sarebbe ~38.000 round-trip. A blocchi di 500 l'import
+  // sta in qualche minuto.
+  //
+  // ON CONFLICT invece di INSERT secco: la tabella non viene più svuotata prima,
+  // quindi rilanciare l'import deve aggiornare le partite che ci sono già —
+  // che è esattamente quello che serve ogni settimana per la stagione in corso,
+  // dove i risultati arrivano man mano. La chiave è il vincolo unique
+  // (div, stagione, data, casa, trasferta).
+  const BLOCCO = 500;
+  const daAggiornare = COLONNE_DB.filter(c => !['div', 'stagione', 'data', 'casa', 'trasferta'].includes(c));
+
   for (let i = 0; i < partite.length; i += BLOCCO) {
     const blocco = partite.slice(i, i + BLOCCO);
-    await sql.transaction(blocco.map(p => sql`
-      INSERT INTO partite (
-        div, campionato, stagione, data, casa, trasferta,
-        gol_casa, gol_trasferta, esito,
-        tiri_casa, tiri_trasf, tirip_casa, tirip_trasf,
-        angoli_casa, angoli_trasf, gialli_casa, gialli_trasf,
-        rossi_casa, rossi_trasf, gol1t_casa, gol1t_trasf,
-        ps_1, ps_x, ps_2, avg_1, avg_x, avg_2, max_1, max_x, max_2,
-        b365_1, b365_x, b365_2, avg_over25, avg_under25, b365_over25, b365_under25
-      ) VALUES (
-        ${p.div}, ${p.campionato}, ${p.stagione}, ${p.data}, ${p.casa}, ${p.trasferta},
-        ${p.gol_casa}, ${p.gol_trasferta}, ${p.esito},
-        ${p.tiri_casa}, ${p.tiri_trasf}, ${p.tirip_casa}, ${p.tirip_trasf},
-        ${p.angoli_casa}, ${p.angoli_trasf}, ${p.gialli_casa}, ${p.gialli_trasf},
-        ${p.rossi_casa}, ${p.rossi_trasf}, ${p.gol1t_casa}, ${p.gol1t_trasf},
-        ${p.ps_1}, ${p.ps_x}, ${p.ps_2}, ${p.avg_1}, ${p.avg_x}, ${p.avg_2},
-        ${p.max_1}, ${p.max_x}, ${p.max_2}, ${p.b365_1}, ${p.b365_x}, ${p.b365_2},
-        ${p.avg_over25}, ${p.avg_under25}, ${p.b365_over25}, ${p.b365_under25}
-      )
-    `));
+    await sql`
+      INSERT INTO partite ${sql(blocco, ...COLONNE_DB)}
+      ON CONFLICT (div, stagione, data, casa, trasferta) DO UPDATE SET
+        ${sql(daAggiornare.reduce((acc, c) => ({ ...acc, [c]: sql`excluded.${sql(c)}` }), {}))}
+    `;
+    process.stdout.write(`\r  salvate ${Math.min(i + BLOCCO, partite.length)}/${partite.length}`);
   }
+  console.log();
 }
 
 async function main() {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    console.error('DATABASE_URL mancante.');
-    process.exit(1);
-  }
 
   // FASE 1 — scarica e analizza TUTTI i CSV in memoria. Se anche uno fallisce
   // (rete instabile), si annulla senza toccare il database: niente `DROP TABLE`
@@ -228,10 +200,8 @@ async function main() {
     console.log(`scaricato ${stagione}  ${conteggi.join('  ')}`);
   }
 
-  // FASE 2 — solo ora tocca il database: ricrea la tabella e inserisce tutto.
-  const sql = neon(databaseUrl);
-  await creaSchema(sql);
-  await salva(sql, tutte);
+  // FASE 2 — solo ora tocca il database, aggiornando quello che c'è.
+  await salva(tutte);
 
   console.log(`\nImportate ${tutte.length} partite.`);
   if (problemi.length) {
@@ -243,8 +213,11 @@ async function main() {
 // Solo se eseguito direttamente: così le funzioni sopra restano importabili da
 // uno script di verifica senza far partire l'import.
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  main().catch(err => {
-    console.error(err);
-    process.exit(1);
-  });
+  main()
+    .then(() => chiudi())
+    .catch(async err => {
+      console.error(err);
+      await chiudi();
+      process.exit(1);
+    });
 }

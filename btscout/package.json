@@ -4,6 +4,6 @@
   "type": "module",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.111.0",
-    "@neondatabase/serverless": "^0.10.4"
+    "postgres": "^3.4.9"
   }
 }

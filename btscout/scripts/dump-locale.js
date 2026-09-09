@@ -5,13 +5,11 @@
 //
 // Uso:  node --env-file=.env scripts/dump-locale.js
 
-import { neon } from '@neondatabase/serverless';
+import { sql, chiudi } from '../lib/db.js';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-if (!process.env.DATABASE_URL) { console.error('DATABASE_URL mancante.'); process.exit(1); }
-const sql = neon(process.env.DATABASE_URL);
 
 const righe = await sql`SELECT * FROM partite ORDER BY div, data, casa`;
 
@@ -21,3 +19,6 @@ const file = join(cacheDir, 'partite.json');
 writeFileSync(file, JSON.stringify(righe));
 
 console.log(`Scritte ${righe.length} partite in ${file}`);
+
+// La connessione è un socket aperto: senza chiuderla lo script non termina.
+await chiudi();

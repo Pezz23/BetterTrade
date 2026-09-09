@@ -7,12 +7,10 @@
 // Uso:  node --env-file=.env scripts/fit-modello.js
 //       node --env-file=.env scripts/fit-modello.js I1   (un solo campionato)
 
-import { neon } from '@neondatabase/serverless';
+import { sql, chiudi } from '../lib/db.js';
 import { fit, prevedi } from '../lib/dixon-coles.js';
 import { CAMPIONATI } from './import-storico.js';
 
-const sql = neon(process.env.DATABASE_URL);
-if (!process.env.DATABASE_URL) { console.error('DATABASE_URL mancante.'); process.exit(1); }
 
 const soloDiv = process.argv[2];
 const divs = soloDiv ? [soloDiv] : Object.keys(CAMPIONATI);
@@ -73,3 +71,6 @@ for (const div of divs) {
 }
 
 console.log();
+
+// La connessione è un socket aperto: senza chiuderla lo script non termina.
+await chiudi();

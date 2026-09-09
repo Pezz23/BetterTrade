@@ -26,7 +26,7 @@
 // vincite nette per simulare un'esecuzione pessimista (non prendi il prezzo top).
 
 import { writeSync, readFileSync, existsSync } from 'node:fs';
-import { neon } from '@neondatabase/serverless';
+import { sql as db, chiudi } from '../lib/db.js';
 import { togliMargine, edge } from '../lib/mercato.js';
 import { MODELLI, modelloMisto } from '../lib/modelli.js';
 import { CAMPIONATI } from './import-storico.js';
@@ -46,8 +46,8 @@ if (existsSync(cacheFile)) {
     perDivCache.get(r.div).push(r);
   }
 }
-const sql = perDivCache ? null : neon(process.env.DATABASE_URL);
-if (!perDivCache && !process.env.DATABASE_URL) { console.error('DATABASE_URL mancante e nessuna cache.'); process.exit(1); }
+// Con la cache locale non serve nessuna connessione: il backtest gira offline.
+const sql = perDivCache ? null : db;
 
 // Data come stringa-giorno 'YYYY-MM-DD', sia che venga da Neon (Date) o dalla
 // cache (stringa ISO). Così il raggruppamento per giornata è coerente e le

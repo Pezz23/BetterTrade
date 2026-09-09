@@ -1,4 +1,4 @@
-import { neon } from '@neondatabase/serverless';
+import postgres from 'postgres';
 import Anthropic from '@anthropic-ai/sdk';
 
 const SYSTEM_PROMPT = `Sei BTScout, l'analista calcistico di Mattia (soprannome: Pezz).
@@ -68,7 +68,7 @@ const USER_ID = 'mattia';
 const TOOLS = [];
 
 // ============================================
-// DATABASE — Neon
+// DATABASE — Supabase (era Neon fino a settembre 2026)
 // ============================================
 async function initDb(sql) {
   await sql`
@@ -139,7 +139,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Campo message mancante o non valido' });
     }
 
-    const sql = neon(databaseUrl);
+    const sql = postgres(databaseUrl, { prepare: false, max: 1 });
     await initDb(sql);
     await saveMessage(sql, USER_ID, 'user', message);
     const history = await getHistory(sql, USER_ID);
