@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from '../supabase'
+import { aggiornaBankroll } from '../lib/bankroll'
 
 const AuthContext = createContext(null)
 
@@ -100,11 +101,15 @@ export function AuthProvider({ children }) {
     return { ok: true }
   }
 
-  async function updateBankroll(userId, amount) {
-    const val = parseFloat(amount) || 0
-    await supabase.from('users').update({ bankroll: val }).eq('id', userId)
-    if (currentUser?.id === userId) setCurrentUser({ ...currentUser, bankroll: val })
+  // Chiede al database di ricalcolare il bankroll di un utente e ricarica quel
+  // che sta in memoria. Non scrive un valore: lo scrive la funzione lato
+  // database (vedi sql/04), perché con RLS un utente normale non può modificare
+  // la propria riga in users e la scrittura falliva in silenzio.
+  async function aggiornaSaldo(userId) {
+    const nuovo = await aggiornaBankroll(userId)
+    if (currentUser?.id === userId) setCurrentUser({ ...currentUser, bankroll: nuovo })
     await fetchUsers()
+    return nuovo
   }
 
   async function deleteUser(userId) {
@@ -155,7 +160,7 @@ export function AuthProvider({ children }) {
       currentUser, users, loading, booting,
       pct, numSlot, savePct, saveNumSlot,
       login, logout, fetchUsers, cambiaMiaPassword,
-      updateBankroll, deleteUser,
+      aggiornaSaldo, deleteUser,
       getTotalBankroll, getMyBase, getTotalBase, calcSchedule,
       isSuperAdmin, isAdmin,
     }}>

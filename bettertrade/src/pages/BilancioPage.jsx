@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../supabase'
-import { ricalcolaBankroll } from '../lib/bankroll'
+
 import { C, F, alpha } from '../theme'
 import { StatCard } from '../components/ui'
 
@@ -22,11 +22,10 @@ function fmtPct(a,b) {
 
 export default function BilancioPage() {
   const {
-    currentUser, users, fetchUsers,
+    currentUser, users, fetchUsers, aggiornaSaldo,
     isSuperAdmin, isAdmin,
     pct, numSlot, savePct, saveNumSlot,
     getMyBase, getTotalBase, getTotalBankroll, calcSchedule,
-    updateBankroll,
   } = useAuth()
 
   const [storico,setStorico]         = useState([])
@@ -76,9 +75,7 @@ export default function BilancioPage() {
     const importo = Math.abs(diff)
     const nota    = `Trasferimento SuperAdmin · reale €${reale} · aggregato €${aggregato.toFixed(2)}`
     await supabase.from('movimenti').insert([{ user_id:lab.id, tipo, importo, nota }])
-    const nuovoBankroll = await ricalcolaBankroll(lab.id)
-    await supabase.from('users').update({ bankroll: nuovoBankroll }).eq('id', lab.id)
-    await fetchUsers()
+    await aggiornaSaldo(lab.id)
     setEsitoDiff(`✓ Trasferiti ${diff>0?'+':''}€${diff.toFixed(2)} a Laboratorio`)
     setSaldoReale('')
     setTrasferendo(false)
@@ -102,9 +99,8 @@ export default function BilancioPage() {
 
     if (newMov) setMovimenti(prev=>[newMov,...prev])
 
-    // Ricalcola bankroll da zero per coerenza
-    const nuovoBankrollRicalc = await ricalcolaBankroll(currentUser.id)
-    await updateBankroll(currentUser.id, nuovoBankrollRicalc)
+    // Ricalcola dal database: un utente normale non può scrivere users.bankroll
+    await aggiornaSaldo(currentUser.id)
 
     setMovForm({tipo:'deposito',importo:'',nota:''})
     setShowMov(false)

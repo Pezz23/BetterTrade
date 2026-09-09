@@ -61,7 +61,7 @@ function calcUserSched(user, pct, numSlot, calcSchedule) {
 }
 
 export default function ReportingPage() {
-  const {currentUser,users,fetchUsers,isSuperAdmin,isAdmin,pct,numSlot,getMyBase,getTotalBase,calcSchedule,updateBankroll} = useAuth()
+  const {currentUser,users,fetchUsers,isSuperAdmin,isAdmin,pct,numSlot,getMyBase,getTotalBase,calcSchedule} = useAuth()
   const [giornate,setGiornate] = useState([])
   const [saving,setSaving]     = useState(false)
   const [savingAll,setSavingAll] = useState(false)
@@ -170,8 +170,7 @@ export default function ReportingPage() {
     }]).select().single()
 
     if (newG) setGiornate(prev=>[...prev,newG])
-    const nuovoBankroll = await aggiornaBankroll(currentUser.id)
-    await updateBankroll(currentUser.id, nuovoBankroll)
+    await aggiornaBankroll(currentUser.id)
 
     setSaving(false)
   }
