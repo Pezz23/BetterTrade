@@ -4,7 +4,7 @@
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
 **Ultimo aggiornamento:** 9 settembre 2026
-**Fase corrente:** sicurezza chiusa — si parte con **i numeri del database**
+**Fase corrente:** saldi allineati — prossimo passo: **confronto con l'Excel**
 
 ---
 
@@ -12,8 +12,9 @@
 
 Due pezzi nello stesso repo: **l'app** (`bettertrade/`, React+Vite+Supabase) e
 **l'archivio** (`btscout/`, 38.613 partite su Neon). Non sono ancora collegati.
-La sicurezza è chiusa. Adesso si costruisce: numeri veri nel database, archivio
-dentro l'app, e alla fine una compilazione automatica delle schedine.
+La sicurezza è chiusa e i saldi sono allineati (€3.955,66 aggregati). Adesso si
+costruisce: verifica dei numeri contro l'Excel, archivio dentro l'app, e alla
+fine la compilazione automatica delle schedine.
 
 **Nessuno sta usando l'app in questo momento** — quindi si può cambiare in
 profondità senza rompere niente a nessuno.
@@ -30,38 +31,64 @@ dentro l'app, e solo alla fine il motore che propone.
 
 ---
 
-## 🔴 1. Sistemare i numeri del database
+## 🟠 1. Sistemare i numeri del database
 
-I dati attuali non tornano. Ho un Excel con i numeri reali da cui partire.
+### Fatto il 9 settembre
 
-**Il caso MNM, diagnosticato il 9 settembre:**
+- [x] **MNM rimesso a posto.** Aveva bankroll −€1.311,21 con capitale iniziale
+      €106,11 — un saldo residuo finito nel campo del capitale di partenza — e
+      una stagione **23/24** che nessun altro utente ha. Il capitale vero era
+      €3.000. La 23/24 (31 giornate, saldo +€570,54) è stata rimossa.
+- [x] **Coppie allineate.** Dal 24/25 alcune persone hanno giocato le stesse
+      schedine e i numeri differivano per errori di trascrizione:
+      MNM ← Bermani (scarto €17,58 su 10 giornate, di cui 3 significative:
+      24/25 sett. 7 e 24, 25/26 sett. 7) e MarcoM ← Christian (€0,15).
+      **Il riferimento scelto è Bermani/Christian: se l'Excel dà ragione
+      all'altro lato, si rifà al contrario.**
+- [x] **Totale portato a €3.955,66**, con la differenza (+€21,04) registrata
+      come **movimento** su Laboratorio — non scritta sul saldo, che è calcolato.
+- [x] **Tutti e sette coerenti**, nessun bankroll negativo.
 
-| | |
-|---|---|
-| `bankroll_iniziale` | €106,11 |
-| movimenti registrati | **0** |
-| giornate | 85, su 3 stagioni |
-| investito / incassato | €24.986,00 / €23.568,68 |
-| saldo giornate | −€1.417,32 |
-| **bankroll risultante** | **−€1.311,21** |
+| Utente | Iniziale | Movim. | Giornate | Saldo | N |
+|---|---|---|---|---|---|
+| Bermani | €3.000,00 | — | −€2.005,44 | **€994,56** | 54 |
+| MNM | €3.000,00 | — | −€2.005,44 | **€994,56** | 54 |
+| MarcoM | €1.000,00 | — | −€671,61 | **€328,39** | 54 |
+| Christian (GLeRoy) | €1.000,00 | — | −€671,61 | **€328,39** | 54 |
+| Botturi | €1.000,00 | — | −€469,44 | **€530,56** | 24 |
+| Laboratorio | €1.563,13 | −€207,17 | −€576,76 | **€779,20** | 35 |
+| **Totale** | €10.563,13 | −€207,17 | −€6.400,30 | **€3.955,66** | 275 |
 
-Il calcolo è corretto: `106,11 + 0 − 1.417,32 = −1.311,21`. **Il problema sono
-gli ingressi, non la formula:** con €106 di capitale iniziale non si muovono
-€24.986 di volume. I versamenti non sono mai stati registrati come `movimenti`.
+Botturi ha solo la 25/26 perché è entrato in corsa; Laboratorio non segue gli
+anni. Entrambe le cose sono corrette, non anomalie.
 
-- [ ] **Confrontare l'Excel con il database**, utente per utente: capitale
-      iniziale, versamenti, prelievi, saldo di ogni giornata.
-- [ ] **Inserire i movimenti mancanti** — sono loro a spiegare il volume giocato.
-- [ ] **Ricalcolare i bankroll** da `lib/bankroll.js`, che è già l'unica fonte
-      di verità (`iniziale + movimenti + giornate`).
-- [ ] **Decidere se un bankroll negativo dev'essere impossibile** a livello di
-      database (un `check (bankroll >= 0)`) o se resta un segnale d'allarme.
-- [ ] **Verificare le 306 giornate** contro l'Excel: investito e incassato di
-      ognuna, non solo il totale.
+### Da fare
+
+- [ ] **Confronto riga per riga con l'Excel** — è il prossimo passo. Da capire
+      com'è strutturato il file per costruire il confronto.
+- [ ] **Verificare le tre giornate contese** (24/25 sett. 7 e 24, 25/26 sett. 7):
+      l'Excel dice se aveva ragione MNM o Bermani.
+- [ ] **Inserire i movimenti mancanti.** Oggi ce ne sono solo tre, tutti su
+      Laboratorio. I versamenti degli altri utenti non sono mai stati registrati:
+      finché mancano, il capitale iniziale è l'unico appiglio.
+- [ ] **Decidere se vietare i bankroll negativi** a livello di database
+      (`check (bankroll >= 0)`) o tenerli come segnale d'allarme.
+
+### Strumenti costruiti per questo lavoro
+
+```bash
+node --env-file=.env scripts/saldi.js                  # riepilogo di tutti
+node --env-file=.env scripts/verifica-coerenza.js      # iniziale+movimenti+giornate=bankroll
+node --env-file=.env scripts/confronta-utenti.js A B   # differenze fra due utenti
+node --env-file=.env scripts/allinea-utenti.js  A B    # allinea (prova a vuoto)
+node --env-file=.env scripts/allinea-totale.js  3955.66
+```
+
+Tutti girano a vuoto per default: scrivono solo con `--esegui`.
 
 ---
 
-## 🟠 2. Portare l'archivio BTScout dentro BetterTrade
+## 🔴 2. Portare l'archivio BTScout dentro BetterTrade
 
 Oggi l'archivio vive su **Neon**, separato, raggiungibile solo da script Node.
 Deve diventare parte dell'app: interrogabile, espandibile, verificabile.
@@ -188,6 +215,13 @@ erano l'impalcatura del vecchio login, che interrogava `users` dal browser.
       Ora `src/theme.js` è l'unica definizione, `src/components/ui.jsx` raccoglie
       i pezzi ricorrenti, e nelle pagine non resta nessun colore hardcoded.
 
+### Numeri — 9 settembre 2026
+
+- [x] Saldi allineati e totale portato a €3.955,66 (dettaglio nella sezione 1).
+- [x] **`backup.js` era rotto**: leggeva con la chiave anon e dopo l'attivazione
+      di RLS tornava **zero righe dichiarando successo**. Ora usa la
+      `service_role` e fallisce se non scarica niente.
+
 ### Trasloco di BTScout — 8 settembre 2026
 
 - [x] `.gitignore` creato alla radice (non esisteva: repo pubblico senza
@@ -208,8 +242,10 @@ bettertrade/          # L'APP — React + Vite + Supabase
   src/context/        # AuthContext — login, ruoli, calcSchedule
   src/pages/          # Slot, Dashboard, Reporting, Bilancio, Utenti
   sql/                # Migrazioni: auth_id, RLS, rimozione password
-  scripts/            # backup, migra-auth, crea-utente, reset-password,
-                      # prova-login, stato-migrazione
+  scripts/            # backup, saldi, verifica-coerenza, confronta-utenti,
+                      # allinea-utenti, allinea-totale, migra-auth,
+                      # crea-utente, reset-password, prova-login,
+                      # stato-migrazione, sistema-mnm
   .env                # ⚠️ chiavi Supabase — gitignorato
   backup/             # ⚠️ dump del database — gitignorato
 
@@ -228,8 +264,16 @@ btscout/              # L'ARCHIVIO — Node, nessun frontend collegato
 ```bash
 cd bettertrade
 npm run dev                                        # avvia l'app
-node --env-file=.env scripts/backup.js             # dump di tutte le tabelle
-node --env-file=.env scripts/stato-migrazione.js   # controllo sicurezza
+
+node --env-file=.env scripts/backup.js             # PRIMA di ogni modifica ai dati
+node --env-file=.env scripts/saldi.js              # riepilogo saldi
+node --env-file=.env scripts/verifica-coerenza.js  # invariante del bankroll
+node --env-file=.env scripts/stato-migrazione.js   # stato della sicurezza
+
+node --env-file=.env scripts/confronta-utenti.js MarcoM Christian
+node --env-file=.env scripts/allinea-utenti.js  MarcoM Christian [--esegui]
+node --env-file=.env scripts/allinea-totale.js  3955.66 [--esegui]
+
 node --env-file=.env scripts/crea-utente.js mario user 500 "Mario Rossi"
 node --env-file=.env scripts/reset-password.js Bermani
 
