@@ -17,3 +17,6 @@ btscout/.cache/
 # Sistema
 .DS_Store
 *.log
+
+# Backup del database — contengono password in chiaro, MAI committare
+backup/

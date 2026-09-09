@@ -3,18 +3,18 @@
 > Fonte di verità sul punto in cui siamo. Da leggere all'inizio di ogni sessione e
 > aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 8 settembre 2026
-**Fase corrente:** trasloco di BTScout completato — prossimo passo: **sicurezza**
+**Ultimo aggiornamento:** 9 settembre 2026
+**Fase corrente:** sicurezza chiusa — prossimo passo: **misurare il ROI reale**
 
 ---
 
 ## Dove siamo in una riga
 
-Due pezzi ora nello stesso repo: **l'app che gioca il sistema** (`bettertrade/`,
-React+Vite+Supabase, con bankroll di più utenti) e **il motore che lo misura**
-(`btscout/`, 38.613 partite e i backtest). Non sono ancora collegati. Prima di
-collegarli vanno chiuse due cose: una falla di sicurezza seria e una domanda
-scomoda sul rendimento reale del sistema.
+Due pezzi ora nello stesso repo: **l'app che archivia le giocate** (`bettertrade/`,
+React+Vite+Supabase) e **il motore che le misura** (`btscout/`, 38.613 partite e i
+backtest). Non sono ancora collegati. La falla di sicurezza è chiusa: si entra con
+Supabase Auth e i permessi stanno nel database. Resta la domanda scomoda sul
+rendimento reale.
 
 ---
 
@@ -59,26 +59,45 @@ node --env-file=.env scripts/backtest.js
 
 ---
 
-## 🔴 1. SICUREZZA — il prossimo lavoro, prima di tutto il resto
+## ✅ 1. SICUREZZA — chiusa il 9 settembre 2026
 
-L'app gestisce **bankroll di più persone** e ha una porta aperta. Il repo è pubblico.
+L'app non muove soldi: è l'archivio delle giocate. Ma le password erano in chiaro
+in un repo pubblico, e le persone le riusano altrove. Ora:
 
-- [ ] **Password in chiaro nel database.** Il login fa
-      `from('users').select('*').eq('username',u).eq('password',p)` dal browser.
-      Perché funzioni, la tabella `users` dev'essere leggibile da `anon` → chiunque
-      abbia la chiave (è nel bundle e nel repo pubblico) può leggere username,
-      password e bankroll di tutti. → Passare a **Supabase Auth** con password hashate.
-- [ ] **I ruoli non proteggono niente.** I controlli (`if role === 'user') return`)
-      sono in JavaScript nel browser: si aggirano chiamando l'API direttamente.
-      → **Policy RLS lato database** su `users`, `movimenti`, `giornate`, `griglia`,
-      `impostazioni`, `inserite`.
-- [ ] **Chiave e URL Supabase hardcoded** in `src/supabase.js` → env var Vite
-      (`VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`).
+- [x] **Supabase Auth** al posto del login fatto a mano. Ogni utente ha un account
+      con password hashata. Si entra sempre con **username + password**: l'email
+      richiesta da Auth è sintetica (`<username>@bettertrade.local`) e nessuno la
+      vede mai. Il mestiere lo fa `emailDi()`, identica in `AuthContext.jsx` e
+      `scripts/_admin.js` — se una delle due cambia, il login smette di funzionare.
+- [x] **Colonna `password` eliminata.** Le vecchie erano di 5 caratteri.
+      Le nuove sono corte e pronunciabili (`fuoco-530`): l'app è un archivio, non
+      un conto, e devono essere dicibili a voce.
+- [x] **RLS attiva** su tutte e sei le tabelle. C'erano sei policy `anon_all_*`
+      che davano permesso totale a chiunque avesse la chiave pubblica, **senza
+      login** — erano l'impalcatura del vecchio login. Sostituite: chi ha fatto
+      login vede tutto l'archivio, scrivono solo admin e superadmin; movimenti e
+      spunte "inserita" restano personali. Chi non ha fatto login non vede niente.
+- [x] **Chiave e URL Supabase** da env var (`.env`, gitignorato). Nota: la chiave
+      `anon` è pubblica per progetto — finisce comunque nel bundle. A proteggere
+      è RLS, non nasconderla.
 - [ ] **Ruotare la password Neon** di BTScout: la stringa di connessione è passata
       in chat durante il setup. Console Neon → ruolo `neondb_owner` → reset →
-      aggiornare `btscout/.env`.
+      aggiornare `btscout/.env`. **Unico punto ancora aperto.**
 
----
+**Conseguenza da conoscere:** creare utenti e resettare la password di qualcun
+altro richiedono la chiave `service_role`, che nel browser non può stare. Si fanno
+da terminale:
+
+```bash
+node --env-file=.env scripts/crea-utente.js mario user 500 "Mario Rossi"
+node --env-file=.env scripts/reset-password.js Bermani
+node --env-file=.env scripts/stato-migrazione.js   # a che punto siamo
+node --env-file=.env scripts/backup.js             # dump di tutte le tabelle
+```
+
+Ognuno può cambiarsi la propria password dalla pagina Utenti. Per rimettere le
+altre due operazioni nell'interfaccia serve una Edge Function che tenga la chiave
+lato server.
 
 ## 🟠 2. La domanda scomoda — il sistema 3x3 è già stato misurato
 
@@ -132,6 +151,17 @@ Nodi tecnici noti:
 - [ ] **History git sporca** — commit `Add files via upload` / `Delete bettertrade
       directory`: il codice è stato caricato dalla UI web di GitHub, non con git.
 - [ ] **README.md vuoto** (contiene solo `# BetterTrade`).
+- [x] **Codice morto rimosso** — `PlaceholderPages.jsx` (duplicato mai importato),
+      props fantasma in `App.jsx`.
+- [x] **Bankroll: una sola fonte di verità** — la formula era copiata identica in
+      `BilancioPage` e `ReportingPage`, ora sta in `src/lib/bankroll.js`.
+- [x] **Tema unico** — c'erano due temi scollegati (le CSS variables di
+      `index.css`, che il JSX non usava mai, e ~130 colori scritti a mano).
+      Ora `src/theme.js` è l'unica definizione e `src/components/ui.jsx` raccoglie
+      i pezzi ricorrenti. Zero colori hardcoded nelle pagine.
+- [ ] **`calcSchedule` arrotonda a zero** — i `Math.floor` in `AuthContext.jsx`
+      producono €0 su tutte le voci quando la base è bassa. Correggerlo cambia
+      gli importi giocati: è una decisione, non una pulizia.
 - [ ] **`btscout/CLAUDE.md` e `btscout/STATO.md`** parlano ancora di BTScout come
       progetto a sé dentro Jarvis. Da fondere in questo file quando i due pezzi si
       collegano davvero.
