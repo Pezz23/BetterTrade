@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../supabase'
+import { aggiornaBankroll } from '../lib/bankroll'
+import { C, F, alpha } from '../theme'
 
 const SPIN_LABELS = ['Spin 1','Spin 2','Spin 3','Spin 4']
 
@@ -36,8 +38,8 @@ function fmtPct(saldo,investito) {
   return p>0?`+${p}%`:`${p}%`
 }
 function pctColor(saldo) {
-  if (!saldo) return '#555'
-  return saldo>0?'#22c55e':saldo<0?'#ef4444':'#555'
+  if (!saldo) return C.spento
+  return saldo>0?C.verde:saldo<0?C.rosso:C.spento
 }
 function calcInvestito(sched) { return sched.tris*5+sched.quaterna*2+sched.full }
 function calcIncasso(tiles,sched) {
@@ -59,7 +61,7 @@ function calcUserSched(user, pct, numSlot, calcSchedule) {
 }
 
 export default function ReportingPage() {
-  const {currentUser,users,fetchUsers,isSuperAdmin,isAdmin,pct,numSlot,getMyBase,getTotalBase,calcSchedule,updateBankroll} = useAuth()
+  const {currentUser,users,fetchUsers,isSuperAdmin,isAdmin,pct,numSlot,getMyBase,getTotalBase,calcSchedule} = useAuth()
   const [giornate,setGiornate] = useState([])
   const [saving,setSaving]     = useState(false)
   const [savingAll,setSavingAll] = useState(false)
@@ -144,19 +146,6 @@ export default function ReportingPage() {
     })
   }
 
-  // Ricalcola bankroll da zero: bankroll_iniziale + movimenti + giornate
-  async function ricalcolaBankroll(userId) {
-    const {data:u}    = await supabase.from('users').select('bankroll_iniziale').eq('id',userId).single()
-    const {data:movs} = await supabase.from('movimenti').select('tipo,importo').eq('user_id',userId)
-    const {data:gio}  = await supabase.from('giornate').select('tot_saldo').eq('user_id',userId)
-    const iniziale    = u?.bankroll_iniziale||0
-    const totMov      = (movs||[]).reduce((s,m)=>s+(m.tipo==='deposito'?m.importo:-m.importo),0)
-    const totGio      = (gio||[]).reduce((s,g)=>s+(g.tot_saldo||0),0)
-    const nuovo       = parseFloat((iniziale+totMov+totGio).toFixed(2))
-    await supabase.from('users').update({bankroll:nuovo}).eq('id',userId)
-    return nuovo
-  }
-
   // Salva giornata per utente corrente (Admin/User — SuperAdmin usa "Salva per tutti")
   async function salvaGiornata() {
     setSaving(true)
@@ -181,8 +170,7 @@ export default function ReportingPage() {
     }]).select().single()
 
     if (newG) setGiornate(prev=>[...prev,newG])
-    const nuovoBankroll = await ricalcolaBankroll(currentUser.id)
-    await updateBankroll(currentUser.id, nuovoBankroll)
+    await aggiornaBankroll(currentUser.id)
 
     setSaving(false)
   }
@@ -212,7 +200,7 @@ export default function ReportingPage() {
         week_number:weekNumber, stagione:stagione
       }])
       // Ricalcola bankroll da zero per coerenza
-      await ricalcolaBankroll(u.id)
+      await aggiornaBankroll(u.id)
     }
 
     await loadGiornate()
@@ -237,7 +225,7 @@ export default function ReportingPage() {
     // Ricalcola bankroll per ogni utente coinvolto
     if (toDelete) {
       for (const row of toDelete) {
-            await ricalcolaBankroll(row.user_id)
+            await aggiornaBankroll(row.user_id)
       }
       await fetchUsers()
     }
@@ -264,29 +252,29 @@ export default function ReportingPage() {
     return null
   }
 
-  if (loading) return <div style={{padding:40,textAlign:'center',color:'#555',fontFamily:"'Sora',sans-serif"}}>Caricamento…</div>
+  if (loading) return <div style={{padding:40,textAlign:'center',color:C.spento,fontFamily:F.sans}}>Caricamento…</div>
 
   return (
     <div style={{padding:'16px'}}>
-      <div style={{fontSize:9,color:'#c9a84c',fontFamily:"'DM Mono',monospace",letterSpacing:4,marginBottom:4}}>REPORTING</div>
+      <div style={{fontSize:9,color:C.oro,fontFamily:F.mono,letterSpacing:4,marginBottom:4}}>REPORTING</div>
       {/* Selettore stagione */}
       <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16}}>
-        <div style={{fontSize:9,color:'#555',fontFamily:"'DM Mono',monospace",textTransform:'uppercase',letterSpacing:'0.07em'}}>Stagione</div>
-        <select value={stagione} onChange={e=>setStagione(e.target.value)} style={{background:'#141414',border:'1px solid #1e1e1e',borderRadius:7,padding:'6px 12px',color:'#c9a84c',fontSize:13,fontFamily:"'DM Mono',monospace",outline:'none',cursor:'pointer'}}>
+        <div style={{fontSize:9,color:C.spento,fontFamily:F.mono,textTransform:'uppercase',letterSpacing:'0.07em'}}>Stagione</div>
+        <select value={stagione} onChange={e=>setStagione(e.target.value)} style={{background:C.card,border:`1px solid ${C.bordo}`,borderRadius:7,padding:'6px 12px',color:C.oro,fontSize:13,fontFamily:F.mono,outline:'none',cursor:'pointer'}}>
           {STAGIONI.map(s=><option key={s} value={s}>{s}</option>)}
         </select>
         {stagione!==stagioneCorrente && (
-          <span style={{fontSize:10,color:'#f59e0b',background:'rgba(245,158,11,0.10)',border:'1px solid rgba(245,158,11,0.20)',borderRadius:20,padding:'3px 10px',fontFamily:"'DM Mono',monospace"}}>
+          <span style={{fontSize:10,color:C.ambra,background:alpha(C.ambra,0.10),border:`1px solid ${alpha(C.ambra,0.20)}`,borderRadius:20,padding:'3px 10px',fontFamily:F.mono}}>
             Sola lettura
           </span>
         )}
       </div>
 
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20,gap:8,flexWrap:'wrap'}}>
-        <div style={{fontSize:20,fontWeight:700,color:'#e0d9d0',fontFamily:"'Sora',sans-serif"}}>Giornate</div>
+        <div style={{fontSize:20,fontWeight:700,color:C.testo,fontFamily:F.sans}}>Giornate</div>
         <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
           {isAdmin&&!isSuperAdmin&&stagione===stagioneCorrente&&(
-            <button onClick={salvaGiornata} disabled={saving||savingAll} style={{padding:'9px 14px',borderRadius:8,cursor:'pointer',fontFamily:"'Sora',sans-serif",fontSize:12,fontWeight:600,background:'rgba(201,168,76,0.10)',border:'1px solid rgba(201,168,76,0.3)',color:'#c9a84c'}}>
+            <button onClick={salvaGiornata} disabled={saving||savingAll} style={{padding:'9px 14px',borderRadius:8,cursor:'pointer',fontFamily:F.sans,fontSize:12,fontWeight:600,background:alpha(C.oro,0.10),border:`1px solid ${alpha(C.oro,0.3)}`,color:C.oro}}>
               {saving?'Salvataggio…':'+ Salva mia giornata'}
             </button>
           )}
@@ -297,17 +285,17 @@ export default function ReportingPage() {
               users.filter(u=>u.role!=='superadmin').forEach(u=>{sel[u.id]=true})
               setUtentiSelezionati(sel)
               setShowSalvaPerTutti(true)
-            }} disabled={saving||savingAll} style={{padding:'9px 14px',borderRadius:8,cursor:'pointer',fontFamily:"'Sora',sans-serif",fontSize:12,fontWeight:600,background:'rgba(34,197,94,0.10)',border:'1px solid rgba(34,197,94,0.3)',color:'#22c55e'}}>
+            }} disabled={saving||savingAll} style={{padding:'9px 14px',borderRadius:8,cursor:'pointer',fontFamily:F.sans,fontSize:12,fontWeight:600,background:alpha(C.verde,0.10),border:`1px solid ${alpha(C.verde,0.3)}`,color:C.verde}}>
               {savingAll?'Salvataggio…':'✦ Salva per tutti'}
             </button>
           )}
           {isSuperAdmin&&stagione===stagioneCorrente&&STAGIONI.indexOf(stagioneCorrente)<STAGIONI.length-1&&(
             <button onClick={()=>confirmChiudi?chiudiStagione():setConfirmChiudi(true)}
               onBlur={()=>setTimeout(()=>setConfirmChiudi(false),2000)}
-              disabled={chiudendo} style={{padding:'9px 14px',borderRadius:8,cursor:'pointer',fontFamily:"'Sora',sans-serif",fontSize:12,fontWeight:600,
-                background:confirmChiudi?'rgba(239,68,68,0.15)':'rgba(100,100,100,0.10)',
-                border:`1px solid ${confirmChiudi?'rgba(239,68,68,0.4)':'#1e1e1e'}`,
-                color:confirmChiudi?'#ef4444':'#555'}}>
+              disabled={chiudendo} style={{padding:'9px 14px',borderRadius:8,cursor:'pointer',fontFamily:F.sans,fontSize:12,fontWeight:600,
+                background:confirmChiudi?alpha(C.rosso,0.15):alpha(C.grigioMedio,0.10),
+                border:`1px solid ${confirmChiudi?alpha(C.rosso,0.4):C.bordo}`,
+                color:confirmChiudi?C.rosso:C.spento}}>
               {chiudendo?'Chiusura…':confirmChiudi?'⚠️ Conferma chiusura':'⏹ Chiudi stagione'}
             </button>
           )}
@@ -318,13 +306,13 @@ export default function ReportingPage() {
       {giornate.length>0&&(
         <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:16}}>
           {[
-            {label:'Tot. Investito',val:fmt(totali.investito),color:'#e0d9d0'},
-            {label:'Tot. Incasso',  val:fmt(totali.incasso),  color:'#60a5fa'},
+            {label:'Tot. Investito',val:fmt(totali.investito),color:C.testo},
+            {label:'Tot. Incasso',  val:fmt(totali.incasso),  color:C.blu},
             {label:'Tot. Saldo',    val:fmt(totali.saldo,true),color:pctColor(totali.saldo)},
           ].map(({label,val,color})=>(
-            <div key={label} style={{background:'#141414',border:'1px solid #1e1e1e',borderRadius:10,padding:'12px'}}>
-              <div style={{fontSize:9,color:'#555',fontFamily:"'DM Mono',monospace",marginBottom:5}}>{label}</div>
-              <div style={{fontSize:15,fontWeight:700,color,fontFamily:"'DM Mono',monospace"}}>{val}</div>
+            <div key={label} style={{background:C.card,border:`1px solid ${C.bordo}`,borderRadius:10,padding:'12px'}}>
+              <div style={{fontSize:9,color:C.spento,fontFamily:F.mono,marginBottom:5}}>{label}</div>
+              <div style={{fontSize:15,fontWeight:700,color,fontFamily:F.mono}}>{val}</div>
             </div>
           ))}
         </div>
@@ -332,33 +320,33 @@ export default function ReportingPage() {
 
       {/* Pannello selezione utenti per Salva per tutti */}
       {showSalvaPerTutti&&isSuperAdmin&&(
-        <div style={{background:'#141414',border:'1px solid rgba(34,197,94,0.3)',borderRadius:10,padding:'16px',marginBottom:16}}>
-          <div style={{fontSize:13,fontWeight:600,color:'#e0d9d0',fontFamily:"'Sora',sans-serif",marginBottom:12}}>Seleziona utenti per questa giornata</div>
+        <div style={{background:C.card,border:`1px solid ${alpha(C.verde,0.3)}`,borderRadius:10,padding:'16px',marginBottom:16}}>
+          <div style={{fontSize:13,fontWeight:600,color:C.testo,fontFamily:F.sans,marginBottom:12}}>Seleziona utenti per questa giornata</div>
           <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:14}}>
             {users.filter(u=>u.role!=='superadmin').map(u=>(
               <div key={u.id} onClick={()=>setUtentiSelezionati(p=>({...p,[u.id]:!p[u.id]}))}
                 style={{display:'flex',alignItems:'center',gap:10,padding:'8px 12px',borderRadius:7,cursor:'pointer',
-                  background:utentiSelezionati[u.id]?'rgba(34,197,94,0.08)':'transparent',
-                  border:`1px solid ${utentiSelezionati[u.id]?'rgba(34,197,94,0.30)':'#1e1e1e'}`}}>
-                <div style={{width:18,height:18,borderRadius:4,border:`2px solid ${utentiSelezionati[u.id]?'#22c55e':'#333'}`,
-                  background:utentiSelezionati[u.id]?'#22c55e':'transparent',
-                  display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'#090909',fontWeight:700,flexShrink:0}}>
+                  background:utentiSelezionati[u.id]?alpha(C.verde,0.08):'transparent',
+                  border:`1px solid ${utentiSelezionati[u.id]?alpha(C.verde,0.30):C.bordo}`}}>
+                <div style={{width:18,height:18,borderRadius:4,border:`2px solid ${utentiSelezionati[u.id]?C.verde:C.fantasma}`,
+                  background:utentiSelezionati[u.id]?C.verde:'transparent',
+                  display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:C.fondo,fontWeight:700,flexShrink:0}}>
                   {utentiSelezionati[u.id]?'✓':''}
                 </div>
-                <span style={{fontSize:13,color:'#e0d9d0',fontFamily:"'Sora',sans-serif"}}>{u.display_name||u.username}</span>
-                <span style={{fontSize:11,color:'#444',fontFamily:"'DM Mono',monospace",marginLeft:'auto'}}>€{(u.bankroll||0).toFixed(2)}</span>
+                <span style={{fontSize:13,color:C.testo,fontFamily:F.sans}}>{u.display_name||u.username}</span>
+                <span style={{fontSize:11,color:C.fioco,fontFamily:F.mono,marginLeft:'auto'}}>€{(u.bankroll||0).toFixed(2)}</span>
               </div>
             ))}
           </div>
           <div style={{display:'flex',gap:8}}>
             <button onClick={()=>salvaPerTutti(Object.keys(utentiSelezionati).filter(id=>utentiSelezionati[id]))}
               disabled={savingAll||Object.values(utentiSelezionati).every(v=>!v)}
-              style={{flex:1,padding:'10px',borderRadius:7,cursor:'pointer',fontFamily:"'Sora',sans-serif",fontSize:13,fontWeight:600,
-                background:'rgba(34,197,94,0.15)',border:'1px solid rgba(34,197,94,0.40)',color:'#22c55e'}}>
+              style={{flex:1,padding:'10px',borderRadius:7,cursor:'pointer',fontFamily:F.sans,fontSize:13,fontWeight:600,
+                background:alpha(C.verde,0.15),border:`1px solid ${alpha(C.verde,0.40)}`,color:C.verde}}>
               {savingAll?'Salvataggio…':`✦ Salva per ${Object.values(utentiSelezionati).filter(Boolean).length} utenti`}
             </button>
             <button onClick={()=>setShowSalvaPerTutti(false)}
-              style={{padding:'10px 16px',borderRadius:7,cursor:'pointer',fontFamily:"'Sora',sans-serif",fontSize:13,background:'transparent',border:'1px solid #1e1e1e',color:'#555'}}>
+              style={{padding:'10px 16px',borderRadius:7,cursor:'pointer',fontFamily:F.sans,fontSize:13,background:'transparent',border:`1px solid ${C.bordo}`,color:C.spento}}>
               Annulla
             </button>
           </div>
@@ -366,9 +354,9 @@ export default function ReportingPage() {
       )}
 
       {giornate.length===0?(
-        <div style={{padding:'60px 24px',textAlign:'center',color:'#333',fontSize:14,fontFamily:"'Sora',sans-serif",background:'#141414',border:'1px solid #1e1e1e',borderRadius:10}}>
+        <div style={{padding:'60px 24px',textAlign:'center',color:C.fantasma,fontSize:14,fontFamily:F.sans,background:C.card,border:`1px solid ${C.bordo}`,borderRadius:10}}>
           Nessuna giornata salvata.<br/>
-          <span style={{fontSize:12,color:'#2a2a2a'}}>Inserisci le partite nella Slot e premi "Salva giornata".</span>
+          <span style={{fontSize:12,color:C.bordoChiaro}}>Inserisci le partite nella Slot e premi "Salva giornata".</span>
         </div>
       ):(
         <div style={{overflowX:'auto',WebkitOverflowScrolling:'touch'}}>
@@ -376,21 +364,21 @@ export default function ReportingPage() {
             <thead>
               <tr>
                 <th style={TH({sticky:true})}></th>
-                <th style={TH({color:'#555'})}>Totale</th>
+                <th style={TH({color:C.spento})}>Totale</th>
                 {/* SuperAdmin: raggruppa per week, utenti: colonna per giornata */}
                 {isSuperAdmin ? (
                   // Mostra week uniche con lista partecipanti
                   [...new Map(giornate.map(g=>[g.week_number,g])).values()].map(g=>(
-                    <th key={g.week_number} style={TH({color:'#c9a84c'})}>
+                    <th key={g.week_number} style={TH({color:C.oro})}>
                       <div style={{fontWeight:700}}>Week {g.week_number}</div>
-                      <div style={{fontSize:9,color:'#666',marginTop:2}}>{g.data}</div>
+                      <div style={{fontSize:9,color:C.grigioFioco,marginTop:2}}>{g.data}</div>
                       <div style={{display:'none'}}>
                         {giornate.filter(r=>r.week_number===g.week_number).map(r=>r.users?.display_name||r.users?.username).join(', ')}
                       </div>
 
                       {stagione===stagioneCorrente&&(
                         <button onClick={()=>confirmIdx===g.week_number?eliminaGiornata(g.id):setConfirmIdx(g.week_number)}
-                          style={{fontSize:9,color:confirmIdx===g.week_number?'#ef4444':'#333',background:'none',border:'none',cursor:'pointer',marginTop:2}}>
+                          style={{fontSize:9,color:confirmIdx===g.week_number?C.rosso:C.fantasma,background:'none',border:'none',cursor:'pointer',marginTop:2}}>
                           {confirmIdx===g.week_number?'⚠️ Conferma':'✕'}
                         </button>
                       )}
@@ -398,9 +386,9 @@ export default function ReportingPage() {
                   ))
                 ) : (
                   giornate.map(g=>(
-                    <th key={g.id} style={TH({color:'#c9a84c'})}>
+                    <th key={g.id} style={TH({color:C.oro})}>
                       <div style={{fontWeight:700}}>Week {g.week_number}</div>
-                      <div style={{fontSize:9,color:'#666',marginTop:2}}>{g.data}</div>
+                      <div style={{fontSize:9,color:C.grigioFioco,marginTop:2}}>{g.data}</div>
                     </th>
                   ))
                 )}
@@ -410,7 +398,7 @@ export default function ReportingPage() {
               {SEZIONI.map(sez=>(
                 <>
                   <tr key={`h-${sez.key}`}>
-                    <td colSpan={2+giornate.length} style={{padding:'10px 10px 4px',fontSize:9,fontWeight:700,color:'#c9a84c',fontFamily:"'DM Mono',monospace",textTransform:'uppercase',letterSpacing:'0.08em',background:'#0d0d0d',borderTop:'1px solid #1a1a1a'}}>
+                    <td colSpan={2+giornate.length} style={{padding:'10px 10px 4px',fontSize:9,fontWeight:700,color:C.oro,fontFamily:F.mono,textTransform:'uppercase',letterSpacing:'0.08em',background:C.barra,borderTop:`1px solid ${C.bordoRiga}`}}>
                       {sez.label}
                     </td>
                   </tr>
@@ -426,7 +414,7 @@ export default function ReportingPage() {
                     return (
                       <tr key={`${sez.key}-${si}`}>
                         <td style={TD({label:true})}>{label}</td>
-                        <td style={TD({color:sez.key==='saldo'||sez.key==='pct'?pctColor(spinTot):'#888'})}>
+                        <td style={TD({color:sez.key==='saldo'||sez.key==='pct'?pctColor(spinTot):C.grigio})}>
                           {sez.key==='pct'?'—':fmt(spinTot,sez.key==='saldo')}
                         </td>
                         {weekUniche.map(g=>{
@@ -438,8 +426,8 @@ export default function ReportingPage() {
                           const hasData = rows.some(r=>r.spins?.[si])
                           if (!hasData) return <td key={g.week_number||g.id} style={TD({muted:true})}>—</td>
                           let val,color
-                          if (sez.key==='investito'){val=fmt(aggInv);color='#888'}
-                          else if (sez.key==='incasso'){val=fmt(aggInc);color='#60a5fa'}
+                          if (sez.key==='investito'){val=fmt(aggInv);color=C.grigio}
+                          else if (sez.key==='incasso'){val=fmt(aggInc);color=C.blu}
                           else if (sez.key==='saldo'){val=fmt(aggSal,true);color=pctColor(aggSal)}
                           else{val=fmtPct(aggSal,aggInv);color=pctColor(aggSal)}
                           return <td key={g.week_number||g.id} style={TD({color})}>{val}</td>
@@ -447,17 +435,17 @@ export default function ReportingPage() {
                       </tr>
                     )
                   })}
-                  <tr key={`tot-${sez.key}`} style={{background:'#111'}}>
+                  <tr key={`tot-${sez.key}`} style={{background:C.pannello}}>
                     <td style={TD({label:true,bold:true})}>
                       {sez.key==='investito'?'Tot Investiti':sez.key==='incasso'?'Tot Incassati':sez.key==='saldo'?'Tot Saldo':'Tot %'}
                     </td>
-                    <td style={TD({bold:true,color:sez.key==='saldo'||sez.key==='pct'?pctColor(totali.saldo):'#e0d9d0'})}>
+                    <td style={TD({bold:true,color:sez.key==='saldo'||sez.key==='pct'?pctColor(totali.saldo):C.testo})}>
                       {sez.key==='pct'?fmtPct(totali.saldo,totali.investito):sez.key==='investito'?fmt(totali.investito):sez.key==='incasso'?fmt(totali.incasso):fmt(totali.saldo,true)}
                     </td>
                     {giornate.map(g=>{
                       let val,color
-                      if (sez.key==='investito'){val=fmt(g.tot_investito);color='#e0d9d0'}
-                      else if (sez.key==='incasso'){val=fmt(g.tot_incasso);color='#60a5fa'}
+                      if (sez.key==='investito'){val=fmt(g.tot_investito);color=C.testo}
+                      else if (sez.key==='incasso'){val=fmt(g.tot_incasso);color=C.blu}
                       else if (sez.key==='saldo'){val=fmt(g.tot_saldo,true);color=pctColor(g.tot_saldo)}
                       else{val=fmtPct(g.tot_saldo,g.tot_investito);color=pctColor(g.tot_saldo)}
                       return <td key={g.id} style={TD({bold:true,color})}>{val}</td>
@@ -474,10 +462,10 @@ export default function ReportingPage() {
 }
 
 function TH({sticky,color}={}) {
-  return {padding:'8px 10px',fontSize:11,fontWeight:600,color:color||'#e0d9d0',fontFamily:"'DM Mono',monospace",background:'#0d0d0d',borderBottom:'1px solid #1a1a1a',textAlign:'center',whiteSpace:'nowrap',
-    ...(sticky?{position:'sticky',left:0,zIndex:2,background:'#0d0d0d',textAlign:'left'}:{})}
+  return {padding:'8px 10px',fontSize:11,fontWeight:600,color:color||C.testo,fontFamily:F.mono,background:C.barra,borderBottom:`1px solid ${C.bordoRiga}`,textAlign:'center',whiteSpace:'nowrap',
+    ...(sticky?{position:'sticky',left:0,zIndex:2,background:C.barra,textAlign:'left'}:{})}
 }
 function TD({label,bold,color,muted}={}) {
-  return {padding:'7px 10px',fontSize:bold?13:12,fontWeight:bold?700:400,color:muted?'#333':color||'#888',fontFamily:"'DM Mono',monospace",borderBottom:'1px solid #181818',textAlign:label?'left':'center',whiteSpace:'nowrap',
-    ...(label?{position:'sticky',left:0,background:'#141414',zIndex:1,minWidth:100}:{})}
+  return {padding:'7px 10px',fontSize:bold?13:12,fontWeight:bold?700:400,color:muted?C.fantasma:color||C.grigio,fontFamily:F.mono,borderBottom:`1px solid ${C.bordoTenue}`,textAlign:label?'left':'center',whiteSpace:'nowrap',
+    ...(label?{position:'sticky',left:0,background:C.card,zIndex:1,minWidth:100}:{})}
 }

@@ -1,24 +1,48 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from '../supabase'
+import { aggiornaBankroll } from '../lib/bankroll'
 
 const AuthContext = createContext(null)
-const SESSION_KEY = 'bt_session'
 
-function loadSession() {
-  try { return JSON.parse(sessionStorage.getItem(SESSION_KEY)) } catch { return null }
-}
+// Gli utenti non hanno un'email e non ne useranno mai una: fanno login con
+// username e password. Supabase Auth però pretende un identificatore email,
+// quindi ne costruiamo una interna e deterministica. Deve restare identica alla
+// funzione emailDi() di scripts/migra-auth.js, altrimenti il login non trova
+// l'account.
+const DOMINIO = 'bettertrade.local'
+export const emailDi = username =>
+  `${String(username).toLowerCase().replace(/[^a-z0-9]/g, '')}@${DOMINIO}`
 
 export function AuthProvider({ children }) {
-  const [currentUser, setCurrentUser] = useState(loadSession)
+  const [currentUser, setCurrentUser] = useState(null)
   const [users, setUsers]             = useState([])
   const [loading, setLoading]         = useState(false)
-  const [pct, setPct]                 = useState(10)   // % bankroll da giocare
-  const [numSlot, setNumSlot]         = useState(1)    // numero slot da giocare
+  const [booting, setBooting]         = useState(true)  // ripristino sessione in corso
+  const [pct, setPct]                 = useState(10)    // % bankroll da giocare
+  const [numSlot, setNumSlot]         = useState(1)     // numero slot da giocare
 
+  // La sessione la tiene supabase-js (con refresh automatico del token): non
+  // salviamo più noi il record utente in sessionStorage — conteneva la password.
   useEffect(() => {
-    if (currentUser) sessionStorage.setItem(SESSION_KEY, JSON.stringify(currentUser))
-    else sessionStorage.removeItem(SESSION_KEY)
-  }, [currentUser])
+    async function caricaProfilo(session) {
+      if (!session) { setCurrentUser(null); setBooting(false); return }
+      const { data } = await supabase
+        .from('users').select('*').eq('auth_id', session.user.id).single()
+      // Account Auth senza riga in users: non è un utente dell'app.
+      if (!data) await supabase.auth.signOut()
+      setCurrentUser(data || null)
+      setBooting(false)
+    }
+
+    supabase.auth.getSession().then(({ data }) => caricaProfilo(data.session))
+    // Il callback di onAuthStateChange gira mentre la libreria tiene un lock
+    // interno: interrogare il database qui dentro può bloccare la login stessa.
+    // Si rimanda la lettura del profilo al giro successivo dell'event loop.
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+      setTimeout(() => caricaProfilo(session), 0)
+    })
+    return () => sub.subscription.unsubscribe()
+  }, [])
 
   // Carica impostazioni globali da Supabase all'avvio
   useEffect(() => {
@@ -29,8 +53,8 @@ export function AuthProvider({ children }) {
         setNumSlot(data.num_slot || 1)
       }
     }
-    loadImpostazioni()
-  }, [])
+    if (currentUser) loadImpostazioni()
+  }, [currentUser?.id])
 
   // Carica users appena il currentUser è disponibile
   // Necessario per calcoli bankroll aggregato (getTotalBankroll/getTotalBase)
@@ -46,54 +70,46 @@ export function AuthProvider({ children }) {
   async function login(username, password) {
     setLoading(true)
     try {
-      const { data, error } = await supabase
-        .from('users').select('*')
-        .eq('username', username).eq('password', password).single()
+      const { error } = await supabase.auth.signInWithPassword({
+        email: emailDi(username),
+        password,
+      })
       setLoading(false)
-      if (error || !data) return { ok: false, error: 'Username o password errati' }
-      setCurrentUser(data)
-      return { ok: true }
-    } catch (err) {
+      // Messaggio unico: non riveliamo se è lo username o la password a essere
+      // sbagliato, altrimenti si scopre chi esiste.
+      if (error) return { ok: false, error: 'Username o password errati' }
+      return { ok: true }  // il profilo lo carica onAuthStateChange
+    } catch {
       setLoading(false)
       return { ok: false, error: 'Impossibile connettersi al server. Verifica la connessione.' }
     }
   }
 
-  function logout() { setCurrentUser(null); setUsers([]) }
+  async function logout() {
+    await supabase.auth.signOut()
+    setCurrentUser(null)
+    setUsers([])
+  }
 
-  async function createUser({ username, password, displayName, role, bankroll }) {
-    if (!currentUser || currentUser.role === 'user') return { ok: false, error: 'Permessi insufficienti' }
-    if (currentUser.role === 'admin' && role !== 'user') return { ok: false, error: 'Gli admin possono creare solo User' }
-
-    const bk = parseFloat(bankroll) || 0
-    const { data, error } = await supabase.from('users').insert([{
-      username,
-      password,
-      display_name: displayName || username,
-      role,
-      bankroll: bk,
-      bankroll_iniziale: bk,
-      created_by: currentUser.id,
-    }]).select().single()
-
-    if (error) {
-      if (error.code === '23505') return { ok: false, error: 'Username già esistente' }
-      return { ok: false, error: error.message }
-    }
-    await fetchUsers()
+  // Cambia la password di CHI È LOGGATO. Per cambiare quella di un altro utente
+  // serve la chiave service_role, che non può stare nel browser:
+  // usa `node --env-file=.env scripts/reset-password.js <username>`.
+  async function cambiaMiaPassword(nuova) {
+    if (!nuova || nuova.length < 6) return { ok: false, error: 'Almeno 6 caratteri' }
+    const { error } = await supabase.auth.updateUser({ password: nuova })
+    if (error) return { ok: false, error: error.message }
     return { ok: true }
   }
 
-  async function updateBankroll(userId, amount) {
-    const val = parseFloat(amount) || 0
-    await supabase.from('users').update({ bankroll: val }).eq('id', userId)
-    // Aggiorna currentUser in sessione E sessionStorage
-    if (currentUser?.id === userId) {
-      const updated = { ...currentUser, bankroll: val }
-      setCurrentUser(updated)
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(updated))
-    }
+  // Chiede al database di ricalcolare il bankroll di un utente e ricarica quel
+  // che sta in memoria. Non scrive un valore: lo scrive la funzione lato
+  // database (vedi sql/04), perché con RLS un utente normale non può modificare
+  // la propria riga in users e la scrittura falliva in silenzio.
+  async function aggiornaSaldo(userId) {
+    const nuovo = await aggiornaBankroll(userId)
+    if (currentUser?.id === userId) setCurrentUser({ ...currentUser, bankroll: nuovo })
     await fetchUsers()
+    return nuovo
   }
 
   async function deleteUser(userId) {
@@ -141,10 +157,10 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{
-      currentUser, users, loading,
+      currentUser, users, loading, booting,
       pct, numSlot, savePct, saveNumSlot,
-      login, logout, fetchUsers,
-      createUser, updateBankroll, deleteUser,
+      login, logout, fetchUsers, cambiaMiaPassword,
+      aggiornaSaldo, deleteUser,
       getTotalBankroll, getMyBase, getTotalBase, calcSchedule,
       isSuperAdmin, isAdmin,
     }}>

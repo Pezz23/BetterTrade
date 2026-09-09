@@ -1,21 +1,22 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { C, F, alpha } from '../theme'
 
 const S = {
-  root:  { minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', padding:24, background:'#090909', position:'relative' },
-  glow:  { position:'fixed', inset:0, background:'radial-gradient(ellipse 70% 40% at 50% 0%, rgba(201,168,76,0.07) 0%, transparent 70%)', pointerEvents:'none' },
-  card:  { background:'#111', border:'1px solid #1e1e1e', borderRadius:18, padding:'40px 32px', width:'100%', maxWidth:380, zIndex:1 },
+  root:  { minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', padding:24, background:C.fondo, position:'relative' },
+  glow:  { position:'fixed', inset:0, background:`radial-gradient(ellipse 70% 40% at 50% 0%, ${alpha(C.oro,0.07)} 0%, transparent 70%)`, pointerEvents:'none' },
+  card:  { background:C.pannello, border:`1px solid ${C.bordo}`, borderRadius:18, padding:'40px 32px', width:'100%', maxWidth:380, zIndex:1 },
   logo:  { display:'flex', alignItems:'center', gap:12, marginBottom:6 },
-  icon:  { width:42, height:42, background:'rgba(201,168,76,0.12)', border:'1px solid rgba(201,168,76,0.22)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center' },
-  name:  { fontSize:20, fontWeight:700, color:'#e0d9d0', letterSpacing:'-0.4px', fontFamily:"'Sora',sans-serif" },
-  sub:   { fontSize:12, color:'#555', marginBottom:28, fontFamily:"'Sora',sans-serif" },
+  icon:  { width:42, height:42, background:alpha(C.oro,0.12), border:`1px solid ${alpha(C.oro,0.22)}`, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center' },
+  name:  { fontSize:20, fontWeight:700, color:C.testo, letterSpacing:'-0.4px', fontFamily:F.sans },
+  sub:   { fontSize:12, color:C.spento, marginBottom:28, fontFamily:F.sans },
   form:  { display:'flex', flexDirection:'column', gap:18 },
   field: { display:'flex', flexDirection:'column', gap:6 },
-  label: { fontSize:11, fontWeight:500, color:'#666', textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:"'DM Mono',monospace" },
-  input: { background:'#0a0a0a', border:'1px solid #1e1e1e', borderRadius:8, padding:'11px 14px', color:'#e0d9d0', fontSize:15, fontFamily:"'Sora',sans-serif", outline:'none', width:'100%' },
-  err:   { background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.22)', borderRadius:8, padding:'10px 14px', fontSize:13, color:'#ef4444', fontFamily:"'Sora',sans-serif" },
-  btn:   { background:'#c9a84c', border:'none', borderRadius:8, padding:'13px', color:'#090909', fontSize:15, fontWeight:700, cursor:'pointer', fontFamily:"'Sora',sans-serif", marginTop:4 },
-  hint:  { marginTop:22, fontSize:12, color:'#333', textAlign:'center', fontFamily:"'Sora',sans-serif" },
+  label: { fontSize:11, fontWeight:500, color:C.grigioFioco, textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:F.mono },
+  input: { background:C.pozzo, border:`1px solid ${C.bordo}`, borderRadius:8, padding:'11px 14px', color:C.testo, fontSize:15, fontFamily:F.sans, outline:'none', width:'100%' },
+  err:   { background:alpha(C.rosso,0.08), border:`1px solid ${alpha(C.rosso,0.22)}`, borderRadius:8, padding:'10px 14px', fontSize:13, color:C.rosso, fontFamily:F.sans },
+  btn:   { background:C.oro, border:'none', borderRadius:8, padding:'13px', color:C.fondo, fontSize:15, fontWeight:700, cursor:'pointer', fontFamily:F.sans, marginTop:4 },
+  hint:  { marginTop:22, fontSize:12, color:C.fantasma, textAlign:'center', fontFamily:F.sans },
 }
 
 export default function LoginPage() {
@@ -40,10 +41,10 @@ export default function LoginPage() {
         <div style={S.logo}>
           <div style={S.icon}>
             <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
-              <rect x="2" y="2" width="10" height="10" rx="2" fill="#c9a84c" opacity=".9"/>
-              <rect x="16" y="2" width="10" height="10" rx="2" fill="#c9a84c" opacity=".5"/>
-              <rect x="2" y="16" width="10" height="10" rx="2" fill="#c9a84c" opacity=".5"/>
-              <rect x="16" y="16" width="10" height="10" rx="2" fill="#c9a84c" opacity=".9"/>
+              <rect x="2" y="2" width="10" height="10" rx="2" fill={C.oro} opacity=".9"/>
+              <rect x="16" y="2" width="10" height="10" rx="2" fill={C.oro} opacity=".5"/>
+              <rect x="2" y="16" width="10" height="10" rx="2" fill={C.oro} opacity=".5"/>
+              <rect x="16" y="16" width="10" height="10" rx="2" fill={C.oro} opacity=".9"/>
             </svg>
           </div>
           <span style={S.name}>BetterTrade</span>

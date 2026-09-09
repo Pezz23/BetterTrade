@@ -1,3 +1,7 @@
+/* Solo il minimo che sta fuori da React: body, scrollbar, reset.
+   I colori dell'interfaccia stanno in src/theme.js — questi qui sotto sono la
+   copia per il poco CSS che non passa da un componente. Se cambi un colore,
+   cambialo in theme.js e riporta qui il valore. */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --bg: #090909;
