@@ -4,189 +4,200 @@
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
 **Ultimo aggiornamento:** 9 settembre 2026
-**Fase corrente:** numeri chiusi — prossimo passo: **l'archivio dentro l'app**
+**Fase corrente:** sicurezza e numeri chiusi — si parte con **l'archivio**
 
 ---
 
 ## Dove siamo in una riga
 
-Due pezzi nello stesso repo: **l'app** (`bettertrade/`, React+Vite+Supabase) e
-**l'archivio** (`btscout/`, 38.613 partite su Neon). Non sono ancora collegati.
-La sicurezza è chiusa e i numeri sono la situazione di partenza ufficiale
-(€3.955,66 aggregati). Adesso si costruisce: l'archivio dentro l'app, e alla
-fine la compilazione automatica delle schedine.
-
-**Nessuno sta usando l'app in questo momento** — quindi si può cambiare in
-profondità senza rompere niente a nessuno.
+Due pezzi nello stesso repo: **l'app** (`bettertrade/`, React+Vite+Supabase, in
+produzione su Vercel) e **l'archivio** (`btscout/`, 38.613 partite su Neon).
+Non sono ancora collegati. Sicurezza chiusa, numeri chiusi: adesso si costruisce.
 
 ---
 
 ## L'obiettivo finale
 
-BetterTrade propone una **lista di partite**; io o gli utenti scegliamo quali
-prendere; l'app **compila da sola** la griglia e le schedine.
-
-Perché funzioni servono, in ordine: numeri affidabili, un archivio interrogabile
-dentro l'app, e solo alla fine il motore che propone.
+BetterTrade propone una **lista di partite** scelte secondo parametri calcolati
+sull'archivio, con filtri sulle quote. Io o gli utenti scegliamo quali prendere,
+e l'app **compila da sola** griglia e schedine.
 
 ---
 
-## ✅ 1. Numeri del database — chiuso
+## ⚠️ Il pezzo che manca a tutti, e che detta l'ordine
 
-### Fatto il 9 settembre
+**L'archivio contiene solo partite già giocate.** Va dal 28 luglio 2016 al
+30 maggio 2026, zero partite senza risultato, zero partite dopo agosto 2026.
+È uno storico, non un calendario.
 
-- [x] **MNM rimesso a posto.** Aveva bankroll −€1.311,21 con capitale iniziale
-      €106,11 — un saldo residuo finito nel campo del capitale di partenza — e
-      una stagione **23/24** che nessun altro utente ha. Il capitale vero era
-      €3.000. La 23/24 (31 giornate, saldo +€570,54) è stata rimossa.
-- [x] **Coppie allineate.** Dal 24/25 alcune persone hanno giocato le stesse
-      schedine e i numeri differivano per errori di trascrizione:
-      MNM ← Bermani (scarto €17,58 su 10 giornate, di cui 3 significative:
-      24/25 sett. 7 e 24, 25/26 sett. 7) e MarcoM ← Christian (€0,15).
-      **Il riferimento scelto è Bermani/Christian: se l'Excel dà ragione
-      all'altro lato, si rifà al contrario.**
-- [x] **Totale portato a €3.955,66**, con la differenza (+€21,04) registrata
-      come **movimento** su Laboratorio — non scritta sul saldo, che è calcolato.
-- [x] **Tutti e sette coerenti**, nessun bankroll negativo.
+Quindi **oggi l'app non può proporre partite da giocare**: quelle partite non
+esistono da nessuna parte nel sistema. Serve una seconda fonte, con il
+**calendario delle prossime giornate e le relative quote**.
 
-| Utente | Iniziale | Movim. | Giornate | Saldo | N |
-|---|---|---|---|---|---|
-| Bermani | €3.000,00 | — | −€2.005,44 | **€994,56** | 54 |
-| MNM | €3.000,00 | — | −€2.005,44 | **€994,56** | 54 |
-| MarcoM | €1.000,00 | — | −€671,61 | **€328,39** | 54 |
-| Christian (GLeRoy) | €1.000,00 | — | −€671,61 | **€328,39** | 54 |
-| Botturi | €1.000,00 | — | −€469,44 | **€530,56** | 24 |
-| Laboratorio | €1.563,13 | −€207,17 | −€576,76 | **€779,20** | 35 |
-| **Totale** | €10.563,13 | −€207,17 | −€6.400,30 | **€3.955,66** | 275 |
+Le due cose sono diverse e vanno tenute separate:
 
-Botturi ha solo la 25/26 perché è entrato in corsa; Laboratorio non segue gli
-anni. Entrambe le cose sono corrette, non anomalie.
+| | Fonte | A cosa serve |
+|---|---|---|
+| **Storico** | football-data.co.uk, stagioni chiuse | Calcolare i parametri, fare ricerca e simulazioni |
+| **Calendario** | *da trovare* — football-data pubblica un `fixtures.csv` settimanale, da verificare | Sapere quali partite si giocano e a che quota |
 
-### Deciso il 9 settembre — questa sezione è chiusa
-
-**I numeri attuali sono la situazione di partenza ufficiale.** L'Excel era
-gestito a mano e conteneva errori: non si fa nessun confronto riga per riga, e
-non si va a cercare quale lato avesse ragione sulle giornate contese. €21 di
-scarto su €6.400 non cambiano niente.
-
-**Nessun movimento è mai stato fatto dopo la creazione degli utenti**, tranne
-quelli su Laboratorio: l'assenza di versamenti non è un dato mancante, è la
-realtà. Il totale €3.955,66 è il saldo vero sul conto.
-
-- [ ] Unico residuo: **decidere se vietare i bankroll negativi** a livello di
-      database (`check (bankroll >= 0)`) o tenerli come segnale d'allarme.
-
-### Strumenti costruiti per questo lavoro
-
-```bash
-node --env-file=.env scripts/saldi.js                  # riepilogo di tutti
-node --env-file=.env scripts/verifica-coerenza.js      # iniziale+movimenti+giornate=bankroll
-node --env-file=.env scripts/confronta-utenti.js A B   # differenze fra due utenti
-node --env-file=.env scripts/allinea-utenti.js  A B    # allinea (prova a vuoto)
-node --env-file=.env scripts/allinea-totale.js  3955.66
-node --env-file=.env scripts/prova-permessi.js Bermani <pw> MNM <pw>
-```
-
-Tutti quelli che scrivono girano a vuoto per default: solo con `--esegui`
-modificano davvero.
+Senza il secondo, i punti 4 e 5 non possono esistere. Con il solo storico si può
+comunque fare ricerca e simulazione — che è già metà del valore.
 
 ---
 
-## 🔴 2. Portare l'archivio BTScout dentro BetterTrade
+## 🔴 FASE 1 — L'archivio dentro l'app
 
-Oggi l'archivio vive su **Neon**, separato, raggiungibile solo da script Node.
-Deve diventare parte dell'app: interrogabile, espandibile, verificabile.
+Prerequisito di tutto il resto. Finché le partite stanno su Neon, l'app non le
+vede.
 
-**Cosa c'è da spostare** — tabella `partite`:
-
-| | |
-|---|---|
-| partite | 38.613 |
-| campionati | 10 (E0 E1 · I1 I2 · SP1 SP2 · D1 D2 · F1 F2) |
-| stagioni | 10 (2016/17 → 2025/26) |
-| campi per partita | 38 |
-| contenuto | gol, esito, tiri, tiri in porta, angoli, cartellini, gol 1° tempo, quote 1X2 (Pinnacle, media, massima, Bet365) e Over/Under 2.5 |
-
-- [ ] **Migrare `partite` da Neon a Supabase.** Sono ~25 MB: stanno nel free
-      tier senza problemi. Elimina il secondo database e rende l'archivio
-      leggibile dall'app con le stesse credenziali e le stesse regole RLS.
-- [ ] **Riscrivere `import-storico.js`** perché scriva su Supabase invece che su
-      Neon. È già idempotente: rilanciarlo aggiorna senza duplicare.
+- [ ] **Migrare `partite` da Neon a Supabase.** 38.613 righe, 38 colonne, ~25 MB:
+      stanno nel free tier. Elimina il secondo database e l'archivio eredita le
+      credenziali e le policy che già ci sono.
+- [ ] **Riscrivere `btscout/scripts/import-storico.js`** perché scriva su
+      Supabase invece che su Neon. È già idempotente: rilanciarlo aggiorna senza
+      duplicare.
 - [ ] **Policy RLS su `partite`**: lettura a chi ha fatto login, scrittura solo
-      agli admin (o solo dallo script con `service_role`).
-- [ ] **Espandere l'archivio.** Oggi: 10 campionati, 10 stagioni. Da decidere
-      quali aggiungere — altri campionati, stagioni più vecchie, o le partite
-      della settimana in corso per poter proporre le prossime.
-- [ ] **Verificare l'archivio.** `verifica-storico.js` esiste già e va rieseguito
-      dopo ogni aggiunta: controlla nomi squadra incoerenti fra stagioni (lo
-      stesso club con due nomi diventa due squadre e dimezza lo storico), date
-      malformate, quote mancanti.
-- [ ] **Aggiornamento continuo.** Serve un modo per tenere l'archivio al passo
-      con la stagione in corso: a mano ogni settimana, o una funzione schedulata.
+      dagli script con `service_role`. Senza policy la tabella è invisibile.
+- [ ] **Rilanciare `verifica-storico.js`** dopo la migrazione: controlla nomi
+      squadra incoerenti fra stagioni (lo stesso club con due nomi diventa due
+      squadre e dimezza lo storico di entrambe), date malformate, quote mancanti.
+- [ ] **Ruotare la password Neon** o dismettere il progetto, una volta migrato.
 
 ---
 
-## 🔵 3. Ricerca partite e compilazione automatica
+## 🟠 FASE 2 — Vedere l'archivio nell'app
 
-L'obiettivo finale. Da progettare quando 1 e 2 sono chiusi.
+Il primo risultato visibile, e la prova che la fase 1 ha funzionato. Solo
+lettura: nessun rischio sui dati.
 
-- [ ] **Ricerca dentro l'app**: filtrare l'archivio per campionato, squadra,
-      data, quota. È il mattone che serve prima di tutto il resto.
-- [ ] **Simulazioni** sull'archivio: provare una selezione sulle partite passate
-      e vedere come sarebbe andata.
-- [ ] **Proposta di partite**: l'app suggerisce una lista fra cui scegliere.
-      Da definire con quale criterio.
+- [ ] **Menu ad hamburger**, oltre ai 4 tasti in basso. Da decidere cosa ci va:
+      i 4 tasti restano per l'uso quotidiano (Dashboard, Slot, Reporting,
+      Bilancio), l'hamburger raccoglie il resto (Partite, Utenti, Impostazioni).
+- [ ] **Pagina Partite — ricerca nell'archivio**: filtri per campionato,
+      stagione, squadra, data, fascia di quota. È il mattone su cui si appoggia
+      tutto il resto.
+- [ ] **Dove girano i calcoli.** L'app non ha backend. Probabile risposta:
+      viste e funzioni in Postgres, che regge tranquillamente 38 mila righe —
+      niente serverless finché non serve davvero. Da confermare alla prova.
+
+---
+
+## 🟠 FASE 3 — Ampliare e tenere aggiornato l'archivio
+
+Più facile dopo la fase 2, perché si vede subito l'effetto di quello che si
+aggiunge.
+
+- [ ] **Aggiungere la stagione in corso (26/27).** L'elenco `STAGIONI` in
+      `import-storico.js` si ferma a `2526`: manca tutto quello che si è giocato
+      da agosto 2026.
+- [ ] **Aggiungere campionati.** Oggi sono 10 (Inghilterra, Italia, Spagna,
+      Germania, Francia — prime due divisioni ciascuno). Da decidere quali:
+      Olanda, Portogallo, Belgio e Turchia sono nello stesso formato e si
+      importano con la stessa pipeline.
+- [ ] **Aggiornamento continuo.** Serve un modo per stare al passo con la
+      stagione: a mano ogni settimana, o una funzione schedulata.
+- [ ] **Rieseguire `verifica-storico.js` dopo ogni aggiunta.** Con più
+      campionati il problema degli alias di squadra cresce.
+
+---
+
+## 🔵 FASE 4 — Il calendario delle partite future
+
+Il pezzo nuovo, senza il quale la compilazione automatica non può esistere.
+
+- [ ] **Trovare e verificare la fonte** del calendario con le quote.
+      Candidato naturale: il `fixtures.csv` di football-data.co.uk, stesso
+      formato dello storico — da verificare che esista ancora, cosa contenga e
+      con che anticipo.
+- [ ] **Tabella `prossime_partite`** separata dallo storico: sono cose diverse,
+      una ha il risultato e l'altra no. Quando la partita si gioca, passa nello
+      storico.
+- [ ] **Aggiornamento automatico** del calendario, o quantomeno un comando da
+      lanciare prima di ogni spin.
+
+---
+
+## 🔵 FASE 5 — Il modello dei dati delle spin
+
+Qui si riscrive. Lo schema attuale non regge l'obiettivo, per tre motivi in
+ordine di gravità:
+
+1. **Non esiste il concetto di partita.** In `griglia`, casa e ospite sono testo
+   libero digitato a mano: non c'è niente da agganciare all'archivio.
+2. **Le 4 spin sono un blob JSON** dentro una riga: non si cerca, non si filtra,
+   non si collega.
+3. **La griglia è una riga sola condivisa** (`griglia` id=1): due admin che
+   editano insieme si sovrascrivono, e non esiste storico delle spin.
+
+- [ ] **Nuovo schema**: una spin è una riga, ogni casella è una riga che punta a
+      una partita reale, con pronostico e quota. Lo storico delle spin diventa
+      interrogabile.
+- [ ] **Migrare le spin esistenti** nel nuovo schema, o decidere di ripartire
+      puliti (oggi c'è una sola riga in `griglia`).
+- [ ] **Riscrivere `SlotPage`** sul nuovo modello — **è lo stesso lavoro della
+      nuova visualizzazione delle spin**, non due cose separate: tanto vale
+      ridisegnarla mentre la si riscrive.
+
+---
+
+## ⚪ FASE 6 — Selezione e compilazione automatica
+
+L'obiettivo finale. Ha senso solo dopo tutte le fasi precedenti.
+
+- [ ] **Definire i parametri** con cui si scelgono le "migliori partite".
+      Da discutere nel dettaglio quando ci arriviamo.
+- [ ] **Filtri sulle quote** sopra la selezione.
+- [ ] **Simulare il criterio sullo storico prima di metterlo nell'app.**
+      L'archivio serve esattamente a questo: qualunque criterio si scelga, si
+      può vedere come sarebbe andato sulle 38.613 partite passate senza
+      rischiare niente. È gratis e va fatto prima, non dopo.
 - [ ] **Compilazione automatica** della griglia e delle 8 schedine dalle partite
-      scelte. Oggi si inserisce tutto a mano in `SlotPage`.
-
-**Nodo tecnico noto:** l'app è una SPA statica, senza backend. Le simulazioni
-sui backtest sono script Node pesanti che nel browser non girano. Servirà
-almeno una Supabase Edge Function — che serve comunque per creare utenti e
-resettare password, quindi i due lavori si fanno insieme.
+      scelte.
 
 ---
 
-## ⚪ Decisione aperta: evolvere o riscrivere
+## Nodi da decidere
 
-Nessuno usa l'app: la riscrittura da zero è sul tavolo.
-
-**La mia proposta: né l'una né l'altra.** Riscrivere tutto butterebbe via cose
-appena messe a posto e che non c'entrano con l'obiettivo — Supabase Auth, le
-policy RLS, il tema, gli script di amministrazione. Ma **il modello dei dati va
-rifatto**, perché quello attuale non regge l'obiettivo finale:
-
-- la griglia è **una riga sola condivisa** (`griglia` id=1): due admin che
-  editano insieme si sovrascrivono, e non esiste uno storico delle spin
-- le 4 spin sono un **blob JSON** dentro quella riga: non si può cercare,
-  filtrare, né collegare a una partita dell'archivio
-- **non esiste il concetto di partita**: casa, ospite e quota sono testo libero
-  digitato a mano, quindi impossibili da agganciare all'archivio
-
-Il pezzo da riscrivere è quello: `griglia` + `SlotPage`. Il resto si tiene.
+1. **Quali campionati aggiungere** (fase 3).
+2. **Da dove prendere il calendario** delle partite future (fase 4) — è il nodo
+   più grosso, perché non ha ancora una risposta.
+3. **Le spin esistenti si migrano o si riparte puliti** (fase 5).
+4. **Cosa va nell'hamburger e cosa resta nei 4 tasti** (fase 2).
+5. **Vietare i bankroll negativi** a livello di database (`check (bankroll >= 0)`)
+   o tenerli come segnale d'allarme.
 
 ---
 
 ## 🧹 Debito tecnico
 
 - [ ] **Annidamento `BetterTrade/bettertrade/`** — una cartella di troppo.
-- [ ] **History git sporca** — commit `Add files via upload` / `Delete bettertrade
-      directory`: il codice è stato caricato dalla UI web di GitHub.
 - [ ] **README.md vuoto** (contiene solo `# BetterTrade`).
 - [ ] **`btscout/CLAUDE.md` e `btscout/STATO.md`** parlano ancora di BTScout come
-      progetto a sé. Da fondere qui quando l'archivio si sposta.
-- [ ] **`btscout/api/` + `index.html`** sono una PWA di chat standalone, mai
+      progetto a sé. Da fondere quando l'archivio si sposta (fase 1).
+- [ ] **`btscout/api/` + `index.html`**: una PWA di chat standalone, mai
       deployata. Se non serve, si cancella.
-- [ ] **Deploy** — da capire se BetterTrade è online o gira solo in locale.
 - [ ] **`calcSchedule` arrotonda a zero** — i `Math.floor` in `AuthContext.jsx`
       producono €0 su tutte le voci quando la base è bassa. Correggerlo cambia
       gli importi giocati: è una decisione, non una pulizia.
-- [ ] **Ruotare la password Neon** di BTScout: la stringa di connessione è
-      passata in chat a luglio. Console Neon → `neondb_owner` → reset →
-      aggiornare `btscout/.env`. Decade se si migra tutto su Supabase.
+- [ ] **Nessun ambiente di prova su Vercel.** Ogni push va in produzione: è già
+      costato una schermata nera. Un branch di anteprima costa poco.
+- [ ] **History git sporca** — vecchi commit `Add files via upload` dalla UI web.
 
 ---
 
 ## ✅ Fatto
+
+### Deploy — 9 settembre 2026
+
+- [x] **L'app è su Vercel**, e si ricostruisce da sola a ogni push su `main`.
+- [x] **Credenziali Supabase di nuovo nel codice** come valori predefiniti.
+      Spostarle in variabili d'ambiente non proteggeva niente — la chiave `anon`
+      è pubblica per costruzione e finisce comunque nel bundle — e in cambio
+      aveva rotto il deploy: su Vercel le variabili non c'erano e il sito
+      mostrava una schermata nera. A proteggere sono le policy RLS.
+- [x] **Una configurazione mancante non è più una schermata nera** ma un
+      riquadro che dice cosa manca (`src/main.jsx`).
 
 ### Sicurezza — 9 settembre 2026
 
