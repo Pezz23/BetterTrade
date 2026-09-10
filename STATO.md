@@ -4,7 +4,7 @@
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
 **Ultimo aggiornamento:** 9 settembre 2026
-**Fase corrente:** archivio migrato — prossimo passo: **vederlo nell'app**
+**Fase corrente:** archivio migrato — prossimo passo: **portarlo a oggi**
 
 ---
 
@@ -25,25 +25,19 @@ e l'app **compila da sola** griglia e schedine.
 
 ---
 
-## ⚠️ Il pezzo che manca a tutti, e che detta l'ordine
+## ⚠️ Storico e calendario sono due cose diverse
 
-**L'archivio contiene solo partite già giocate.** Va dal 28 luglio 2016 al
-30 maggio 2026, zero partite senza risultato, zero partite dopo agosto 2026.
-È uno storico, non un calendario.
-
-Quindi **oggi l'app non può proporre partite da giocare**: quelle partite non
-esistono da nessuna parte nel sistema. Serve una seconda fonte, con il
-**calendario delle prossime giornate e le relative quote**.
-
-Le due cose sono diverse e vanno tenute separate:
+**L'archivio contiene solo partite già giocate.** Dal 29 luglio 2016 al 31 maggio
+2026, zero partite senza risultato. È uno storico, non un calendario: da solo
+non può proporre partite da giocare, perché quelle partite non ci sono.
 
 | | Fonte | A cosa serve |
 |---|---|---|
-| **Storico** | football-data.co.uk, stagioni chiuse | Calcolare i parametri, fare ricerca e simulazioni |
-| **Calendario** | *da trovare* — football-data pubblica un `fixtures.csv` settimanale, da verificare | Sapere quali partite si giocano e a che quota |
+| **Storico** | `football-data.co.uk`, stagioni chiuse | Calcolare i parametri, fare ricerca e simulazioni |
+| **Calendario** | `football-data.co.uk/fixtures.csv` — **verificato il 10/09/2026** | Sapere quali partite si giocano e a che quota |
 
-Senza il secondo, i punti 4 e 5 non possono esistere. Con il solo storico si può
-comunque fare ricerca e simulazione — che è già metà del valore.
+Le due cose stanno in due tabelle separate e si incontrano solo quando una
+partita viene giocata: allora esce dal calendario ed entra nello storico.
 
 ---
 
@@ -76,59 +70,94 @@ giusto, ma i risultati dei backtest non saranno bit-per-bit gli stessi.
 
 ---
 
-## 🟠 FASE 2 — Vedere l'archivio nell'app
+## 🔴 FASE 2 — Portare l'archivio a oggi
 
-Il primo risultato visibile, e la prova che la fase 1 ha funzionato. Solo
-lettura: nessun rischio sui dati.
+L'archivio si ferma al **31 maggio 2026**: manca tutta la stagione in corso.
+`STAGIONI` in `btscout/scripts/import-storico.js` si ferma a `2526`.
 
-- [ ] **Menu ad hamburger**, oltre ai 4 tasti in basso. Da decidere cosa ci va:
-      i 4 tasti restano per l'uso quotidiano (Dashboard, Slot, Reporting,
-      Bilancio), l'hamburger raccoglie il resto (Partite, Utenti, Impostazioni).
-- [ ] **Pagina Partite — ricerca nell'archivio**: filtri per campionato,
-      stagione, squadra, data, fascia di quota. È il mattone su cui si appoggia
-      tutto il resto.
-- [ ] **Dove girano i calcoli.** L'app non ha backend. Probabile risposta:
-      viste e funzioni in Postgres, che regge tranquillamente 38 mila righe —
-      niente serverless finché non serve davvero. Da confermare alla prova.
-
----
-
-## 🟠 FASE 3 — Ampliare e tenere aggiornato l'archivio
-
-Più facile dopo la fase 2, perché si vede subito l'effetto di quello che si
-aggiunge.
-
-- [ ] **Aggiungere la stagione in corso (26/27).** L'elenco `STAGIONI` in
-      `import-storico.js` si ferma a `2526`: manca tutto quello che si è giocato
-      da agosto 2026.
-- [ ] **Aggiungere campionati.** Oggi sono 10 (Inghilterra, Italia, Spagna,
-      Germania, Francia — prime due divisioni ciascuno). Da decidere quali:
-      Olanda, Portogallo, Belgio e Turchia sono nello stesso formato e si
-      importano con la stessa pipeline.
-- [ ] **Aggiornamento continuo.** Serve un modo per stare al passo con la
-      stagione: a mano ogni settimana, o una funzione schedulata.
-- [ ] **Rieseguire `verifica-storico.js` dopo ogni aggiunta.** Con più
-      campionati il problema degli alias di squadra cresce.
+- [ ] **Aggiungere la stagione 26/27** all'elenco e rilanciare l'import.
+      Ora fa upsert, quindi rilanciarlo non duplica: aggiunge le partite nuove e
+      aggiorna quelle che avevano dati parziali.
+- [ ] **Rilanciare `verifica-storico.js`** e controllare che la stagione nuova
+      non porti squadre con pochi dati o nomi incoerenti.
+- [ ] **Rigenerare la cache locale** (`dump-locale.js`). Attenzione: le date
+      cambieranno di un giorno — nel verso giusto, vedi la nota della fase 1 —
+      quindi i backtest non torneranno bit-per-bit come prima.
 
 ---
 
-## 🔵 FASE 4 — Il calendario delle partite future
+## 🟠 FASE 3 — Censire e ampliare i campionati
 
-Il pezzo nuovo, senza il quale la compilazione automatica non può esistere.
-
-- [ ] **Trovare e verificare la fonte** del calendario con le quote.
-      Candidato naturale: il `fixtures.csv` di football-data.co.uk, stesso
-      formato dello storico — da verificare che esista ancora, cosa contenga e
-      con che anticipo.
-- [ ] **Tabella `prossime_partite`** separata dallo storico: sono cose diverse,
-      una ha il risultato e l'altra no. Quando la partita si gioca, passa nello
-      storico.
-- [ ] **Aggiornamento automatico** del calendario, o quantomeno un comando da
-      lanciare prima di ogni spin.
+- [ ] **Fare l'elenco di quelli presenti.** Oggi sono 10: Inghilterra, Italia,
+      Spagna, Germania, Francia, prime due divisioni ciascuna
+      (`E0 E1 · I1 I2 · SP1 SP2 · D1 D2 · F1 F2`).
+- [ ] **Elencare quelli disponibili su football-data** e non ancora presi.
+      Dal file delle partite future si vedono già `E2`, `G1` (Grecia), `N1`
+      (Olanda), `P1` (Portogallo), `SC0` (Scozia): sono nello stesso formato.
+- [ ] **Decidere quali aggiungere.** Più campionati significa più partite fra
+      cui scegliere, ma anche più nomi squadra da tenere allineati.
+- [ ] **Importare e verificare.** Dopo ogni aggiunta, `verifica-storico.js`:
+      con più campionati il problema degli alias di squadra cresce.
 
 ---
 
-## 🔵 FASE 5 — Il modello dei dati delle spin
+## 🟠 FASE 4 — Le partite future
+
+**Verificato il 10 settembre: la fonte esiste ed è gratuita.**
+`https://football-data.co.uk/fixtures.csv` — 94 colonne, stesso formato dello
+storico, stessi codici campionato e stessi nomi squadra. Contiene `Div`, `Date`,
+`Time`, le squadre, e le quote 1X2 di 8 bookmaker più `Max` e `Avg`, Over/Under
+2.5 e handicap asiatico.
+
+**Il limite da conoscere: non è una finestra di 7 giorni.** Il file contiene *il
+prossimo blocco* di partite e viene sostituito ogni volta. Dal sito: le quote
+sono raccolte **venerdì pomeriggio** (non oltre le 17:00 BST) per il weekend, e
+**martedì** (non oltre le 13:00) per l'infrasettimanale. Scaricandolo giovedì 10
+settembre restituiva 18 partite dell'8-10 settembre: il blocco di martedì, quasi
+esaurito.
+
+Quindi non si "scarica una settimana": **si scarica due volte a settimana e si
+accumula**. Vantaggio nascosto: sono quote raccolte a orario fisso prima delle
+partite, cioè lo stesso tipo di quota che sta nello storico (`B365` di apertura).
+Storico e futuro restano confrontabili.
+
+- [ ] **Tabella `prossime_partite`**, separata dallo storico: una ha il
+      risultato, l'altra no. Quando la partita si gioca, entra in `partite`
+      dall'import normale e sparisce da qui.
+- [ ] **Script `importa-prossime.js`** che scarica il CSV e fa upsert.
+- [ ] **Provarlo di venerdì**, quando esce il blocco del weekend con i
+      campionati maggiori.
+- [ ] **Decidere la cadenza**: a mano il martedì e il venerdì, oppure
+      schedulato.
+
+*Piano B se servisse l'orizzonte lungo:* API-Football o The Odds API danno il
+calendario a settimane di distanza, ma hanno piani gratuiti stretti e richiedono
+una chiave. Da valutare solo se football-data non basta.
+
+---
+
+## 🔵 FASE 5 — Il menu di aggiornamento nell'app
+
+- [ ] **Menu ad hamburger**, oltre ai 4 tasti in basso.
+- [ ] **Voce "Aggiorna dati"**: lancia l'import dello storico e delle partite
+      future dall'app, senza terminale.
+- [ ] **Nodo tecnico da risolvere prima.** Gli import sono script Node che
+      girano sul Mac di Mattia: un pulsante nell'app non può eseguirli. Servirà
+      una **Supabase Edge Function** — la stessa che serve già per creare utenti
+      e resettare password. Da fare una volta, serve a tre cose.
+
+---
+
+## 🔵 FASE 6 — Vedere e cercare le partite nell'app
+
+- [ ] **Pagina Partite**: filtri per campionato, stagione, squadra, data, fascia
+      di quota.
+- [ ] **Dove girano i calcoli.** L'app non ha backend. Probabile risposta: viste
+      e funzioni in Postgres, che su 38 mila righe non fa fatica.
+
+---
+
+## 🔵 FASE 7 — Il modello dei dati delle spin
 
 Qui si riscrive. Lo schema attuale non regge l'obiettivo, per tre motivi in
 ordine di gravità:
@@ -140,18 +169,15 @@ ordine di gravità:
 3. **La griglia è una riga sola condivisa** (`griglia` id=1): due admin che
    editano insieme si sovrascrivono, e non esiste storico delle spin.
 
-- [ ] **Nuovo schema**: una spin è una riga, ogni casella è una riga che punta a
-      una partita reale, con pronostico e quota. Lo storico delle spin diventa
-      interrogabile.
-- [ ] **Migrare le spin esistenti** nel nuovo schema, o decidere di ripartire
-      puliti (oggi c'è una sola riga in `griglia`).
-- [ ] **Riscrivere `SlotPage`** sul nuovo modello — **è lo stesso lavoro della
-      nuova visualizzazione delle spin**, non due cose separate: tanto vale
-      ridisegnarla mentre la si riscrive.
+- [ ] **Nuovo schema**: una spin è una riga, ogni casella punta a una partita
+      reale, con pronostico e quota.
+- [ ] **Migrare le spin esistenti** o ripartire puliti (oggi c'è una riga sola).
+- [ ] **Riscrivere `SlotPage`** — **è lo stesso lavoro della nuova
+      visualizzazione delle spin**, non due cose separate.
 
 ---
 
-## ⚪ FASE 6 — Selezione e compilazione automatica
+## ⚪ FASE 8 — Selezione e compilazione automatica
 
 L'obiettivo finale. Ha senso solo dopo tutte le fasi precedenti.
 
@@ -170,10 +196,11 @@ L'obiettivo finale. Ha senso solo dopo tutte le fasi precedenti.
 ## Nodi da decidere
 
 1. **Quali campionati aggiungere** (fase 3).
-2. **Da dove prendere il calendario** delle partite future (fase 4) — è il nodo
-   più grosso, perché non ha ancora una risposta.
-3. **Le spin esistenti si migrano o si riparte puliti** (fase 5).
-4. **Cosa va nell'hamburger e cosa resta nei 4 tasti** (fase 2).
+2. **Con che cadenza scaricare le partite future** (fase 4): a mano due volte a
+   settimana, o schedulato.
+3. **Quando fare la Edge Function** (fase 5): serve a tre cose insieme —
+   aggiornamento dati, creazione utenti, reset password.
+4. **Le spin esistenti si migrano o si riparte puliti** (fase 7).
 5. **Vietare i bankroll negativi** a livello di database (`check (bankroll >= 0)`)
    o tenerli come segnale d'allarme.
 
