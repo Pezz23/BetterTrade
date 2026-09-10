@@ -6,7 +6,7 @@ Due pezzi nello stesso repo, non ancora collegati:
 | | |
 |---|---|
 | `bettertrade/` | **L'app.** React + Vite + Supabase. Registra spin, giornate e bankroll di 6 persone. |
-| `btscout/` | **L'archivio.** Node, nessun frontend. 38.613 partite su Neon, modelli e backtest. |
+| `btscout/` | **Il motore.** Node, nessun frontend: modelli, backtest, import. Le 38.613 partite ora stanno in Supabase con il resto. |
 
 ---
 
@@ -143,6 +143,11 @@ tengono — sono appena stati messi a posto e non c'entrano con il problema.
   normale registrava il movimento e il saldo restava fermo. Dopo ogni modifica
   alle policy, lancia `scripts/prova-permessi.js` — controlla cosa ogni ruolo
   può e non può fare, e sarebbe bastato la prima volta.
+- **Le date dell'archivio erano istanti UTC.** Nel dump di Neon
+  `2016-08-25T22:00:00.000Z` sono le 00:00 del **26** agosto ora italiana:
+  tagliare i primi dieci caratteri sposta tutto indietro di un giorno. Si
+  ricostruisce la data dai componenti locali — `giornoLocale()` in
+  `bettertrade/scripts/importa-partite.js`.
 - **Nel convertire i colori, `rgba()` e `#hex` dello stesso nome sono tinte
   diverse.** `rgba(59,130,246)` è `#3b82f6`, non il `#60a5fa` usato per il testo.
   Sono token separati in `theme.js` (`bluPieno`, `giallo`, `celestePieno`).
@@ -169,9 +174,14 @@ node --env-file=.env scripts/crea-utente.js mario user 500 "Mario Rossi"
 node --env-file=.env scripts/reset-password.js Bermani
 node --env-file=.env scripts/prova-login.js Admin <password>
 
+cd bettertrade
+node --env-file=.env scripts/importa-partite.js    # archivio → Supabase (prova a vuoto)
+node --env-file=.env scripts/verifica-partite.js   # confronto con la sorgente
+
 cd btscout && npm install
 node --env-file=.env scripts/verifica-storico.js   # coerenza dell'archivio
-node --env-file=.env scripts/backtest.js
+node --env-file=.env scripts/import-storico.js     # scarica i CSV e aggiorna
+node scripts/backtest.js                           # gira offline, dalla cache
 ```
 
 `btscout/CLAUDE.md` contiene le regole del motore — in particolare **"la

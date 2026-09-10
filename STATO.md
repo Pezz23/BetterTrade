@@ -4,15 +4,16 @@
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
 **Ultimo aggiornamento:** 9 settembre 2026
-**Fase corrente:** sicurezza e numeri chiusi — si parte con **l'archivio**
+**Fase corrente:** archivio migrato — prossimo passo: **vederlo nell'app**
 
 ---
 
 ## Dove siamo in una riga
 
-Due pezzi nello stesso repo: **l'app** (`bettertrade/`, React+Vite+Supabase, in
-produzione su Vercel) e **l'archivio** (`btscout/`, 38.613 partite su Neon).
-Non sono ancora collegati. Sicurezza chiusa, numeri chiusi: adesso si costruisce.
+**L'app e l'archivio sono ora nello stesso database.** `bettertrade/` (React+Vite,
+in produzione su Vercel) e le 38.613 partite vivono entrambi in Supabase;
+`btscout/` resta il motore che le importa e le analizza. Sicurezza chiusa, numeri
+chiusi, archivio dentro: adesso si costruisce sopra.
 
 ---
 
@@ -46,23 +47,32 @@ comunque fare ricerca e simulazione — che è già metà del valore.
 
 ---
 
-## 🔴 FASE 1 — L'archivio dentro l'app
+## ✅ FASE 1 — L'archivio dentro l'app — fatta il 9 settembre 2026
 
-Prerequisito di tutto il resto. Finché le partite stanno su Neon, l'app non le
-vede.
+- [x] **38.613 partite migrate su Supabase**, nello stesso database dell'app.
+      Verificate contro la sorgente: totale, conteggi su tutti e 100 i gruppi
+      campionato-stagione, estremi temporali, 200 partite confrontate campo per
+      campo, e la lettura reale dall'app con e senza login.
+- [x] **Policy RLS su `partite`**: lettura a chi ha fatto login, scrittura solo
+      dagli script con `service_role`.
+- [x] **BTScout parla con Supabase.** Gli script continuano a fare SQL — qui si
+      fanno aggregazioni e GROUP BY, tradurle in chiamate REST sarebbe stato una
+      perdita netta — cambia solo a quale Postgres puntano (`btscout/lib/db.js`).
+- [x] **`import-storico.js` non ricostruisce più la tabella.** Faceva
+      `DROP TABLE partite` a ogni esecuzione: ora si porterebbe via anche le
+      policy. Fa upsert sulla chiave unique, che è anche quello che serve ogni
+      settimana per la stagione in corso.
+- [x] **`verifica-storico.js` dà gli stessi numeri di prima** letti da Supabase.
+- [ ] **Dismettere Neon.** Non serve più a niente: l'ultimo consumatore era
+      `api/chat.js`, migrato anche lui. **Da fare a mano sulla console Neon.**
 
-- [ ] **Migrare `partite` da Neon a Supabase.** 38.613 righe, 38 colonne, ~25 MB:
-      stanno nel free tier. Elimina il secondo database e l'archivio eredita le
-      credenziali e le policy che già ci sono.
-- [ ] **Riscrivere `btscout/scripts/import-storico.js`** perché scriva su
-      Supabase invece che su Neon. È già idempotente: rilanciarlo aggiorna senza
-      duplicare.
-- [ ] **Policy RLS su `partite`**: lettura a chi ha fatto login, scrittura solo
-      dagli script con `service_role`. Senza policy la tabella è invisibile.
-- [ ] **Rilanciare `verifica-storico.js`** dopo la migrazione: controlla nomi
-      squadra incoerenti fra stagioni (lo stesso club con due nomi diventa due
-      squadre e dimezza lo storico di entrambe), date malformate, quote mancanti.
-- [ ] **Ruotare la password Neon** o dismettere il progetto, una volta migrato.
+**Attenzione alle date.** Nel dump di Neon erano istanti UTC: `2016-08-25T22:00Z`
+sono le 00:00 del **26** agosto ora italiana. Tagliare i primi dieci caratteri
+avrebbe spostato l'archivio indietro di un giorno su tutte e 38.613 le righe.
+Conseguenza da tenere a mente: **la cache locale `btscout/.cache/partite.json`
+è quella vecchia**, con le date sfalsate, e i backtest girano su quella. Quando
+la si rigenera con `dump-locale.js` le date cambiano di un giorno — nel verso
+giusto, ma i risultati dei backtest non saranno bit-per-bit gli stessi.
 
 ---
 
