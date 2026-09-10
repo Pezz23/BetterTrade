@@ -1,6 +1,8 @@
-// Importa lo storico di football-data.co.uk in Neon.
+// Importa lo storico di football-data.co.uk in Supabase.
 //
-// Uso:  DATABASE_URL='postgres://...' node scripts/import-storico.js
+// Uso:
+//   node --env-file=.env scripts/import-storico.js                  # tutte le stagioni
+//   node --env-file=.env scripts/import-storico.js --stagioni=2627  # solo quella in corso
 //
 // È idempotente: rilanciarlo non duplica nulla e aggiorna le partite già
 // presenti. Serve per la stagione in corso, che cambia ogni settimana.
@@ -16,7 +18,26 @@ export const CAMPIONATI = {
   F1: 'Ligue 1', F2: 'Ligue 2',
 };
 
-export const STAGIONI = ['1617', '1718', '1819', '1920', '2021', '2122', '2223', '2324', '2425', '2526'];
+export const STAGIONI = ['1617', '1718', '1819', '1920', '2021', '2122', '2223', '2324', '2425', '2526', '2627'];
+
+// Quali stagioni importare in questa esecuzione.
+//
+// Rifare tutte e undici significa scaricare 110 CSV: giusto la prima volta o
+// dopo un cambio di schema, sprecato ogni settimana. Con --stagioni=2627 si
+// aggiorna solo quella in corso, che è il caso normale — i risultati arrivano
+// man mano e l'upsert li sovrascrive.
+function stagioniRichieste() {
+  const arg = process.argv.find(a => a.startsWith('--stagioni='));
+  if (!arg) return STAGIONI;
+  const chieste = arg.split('=')[1].split(',').map(x => x.trim()).filter(Boolean);
+  const sconosciute = chieste.filter(x => !STAGIONI.includes(x));
+  if (sconosciute.length) {
+    console.error(`✗ stagioni non riconosciute: ${sconosciute.join(', ')}`);
+    console.error(`  disponibili: ${STAGIONI.join(' ')}`);
+    process.exit(1);
+  }
+  return chieste;
+}
 
 // Quote di chiusura. Pinnacle (PSC*) è il riferimento più severo — margine
 // basso — ma dal 2025/26 copre solo metà partite. La media di mercato (AvgC*)
@@ -188,7 +209,9 @@ async function main() {
   // la tabella vuota o a metà.
   const tutte = [];
   const problemi = [];
-  for (const stagione of STAGIONI) {
+  const stagioni = stagioniRichieste();
+  console.log(`Stagioni da importare: ${stagioni.join(' ')}\n`);
+  for (const stagione of stagioni) {
     const conteggi = [];
     for (const div of Object.keys(CAMPIONATI)) {
       const righe = await scarica(stagione, div); // se la rete cade, lancia e abortisce
