@@ -62,28 +62,100 @@ Nell'archivio stanno vicine ma hanno ruoli opposti — **non confonderle**:
 | Colonna | Cos'è | Ruolo |
 |---|---|---|
 | `b365_*` | Bet365, **apertura** | La quota che **giochi davvero** |
-| `bfe_*` | Betfair Exchange, **chiusura** | Riferimento *a posteriori* |
+| `bfe_ap_*` | Betfair Exchange, **apertura** | **Il riferimento onesto**: esiste quando giochi |
+| `bfe_ch_*` | Betfair Exchange, **chiusura** | Più preciso ma *non esiste ancora* quando giochi |
 | `avg_*`, `max_*` | Media e massima di mercato, chiusura | Contesto |
 
-### Si può fare dal vivo, non solo a posteriori
+⚠️ **Apertura contro chiusura è la trappola del progetto.** Misurare un segnale
+contro `bfe_ch_*` significa scoprire che il metodo funziona usando informazioni
+che non avevi. Il confronto onesto è `b365_*` contro `bfe_ap_*`.
 
-Verificato l'11 settembre: nel file delle partite future
-(`football-data.co.uk/fixtures.csv`) le quote **Betfair Exchange sono già
-presenti** (`BFEH/BFED/BFEA`, popolate su tutte le partite), accanto a Bet365,
-Max e media. Quindi il confronto si fa **prima** della partita, non dopo.
+### Fatto l'11 settembre 2026
 
-### Il pezzo che manca
+- [x] **Colonne rinominate**: `bfe_*` → `bfe_ch_*`, perché erano la chiusura e il
+      nome non lo diceva. Vedi `bettertrade/sql/07-exchange-apertura.sql`.
+- [x] **Aggiunte `bfe_ap_1/x/2` e `bfe_ap_over25/under25`** e caricate.
+- [x] **Reimportate le stagioni 24/25, 25/26, 26/27** (l'exchange non esiste
+      prima della 24/25 — limite della fonte, non un errore).
 
-Per misurare sullo storico se il segnale ha funzionato, il confronto dev'essere
-**alla pari con quello dal vivo**: Bet365 di apertura contro exchange *di
-apertura*. Noi abbiamo importato solo l'exchange di **chiusura** (`BFEC*`).
+**Copertura:**
 
-La colonna di apertura (`BFEH`) **esiste nei file storici dalla 24/25**, verificata.
+| Stagione | partite | b365 | exchange apertura | exchange chiusura |
+|---|---|---|---|---|
+| 2023/24 | 3.831 | 3.827 | — | — |
+| 2024/25 | 3.758 | 3.758 | **3.753** | 3.758 |
+| 2025/26 | 3.757 | 3.756 | **3.498** | 3.524 |
+| 2026/27 | 370 | 370 | **358** | 369 |
 
-- [ ] **Aggiungere `bfe_ap_1`, `bfe_ap_x`, `bfe_ap_2`** all'archivio e
-      reimportare le stagioni dalla 24/25. Senza, si può misurare il segnale solo
-      contro il prezzo di chiusura — che al momento della giocata non si conosce,
-      quindi sarebbe barare col senno di poi.
+### ⚠️ Scoperta importante: l'apertura non è un prezzo equo
+
+Il margine implicito dell'exchange **di apertura** non è quel 1,007 che aveva
+colpito — quello è la chiusura. All'apertura il mercato è ancora sottile e il
+prezzo è largo:
+
+| Stagione | Bet365 apertura | **Exchange apertura** | Exchange chiusura |
+|---|---|---|---|
+| 2024/25 | 1,0617 | **1,0521** | 1,0065 |
+| 2025/26 | 1,0681 | **1,0381** | 1,0073 |
+| 2026/27 | 1,0725 | **1,0296** | 1,0070 |
+
+**Conseguenza pratica:** l'exchange di apertura non si usa così com'è. Va
+**normalizzato** — si dividono le tre probabilità implicite per la loro somma,
+e da lì si ricava la quota equa. Solo dopo ha senso confrontarlo con Bet365.
+
+Resta comunque il riferimento migliore disponibile al momento della giocata:
+1,03 contro 1,07 di Bet365. E il suo margine si sta restringendo di stagione in
+stagione (1,052 → 1,038 → 1,030).
+
+### Prima misura del segnale
+
+Su **7.250 partite** delle stagioni 24/25 e 25/26 con entrambe le quote di
+apertura, quanto spesso Bet365 paga **più** del prezzo equo ricavato
+dall'exchange normalizzato:
+
+| | partite | % |
+|---|---|---|
+| sul segno 1 | 58 | 0,8% |
+| sul segno X | 430 | 5,9% |
+| sul segno 2 | 180 | 2,5% |
+| **su almeno un esito** | **591** | **8,2%** |
+| con almeno il 2% di scarto | 337 | 4,6% |
+
+Circa **31 partite ogni 380**, cioè una trentina per stagione di campionato.
+
+Tre cose da tenere a mente:
+- **Il segnale è sbilanciato**: quasi mai sul segno 1, spesso sulla X. Ha senso —
+  il pareggio è dove i bookmaker sono meno precisi.
+- **Frequenza non è redditività.** Sapere che un prezzo è più alto del riferimento
+  non dice ancora se scommetterci guadagna. **Questo non è ancora stato misurato.**
+- **C'è almeno un valore anomalo** (scarto massimo +163%): prima di fidarsi dei
+  casi estremi vanno filtrati gli errori di dato.
+
+### Da fare, quando si riprende
+
+- [ ] **Misurare se il segnale guadagna**, non solo se esiste: prendere le partite
+      dove `b365 > equo` e vedere il rendimento reale sulle due stagioni.
+      Walk-forward, senza guardare la chiusura.
+- [ ] **Filtrare i valori anomali** prima di qualsiasi conclusione.
+- [ ] **Decidere la soglia**: qualunque scarto, o solo oltre il 2%?
+
+### Come rifare tutto da capo
+
+```bash
+# 1. le colonne (una volta sola, già fatto)
+#    bettertrade/sql/07-exchange-apertura.sql sulla dashboard Supabase
+
+# 2. i dati
+cd btscout
+node --env-file=.env scripts/import-storico.js --stagioni=2425,2526,2627
+
+# 3. il controllo
+node --env-file=.env scripts/verifica-storico.js
+```
+
+La mappa fra colonne CSV e colonne del database sta in `COLONNE`, in cima a
+`btscout/scripts/import-storico.js`. I nomi dei CSV: `BFEH/BFED/BFEA` è
+l'apertura, `BFECH/BFECD/BFECA` la chiusura.
 
 ### Nota dallo storico del progetto
 

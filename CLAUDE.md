@@ -108,13 +108,22 @@ sull'archivio: exchange 1,007, Pinnacle 1,033, media di mercato 1,073.
 | Colonna | Cos'è | Ruolo |
 |---|---|---|
 | `b365_*` | Bet365, **apertura** | La quota che si **gioca davvero** |
-| `bfe_*` | Betfair Exchange, **chiusura** | Riferimento, ma *a posteriori* |
+| `bfe_ap_*` | Betfair Exchange, **apertura** | **Il riferimento onesto** |
+| `bfe_ch_*` | Betfair Exchange, **chiusura** | Più preciso, ma non esiste ancora quando si gioca |
 | `avg_*`, `max_*` | Media e massima di mercato | Contesto |
 
-⚠️ **Apertura contro chiusura è la trappola.** Al momento della giocata il prezzo
-di chiusura non esiste ancora: misurare un segnale contro `bfe_*` è barare col
-senno di poi. Il confronto onesto è Bet365 apertura contro exchange *di apertura*
-— colonna `BFEH` nei CSV, **non ancora importata**. Vedi STATO.md.
+⚠️ **Apertura contro chiusura è la trappola.** Misurare un segnale contro
+`bfe_ch_*` significa scoprire che funziona usando informazioni che non avevi.
+Il confronto onesto è `b365_*` contro `bfe_ap_*`.
+
+⚠️ **L'apertura dell'exchange NON è un prezzo equo.** Margine implicito ~1,03
+(la chiusura è ~1,007): all'apertura il mercato è sottile e il prezzo largo.
+Va **normalizzato** — probabilità implicite divise per la loro somma — prima di
+confrontarlo con qualsiasi cosa. Resta comunque il riferimento migliore
+disponibile al momento della giocata: 1,03 contro 1,07 di Bet365.
+
+L'exchange esiste solo **dalla stagione 24/25**: prima, quelle colonne sono
+vuote per forza.
 
 ---
 
