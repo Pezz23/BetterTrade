@@ -23,6 +23,75 @@ BetterTrade propone una **lista di partite** scelte secondo parametri calcolati
 sull'archivio, con filtri sulle quote. Io o gli utenti scegliamo quali prendere,
 e l'app **compila da sola** griglia e schedine.
 
+**Il criterio che interessa a Mattia (11 settembre):** riconoscere le partite in
+cui **la quota è più alta di quanto dovrebbe essere**. Non "chi vincerà", ma
+"questo prezzo è sbagliato in mio favore". Vedi la sezione qui sotto.
+
+---
+
+## 🎯 Il criterio: quote più alte di quanto dovrebbero essere
+
+Deciso l'11 settembre 2026. È il parametro con cui l'app sceglierà le partite da
+proporre, e cambia cosa conta nei dati.
+
+### Perché è diverso da "prevedere il risultato"
+
+Non serve un modello che indovini chi vince: serve un **prezzo di riferimento**
+con cui confrontare la quota del bookmaker. Se Bet365 paga 2,10 una cosa che vale
+2,00, quella differenza è misurabile senza prevedere niente.
+
+### Il riferimento c'è, ed è buono
+
+**Betfair Exchange.** Non è un bookmaker: è gente che si scambia scommesse fra
+loro. Non c'è un banco che ci mette sopra il suo margine, quindi il prezzo è il
+più vicino a quello vero che si possa avere gratis.
+
+Quanto vale la differenza, misurata sull'archivio — margine implicito, dove 1 è
+il prezzo equo:
+
+| | margine |
+|---|---|
+| Betfair Exchange | **1,007** |
+| Pinnacle (non più pubblicato) | 1,033 |
+| Media di mercato | 1,073 |
+
+### Le colonne, e a cosa servono
+
+Nell'archivio stanno vicine ma hanno ruoli opposti — **non confonderle**:
+
+| Colonna | Cos'è | Ruolo |
+|---|---|---|
+| `b365_*` | Bet365, **apertura** | La quota che **giochi davvero** |
+| `bfe_*` | Betfair Exchange, **chiusura** | Riferimento *a posteriori* |
+| `avg_*`, `max_*` | Media e massima di mercato, chiusura | Contesto |
+
+### Si può fare dal vivo, non solo a posteriori
+
+Verificato l'11 settembre: nel file delle partite future
+(`football-data.co.uk/fixtures.csv`) le quote **Betfair Exchange sono già
+presenti** (`BFEH/BFED/BFEA`, popolate su tutte le partite), accanto a Bet365,
+Max e media. Quindi il confronto si fa **prima** della partita, non dopo.
+
+### Il pezzo che manca
+
+Per misurare sullo storico se il segnale ha funzionato, il confronto dev'essere
+**alla pari con quello dal vivo**: Bet365 di apertura contro exchange *di
+apertura*. Noi abbiamo importato solo l'exchange di **chiusura** (`BFEC*`).
+
+La colonna di apertura (`BFEH`) **esiste nei file storici dalla 24/25**, verificata.
+
+- [ ] **Aggiungere `bfe_ap_1`, `bfe_ap_x`, `bfe_ap_2`** all'archivio e
+      reimportare le stagioni dalla 24/25. Senza, si può misurare il segnale solo
+      contro il prezzo di chiusura — che al momento della giocata non si conosce,
+      quindi sarebbe barare col senno di poi.
+
+### Nota dallo storico del progetto
+
+Questo tipo di confronto **è già stato misurato una volta** in BTScout: la
+strategia S6 *line shopping* — l'unica con esito positivo fra le sei provate
+(+1,6%) — funzionava esattamente così, confrontando prezzi invece di prevedere
+risultati. Non usava il modello. Vedi l'appendice in fondo.
+
 ---
 
 ## ⚠️ Storico e calendario sono due cose diverse

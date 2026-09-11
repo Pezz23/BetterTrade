@@ -93,6 +93,31 @@ Supabase Edge Function.
 
 ---
 
+## Il criterio del progetto: quote più alte di quanto dovrebbero essere
+
+Deciso l'11 settembre 2026. L'app non deve indovinare chi vince: deve
+riconoscere **prezzi sbagliati in nostro favore**. Se Bet365 paga 2,10 una cosa
+che vale 2,00, quella differenza si misura senza prevedere niente.
+
+Il riferimento è **Betfair Exchange** — non un bookmaker ma uno scambio fra
+persone, quindi senza margine del banco sopra. Margine implicito misurato
+sull'archivio: exchange 1,007, Pinnacle 1,033, media di mercato 1,073.
+
+**Le colonne hanno ruoli opposti e non vanno confuse:**
+
+| Colonna | Cos'è | Ruolo |
+|---|---|---|
+| `b365_*` | Bet365, **apertura** | La quota che si **gioca davvero** |
+| `bfe_*` | Betfair Exchange, **chiusura** | Riferimento, ma *a posteriori* |
+| `avg_*`, `max_*` | Media e massima di mercato | Contesto |
+
+⚠️ **Apertura contro chiusura è la trappola.** Al momento della giocata il prezzo
+di chiusura non esiste ancora: misurare un segnale contro `bfe_*` è barare col
+senno di poi. Il confronto onesto è Bet365 apertura contro exchange *di apertura*
+— colonna `BFEH` nei CSV, **non ancora importata**. Vedi STATO.md.
+
+---
+
 ## Il modello dei dati, e perché va rifatto
 
 Lo schema attuale non regge l'obiettivo finale (l'app propone partite e compila
