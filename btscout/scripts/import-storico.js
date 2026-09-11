@@ -50,13 +50,15 @@ function stagioniRichieste() {
 // l'Over/Under non ha quote di chiusura affatto.
 const COLONNE = {
   // 1X2 di chiusura
-  ps_1: 'PSCH', ps_x: 'PSCD', ps_2: 'PSCA',          // Pinnacle (il più affilato)
+  ps_1: 'PSCH', ps_x: 'PSCD', ps_2: 'PSCA',          // Pinnacle: fino alla 25/26, poi sparito
+  bfe_1: 'BFECH', bfe_x: 'BFECD', bfe_2: 'BFECA',    // Betfair Exchange: dalla 24/25, il suo erede
   avg_1: 'AvgCH', avg_x: 'AvgCD', avg_2: 'AvgCA',    // media di mercato
   max_1: 'MaxCH', max_x: 'MaxCD', max_2: 'MaxCA',    // migliore di ~40 book
   // 1X2 di apertura Bet365 (book reale, quota che prendi davvero; 10 stagioni)
   b365_1: 'B365H', b365_x: 'B365D', b365_2: 'B365A',
   // Over/Under 2.5
   avg_over25: 'AvgC>2.5', avg_under25: 'AvgC<2.5',           // media chiusura
+  bfe_over25: 'BFEC>2.5', bfe_under25: 'BFEC<2.5',           // exchange chiusura
   b365_over25: 'B365>2.5', b365_under25: 'B365<2.5',         // Bet365 apertura
 };
 
@@ -172,9 +174,11 @@ const COLONNE_DB = [
   'tiri_casa', 'tiri_trasf', 'tirip_casa', 'tirip_trasf',
   'angoli_casa', 'angoli_trasf', 'gialli_casa', 'gialli_trasf',
   'rossi_casa', 'rossi_trasf', 'gol1t_casa', 'gol1t_trasf',
-  'ps_1', 'ps_x', 'ps_2', 'avg_1', 'avg_x', 'avg_2',
-  'max_1', 'max_x', 'max_2', 'b365_1', 'b365_x', 'b365_2',
-  'avg_over25', 'avg_under25', 'b365_over25', 'b365_under25',
+  'ps_1', 'ps_x', 'ps_2', 'bfe_1', 'bfe_x', 'bfe_2',
+  'avg_1', 'avg_x', 'avg_2', 'max_1', 'max_x', 'max_2',
+  'b365_1', 'b365_x', 'b365_2',
+  'avg_over25', 'avg_under25', 'bfe_over25', 'bfe_under25',
+  'b365_over25', 'b365_under25',
 ];
 
 async function salva(partite) {

@@ -143,6 +143,13 @@ tengono — sono appena stati messi a posto e non c'entrano con il problema.
   normale registrava il movimento e il saldo restava fermo. Dopo ogni modifica
   alle policy, lancia `scripts/prova-permessi.js` — controlla cosa ogni ruolo
   può e non può fare, e sarebbe bastato la prima volta.
+- **Pinnacle non esiste più.** football-data ha smesso di pubblicarlo: le
+  colonne `PSC*` ci sono fino alla stagione 25/26 (e lì già coprono meno della
+  metà delle partite), spariscono dalla 26/27. Il riferimento "affilato" ora è
+  **Betfair Exchange**, `bfe_*`, presente dalla 24/25 — ed è migliore: margine
+  implicito 1,007 contro 1,033 di Pinnacle e 1,073 della media di mercato.
+  Le stagioni 24/25 e 25/26 hanno entrambi, quindi il passaggio è calibrabile.
+  **Uno script che usa `ps_*` perde silenziosamente la stagione in corso.**
 - **Le date dell'archivio erano istanti UTC.** Nel dump di Neon
   `2016-08-25T22:00:00.000Z` sono le 00:00 del **26** agosto ora italiana:
   tagliare i primi dieci caratteri sposta tutto indietro di un giorno. Si

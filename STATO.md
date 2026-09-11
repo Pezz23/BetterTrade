@@ -4,7 +4,7 @@
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
 **Ultimo aggiornamento:** 9 settembre 2026
-**Fase corrente:** archivio migrato — prossimo passo: **portarlo a oggi**
+**Fase corrente:** archivio a oggi — prossimo passo: **censire e ampliare i campionati**
 
 ---
 
@@ -70,19 +70,54 @@ giusto, ma i risultati dei backtest non saranno bit-per-bit gli stessi.
 
 ---
 
-## 🔴 FASE 2 — Portare l'archivio a oggi
+## ✅ FASE 2 — Portare l'archivio a oggi — fatta l'11 settembre 2026
 
-L'archivio si ferma al **31 maggio 2026**: manca tutta la stagione in corso.
-`STAGIONI` in `btscout/scripts/import-storico.js` si ferma a `2526`.
+- [x] **Stagione 26/27 importata.** L'archivio arriva a oggi: **38.983 partite**.
+      Aggiunta anche l'opzione `--stagioni=2627`, perché rifare tutte e undici
+      significa scaricare 110 CSV — giusto la prima volta, sprecato ogni settimana.
+- [x] **Quote Betfair Exchange aggiunte** (`bfe_1`, `bfe_x`, `bfe_2`,
+      `bfe_over25`, `bfe_under25`) e caricate sulle stagioni dalla 24/25.
 
-- [ ] **Aggiungere la stagione 26/27** all'elenco e rilanciare l'import.
-      Ora fa upsert, quindi rilanciarlo non duplica: aggiunge le partite nuove e
-      aggiorna quelle che avevano dati parziali.
-- [ ] **Rilanciare `verifica-storico.js`** e controllare che la stagione nuova
-      non porti squadre con pochi dati o nomi incoerenti.
-- [ ] **Rigenerare la cache locale** (`dump-locale.js`). Attenzione: le date
-      cambieranno di un giorno — nel verso giusto, vedi la nota della fase 1 —
-      quindi i backtest non torneranno bit-per-bit come prima.
+### Pinnacle è sparito, e il sostituto è migliore
+
+football-data ha smesso di pubblicare Pinnacle: le colonne `PSC*` ci sono fino
+alla 25/26 — dove già coprivano meno della metà delle partite — e spariscono
+dalla 26/27. Era il riferimento "affilato" dei backtest.
+
+Al suo posto **Betfair Exchange**, presente dalla 24/25. È un exchange: il prezzo
+che le persone si scambiano davvero, senza margine del banco sopra.
+
+| Stagione | partite | Pinnacle | Exchange | media |
+|---|---|---|---|---|
+| 2023/24 | 3.831 | 3.831 | — | 3.831 |
+| 2024/25 | 3.758 | 3.758 | **3.758** | 3.758 |
+| 2025/26 | 3.757 | 1.646 | **3.524** | 3.757 |
+| 2026/27 | 370 | 0 | **369** | 370 |
+
+**Margine implicito** (1 = prezzo equo; più alto = più margine del banco):
+
+| Stagione | Pinnacle | Exchange | Media mercato |
+|---|---|---|---|
+| 2024/25 | 1,0333 | **1,0065** | 1,0546 |
+| 2025/26 | 1,0330 | **1,0073** | 1,0713 |
+| 2026/27 | — | **1,0070** | 1,0728 |
+
+L'exchange copre più partite *e* ha un margine cinque volte più stretto di
+Pinnacle. Non è un ripiego: è il prezzo più onesto che abbiamo mai avuto.
+
+### Resta da fare
+
+- [ ] **Gli script di backtest usano ancora `ps_*`.** Con Pinnacle sparito,
+      chiunque li lanci sulla stagione in corso perde le partite senza accorgersene.
+      Va aggiunta l'opzione `--quote=exchange` e reso quello il riferimento
+      predefinito.
+- [ ] **Il controllo sulle squadre con poche partite fa rumore.**
+      `verifica-storico.js` segnala decine di squadre della 26/27, che è
+      cominciata da tre giornate: corretto, ma seppellisce i problemi veri.
+      Va insegnato a distinguere una stagione appena iniziata da un buco.
+- [ ] **Rigenerare la cache locale** (`dump-locale.js`). Le date cambieranno di
+      un giorno — nel verso giusto, vedi la nota della fase 1 — quindi i backtest
+      non torneranno bit-per-bit come prima.
 
 ---
 
