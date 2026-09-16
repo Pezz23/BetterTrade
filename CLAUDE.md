@@ -27,6 +27,11 @@ Aggiornare STATO.md fa parte del lavoro, non è un extra.
   cinque passi insieme.
 - **Verifica prima di dichiarare fatto.** Ogni passo che tocca il database va
   verificato da terminale prima di passare al successivo, non dato per riuscito.
+- **Le migrazioni SQL** stanno in `bettertrade/sql/`, numerate, e si possono
+  applicare dalla connessione diretta (`btscout/lib/db.js` ha il ruolo
+  postgres): `sql.unsafe(readFileSync(...))`. Provare la funzione o la colonna
+  subito dopo, dall'API con un utente normale — la grant e le policy non si
+  vedono dal ruolo postgres.
 - **Prova a vuoto prima di scrivere.** Ogni script che modifica dati ha una
   modalità di default che non scrive e mostra cosa cambierebbe; si scrive solo
   con `--esegui`. È la convenzione del progetto, va mantenuta.

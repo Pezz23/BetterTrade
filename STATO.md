@@ -690,7 +690,20 @@ comunque con `ENOTFOUND`, aspettare un minuto e rilanciare.
       votano e solo a nome proprio. Sette controlli in `prova-permessi.js`.
       È il "tre persone dicono la loro" della visione di Mattia, dentro l'app.
 - [x] Centro in verde chiaro, data e ora grandi, quota colorata come la
-      categoria con la fonte accanto (Codere / Bet365 / massima).
+      categoria con la fonte accanto (Codere / Bet365 / massima), `Q:` davanti.
+- [x] **Il quadro di forma al clic** (`forma_partita`, `sql/15`, calcolata dal
+      database in una chiamata): ultimi 5 risultati per squadra colorati V/N/P,
+      gol fatti e subiti nella stagione con le partite giocate, ultimi 5 scontri
+      diretti in qualunque campionato, posizione in classifica e "per forma"
+      (la classifica se contassero solo le ultime 5). Solo la stagione in corso:
+      a settembre sono 4 partite, e va bene così. Le quote restano in una riga
+      piccola in fondo. **Non cambia l'attendibilità**: la forma è già nel
+      consenso, serve a chi sceglie per ragionare con gli occhi.
+- [x] Filtri quota: accettano la virgola e filtrano sulla quota mostrata.
+
+**Da questa sessione le migrazioni SQL le applico io** dalla connessione
+diretta (`btscout/lib/db.js`, ruolo postgres), e le provo subito. I file in
+`bettertrade/sql/` restano la memoria di cosa c'è nel database.
 - [ ] **Da vedere su Vercel dopo il push.** Se la lista è vuota, non è un
       errore: l'aggiornamento del venerdì non è ancora passato.
 
