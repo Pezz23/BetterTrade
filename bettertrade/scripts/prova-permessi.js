@@ -100,5 +100,28 @@ if (uA && pA) {
   esito(true, !eRpcAdm, 'ricalcola il bankroll di un altro utente');
 }
 
+// ── I voti sulle partite future (voti_partite) ──────────────────────────────
+const { data: [partitaProva] } = await servizio.from('prossime_partite').select('id').gte('data', new Date().toISOString().slice(0, 10)).limit(1);
+if (partitaProva && uA && pA) {
+  const A = await entra(uA, pA);
+  console.log(`\nVOTI — ${A.me.username} (admin) e ${N.me.username} (utente)`);
+  let r = await A.s.from('voti_partite').insert({ prossima_id: partitaProva.id, user_id: A.me.id });
+  esito(true, !r.error, 'admin vota a nome proprio');
+  r = await A.s.from('voti_partite').insert({ prossima_id: partitaProva.id, user_id: A.me.id });
+  esito(false, !r.error, 'admin vota due volte la stessa partita');
+  r = await A.s.from('voti_partite').insert({ prossima_id: partitaProva.id, user_id: N.me.id });
+  esito(false, !r.error, 'admin vota a nome di un altro');
+  const { data: visti } = await N.s.from('voti_partite').select('prossima_id');
+  esito(true, !!(visti && visti.length), 'utente vede i voti');
+  r = await N.s.from('voti_partite').insert({ prossima_id: partitaProva.id, user_id: N.me.id });
+  esito(false, !r.error, 'utente vota');
+  const { data: delN } = await N.s.from('voti_partite').delete().eq('prossima_id', partitaProva.id).eq('user_id', A.me.id).select();
+  esito(false, !!(delN && delN.length), 'utente cancella il voto di un admin');
+  const { data: delA } = await A.s.from('voti_partite').delete().eq('prossima_id', partitaProva.id).eq('user_id', A.me.id).select();
+  esito(true, !!(delA && delA.length), 'admin toglie il proprio voto');
+} else if (!partitaProva) {
+  console.log('\n  · voti: nessuna partita futura in tabella, controlli saltati');
+}
+
 console.log(falliti ? `\n✗ ${falliti} controlli falliti\n` : '\n✓ tutti i permessi si comportano come previsto\n');
 process.exit(falliti ? 1 : 0);

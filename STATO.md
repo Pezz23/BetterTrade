@@ -681,6 +681,16 @@ comunque con `ENOTFOUND`, aspettare un minuto e rilanciare.
       apre e mostra consenso, quote Bet365, over 2,5 e lo scarto sul prezzo.
 - [x] **Verificata** sui dati: Barcelona centro 89%, Ath Madrid giallo 68%,
       Betis blu 57%; le altre tre sotto soglia.
+- [x] **Finestra della settimana di gioco** (fino a lunedì / anche la prossima /
+      tutte) con il conteggio su ogni pulsante; il menu dei campionati mostra
+      "I1 – Serie A". Codice spezzato: `lib/attendibilita.js` (solo calcoli, li
+      riuserà la compilazione), `components/RigaPartita.jsx`, la pagina.
+- [x] **La stella: il voto degli admin** (`voti_partite`, `sql/14`). Ogni admin
+      vota una partita una volta; contatore `n/3`; tutti vedono, solo gli admin
+      votano e solo a nome proprio. Sette controlli in `prova-permessi.js`.
+      È il "tre persone dicono la loro" della visione di Mattia, dentro l'app.
+- [x] Centro in verde chiaro, data e ora grandi, quota colorata come la
+      categoria con la fonte accanto (Codere / Bet365 / massima).
 - [ ] **Da vedere su Vercel dopo il push.** Se la lista è vuota, non è un
       errore: l'aggiornamento del venerdì non è ancora passato.
 

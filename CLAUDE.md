@@ -303,7 +303,7 @@ node --env-file=.env scripts/backup.js             # PRIMA di ogni modifica ai d
 node --env-file=.env scripts/saldi.js              # riepilogo saldi
 node --env-file=.env scripts/verifica-coerenza.js  # invariante del bankroll
 node --env-file=.env scripts/stato-migrazione.js   # stato della sicurezza
-node --env-file=.env scripts/prova-permessi.js Bermani <pw> MNM <pw>   # RLS
+node --env-file=.env scripts/prova-permessi.js Bermani <pw> MNM <pw>   # RLS, voti compresi
 
 node --env-file=.env scripts/confronta-utenti.js MarcoM Christian
 node --env-file=.env scripts/allinea-utenti.js  MarcoM Christian [--esegui]
