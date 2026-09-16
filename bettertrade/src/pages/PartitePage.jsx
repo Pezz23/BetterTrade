@@ -81,12 +81,18 @@ export default function PartitePage() {
     return righe.filter(r => r.data <= fine)
   }, [righe, finestra])
 
+  // La quota su cui si filtra è quella MOSTRATA: della doppia chance se c'è,
+  // altrimenti del segno. E si accetta la virgola: "1,5" è quello che si scrive
+  // in Italia, e parseFloat da solo lo leggerebbe come 1.
+  const numero = t => { const n = parseFloat(String(t).replace(',', '.')); return Number.isFinite(n) ? n : null }
+  const quotaMostrata = r => r.quotaGiocata ?? r.quota ?? null
+
   const visibili = useMemo(() => {
-    const qMin = parseFloat(quotaMin), qMax = parseFloat(quotaMax)
+    const qMin = numero(quotaMin), qMax = numero(quotaMax)
     return inFinestra
       .filter(r => campionato ? r.div === campionato : true)
-      .filter(r => Number.isFinite(qMin) ? (r.quota ?? 0) >= qMin : true)
-      .filter(r => Number.isFinite(qMax) ? (r.quota ?? 99) <= qMax : true)
+      .filter(r => qMin === null ? true : quotaMostrata(r) !== null && quotaMostrata(r) >= qMin)
+      .filter(r => qMax === null ? true : quotaMostrata(r) !== null && quotaMostrata(r) <= qMax)
       .filter(r => soloSopraSoglia ? categoria(r.probGiocata, soglie) !== 'no' : true)
       .sort((a, b) => b.probGiocata - a.probGiocata)
   }, [inFinestra, campionato, quotaMin, quotaMax, soloSopraSoglia, soglie])
@@ -141,8 +147,9 @@ export default function PartitePage() {
           {campionati.map(([d, nome]) => <option key={d} value={d}>{d} – {nome}</option>)}
         </select>
         <span style={{ fontSize: 10, color: C.spento, fontFamily: F.mono }}>quota</span>
-        <input style={campo} placeholder="min" inputMode="decimal" value={quotaMin} onChange={e => setQuotaMin(e.target.value)} />
-        <input style={campo} placeholder="max" inputMode="decimal" value={quotaMax} onChange={e => setQuotaMax(e.target.value)} />
+        <input style={{ ...campo, borderColor: quotaMin && numero(quotaMin) === null ? C.rosso : C.bordo }} placeholder="min" inputMode="decimal" value={quotaMin} onChange={e => setQuotaMin(e.target.value)} />
+        <input style={{ ...campo, borderColor: quotaMax && numero(quotaMax) === null ? C.rosso : C.bordo }} placeholder="max" inputMode="decimal" value={quotaMax} onChange={e => setQuotaMax(e.target.value)} />
+        {(quotaMin || quotaMax) && <button onClick={() => { setQuotaMin(''); setQuotaMax('') }} style={{ ...pillola(false), padding: '6px 9px' }}>✕</button>}
         <button onClick={() => setSoloSopraSoglia(v => !v)} style={pillola(soloSopraSoglia)}>{soloSopraSoglia ? 'solo sopra soglia' : 'tutte'}</button>
         <button onClick={() => setMostraSoglie(v => !v)} style={{ ...pillola(false), marginLeft: 'auto' }}>⚙ soglie</button>
       </div>
