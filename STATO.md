@@ -63,6 +63,7 @@ Nell'archivio stanno vicine ma hanno ruoli opposti — **non confonderle**:
 |---|---|---|
 | `b365_*` | Bet365, **apertura** | La quota che **giochi davvero** |
 | `bfe_ap_*` | Betfair Exchange, **apertura** | **Il riferimento onesto**: esiste quando giochi |
+| `bfe_ap_valido` | Calcolata dal database | **TRUE solo se `bfe_ap_*` è un prezzo reale.** Usare sempre `where bfe_ap_valido` |
 | `bfe_ch_*` | Betfair Exchange, **chiusura** | Più preciso ma *non esiste ancora* quando giochi |
 | `avg_*`, `max_*` | Media e massima di mercato, chiusura | Contesto |
 
@@ -128,15 +129,19 @@ Tre cose da tenere a mente:
   il pareggio è dove i bookmaker sono meno precisi.
 - **Frequenza non è redditività.** Sapere che un prezzo è più alto del riferimento
   non dice ancora se scommetterci guadagna. **Questo non è ancora stato misurato.**
-- **C'è almeno un valore anomalo** (scarto massimo +163%): prima di fidarsi dei
-  casi estremi vanno filtrati gli errori di dato.
+- ~~C'è almeno un valore anomalo (scarto massimo +163%)~~ → **risolto il 16/09**:
+  erano **mercati vuoti** dell'exchange (`1.02/1.01/1.01`, segnaposto quando
+  nessuno ha ancora offerto), 370 su 10.789. Ora la colonna `bfe_ap_valido` li
+  marca FALSE. **La misura dell'11/09 va rifatta con `where bfe_ap_valido`.**
 
 ### Da fare, quando si riprende
 
 - [ ] **Misurare se il segnale guadagna**, non solo se esiste: prendere le partite
       dove `b365 > equo` e vedere il rendimento reale sulle due stagioni.
       Walk-forward, senza guardare la chiusura.
-- [ ] **Filtrare i valori anomali** prima di qualsiasi conclusione.
+- [x] ~~Filtrare i valori anomali~~ → `bfe_ap_valido`, calcolata dal database.
+- [ ] **Rifare la misura del segnale** dell'11/09 con il filtro: i numeri (8,2%,
+      4,6%) includevano i mercati vuoti e sono da rivedere.
 - [ ] **Decidere la soglia**: qualunque scarto, o solo oltre il 2%?
 
 ### Come rifare tutto da capo
@@ -330,8 +335,28 @@ Trovate due, mappate sul nome attuale sia nel database che in `ALIAS`
 `Gaziantep` (ex Gazişehir); `Lorca` e `Mallorca`. Registrate in `NON_ALIAS`
 dentro `verifica-storico.js` così non vengono più segnalate.
 
+### Audit completo del 16 settembre — archivio pulito
+
+Prima di passare alla fase 4, `scripts/audit-archivio.js` (nuovo): 14 controlli
+su duplicati sotto etichette diverse, squadre nel paese sbagliato, date fuori
+stagione, campi vuoti, coerenza esito/gol, quote fuori scala, struttura dei
+campionati. **Tutti verdi.** Da rilanciare dopo ogni import di un campionato nuovo.
+
+Tre cose della fonte, non correggibili, da sapere:
+- **VVV Venlo–Ajax 0-13** (N1, 24/10/2020) è vero: record dell'Eredivisie.
+- **Celtic–Hearts `max_2` = 251** (SC0, 16/05/2026): quota di un book rimasta
+  appesa a fine stagione. `max_*` ha qualche valore così.
+- **6 terne `avg_*` con somma < 1** (arbitraggi impossibili): errori di
+  football-data. Elencate dall'audit.
+
+E una che riguarda il criterio: **370 partite (3,4%) hanno un exchange di
+apertura che non è un prezzo** — `1.02/1.01/1.01`, il segnaposto di un mercato
+ancora vuoto. Marcate FALSE da `bfe_ap_valido` (`sql/08`), colonna che il
+database calcola da solo a ogni riga.
+
 ### Strumenti migliorati
 
+- `audit-archivio.js` — il controllo completo, vedi sopra.
 - `import-storico.js --campionati=P1,N1` — importa solo alcuni campionati,
   senza riscaricare gli altri.
 - `verifica-storico.js` ora **esclude la stagione in corso** dal controllo

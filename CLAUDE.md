@@ -122,6 +122,13 @@ Va **normalizzato** — probabilità implicite divise per la loro somma — prim
 confrontarlo con qualsiasi cosa. Resta comunque il riferimento migliore
 disponibile al momento della giocata: 1,03 contro 1,07 di Bet365.
 
+⚠️ **Il 3,4% delle aperture exchange sono mercati vuoti**, non prezzi:
+`1.02/1.01/1.01`, il segnaposto quando nessuno ha ancora offerto. Confrontarli
+con Bet365 produce "valore" inesistente (il +163% dell'11/09 era questo).
+La colonna **`bfe_ap_valido`** — calcolata dal database, `sql/08` — li marca
+FALSE. **Ogni query sul criterio usa `where bfe_ap_valido`.** Senza, i numeri
+sono sbagliati.
+
 L'exchange esiste solo **dalla stagione 24/25**: prima, quelle colonne sono
 vuote per forza.
 
@@ -231,7 +238,8 @@ node --env-file=.env scripts/importa-partite.js    # archivio → Supabase (prov
 node --env-file=.env scripts/verifica-partite.js   # confronto con la sorgente
 
 cd btscout && npm install
-node --env-file=.env scripts/verifica-storico.js   # coerenza dell'archivio
+node --env-file=.env scripts/verifica-storico.js   # coerenza dell'archivio (settimanale)
+node --env-file=.env scripts/audit-archivio.js     # controllo completo (dopo ogni campionato nuovo)
 node --env-file=.env scripts/import-storico.js --stagioni=2627      # aggiornamento settimanale
 node --env-file=.env scripts/import-storico.js --campionati=P1,N1   # solo alcuni campionati
 node scripts/backtest.js                           # gira offline, dalla cache
