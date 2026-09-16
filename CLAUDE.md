@@ -93,8 +93,10 @@ Nel frontend può stare solo `VITE_SUPABASE_ANON_KEY`, che è pubblica per
 progetto: a proteggere è RLS, non nasconderla.
 
 Per questo **creare utenti e resettare la password di altri sono usciti
-dall'interfaccia** e vivono in `scripts/`. Per riportarli nell'app serve una
-Supabase Edge Function.
+dall'interfaccia** e vivono in `scripts/`. **Stanno per rientrare** (fase 9 in
+STATO.md) attraverso due funzioni SQL `security definer` che scrivono in
+`auth.users` — la stessa strada di `ricalcola_bankroll`, non una Edge Function.
+La chiave resta fuori dal browser comunque.
 
 ---
 

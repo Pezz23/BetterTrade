@@ -659,8 +659,33 @@ comunque con `ENOTFOUND`, aspettare un minuto e rilanciare.
       future dall'app, senza terminale.
 - [ ] **Nodo tecnico da risolvere prima.** Gli import sono script Node che
       girano sul Mac di Mattia: un pulsante nell'app non può eseguirli. Servirà
-      una **Supabase Edge Function** — la stessa che serve già per creare utenti
-      e resettare password. Da fare una volta, serve a tre cose.
+      una **Supabase Edge Function**. Non serve più per gli account (vedi fase 9).
+
+---
+
+## 🔵 FASE 9 — Le credenziali dentro l'app — decisa il 16 settembre 2026, sera
+
+Mattia: "non mi serve troppa sicurezza, qui ci sono solo dati; vorrei gestire
+le credenziali direttamente da dentro l'app". Oggi creare un utente e cambiare
+la password di un altro stanno in `scripts/` perché servono la `service_role`.
+
+**La strada scelta: due funzioni SQL in `security definer`**, come
+`ricalcola_bankroll`, che scrivono in `auth.users` con l'hash fatto da Postgres.
+Niente Edge Function, niente servizio in più: SQL che applico e provo io.
+
+- [ ] `crea_utente(username, password, ruolo, nome, bankroll_iniziale)`: riga in
+      `auth.users` (email sintetica di `emailDi()`, **stessa regola delle due
+      copie JS**) + riga in `users`. Solo chi è admin la può chiamare.
+- [ ] `reset_password(username, password)`: cambia l'hash. Solo admin.
+- [ ] Pagina Utenti: **Nuovo utente** (password proposta pronunciabile,
+      modificabile prima di salvare) e **Reset password** su ogni riga.
+- [ ] `prova-permessi.js`: un utente normale che chiama le due funzioni deve
+      ricevere errore.
+- [ ] Gli script in `scripts/` restano come riserva.
+
+**Le password restano hashate**: non si rileggono, si resettano. Proposto di
+non salvarle in chiaro; Mattia non ha ancora risposto. **Da decidere anche chi
+può farlo: solo superadmin (proposta) o tutti gli admin.**
 
 ---
 
@@ -668,8 +693,8 @@ comunque con `ENOTFOUND`, aspettare un minuto e rilanciare.
 
 - [x] **Menu ad hamburger** (☰ in alto a destra). I 4 tasti in basso restano
       per l'uso quotidiano; il menu raccoglie il resto: **Partite** e, per gli
-      admin, **Utenti** (che era un quinto tasto). Il pulsante "Aggiorna" arriverà
-      qui con la Edge Function (fase 5).
+      admin, **Utenti** (che era un quinto tasto), **Spin provvisorie**. Il
+      pulsante "Aggiorna" arriverà qui con la Edge Function (fase 5).
 - [x] **Pagina Partite** (`src/pages/PartitePage.jsx`), riscritta la sera del
       16/09 dopo il chiarimento: le partite future ordinate per **attendibilità
       = probabilità della giocata** secondo il consenso (`avg_ap_*` normalizzata).
@@ -780,8 +805,10 @@ spin compilate così sono già agganciate all'archivio quando si farà la fase 7
 1. ~~Quali campionati aggiungere~~ — deciso: i 9 paesi che Mattia seguiva + Scozia.
 2. **Con che cadenza scaricare le partite future** (fase 4): a mano martedì e
    venerdì, o schedulato. Lo script c'è; manca chi lo lancia.
-3. **Quando fare la Edge Function** (fase 5): serve a tre cose insieme —
-   aggiornamento dati, creazione utenti, reset password.
+3. **Quando fare la Edge Function** (fase 5): ormai serve solo all'aggiornamento
+   dati — gli account passano dalle funzioni SQL (fase 9).
+6. **Account (fase 9)**: chi può creare e resettare (solo superadmin o tutti
+   gli admin); password solo hashate o anche in chiaro.
 4. **Le spin esistenti si migrano o si riparte puliti** (fase 7).
 5. **Vietare i bankroll negativi** a livello di database (`check (bankroll >= 0)`)
    o tenerli come segnale d'allarme.
