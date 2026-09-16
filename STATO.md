@@ -4,7 +4,7 @@
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
 **Ultimo aggiornamento:** 9 settembre 2026
-**Fase corrente:** criterio misurato e positivo (CLV +2%) — prossimo passo: **da future a storico, poi l'app**
+**Fase corrente:** archivio, future e routine completi — prossimo passo: **l'app (fase 5)**
 
 ---
 
@@ -473,7 +473,7 @@ database calcola da solo a ogni riga.
 
 ---
 
-## 🟢 FASE 4 — Le partite future — costruita il 16 settembre 2026, da provare venerdì
+## ✅ FASE 4 — Le partite future — fatta il 16 settembre 2026 (prova del weekend venerdì)
 
 **Fonte verificata e gratuita:** `football-data.co.uk/fixtures.csv`. Stesso
 formato dello storico, stessi codici, stessi nomi squadra. Per ogni partita:
@@ -521,24 +521,49 @@ banco si concentra dove pensa che la gente giochi male.
 +4% guadagna. È la prima volta che la macchina fa la cosa per cui la stiamo
 costruendo.
 
+### Da futuro a storico — costruito il 16 settembre 2026
+
+Non si sposta niente. Quando una partita si gioca entra in `partite` dall'import
+dello storico; la riga in `prossime_partite` resta com'era e riceve un puntatore
+(`partita_id`, `sql/11`) alla riga dello storico. Così ogni partita, una volta
+giocata, sa: com'è finita, che quote football-data ha registrato come apertura,
+e che quote **noi** avevamo visto al download. Il confronto fra le ultime due
+dice se la fotografia era fedele — `riconcilia-prossime.js` lo fa e segnala
+scarti oltre il 5%. Cerca anche nei ±7 giorni, per i rinvii.
+
+**Stato:** le 9 partite del 15/09 sono *in attesa* — football-data non ha ancora
+pubblicato quei risultati (latenza normale, i risultati infrasettimanali escono
+nei giorni dopo). Al prossimo aggiornamento il collegamento scatta da solo.
+
+### La routine, in un comando
+
+```bash
+cd btscout && node --env-file=.env scripts/aggiorna.js --esegui
+```
+
+Fa tre cose in ordine: risultati → storico, future giocate → collegamento,
+nuove future. Se un passo fallisce si ferma lì. **È il comando che il pulsante
+"Aggiorna" nell'app dovrà eseguire** (fase 5).
+
+**Quando:** martedì e venerdì, dopo le 18. Provata da cima a fondo il 16/09.
+
 ### Da fare
 
-- [ ] **Provare venerdì 18/09 pomeriggio** sul blocco del weekend, quando ci
-      sono tutti i campionati maggiori. Comando:
-      `cd btscout && node --env-file=.env scripts/importa-prossime.js --esegui`
-- [ ] **Decidere la cadenza:** a mano martedì e venerdì, o schedulato. Finché è a
-      mano, va segnato in calendario — se si salta il venerdì, il weekend non
-      c'è.
-- [ ] **Quando le partite del 15-17/09 saranno nello storico**, confrontare le
-      quote viste prima (`prossime_partite`) con quelle di apertura registrate
-      da football-data (`partite.b365_*`): se coincidono, la fotografia è fedele.
+- [ ] **Venerdì 18/09 dopo le 18**: primo blocco del weekend con tutti i
+      campionati maggiori. `aggiorna.js --esegui`.
+- [ ] **Decidere la cadenza:** a mano (in calendario!) o schedulato. Lo script
+      c'è; manca chi lo lancia.
+- [ ] **Al primo collegamento riuscito**, leggere il confronto quote viste /
+      quote registrate: se lo scarto è sistematico, la "apertura" dello storico
+      non è il prezzo che si gioca davvero, e la misura del criterio va riletta.
 
-### Rete: il DNS del router non è affidabile
+### Rete: il DNS singhiozza, gli script lo sopportano
 
-Il 16/09 il router di casa (192.168.1.1) risolveva i nomi a intermittenza —
-football-data sì e Supabase no, poi il contrario. Il Mac ora usa **1.1.1.1 e
-8.8.8.8** come DNS. Se uno script fallisce con `ENOTFOUND`, controllare prima
-quello: `scutil --dns | grep nameserver`.
+Il 16/09 la risoluzione dei nomi falliva a intermittenza — prima col router
+(192.168.1.1), poi anche con 1.1.1.1 impostato. `lib/rete.js` prova entrambi
+i nomi del sito (con e senza `www`), quattro volte, con pause crescenti; lo
+usano sia `import-storico` sia `importa-prossime`. Se uno script fallisce
+comunque con `ENOTFOUND`, aspettare un minuto e rilanciare.
 
 ---
 

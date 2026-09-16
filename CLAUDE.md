@@ -170,6 +170,11 @@ La fonte delle future (`fixtures.csv`) non è una finestra di 7 giorni: è il
 prossimo blocco, sostituito ogni volta. **Si scarica martedì e venerdì
 pomeriggio** — se si salta il venerdì, il weekend non c'è.
 
+Quando una futura si gioca, `riconcilia-prossime.js` le mette `partita_id` che
+punta alla riga di `partite`. Non si sposta e non si cancella: la futura resta
+la fotografia di cosa si vedeva prima, e il confronto con le quote registrate
+dice se era fedele. Tutto in un comando: `scripts/aggiorna.js --esegui`.
+
 ---
 
 ## Il modello dei dati, e perché va rifatto
@@ -282,8 +287,9 @@ node --env-file=.env scripts/verifica-partite.js   # confronto con la sorgente
 cd btscout && npm install
 node --env-file=.env scripts/verifica-storico.js   # coerenza dell'archivio (settimanale)
 node --env-file=.env scripts/audit-archivio.js     # controllo completo (dopo ogni campionato nuovo)
-node --env-file=.env scripts/import-storico.js --stagioni=2627      # aggiornamento settimanale
-node --env-file=.env scripts/importa-prossime.js [--esegui]         # partite future: martedì e venerdì
+node --env-file=.env scripts/aggiorna.js --esegui                   # LA ROUTINE: martedì e venerdì dopo le 18
+#   = import-storico --stagioni=2627 → riconcilia-prossime → importa-prossime
+node --env-file=.env scripts/misura-valore.js --riferimento=media   # il criterio, a fine stagione
 node --env-file=.env scripts/import-storico.js --campionati=P1,N1   # solo alcuni campionati
 node scripts/backtest.js                           # gira offline, dalla cache
 ```

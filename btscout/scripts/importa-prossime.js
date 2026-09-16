@@ -18,37 +18,9 @@
 
 import { sql, chiudi } from '../lib/db.js';
 import { CAMPIONATI, parseCsv, parseData, normalizzaSquadra } from './import-storico.js';
+import { scaricaDaFootballData } from '../lib/rete.js';
 
 const ESEGUI = process.argv.includes('--esegui');
-
-// Il sito risponde su due nomi (con e senza www) e reindirizza dall'uno
-// all'altro. Un DNS domestico che risolve a intermittenza — è successo il
-// 16/09/2026 — fa fallire un nome e non l'altro: si provano entrambi, più volte.
-// Questo script girerà due volte a settimana senza nessuno a guardarlo.
-const URL_FIXTURES = [
-  'https://football-data.co.uk/fixtures.csv',
-  'https://www.football-data.co.uk/fixtures.csv',
-];
-
-async function scaricaConTentativi(urls, tentativi = 4) {
-  let ultimo;
-  for (let t = 1; t <= tentativi; t++) {
-    for (const url of urls) {
-      try {
-        const res = await fetch(url, { redirect: 'follow' });
-        if (res.ok) return await res.text();
-        ultimo = new Error(`${url} → HTTP ${res.status}`);
-      } catch (e) {
-        ultimo = new Error(`${url} → ${e.cause?.code || e.message}`);
-      }
-    }
-    if (t < tentativi) {
-      console.log(`  · tentativo ${t} fallito (${ultimo.message}), riprovo fra ${t * 5}s`);
-      await new Promise(r => setTimeout(r, t * 5000));
-    }
-  }
-  throw ultimo;
-}
 
 // Colonne del CSV → colonne della tabella. Qui sono tutte quote di apertura,
 // quindi Avg/Max si chiamano avg_ap/max_ap — in `partite` avg/max sono di
@@ -69,7 +41,7 @@ const numero = v => { const n = parseFloat(v); return Number.isFinite(n) && n > 
 
 // ── Scarica ─────────────────────────────────────────────────────────────────
 let grezze;
-try { grezze = parseCsv(await scaricaConTentativi(URL_FIXTURES)); }
+try { grezze = parseCsv(await scaricaDaFootballData('/fixtures.csv')); }
 catch (e) { console.error(`✗ impossibile scaricare il file: ${e.message}`); await chiudi(); process.exit(1); }
 
 // ── Estrai solo quello che seguiamo ─────────────────────────────────────────

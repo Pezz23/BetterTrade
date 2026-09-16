@@ -9,6 +9,7 @@
 // presenti. Serve per la stagione in corso, che cambia ogni settimana.
 
 import { sql, chiudi } from '../lib/db.js';
+import { scaricaDaFootballData } from '../lib/rete.js';
 import { pathToFileURL } from 'node:url';
 
 export const CAMPIONATI = {
@@ -163,10 +164,8 @@ export function parseCsv(testo) {
 }
 
 export async function scarica(stagione, div) {
-  const url = `https://www.football-data.co.uk/mmz4281/${stagione}/${div}.csv`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`${url} → HTTP ${res.status}`);
-  const righe = parseCsv(await res.text());
+  const percorso = `/mmz4281/${stagione}/${div}.csv`;
+  const righe = parseCsv(await scaricaDaFootballData(percorso));
 
   // Il server risponde 200 anche a codici che non esistono, reindirizzando su
   // un file simile: P2.csv → SP2.csv. È successo il 16/09/2026 e ha messo in
@@ -174,7 +173,7 @@ export async function scarica(stagione, div) {
   // dentro il file dice la verità: se non coincide, il campionato non esiste.
   const divNelFile = righe[0]?.Div;
   if (divNelFile && divNelFile !== div) {
-    throw new Error(`${div}/${stagione}: il file contiene "${divNelFile}", non "${div}" — il campionato ${div} non esiste su football-data (redirect da ${res.url})`);
+    throw new Error(`${div}/${stagione}: il file contiene "${divNelFile}", non "${div}" — il campionato ${div} non esiste su football-data (il server ha reindirizzato su un altro file)`);
   }
   return righe;
 }
