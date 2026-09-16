@@ -605,6 +605,16 @@ anticipo** con le quote di 40+ bookmaker (Pinnacle e Betfair compresi).
 - [x] Nella routine come passo 4, **solo con `--esegui`**: la prova a vuoto
       costa comunque 30 crediti.
 
+- [x] **Bookmaker di riferimento: Codere** (`book_*`, `sql/13`), l'unico con
+      licenza italiana fra quelli presenti — Bet365, Sisal, Snai, Eurobet non ci
+      sono. Scelto da Mattia: "la variazione sarà simile", ed è vero, i book
+      italiani hanno margini simili. Configurabile con `ODDS_BOOK` in `.env`;
+      il nome del book sta nella colonna, niente da rinominare se cambia.
+- [x] **Codere non quota tutto**: 118 partite su 161. Mancano **Belgio e
+      Portogallo interi**, metà della Liga del weekend, e tutto ciò che è oltre
+      la settimana. La pagina usa una scala — **Codere → Bet365 → massima sul
+      mercato** — e sotto ogni quota dice quale delle tre è.
+
 **Crediti:** 30 per giro. Mattia prevede ~4 giri al mese → 120 su 500.
 Controllo: `x-requests-remaining` stampato a ogni import.
 

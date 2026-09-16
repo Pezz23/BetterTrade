@@ -34,7 +34,7 @@ export default function PartitePage() {
       const oggi = new Date().toISOString().slice(0, 10)
       const { data, error } = await supabase
         .from('prossime_partite')
-        .select('id, div, campionato, data, ora, casa, trasferta, scaricato_il, fonte, b365_1, b365_x, b365_2, b365_over25, avg_ap_1, avg_ap_x, avg_ap_2')
+        .select('id, div, campionato, data, ora, casa, trasferta, scaricato_il, fonte, book, book_1, book_x, book_2, b365_1, b365_x, b365_2, b365_over25, avg_ap_1, avg_ap_x, avg_ap_2, max_ap_1, max_ap_x, max_ap_2')
         .gte('data', oggi).order('data').order('ora')
       if (error) setErrore(error.message)
       else setRighe((data || []).map(valuta).filter(r => r.prob !== null))
@@ -161,6 +161,7 @@ export default function PartitePage() {
           <b style={{ color: C.fioco }}>Come leggere.</b> L'attendibilità è la probabilità che la giocata vinca, secondo il consenso
           del mercato (media di ~40 book, tolto il margine). Sui favoriti il mercato è calibrato: un 75% vince tre volte su quattro.
           La X secca non viene mai proposta. Sotto 1,25 si aggiunge l'over 1,5; sopra 1,90 si passa alla doppia chance.
+          La quota è di <b style={{ color: C.fioco }}>Codere</b> quando c'è; altrimenti Bet365, altrimenti la massima sul mercato — sotto ogni quota c'è scritto quale.
           Gli orari sono quelli del Regno Unito.
         </div>
       )}

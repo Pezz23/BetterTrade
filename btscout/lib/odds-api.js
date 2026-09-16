@@ -30,14 +30,27 @@ function chiave() {
   return process.env.ODDS_API_KEY;
 }
 
-export async function chiama(percorso, parametri = {}) {
+// Come lib/rete.js: il DNS singhiozza, e una chiamata fallita per rete non
+// costa crediti — si può riprovare senza rimorsi. Un errore HTTP invece (chiave
+// sbagliata, crediti finiti) si propaga subito.
+export async function chiama(percorso, parametri = {}, tentativi = 4) {
   const url = new URL(BASE + percorso);
   url.searchParams.set('apiKey', chiave());
   for (const [k, v] of Object.entries(parametri)) url.searchParams.set(k, v);
-  const res = await fetch(url);
-  const crediti = { usati: Number(res.headers.get('x-requests-last') || 0), rimasti: Number(res.headers.get('x-requests-remaining') || 0) };
-  if (!res.ok) throw new Error(`${percorso} → HTTP ${res.status}: ${await res.text()}`);
-  return { dati: await res.json(), crediti };
+  let ultimo;
+  for (let t = 1; t <= tentativi; t++) {
+    try {
+      const res = await fetch(url);
+      const crediti = { usati: Number(res.headers.get('x-requests-last') || 0), rimasti: Number(res.headers.get('x-requests-remaining') || 0) };
+      if (!res.ok) throw Object.assign(new Error(`${percorso} → HTTP ${res.status}: ${await res.text()}`), { http: true });
+      return { dati: await res.json(), crediti };
+    } catch (e) {
+      if (e.http) throw e;
+      ultimo = e;
+      if (t < tentativi) await new Promise(r => setTimeout(r, t * 4000));
+    }
+  }
+  throw new Error(`${percorso} → rete: ${ultimo.cause?.code || ultimo.message} dopo ${tentativi} tentativi`);
 }
 
 /** Le partite in programma di un campionato, senza quote. Gratis. */

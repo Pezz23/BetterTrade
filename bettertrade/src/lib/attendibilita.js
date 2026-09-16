@@ -38,7 +38,19 @@ export function valuta(r) {
 
   const segno = p.p1 >= p.p2 ? '1' : '2'          // il favorito fra 1 e 2: la X è esclusa
   const prob = segno === '1' ? p.p1 : p.p2
-  const quota = segno === '1' ? r.b365_1 : r.b365_2 // può mancare: The Odds API non ha Bet365
+
+  // La terna di quote su cui si gioca, in ordine di preferenza: il bookmaker di
+  // riferimento (Codere, l'unico italiano fra quelli disponibili), poi Bet365
+  // quando football-data lo porta, poi la massima sul mercato. Codere non quota
+  // tutto — mancano Belgio e Portogallo, e le partite lontane — quindi la
+  // scala serve davvero. `quotaFonte` dice quale delle tre è.
+  const terna = r.book_1 ? { q: [r.book_1, r.book_x, r.book_2], fonte: nomeBook(r.book) }
+              : r.b365_1 ? { q: [r.b365_1, r.b365_x, r.b365_2], fonte: 'Bet365' }
+              : r.max_ap_1 ? { q: [r.max_ap_1, r.max_ap_x, r.max_ap_2], fonte: 'massima' }
+              : null
+  const [q1, qx, q2] = terna?.q ?? [null, null, null]
+  const quotaFonte = terna?.fonte ?? null
+  const quota = segno === '1' ? q1 : q2
   const equo = prob ? 1 / prob : null
   const scarto = quota && equo ? quota / equo - 1 : null
 
@@ -49,7 +61,7 @@ export function valuta(r) {
     nota = `quota ${quota} sotto ${REGOLA_OVER}: si aggiunge l'over 1,5 (se non basta, over 2,5 @${r.b365_over25 ?? '—'}). La quota combinata va letta sul book.`
   } else if (quota && quota > REGOLA_DOPPIA) {
     giocata = segno === '1' ? '1X' : 'X2'
-    quotaGiocata = segno === '1' ? quotaDoppia(r.b365_1, r.b365_x) : quotaDoppia(r.b365_x, r.b365_2)
+    quotaGiocata = segno === '1' ? quotaDoppia(q1, qx) : quotaDoppia(qx, q2)
     nota = `quota ${quota} sopra ${REGOLA_DOPPIA}: doppia chance, stimata dalle quote 1X2`
   }
 
@@ -58,8 +70,12 @@ export function valuta(r) {
   // combinata vale meno (manca l'1-0) e non abbiamo le quote per dirlo.
   const probGiocata = giocata.length === 2 ? probDoppia : prob
 
-  return { ...r, p, segno, prob, quota, equo, scarto, giocata, quotaGiocata, nota, probDoppia, probGiocata }
+  return { ...r, p, segno, prob, quota, quotaFonte, q1, qx, q2, equo, scarto, giocata, quotaGiocata, nota, probDoppia, probGiocata }
 }
+
+// Il nome leggibile del bookmaker di riferimento, dalla chiave di The Odds API.
+const NOMI_BOOK = { codere_it: 'Codere', pinnacle: 'Pinnacle', williamhill: 'William Hill', unibet_eu: 'Unibet', betfair_ex_eu: 'Betfair' }
+export const nomeBook = chiave => NOMI_BOOK[chiave] || chiave || '—'
 
 /** centro | giallo | blu | no, dalla probabilità della giocata e dalle soglie. */
 export function categoria(probGiocata, soglie = SOGLIE_DEFAULT) {

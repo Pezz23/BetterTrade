@@ -5,6 +5,10 @@
 //   avg_ap_*   media delle quote di tutti i bookmaker (come l'Avg di football-data)
 //   max_ap_*   la migliore
 //   bfe_ap_*   Betfair Exchange, se presente
+//   book_*     le quote del bookmaker di riferimento — Codere, l'unico con
+//              licenza italiana fra quelli presenti (scelto il 16/09/2026).
+//              Configurabile con ODDS_BOOK in .env. Il nome del book è salvato
+//              nella colonna `book`: se cambia, non c'è niente da rinominare.
 //   b365_*     NIENTE: The Odds API non ha Bet365. Se la riga esiste già da
 //              football-data, Bet365 resta com'era. Non si sovrascrive con null.
 //
@@ -27,6 +31,7 @@ import { traduci } from '../lib/nomi-squadre.js';
 import { CAMPIONATI } from './import-storico.js';
 
 const ESEGUI = process.argv.includes('--esegui');
+const BOOK = process.env.ODDS_BOOK || 'codere_it';
 
 // Nomi validi per campionato: quelli visti nell'archivio nelle ultime due stagioni.
 const validi = new Map();
@@ -65,7 +70,7 @@ for (const div of Object.keys(SPORT)) {
     if (salta) { saltate++; continue; }
 
     // Per ogni bookmaker, le tre quote 1X2 nell'ordine casa / pareggio / trasferta.
-    const q1 = [], qx = [], q2 = []; let bfe = null;
+    const q1 = [], qx = [], q2 = []; let bfe = null, book = null;
     for (const b of ev.bookmakers) {
       const m = b.markets.find(m => m.key === 'h2h'); if (!m) continue;
       const o = Object.fromEntries(m.outcomes.map(x => [x.name, x.price]));
@@ -73,6 +78,7 @@ for (const div of Object.keys(SPORT)) {
       if (!(a > 1 && d > 1 && c > 1)) continue;
       q1.push(a); qx.push(d); q2.push(c);
       if (b.key.startsWith('betfair_ex') && !bfe) bfe = [a, d, c];
+      if (b.key === BOOK) book = [a, d, c];
     }
     if (q1.length < 3) { saltate++; continue; }   // troppo pochi book per un consenso
 
@@ -82,6 +88,8 @@ for (const div of Object.keys(SPORT)) {
       avg_ap_1: media(q1), avg_ap_x: media(qx), avg_ap_2: media(q2),
       max_ap_1: massimo(q1), max_ap_x: massimo(qx), max_ap_2: massimo(q2),
       bfe_ap_1: bfe?.[0] ?? null, bfe_ap_x: bfe?.[1] ?? null, bfe_ap_2: bfe?.[2] ?? null,
+      book: book ? BOOK : null,
+      book_1: book?.[0] ?? null, book_x: book?.[1] ?? null, book_2: book?.[2] ?? null,
       _book: q1.length,
     });
     prese++;
@@ -97,6 +105,8 @@ if (righe.length) {
   console.log(`  periodo        ${date[0]} → ${date[date.length - 1]}`);
   console.log(`  bookmaker per partita: min ${Math.min(...righe.map(r => r._book))} · media ${media(righe.map(r => r._book)).toFixed(0)}`);
   console.log(`  con exchange   ${righe.filter(r => r.bfe_ap_1).length}`);
+  const conBook = righe.filter(r => r.book_1).length;
+  console.log(`  con ${BOOK.padEnd(11)} ${conBook}/${righe.length}${conBook < righe.length ? '  ⚠️ manca su: ' + [...new Set(righe.filter(r => !r.book_1).map(r => r.div))].join(' ') : ''}`);
 }
 if (sconosciute.size) {
   console.log(`\n  ⚠️  squadre non riconosciute — partite SALTATE, da aggiungere a lib/nomi-squadre.js:`);
@@ -106,7 +116,8 @@ if (sconosciute.size) {
 if (!ESEGUI || !righe.length) { await chiudi(); process.exit(sconosciute.size ? 1 : 0); }
 
 const COL = ['div', 'campionato', 'data', 'ora', 'casa', 'trasferta', 'fonte',
-  'avg_ap_1', 'avg_ap_x', 'avg_ap_2', 'max_ap_1', 'max_ap_x', 'max_ap_2', 'bfe_ap_1', 'bfe_ap_x', 'bfe_ap_2'];
+  'avg_ap_1', 'avg_ap_x', 'avg_ap_2', 'max_ap_1', 'max_ap_x', 'max_ap_2', 'bfe_ap_1', 'bfe_ap_x', 'bfe_ap_2',
+  'book', 'book_1', 'book_x', 'book_2'];
 const daAggiornare = COL.filter(c => !['div', 'data', 'casa', 'trasferta'].includes(c));
 const pulite = righe.map(r => Object.fromEntries(COL.map(c => [c, r[c]])));
 
