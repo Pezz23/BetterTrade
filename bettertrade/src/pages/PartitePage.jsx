@@ -71,6 +71,20 @@ const pct = v => (v * 100).toFixed(0) + '%'
 const pctSegno = v => (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%'
 const giorno = d => new Date(d + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit' })
 
+// Il lunedì che chiude la settimana di gioco: se oggi è lunedì, quello di oggi.
+function lunediProssimo(daOggi = 0) {
+  const d = new Date(); d.setHours(12, 0, 0, 0)
+  const giorno = d.getDay()                 // 0 dom … 6 sab
+  const avanti = giorno === 1 ? 0 : (8 - giorno) % 7
+  d.setDate(d.getDate() + avanti + 7 * daOggi)
+  return d.toISOString().slice(0, 10)
+}
+const FINESTRE = [
+  { id: 'settimana', label: 'Fino a lunedì',        fine: () => lunediProssimo(0) },
+  { id: 'due',       label: 'Anche la prossima',    fine: () => lunediProssimo(1) },
+  { id: 'tutte',     label: 'Tutte',                fine: () => '9999-12-31' },
+]
+
 const CATEGORIE = {
   centro: { nome: 'Centro',  colore: C.oro,          desc: 'la partita perfetta' },
   giallo: { nome: 'Giallo',  colore: C.oroChiaro,    desc: 'i 4 angoli: le più attendibili' },
@@ -87,7 +101,8 @@ export default function PartitePage() {
   const [campionato, setCampionato] = useState('')
   const [quotaMin, setQuotaMin] = useState('')
   const [quotaMax, setQuotaMax] = useState('')
-  const [soloSopraSoglia, setSoloSopraSoglia] = useState(true)
+  const [soloSopraSoglia, setSoloSopraSoglia] = useState(false)
+  const [finestra, setFinestra] = useState('settimana')
   const [mostraSoglie, setMostraSoglie] = useState(false)
 
   useEffect(() => {
@@ -104,25 +119,36 @@ export default function PartitePage() {
     carica()
   }, [])
 
-  const campionati = useMemo(() => [...new Set(righe.map(r => r.div))].sort(), [righe])
+  // Per il menu a tendina: codice e nome, "I1 – Serie A".
+  const campionati = useMemo(() => {
+    const m = new Map(); for (const r of righe) m.set(r.div, r.campionato)
+    return [...m.entries()].sort()
+  }, [righe])
   const ultimoDownload = useMemo(() => righe.reduce((m, r) => (!m || r.scaricato_il > m ? r.scaricato_il : m), null), [righe])
 
   const visibili = useMemo(() => {
     const qMin = parseFloat(quotaMin), qMax = parseFloat(quotaMax)
+    const fine = FINESTRE.find(f => f.id === finestra).fine()
     return righe
       .filter(r => r.prob !== null)
+      .filter(r => r.data <= fine)
       .filter(r => campionato ? r.div === campionato : true)
       .filter(r => Number.isFinite(qMin) ? (r.quota ?? 0) >= qMin : true)
       .filter(r => Number.isFinite(qMax) ? (r.quota ?? 99) <= qMax : true)
       .filter(r => soloSopraSoglia ? categoria(r.probGiocata, soglie) !== 'no' : true)
       .sort((a, b) => b.probGiocata - a.probGiocata)
-  }, [righe, campionato, quotaMin, quotaMax, soloSopraSoglia, soglie])
+  }, [righe, campionato, quotaMin, quotaMax, soloSopraSoglia, soglie, finestra])
 
   const conteggi = useMemo(() => {
-    const c = { centro: 0, giallo: 0, blu: 0 }
-    for (const r of righe) { if (r.prob === null) continue; const k = categoria(r.probGiocata, soglie); if (k !== 'no') c[k]++ }
+    const fine = FINESTRE.find(f => f.id === finestra).fine()
+    const c = { tot: 0, centro: 0, giallo: 0, blu: 0 }
+    for (const r of righe) {
+      if (r.prob === null || r.data > fine) continue
+      c.tot++
+      const k = categoria(r.probGiocata, soglie); if (k !== 'no') c[k]++
+    }
     return c
-  }, [righe, soglie])
+  }, [righe, soglie, finestra])
 
   const inputStile = { padding: '6px 10px', borderRadius: 20, background: C.pozzo, border: `1px solid ${C.bordo}`, color: C.testo, fontFamily: F.mono, fontSize: 11, outline: 'none', width: 74 }
 
@@ -133,7 +159,7 @@ export default function PartitePage() {
       <div style={{ fontSize: 12, color: C.spento, fontFamily: F.sans, marginBottom: 14, lineHeight: 1.6 }}>
         {caricamento ? 'Caricamento…' : (
           <>
-            {righe.length} partite ·{' '}
+            {conteggi.tot} partite ·{' '}
             <span style={{ color: C.oro }}>{conteggi.centro} centro</span> ·{' '}
             <span style={{ color: C.oroChiaro }}>{conteggi.giallo} gialle</span> ·{' '}
             <span style={{ color: C.celeste }}>{conteggi.blu} blu</span>
@@ -142,11 +168,23 @@ export default function PartitePage() {
         {ultimoDownload && <span style={{ color: C.fioco }}> · aggiornate {new Date(ultimoDownload).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>}
       </div>
 
+      {/* Finestra temporale */}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+        {FINESTRE.map(f => (
+          <button key={f.id} onClick={() => setFinestra(f.id)} style={{
+            padding: '6px 12px', borderRadius: 20, cursor: 'pointer', fontFamily: F.mono, fontSize: 11, fontWeight: 600,
+            background: finestra === f.id ? alpha(C.oro, 0.15) : 'transparent',
+            border: `1px solid ${finestra === f.id ? alpha(C.oro, 0.5) : C.bordo}`,
+            color: finestra === f.id ? C.oro : C.fioco,
+          }}>{f.label}{f.id !== 'tutte' && <span style={{ color: C.fantasma, fontWeight: 400 }}> {giorno(f.fine()).slice(0, 9)}</span>}</button>
+        ))}
+      </div>
+
       {/* Filtri */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
         <select value={campionato} onChange={e => setCampionato(e.target.value)} style={{ ...inputStile, width: 'auto', color: campionato ? C.testo : C.fioco }}>
           <option value="">Tutti i campionati</option>
-          {campionati.map(d => <option key={d} value={d}>{d}</option>)}
+          {campionati.map(([d, nome]) => <option key={d} value={d}>{d} – {nome}</option>)}
         </select>
         <span style={{ fontSize: 10, color: C.spento, fontFamily: F.mono }}>quota</span>
         <input style={inputStile} placeholder="min" inputMode="decimal" value={quotaMin} onChange={e => setQuotaMin(e.target.value)} />
