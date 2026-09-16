@@ -3,8 +3,8 @@ import { usaProssime } from '../hooks/usaProssime'
 import { C, F, alpha } from '../theme'
 import { Card, Etichetta, Btn } from '../components/ui'
 import { CATEGORIE, pct, giorno } from '../components/RigaPartita'
-import { categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
-import { candidate, componi, conStelline, compilaSpin, spinPiena, DISPOSIZIONE } from '../lib/spin'
+import { categoria, SOGLIE_DEFAULT, lunediProssimo } from '../lib/attendibilita'
+import { candidate, componi, conStelline, compilaSpin, spinPiena, pronosticoDa, DISPOSIZIONE } from '../lib/spin'
 import { supabase } from '../supabase'
 
 // L'anteprima delle spin compilate da sole, dalla lista delle partite della
@@ -22,22 +22,28 @@ function Cella({ pos, partita, votiDi, diversa }) {
     <div style={{
       background: alpha(colore, partita ? 0.10 : 0.03), border: `2px solid ${diversa ? C.oro : alpha(colore, partita ? 0.4 : 0.15)}`,
       boxShadow: diversa ? `0 0 10px ${alpha(C.oro, 0.35)}` : 'none',
-      borderRadius: 10, padding: '7px 6px', minHeight: 78, textAlign: 'center', fontFamily: F.mono,
+      borderRadius: 10, padding: '8px 6px', height: 124, textAlign: 'center', fontFamily: F.mono,
+      display: 'flex', flexDirection: 'column', justifyContent: 'space-between', overflow: 'hidden',
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: C.spento }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: C.spento, lineHeight: 1 }}>
         <span>{pos}</span>
         {voti > 0 && <span style={{ color: C.oro }}>{'★'.repeat(voti)}</span>}
       </div>
       {partita ? (
         <>
-          <div style={{ fontSize: 10, color: C.testo, fontFamily: F.sans, fontWeight: 600, lineHeight: 1.25, marginTop: 2 }}>{partita.casa}<br /><span style={{ color: C.spento }}>{partita.trasferta}</span></div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: colore, marginTop: 4 }}>{partita.giocata}</div>
-          <div style={{ fontSize: 9, color: C.spento }}>
-            {partita.quotaGiocata ? `@${partita.quotaGiocata.toFixed(2)}` : 'quota sul book'} · {pct(partita.probGiocata)}
+          {/* Le squadre su due righe, una ciascuna: i nomi lunghi si tagliano invece di rompere la cella. */}
+          <div style={{ fontSize: 12, color: C.testo, fontFamily: F.sans, fontWeight: 600, lineHeight: 1.3 }}>
+            <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{partita.casa}</div>
+            <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: C.spento }}>{partita.trasferta}</div>
           </div>
-          <div style={{ fontSize: 9, color: C.fantasma }}>{partita.div} · {giorno(partita.data)}</div>
+          {/* La giocata nella forma compatta della griglia: "1+O1,5" sta su una riga, "1 + over 1,5" no. */}
+          <div style={{ fontSize: 17, fontWeight: 700, color: colore, whiteSpace: 'nowrap', lineHeight: 1 }}>{pronosticoDa(partita.giocata)}</div>
+          <div style={{ fontSize: 11, color: C.spento, whiteSpace: 'nowrap' }}>
+            {partita.quotaGiocata ? `@${partita.quotaGiocata.toFixed(2)}` : 'sul book'} · <b style={{ color: colore }}>{pct(partita.probGiocata)}</b>
+          </div>
+          <div style={{ fontSize: 10, color: C.fantasma, whiteSpace: 'nowrap' }}>{partita.div} · {giorno(partita.data)}</div>
         </>
-      ) : <div style={{ fontSize: 10, color: C.fantasma, marginTop: 20 }}>—</div>}
+      ) : <div style={{ fontSize: 12, color: C.fantasma }}>—</div>}
     </div>
   )
 }
@@ -73,10 +79,10 @@ function Griglia({ titolo, colore, celle, riferimento, votiDi, indice, piena, on
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-        <Etichetta colore={colore}>{titolo}</Etichetta>
-        {riferimento && <span style={{ fontSize: 10, fontFamily: F.mono, color: diverse ? C.oro : C.fantasma }}>{diverse ? `${diverse} celle diverse` : 'uguale all\'automatica'}</span>}
+        <Etichetta colore={colore} style={{ fontSize: 12 }}>{titolo}</Etichetta>
+        {riferimento && <span style={{ fontSize: 11, fontFamily: F.mono, color: diverse ? C.oro : C.fantasma }}>{diverse ? `${diverse} celle diverse` : 'uguale all\'automatica'}</span>}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
         {DISPOSIZIONE.flat().map(pos => {
           const c = celle.find(c => c.pos === pos)
           const rif = riferimento?.find(r => r.pos === pos)
@@ -103,6 +109,14 @@ export default function SpinProvvisoriePage() {
   const automatiche = useMemo(() => componi(ordinate, quante), [ordinate, quante])
   const votate = useMemo(() => componi(conStelline(ordinate, votiDi), quante), [ordinate, quante, votiDi])
   const nVotate = ordinate.filter(p => votiDi(p.id) > 0).length
+  // Tutte le partite con almeno una stellina, anche sotto soglia o oltre la
+  // settimana: chi ha votato deve vedere dov'è finito il suo voto.
+  const votateTutte = useMemo(() => righe.filter(p => votiDi(p.id) > 0).sort((a, b) => votiDi(b.id) - votiDi(a.id) || b.probGiocata - a.probGiocata), [righe, votiDi])
+  const lunedi = lunediProssimo(0)
+  const doveSta = id => {
+    for (let s = 0; s < votate.length; s++) { const c = votate[s].find(c => c.partita?.id === id); if (c) return { spin: s + 1, pos: c.pos } }
+    return null
+  }
   const servono = quante * 9
 
   return (
@@ -140,6 +154,28 @@ export default function SpinProvvisoriePage() {
         </Card>
       ))}
       </div>
+
+      {!caricamento && (
+        <Card style={{ marginTop: 16, padding: 14 }}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: C.oro, fontFamily: F.sans, letterSpacing: 2, marginBottom: 8 }}>LE VOTATE</div>
+          {votateTutte.length === 0
+            ? <div style={{ fontSize: 12, color: C.spento, fontFamily: F.sans }}>Nessuna partita con stelline: si votano dalla pagina Partite.</div>
+            : votateTutte.map(p => {
+              const cat = categoria(p.probGiocata, SOGLIE_DEFAULT), colore = CATEGORIE[cat].colore
+              const dove = doveSta(p.id)
+              return (
+                <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '7px 0', borderTop: `1px solid ${C.bordoTenue}`, fontFamily: F.mono, fontSize: 13 }}>
+                  <span style={{ color: C.oro, minWidth: 40 }}>{'★'.repeat(votiDi(p.id))}</span>
+                  <span style={{ color: C.spento, minWidth: 90, fontSize: 12 }}>{p.div} · {giorno(p.data)}</span>
+                  <span style={{ color: C.testo, fontFamily: F.sans, fontWeight: 600, flex: 1, minWidth: 0 }}>{p.casa} – {p.trasferta}</span>
+                  <b style={{ color: colore }}>{pronosticoDa(p.giocata)}</b>
+                  <span style={{ color: C.spento, minWidth: 110, textAlign: 'right' }}>{p.quotaGiocata ? `@${p.quotaGiocata.toFixed(2)}` : 'sul book'} · <b style={{ color: colore }}>{pct(p.probGiocata)}</b></span>
+                  <span style={{ color: dove ? C.verde : C.fantasma, minWidth: 90, textAlign: 'right', fontSize: 12 }}>{dove ? `spin ${dove.spin} · pos ${dove.pos}` : p.data > lunedi ? 'oltre lunedì' : cat === 'no' ? 'sotto soglia' : 'non entra'}</span>
+                </div>
+              )
+            })}
+        </Card>
+      )}
     </div>
   )
 }
