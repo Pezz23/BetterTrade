@@ -228,9 +228,11 @@ tengono — sono appena stati messi a posto e non c'entrano con il problema.
 - **Navigazione**: 4 tasti in basso (Dashboard, Slot, Reporting, Bilancio) per
   l'uso quotidiano; il menu ☰ in alto a destra per il resto (`VOCI_MENU` in
   `App.jsx`). Una pagina nuova va nel menu, non come quinto tasto.
-- **L'indice di attendibilità** (`PartitePage.jsx`) usa `avg_ap_*` come
-  riferimento, non `bfe_ap_*`. Non cambiarlo: è quello che la misura ha
-  validato (STATO.md, "La misura che conta").
+- **L'attendibilità è in `src/lib/attendibilita.js`**, solo calcoli: probabilità
+  dal consenso (`avg_ap_*`, non l'exchange), regole di gioco, categorie, finestra
+  della settimana. La usa `PartitePage.jsx` e la userà la compilazione delle
+  spin: **non duplicare la logica nelle pagine.** La riga della lista è
+  `components/RigaPartita.jsx`.
 - **Pezzi ricorrenti** in `src/components/ui.jsx`: `Card`, `Etichetta`,
   `StatCard`, `Btn`, `Input`, `Badge`. Prima di riscrivere una card a mano,
   guarda se c'è già.
