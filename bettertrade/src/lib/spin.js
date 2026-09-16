@@ -1,4 +1,5 @@
 import { categoria, SOGLIE_DEFAULT, FINESTRE } from './attendibilita.js'
+import { supabase } from '../supabase.js'
 
 // La composizione automatica delle spin. Solo calcoli: la usa la pagina
 // "Spin provvisorie" e il tasto che compila la griglia.
@@ -56,4 +57,23 @@ export function cellaDa(pos, p) {
     data: `${gg}/${mm}`, result: '',
     prossima_id: p.id,   // il filo con l'archivio: non lo usa ancora nessuno, ma resta
   }
+}
+
+/** Una spin della griglia ha qualcosa dentro? Serve a chiedere conferma prima di sovrascriverla. */
+export const spinPiena = celle => Array.isArray(celle) && celle.some(t => t.casa || t.ospite || t.pronostico)
+
+/**
+ * Scrive una spin composta nella griglia (griglia.spins[indice], 0-based) e
+ * toglie le spunte delle schedine di quella spin: appartenevano alla spin
+ * vecchia. Restituisce un messaggio d'errore o null.
+ */
+export async function compilaSpin(indice, celle) {
+  const { data, error } = await supabase.from('griglia').select('spins').eq('id', 1).single()
+  if (error) return error.message
+  const spins = [0, 1, 2, 3].map(i => data?.spins?.[i] ?? [])
+  spins[indice] = celle.map(c => cellaDa(c.pos, c.partita))
+  const { error: e2 } = await supabase.from('griglia').update({ spins, updated_at: new Date().toISOString() }).eq('id', 1)
+  if (e2) return e2.message
+  const { error: e3 } = await supabase.from('inserite').delete().eq('spin_idx', indice)
+  return e3 ? `spin scritta, ma le spunte vecchie non si sono cancellate: ${e3.message}` : null
 }

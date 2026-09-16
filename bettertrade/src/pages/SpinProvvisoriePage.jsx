@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { usaProssime } from '../hooks/usaProssime'
 import { C, F, alpha } from '../theme'
-import { Card, Etichetta } from '../components/ui'
+import { Card, Etichetta, Btn } from '../components/ui'
 import { CATEGORIE, pct, giorno } from '../components/RigaPartita'
 import { categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
-import { candidate, componi, conStelline, DISPOSIZIONE } from '../lib/spin'
+import { candidate, componi, conStelline, compilaSpin, spinPiena, DISPOSIZIONE } from '../lib/spin'
+import { supabase } from '../supabase'
 
 // L'anteprima delle spin compilate da sole, dalla lista delle partite della
 // settimana. Per ogni spin due griglie: quella automatica (solo attendibilità)
@@ -41,7 +42,33 @@ function Cella({ pos, partita, votiDi, diversa }) {
   )
 }
 
-function Griglia({ titolo, colore, celle, riferimento, votiDi }) {
+// Il tasto sotto ogni griglia. Se la spin ha già qualcosa dentro chiede
+// conferma al primo clic e scrive al secondo: una spin in corso non si perde
+// per sbaglio.
+function Compila({ indice, celle, piena, onFatto }) {
+  const [conferma, setConferma] = useState(false)
+  const [stato, setStato] = useState(null)   // 'scrivo' | 'fatta' | errore
+  const vuota = celle.every(c => !c.partita)
+  async function clic() {
+    if (piena && !conferma) { setConferma(true); return }
+    setStato('scrivo')
+    const errore = await compilaSpin(indice, celle)
+    setStato(errore || 'fatta'); setConferma(false)
+    if (!errore) onFatto()
+  }
+  return (
+    <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+      <Btn onClick={clic} disabled={vuota || stato === 'scrivo'} variante={conferma ? 'pericolo' : 'contorno'} style={{ padding: '8px 14px', fontSize: 12 }}>
+        {conferma ? `⚠️ La spin ${indice + 1} è già compilata: sovrascrivo?` : stato === 'scrivo' ? 'Scrivo…' : `Compila spin n.${indice + 1}`}
+      </Btn>
+      {conferma && <span onClick={() => setConferma(false)} style={{ fontSize: 11, color: C.spento, cursor: 'pointer', fontFamily: F.sans }}>annulla</span>}
+      {stato === 'fatta' && <span style={{ fontSize: 11, color: C.verde, fontFamily: F.mono }}>✓ scritta nella griglia — la vedi in Slot</span>}
+      {stato && stato !== 'fatta' && stato !== 'scrivo' && <span style={{ fontSize: 11, color: C.rosso, fontFamily: F.sans }}>⚠️ {stato}</span>}
+    </div>
+  )
+}
+
+function Griglia({ titolo, colore, celle, riferimento, votiDi, indice, piena, onFatto }) {
   const diverse = riferimento ? celle.filter(c => c.partita?.id !== riferimento.find(r => r.pos === c.pos)?.partita?.id).length : 0
   return (
     <div>
@@ -56,6 +83,7 @@ function Griglia({ titolo, colore, celle, riferimento, votiDi }) {
           return <Cella key={pos} pos={pos} partita={c.partita} votiDi={votiDi} diversa={!!riferimento && c.partita?.id !== rif?.partita?.id} />
         })}
       </div>
+      <Compila indice={indice} celle={celle} piena={piena} onFatto={onFatto} />
     </div>
   )
 }
@@ -63,6 +91,13 @@ function Griglia({ titolo, colore, celle, riferimento, votiDi }) {
 export default function SpinProvvisoriePage() {
   const { righe, votiDi, caricamento, errore } = usaProssime()
   const [quante, setQuante] = useState(2)
+  // Quali spin della griglia hanno già qualcosa dentro: per la conferma.
+  const [piene, setPiene] = useState([false, false, false, false])
+  async function leggiGriglia() {
+    const { data } = await supabase.from('griglia').select('spins').eq('id', 1).single()
+    setPiene([0, 1, 2, 3].map(i => spinPiena(data?.spins?.[i])))
+  }
+  useEffect(() => { leggiGriglia() }, [])
 
   const ordinate = useMemo(() => candidate(righe), [righe])
   const automatiche = useMemo(() => componi(ordinate, quante), [ordinate, quante])
@@ -99,8 +134,8 @@ export default function SpinProvvisoriePage() {
         <Card key={i} style={{ padding: '14px' }}>
           <div style={{ fontSize: 30, fontWeight: 800, color: C.oro, fontFamily: F.sans, letterSpacing: 2, marginBottom: 12 }}>SPIN {i + 1}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <Griglia titolo="Automatica · per attendibilità" colore={C.spento} celle={auto} votiDi={votiDi} />
-            <Griglia titolo="Con le stelline · le votate prima" colore={C.oro} celle={votate[i]} riferimento={auto} votiDi={votiDi} />
+            <Griglia titolo="Automatica · per attendibilità" colore={C.spento} celle={auto} votiDi={votiDi} indice={i} piena={piene[i]} onFatto={leggiGriglia} />
+            <Griglia titolo="Con le stelline · le votate prima" colore={C.oro} celle={votate[i]} riferimento={auto} votiDi={votiDi} indice={i} piena={piene[i]} onFatto={leggiGriglia} />
           </div>
         </Card>
       ))}
