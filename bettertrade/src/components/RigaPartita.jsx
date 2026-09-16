@@ -65,11 +65,15 @@ export default function RigaPartita({ p, cat, voti = 0, mio = false, puoVotare =
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, padding: '8px 10px', background: C.pozzo, border: `1px solid ${C.bordo}`, borderRadius: 8 }}>
         <div style={{ fontSize: 16, fontWeight: 700, fontFamily: F.mono, color: C.oro, minWidth: 80 }}>{p.giocata}</div>
         <div style={{ fontSize: 17, fontWeight: 700, fontFamily: F.mono, color: c.colore }}>
-          {p.quotaGiocata ? <><span style={{ fontSize: 11, color: C.spento, fontWeight: 400 }}>Q: </span>{p.quotaGiocata.toFixed(2).replace('.', ',')}</>
-            : p.quota ? <span style={{ fontSize: 9, fontWeight: 400, color: C.spento, letterSpacing: 0.5 }}>Q: combinata, sul book</span> : null}
+          {/* Per la combinata con l'over non abbiamo la quota (nessuna fonte dà
+              l'over 1,5): si mostra quella del segno secco, e si dice che l'over
+              va letto sul book. */}
+          {(p.quotaGiocata ?? p.quota) ? <><span style={{ fontSize: 11, color: C.spento, fontWeight: 400 }}>Q: </span>{(p.quotaGiocata ?? p.quota).toFixed(2).replace('.', ',')}</> : null}
         </div>
-        {p.quotaFonte && <div style={{ fontSize: 9, fontFamily: F.mono, color: C.spento, alignSelf: 'flex-end', paddingBottom: 2 }}>{p.quotaFonte}</div>}
-        {p.giocata !== p.segno && p.quota && (
+        {p.quotaFonte && <div style={{ fontSize: 9, fontFamily: F.mono, color: C.spento, alignSelf: 'flex-end', paddingBottom: 2 }}>
+          {p.quotaFonte}{!p.quotaGiocata && p.quota ? ` · ${p.segno} secco, l'over sul book` : ''}
+        </div>}
+        {p.giocata.length === 2 && p.quota && (
           <div style={{ fontSize: 10, fontFamily: F.mono, color: C.spento, marginLeft: 'auto' }}>{p.segno} secco {p.quota}</div>
         )}
       </div>
