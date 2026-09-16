@@ -18,17 +18,28 @@ const ESITO = {
 const data = d => new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit' })
 const ordinale = n => `${n}°`
 
+const Chip = ({ lettera, colore, title }) => (
+  <span title={title} style={{
+    width: 22, height: 22, borderRadius: 5, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: 11, fontWeight: 700, fontFamily: F.mono,
+    background: alpha(colore, 0.18), color: colore, border: `1px solid ${alpha(colore, 0.4)}`,
+  }}>{lettera}</span>
+)
+
+// Due strisce affiancate, dalla più vecchia alla più recente come si legge:
+// l'esito (V/N/P) e, a destra, l'over/under 2,5 della stessa partita (O/U).
 function Risultati({ lista }) {
   if (!lista.length) return <span style={{ color: C.fantasma, fontSize: 11 }}>nessuna partita giocata</span>
+  const ordinate = [...lista].reverse()
+  const titolo = m => `${data(m.data)} · ${m.casa} ${m.gol_casa}–${m.gol_trasferta} ${m.trasferta}`
   return (
-    <span style={{ display: 'inline-flex', gap: 4 }}>
-      {[...lista].reverse().map((m, i) => (   // dalla più vecchia alla più recente, come si legge una striscia
-        <span key={i} title={`${data(m.data)} · ${m.casa} ${m.gol_casa}–${m.gol_trasferta} ${m.trasferta}`} style={{
-          width: 22, height: 22, borderRadius: 5, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 11, fontWeight: 700, fontFamily: F.mono,
-          background: alpha(ESITO[m.esito].colore, 0.18), color: ESITO[m.esito].colore, border: `1px solid ${alpha(ESITO[m.esito].colore, 0.4)}`,
-        }}>{m.esito}</span>
-      ))}
+    <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+      {ordinate.map((m, i) => <Chip key={'e' + i} lettera={m.esito} colore={ESITO[m.esito].colore} title={titolo(m)} />)}
+      <span style={{ width: 10 }} />
+      {ordinate.map((m, i) => {
+        const over = m.gol_casa + m.gol_trasferta > 2.5
+        return <Chip key={'o' + i} lettera={over ? 'O' : 'U'} colore={over ? C.celeste : C.spento} title={`${titolo(m)} · ${over ? 'over' : 'under'} 2,5`} />
+      })}
     </span>
   )
 }
