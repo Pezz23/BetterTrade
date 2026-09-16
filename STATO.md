@@ -4,7 +4,7 @@
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
 **Ultimo aggiornamento:** 9 settembre 2026
-**Fase corrente:** pagina Partite costruita — prossimo passo: **vederla su Vercel, poi il pulsante Aggiorna (fase 5) o le spin (fase 7)**
+**Fase corrente:** pagina Partite su attendibilità, criterio chiarito — prossimo passo: **venerdì il primo weekend, poi le spin (fase 7)**
 
 ---
 
@@ -27,11 +27,26 @@ e l'app **compila da sola** griglia e schedine.
 cui **la quota è più alta di quanto dovrebbe essere**. Non "chi vincerà", ma
 "questo prezzo è sbagliato in mio favore". Vedi la sezione qui sotto.
 
-**Come si userà (16 settembre):** l'app mostra una lista di partite future con
-un **indice di attendibilità** (lo scarto fra Bet365 e il consenso di mercato).
-Da quella lista si scelgono **a mano** 9 o 18 partite per riempire **2 spin**.
-Scelta manuale: l'app propone e misura, la persona decide. I dettagli durante
-lo sviluppo dell'app.
+**Come si userà (16 settembre, chiarito la sera):** l'app mostra le partite
+future ordinate per **attendibilità = probabilità che la giocata vinca**, secondo
+il consenso del mercato. Da quella lista **tre persone** scelgono a mano 9 o 18
+partite per 2 spin. L'app semplifica la ricerca, la scelta resta umana.
+
+**La spin come la vede Mattia:**
+
+```
+   1(G)  5(B)  2(G)     G = gialli, i 4 angoli: le partite più attendibili
+   6(B)  9(★)  7(B)     B = blu, i 4 lati: sacrificabili
+   3(G)  8(B)  4(G)     ★ = centro: la partita perfetta (sta in 3 schedine)
+```
+
+**Le regole di gioco:** mai la X secca · quota < 1,25 → favorito + over 1,5 (se
+non basta, over 2,5) · quota > 1,90 → doppia chance (1X o X2).
+
+⚠️ **Il primo criterio era sbagliato.** "Quota più alta di quanto dovrebbe
+essere" trova sfavoriti a quota 8 con l'1% di vantaggio — vero e inutile per un
+sistema che deve indovinare nove esiti. La domanda giusta è *quale esito è più
+probabile*; lo scarto sul prezzo resta un'informazione secondaria.
 
 ---
 
@@ -232,13 +247,42 @@ Valutazione: *quota Bet365 / media di mercato di chiusura normalizzata − 1*.
 prezzi — e stesso ordine di grandezza. Ora però con una misura molto più
 robusta e otto stagioni invece di due.
 
-### L'indice di attendibilità per la lista delle partite
+### Il segnale "Como" non esiste come regola — misurato il 16/09
 
-È esattamente quello che serve alla fase 6 (pagina Partite) e alla fase 8
-(compilazione): per ogni partita futura, per ogni segno, **lo scarto fra la
-quota Bet365 e la media di mercato normalizzata**. `prossime_partite` ha già
-tutto quello che serve (`b365_*`, `avg_ap_*`). La soglia non va alzata troppo:
-sopra il 5% restano poche scommesse a quote alte.
+`btscout/scripts/misura-forma.js`. La domanda: le squadre che nelle ultime 5
+partite hanno fatto meglio di quanto il mercato prevedeva, continuano a farlo?
+64.127 osservazioni (squadra × partita) su otto stagioni.
+
+| Sorpresa nelle ultime 5 | n | vittorie attese | reali | scarto |
+|---|---|---|---|---|
+| molto sotto le attese | 8.644 | 34,3% | 34,9% | +0,6 |
+| in linea | 18.217 | 37,0% | 36,8% | −0,2 |
+| **molto sopra le attese** | 8.559 | 39,9% | 38,8% | **−1,0** ✗ |
+
+**Il mercato non è in ritardo: è già a posto entro cinque partite.** Le squadre
+in forma vincono *leggermente meno* di quanto le quote dicono — il mercato le
+ha già rialzate, semmai un filo troppo. Solo squadre nuove nella categoria
+(10.794 oss.): stesso quadro, ancora più marcato (−2,6% per le "molto sopra").
+**Como e Sunderland sono eccezioni memorabili, non una regola.** Nessun indice
+di forma migliora il consenso.
+
+**Ma c'è un dato utile, e va nella direzione giusta:** i **favoriti vincono più
+di quanto il consenso dice**, di circa 3,5 punti, in tutte le fasce di forma:
+
+| Favorite (consenso ≥ 55%) | n | attese | reali | scarto |
+|---|---|---|---|---|
+| tutte le fasce di forma | 9.028 | ~65,5% | ~68,8% | **+3,3** ✓ |
+
+È il noto *favourite-longshot bias*: il mercato tiene i favoriti un po' più
+bassi del vero. Per un sistema che deve indovinare esiti è una buona notizia —
+**l'attendibilità mostrata in pagina è leggermente conservativa**. Non è un
+vantaggio sul prezzo (CLV −5,7%, ROI ~−1%): il margine resta.
+
+### L'indice di attendibilità, deciso
+
+**Probabilità della giocata secondo il consenso di mercato.** Nessun modello,
+nessun indice di forma: la misura dice che non aggiungono niente. Lo scarto sul
+prezzo resta nel dettaglio della riga, come seconda informazione.
 
 ### Rilanciare la misura
 
@@ -585,16 +629,18 @@ comunque con `ENOTFOUND`, aspettare un minuto e rilanciare.
       per l'uso quotidiano; il menu raccoglie il resto: **Partite** e, per gli
       admin, **Utenti** (che era un quinto tasto). Il pulsante "Aggiorna" arriverà
       qui con la Edge Function (fase 5).
-- [x] **Pagina Partite** (`src/pages/PartitePage.jsx`): le partite future da
-      `prossime_partite` con l'**indice di attendibilità** per ogni segno — lo
-      scarto fra Bet365 e la media di mercato normalizzata. Il riferimento è
-      `avg_ap_*`, **non l'exchange**: è quello che la misura ha validato.
-- [x] **Filtri**: soglia (tutte / >0 / >2% / >5%), campionato, ordine per indice
-      o per data. Sotto ogni quota lo scarto e il prezzo equo.
-- [x] **Verificata** con i permessi di un utente normale: 6 partite, 2 con
-      indice positivo (Betis–Getafe X +3,2%, Ath Madrid–Osasuna 2 +1,1%).
-- [x] **Spiegazione in pagina**: cos'è l'indice, cosa dice e cosa non dice
-      ("vantaggio atteso per singola scommessa, non una previsione").
+- [x] **Pagina Partite** (`src/pages/PartitePage.jsx`), riscritta la sera del
+      16/09 dopo il chiarimento: le partite future ordinate per **attendibilità
+      = probabilità della giocata** secondo il consenso (`avg_ap_*` normalizzata).
+      Il favorito è fra 1 e 2 (X esclusa); sotto 1,25 propone "+ over 1,5", sopra
+      1,90 la doppia chance con la sua quota stimata e la **sua** probabilità
+      (Levante–Bilbao X2 è al 73%, non al 45% del 2 secco).
+- [x] **Categorie** centro / giallo / blu con soglie di probabilità **regolabili
+      dalla pagina** (default 80 / 65 / 55%): le aggiustano loro tre.
+- [x] **Filtri**: campionato, quota min e max, solo sopra soglia. Ogni riga si
+      apre e mostra consenso, quote Bet365, over 2,5 e lo scarto sul prezzo.
+- [x] **Verificata** sui dati: Barcelona centro 89%, Ath Madrid giallo 68%,
+      Betis blu 57%; le altre tre sotto soglia.
 - [ ] **Da vedere su Vercel dopo il push.** Se la lista è vuota, non è un
       errore: l'aggiornamento del venerdì non è ancora passato.
 

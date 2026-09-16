@@ -93,11 +93,31 @@ Supabase Edge Function.
 
 ---
 
-## Il criterio del progetto: quote più alte di quanto dovrebbero essere
+## Il criterio del progetto: attendibilità, cioè probabilità
 
-Deciso l'11 settembre 2026. L'app non deve indovinare chi vince: deve
-riconoscere **prezzi sbagliati in nostro favore**. Se Bet365 paga 2,10 una cosa
-che vale 2,00, quella differenza si misura senza prevedere niente.
+**Chiarito il 16 settembre 2026, dopo un malinteso.** Il sistema di Mattia
+deve indovinare nove esiti per spin: serve sapere **quale esito è più
+probabile**, non dove il prezzo è generoso. L'11/09 avevo costruito il secondo
+("quota più alta di quanto dovrebbe essere"): trova sfavoriti a quota 8 con l'1%
+di vantaggio, vero e inutile. Non rifarlo.
+
+**Attendibilità = probabilità della giocata secondo il consenso di mercato**
+(`avg_ap_*` normalizzata). Sui favoriti il mercato è calibrato, anzi un filo
+conservativo (+3,3 punti, favourite-longshot bias). Nessun modello e nessun
+indice di forma migliora il consenso: misurato (`misura-forma.js`), il mercato
+si aggiusta entro cinque partite. **Como e Sunderland erano eccezioni.**
+
+**Le regole di gioco:** mai la X secca · quota < 1,25 → favorito + over 1,5 ·
+quota > 1,90 → doppia chance, e allora l'attendibilità è quella della doppia.
+**La spin:** gialli (angoli) le più attendibili, blu (lati) sacrificabili, centro
+la perfetta — il centro sta in 3 schedine, i gialli in 3, i blu in 2.
+
+Quello che segue sul valore resta vero e utile **come informazione secondaria**.
+
+### Il valore: dove Bet365 paga più del consenso
+
+Se Bet365 paga 2,10 una cosa che il mercato vale 2,00, quella differenza si
+misura senza prevedere niente.
 
 Il riferimento è **Betfair Exchange** — non un bookmaker ma uno scambio fra
 persone, quindi senza margine del banco sopra. Margine implicito misurato
