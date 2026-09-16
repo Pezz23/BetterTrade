@@ -13,6 +13,9 @@ const COMBOS = [
   { id:7, nome:'Quaterna 5-6-7-8', tipo:'quaterna',pos:[5,6,7,8]            },
   { id:8, nome:'Full 1→9',         tipo:'full',    pos:[1,2,3,4,5,6,7,8,9] },
 ]
+// Le giocate ammesse in una cella: i segni secchi, le doppie e le combinate
+// con l'over che le regole di gioco producono (vedi lib/attendibilita.js).
+export const PRONOSTICI = ['1','X','2','1X','X2','12','1+O1,5','2+O1,5','1+O2,5','2+O2,5']
 const SPIN_LABELS = ['Spin 1','Spin 2','Spin 3','Spin 4']
 const TIPO_COLOR  = { tris:C.verde, quaterna:C.blu, full:C.oro }
 const TIPO_BG     = { tris:alpha(C.verde,0.10), quaterna:alpha(C.bluPieno,0.10), full:alpha(C.oro,0.10) }
@@ -58,7 +61,7 @@ const cell=(extra={})=>({
 // ── TabellaGriglia ────────────────────────────────────────────────────────────
 function TabellaGriglia({tiles,isAdmin,onUpdate,onReset,syncing}) {
   const [confirmReset,setConfirmReset]=useState(false)
-  const COLS='46px 1fr 12px 1fr 52px 54px 80px'
+  const COLS='64px 1fr 12px 1fr 52px 54px 80px'   // 64: ci deve stare '1+O1,5'
   function handleReset() {
     if (!confirmReset){setConfirmReset(true);setTimeout(()=>setConfirmReset(false),3000);return}
     onReset();setConfirmReset(false)
@@ -83,7 +86,7 @@ function TabellaGriglia({tiles,isAdmin,onUpdate,onReset,syncing}) {
               borderRadius:7}}>
               <select style={cell({color:C.oro,fontFamily:F.mono,textAlign:'center',padding:'5px 2px'})}
                 value={t.pronostico} disabled={!isAdmin} onChange={e=>onUpdate(t.id,'pronostico',e.target.value)}>
-                <option value="">-</option><option value="1">1</option><option value="X">X</option><option value="2">2</option>
+                <option value="">-</option>{PRONOSTICI.map(v=><option key={v} value={v}>{v}</option>)}
               </select>
               <input style={cell()} placeholder="Casa" value={t.casa} disabled={!isAdmin} onChange={e=>onUpdate(t.id,'casa',e.target.value)}/>
               <div style={{fontSize:10,color:C.fantasma,textAlign:'center',fontFamily:F.mono}}>-</div>
