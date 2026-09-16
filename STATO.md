@@ -4,7 +4,7 @@
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
 **Ultimo aggiornamento:** 9 settembre 2026
-**Fase corrente:** 15 campionati, 53.796 partite — prossimo passo: **le partite future**
+**Fase corrente:** partite future collegate — prossimo passo: **provarle venerdì, poi il menu nell'app**
 
 ---
 
@@ -366,38 +366,72 @@ database calcola da solo a ogni riga.
 
 ---
 
-## 🟠 FASE 4 — Le partite future
+## 🟢 FASE 4 — Le partite future — costruita il 16 settembre 2026, da provare venerdì
 
-**Verificato il 10 settembre: la fonte esiste ed è gratuita.**
-`https://football-data.co.uk/fixtures.csv` — 94 colonne, stesso formato dello
-storico, stessi codici campionato e stessi nomi squadra. Contiene `Div`, `Date`,
-`Time`, le squadre, e le quote 1X2 di 8 bookmaker più `Max` e `Avg`, Over/Under
-2.5 e handicap asiatico.
+**Fonte verificata e gratuita:** `football-data.co.uk/fixtures.csv`. Stesso
+formato dello storico, stessi codici, stessi nomi squadra. Per ogni partita:
+Bet365, **exchange di apertura**, media e massima di mercato, Over/Under 2.5.
 
-**Il limite da conoscere: non è una finestra di 7 giorni.** Il file contiene *il
-prossimo blocco* di partite e viene sostituito ogni volta. Dal sito: le quote
-sono raccolte **venerdì pomeriggio** (non oltre le 17:00 BST) per il weekend, e
-**martedì** (non oltre le 13:00) per l'infrasettimanale. Scaricandolo giovedì 10
-settembre restituiva 18 partite dell'8-10 settembre: il blocco di martedì, quasi
-esaurito.
+**Il limite:** non è una finestra di 7 giorni. È *il prossimo blocco* di partite,
+sostituito ogni volta — quote raccolte **venerdì pomeriggio** (weekend) e
+**martedì** (infrasettimanale). Si scarica due volte a settimana e si accumula.
 
-Quindi non si "scarica una settimana": **si scarica due volte a settimana e si
-accumula**. Vantaggio nascosto: sono quote raccolte a orario fisso prima delle
-partite, cioè lo stesso tipo di quota che sta nello storico (`B365` di apertura).
-Storico e futuro restano confrontabili.
+### Fatto
 
-- [ ] **Tabella `prossime_partite`**, separata dallo storico: una ha il
-      risultato, l'altra no. Quando la partita si gioca, entra in `partite`
-      dall'import normale e sparisce da qui.
-- [ ] **Script `importa-prossime.js`** che scarica il CSV e fa upsert.
-- [ ] **Provarlo di venerdì**, quando esce il blocco del weekend con i
-      campionati maggiori.
-- [ ] **Decidere la cadenza**: a mano il martedì e il venerdì, oppure
-      schedulato.
+- [x] **Tabella `prossime_partite`** (`sql/09`). Separata dallo storico: una ha
+      il risultato, l'altra no. Con `scaricato_il` — l'istante del download,
+      perché una quota ha senso solo insieme al momento in cui l'hai vista — e
+      `bfe_ap_valido` calcolata dal database, stessa regola dello storico.
+      Media e massima si chiamano `avg_ap_*`/`max_ap_*`: qui sono di apertura,
+      nello storico di chiusura, e un nome uguale con significato diverso è una
+      trappola.
+- [x] **Non si cancella mai niente.** Ogni riga è la fotografia di cosa si vedeva
+      prima della partita. Quando si gioca, entra in `partite` dall'import
+      normale, ma qui resta la traccia. L'app legge `where data >= current_date`.
+- [x] **`btscout/scripts/importa-prossime.js`**: scarica, tiene solo i 15
+      campionati seguiti, fa upsert (la fotografia più recente vince). Robusto a
+      un DNS che risolve a intermittenza: prova entrambi i nomi del sito, quattro
+      volte, con pause crescenti.
+- [x] **Primo download riuscito:** 30 partite nel file, 15 dei nostri campionati
+      (blocco infrasettimanale 15-17/09), tutte con l'exchange.
 
-*Piano B se servisse l'orizzonte lungo:* API-Football o The Odds API danno il
-calendario a settimane di distanza, ma hanno piani gratuiti stretti e richiedono
-una chiave. Da valutare solo se football-data non basta.
+### Il criterio applicato dal vivo, per la prima volta
+
+Sulle 6 partite ancora da giocare al momento del download (16/09, 18:00):
+
+| Partita | Bet365 | Equo (exchange norm.) | Scarto 1 / X / 2 |
+|---|---|---|---|
+| La Coruna–Sevilla | 2,40 / 3,25 / 3,00 | 2,65 / 3,19 / 3,24 | −9,5 / **+2,0** / −7,3 |
+| Betis–Getafe | 1,57 / 4,00 / 5,75 | 1,73 / 3,84 / 6,26 | −9,0 / **+4,3** / −8,1 |
+| Barcelona–Santander | 1,06 / 14 / 23 | 1,09 / 21,1 / 32,2 | −2,3 / −33,7 / −28,5 |
+| altre 3 | | | tutti negativi |
+
+Due segnali su sei, **entrambi sulla X**: come diceva lo storico. E su
+Barcelona–Santander Bet365 paga la X il 34% meno del dovuto — il margine del
+banco si concentra dove pensa che la gente giochi male.
+
+**Non è una raccomandazione:** non abbiamo ancora misurato se giocare quei +2% e
++4% guadagna. È la prima volta che la macchina fa la cosa per cui la stiamo
+costruendo.
+
+### Da fare
+
+- [ ] **Provare venerdì 18/09 pomeriggio** sul blocco del weekend, quando ci
+      sono tutti i campionati maggiori. Comando:
+      `cd btscout && node --env-file=.env scripts/importa-prossime.js --esegui`
+- [ ] **Decidere la cadenza:** a mano martedì e venerdì, o schedulato. Finché è a
+      mano, va segnato in calendario — se si salta il venerdì, il weekend non
+      c'è.
+- [ ] **Quando le partite del 15-17/09 saranno nello storico**, confrontare le
+      quote viste prima (`prossime_partite`) con quelle di apertura registrate
+      da football-data (`partite.b365_*`): se coincidono, la fotografia è fedele.
+
+### Rete: il DNS del router non è affidabile
+
+Il 16/09 il router di casa (192.168.1.1) risolveva i nomi a intermittenza —
+football-data sì e Supabase no, poi il contrario. Il Mac ora usa **1.1.1.1 e
+8.8.8.8** come DNS. Se uno script fallisce con `ENOTFOUND`, controllare prima
+quello: `scutil --dns | grep nameserver`.
 
 ---
 
@@ -461,8 +495,8 @@ L'obiettivo finale. Ha senso solo dopo tutte le fasi precedenti.
 ## Nodi da decidere
 
 1. ~~Quali campionati aggiungere~~ — deciso: i 9 paesi che Mattia seguiva + Scozia.
-2. **Con che cadenza scaricare le partite future** (fase 4): a mano due volte a
-   settimana, o schedulato.
+2. **Con che cadenza scaricare le partite future** (fase 4): a mano martedì e
+   venerdì, o schedulato. Lo script c'è; manca chi lo lancia.
 3. **Quando fare la Edge Function** (fase 5): serve a tre cose insieme —
    aggiornamento dati, creazione utenti, reset password.
 4. **Le spin esistenti si migrano o si riparte puliti** (fase 7).

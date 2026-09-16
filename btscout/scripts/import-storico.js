@@ -118,7 +118,7 @@ const ALIAS = {
   // sono due club diversi che hanno giocato in T1 in anni diversi.
 };
 
-function normalizzaSquadra(nome, div) {
+export function normalizzaSquadra(nome, div) {
   return ALIAS[div]?.[nome] ?? nome;
 }
 
@@ -149,7 +149,7 @@ function parseIntero(v) {
 }
 
 // Parser CSV minimale: football-data non usa virgolette né virgole nei campi.
-function parseCsv(testo) {
+export function parseCsv(testo) {
   const righe = testo.replace(/^﻿/, '').split(/\r?\n/).filter(r => r.trim());
   const intestazione = righe[0].split(',').map(c => c.trim());
   return righe.slice(1).map(riga => {

@@ -134,6 +134,23 @@ vuote per forza.
 
 ---
 
+## Storico e calendario: due tabelle, due significati
+
+| Tabella | Contiene | Quote | Si cancella? |
+|---|---|---|---|
+| `partite` | Partite **giocate**, con risultato | `b365_*` apertura, `bfe_ap_*` apertura, `bfe_ch_*` chiusura, `avg_*`/`max_*` **chiusura** | Mai |
+| `prossime_partite` | Partite **da giocare**, senza risultato | tutte di **apertura**: `b365_*`, `bfe_ap_*`, `avg_ap_*`, `max_ap_*` | **Mai**: è la fotografia di cosa si vedeva prima |
+
+Entrambe hanno `bfe_ap_valido`. `prossime_partite` ha `scaricato_il`: una quota
+ha senso solo con l'istante in cui l'hai vista. L'app legge le future con
+`where data >= current_date`.
+
+La fonte delle future (`fixtures.csv`) non è una finestra di 7 giorni: è il
+prossimo blocco, sostituito ogni volta. **Si scarica martedì e venerdì
+pomeriggio** — se si salta il venerdì, il weekend non c'è.
+
+---
+
 ## Il modello dei dati, e perché va rifatto
 
 Lo schema attuale non regge l'obiettivo finale (l'app propone partite e compila
@@ -202,6 +219,10 @@ tengono — sono appena stati messi a posto e non c'entrano con il problema.
   `import-storico.js` mappa sul nome attuale; `verifica-storico.js` cerca nomi
   simili che non coesistono mai nella stessa stagione. I falsi positivi noti
   stanno in `NON_ALIAS`.
+- **Il DNS del router di Mattia risolve a intermittenza.** Un `ENOTFOUND` su
+  football-data o Supabase è quasi sempre quello, non il codice. Il Mac usa
+  1.1.1.1 e 8.8.8.8; `importa-prossime.js` prova entrambi i nomi del sito con
+  quattro tentativi.
 - **Le date dell'archivio erano istanti UTC.** Nel dump di Neon
   `2016-08-25T22:00:00.000Z` sono le 00:00 del **26** agosto ora italiana:
   tagliare i primi dieci caratteri sposta tutto indietro di un giorno. Si
@@ -241,6 +262,7 @@ cd btscout && npm install
 node --env-file=.env scripts/verifica-storico.js   # coerenza dell'archivio (settimanale)
 node --env-file=.env scripts/audit-archivio.js     # controllo completo (dopo ogni campionato nuovo)
 node --env-file=.env scripts/import-storico.js --stagioni=2627      # aggiornamento settimanale
+node --env-file=.env scripts/importa-prossime.js [--esegui]         # partite future: martedì e venerdì
 node --env-file=.env scripts/import-storico.js --campionati=P1,N1   # solo alcuni campionati
 node scripts/backtest.js                           # gira offline, dalla cache
 ```
