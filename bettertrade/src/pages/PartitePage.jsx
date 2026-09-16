@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabase'
+import { useAuth } from '../context/AuthContext'
 import { C, F, alpha } from '../theme'
 import { Card, Etichetta } from '../components/ui'
 import RigaPartita, { CATEGORIE, pct, giorno } from '../components/RigaPartita'
@@ -18,7 +19,9 @@ const pillola = (on, colore = C.oro) => ({
 const campo = { padding: '6px 10px', borderRadius: 20, background: C.pozzo, border: `1px solid ${C.bordo}`, color: C.testo, fontFamily: F.mono, fontSize: 11, outline: 'none', width: 74 }
 
 export default function PartitePage() {
+  const { currentUser, isAdmin } = useAuth()
   const [righe, setRighe] = useState([])
+  const [voti, setVoti] = useState([])     // [{ prossima_id, user_id }]
   const [caricamento, setCaricamento] = useState(true)
   const [errore, setErrore] = useState(null)
   const [soglie, setSoglie] = useState(SOGLIE_DEFAULT)
@@ -38,10 +41,29 @@ export default function PartitePage() {
         .gte('data', oggi).order('data').order('ora')
       if (error) setErrore(error.message)
       else setRighe((data || []).map(valuta).filter(r => r.prob !== null))
+      // I voti: se la tabella non c'è ancora, la lista resta senza stelle attive.
+      const { data: v } = await supabase.from('voti_partite').select('prossima_id, user_id')
+      setVoti(v || [])
       setCaricamento(false)
     }
     carica()
   }, [])
+
+  // Voto: una riga per admin per partita. Si scrive prima in memoria — la
+  // risposta del database arriva dopo — e se fallisce si torna indietro.
+  async function vota(prossimaId) {
+    if (!isAdmin || !currentUser) return
+    const mio = voti.some(v => v.prossima_id === prossimaId && v.user_id === currentUser.id)
+    const prima = voti
+    setVoti(mio ? voti.filter(v => !(v.prossima_id === prossimaId && v.user_id === currentUser.id))
+                : [...voti, { prossima_id: prossimaId, user_id: currentUser.id }])
+    const { error } = mio
+      ? await supabase.from('voti_partite').delete().eq('prossima_id', prossimaId).eq('user_id', currentUser.id)
+      : await supabase.from('voti_partite').insert({ prossima_id: prossimaId, user_id: currentUser.id })
+    if (error) { setVoti(prima); setErrore(`Voto non salvato: ${error.message}`) }
+  }
+  const votiDi = id => voti.filter(v => v.prossima_id === id).length
+  const mioVoto = id => !!currentUser && voti.some(v => v.prossima_id === id && v.user_id === currentUser.id)
 
   // Per il menu a tendina: "I1 – Serie A"
   const campionati = useMemo(() => {
@@ -153,7 +175,10 @@ export default function PartitePage() {
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {visibili.map(p => <RigaPartita key={p.id} p={p} cat={categoria(p.probGiocata, soglie)} />)}
+        {visibili.map(p => (
+          <RigaPartita key={p.id} p={p} cat={categoria(p.probGiocata, soglie)}
+            voti={votiDi(p.id)} mio={mioVoto(p.id)} puoVotare={isAdmin} onVota={() => vota(p.id)} />
+        ))}
       </div>
 
       {righe.length > 0 && (
