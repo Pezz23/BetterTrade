@@ -108,41 +108,63 @@ Resta comunque il riferimento migliore disponibile al momento della giocata:
 1,03 contro 1,07 di Bet365. E il suo margine si sta restringendo di stagione in
 stagione (1,052 → 1,038 → 1,030).
 
-### Prima misura del segnale
+### La misura del criterio — 16 settembre 2026
 
-Su **7.250 partite** delle stagioni 24/25 e 25/26 con entrambe le quote di
-apertura, quanto spesso Bet365 paga **più** del prezzo equo ricavato
-dall'exchange normalizzato:
+`btscout/scripts/misura-valore.js`. Regole: solo quote di apertura, solo
+`bfe_ap_valido`, prezzo equo = exchange normalizzato, puntata fissa, intervallo
+di confidenza al 95%. Nessun modello, quindi niente da stimare né walk-forward.
 
-| | partite | % |
-|---|---|---|
-| sul segno 1 | 58 | 0,8% |
-| sul segno X | 430 | 5,9% |
-| sul segno 2 | 180 | 2,5% |
-| **su almeno un esito** | **591** | **8,2%** |
-| con almeno il 2% di scarto | 337 | 4,6% |
+**10.415 partite** con exchange reale (24/25, 25/26, 26/27 parziale), 31.245
+scommesse possibili.
 
-Circa **31 partite ogni 380**, cioè una trentina per stagione di campionato.
+| Cosa giochi | n | vinte | ROI | IC 95% |
+|---|---|---|---|---|
+| Tutto, sempre *(= margine del banco)* | 31.245 | 33,3% | **−7,9%** | [−9,6 … −6,3] |
+| Solo il favorito | 10.568 | 50,8% | −5,5% | [−7,4 … −3,7] |
+| **Bet365 > equo** (scarto > 0) | **777** | 28,4% | **+1,0%** | **[−11,3 … +13,4]** |
+| Bet365 > equo, scarto > 2% | 348 | 24,1% | −12,2% | [−31,1 … +6,7] |
+| Bet365 > equo, scarto > 5% | 151 | 20,5% | −23,2% | [−54,6 … +8,2] |
+| Bet365 < equo di oltre 10% *(controllo)* | 5.751 | 20,5% | −20,0% | [−24,7 … −15,3] |
 
-Tre cose da tenere a mente:
-- **Il segnale è sbilanciato**: quasi mai sul segno 1, spesso sulla X. Ha senso —
-  il pareggio è dove i bookmaker sono meno precisi.
-- **Frequenza non è redditività.** Sapere che un prezzo è più alto del riferimento
-  non dice ancora se scommetterci guadagna. **Questo non è ancora stato misurato.**
-- ~~C'è almeno un valore anomalo (scarto massimo +163%)~~ → **risolto il 16/09**:
-  erano **mercati vuoti** dell'exchange (`1.02/1.01/1.01`, segnaposto quando
-  nessuno ha ancora offerto), 370 su 10.789. Ora la colonna `bfe_ap_valido` li
-  marca FALSE. **La misura dell'11/09 va rifatta con `where bfe_ap_valido`.**
+**Tre cose che i numeri dicono:**
 
-### Da fare, quando si riprende
+1. **Il segnale distingue i prezzi buoni dai cattivi.** A caso −8%; dove Bet365
+   è generoso ~0%; dove è tirchio −20%. La direzione è giusta, il controllo lo
+   conferma.
+2. **Cancella il margine, non lo batte.** +1,0% con intervallo [−11%, +13%]:
+   777 scommesse non distinguono un +1% dal caso. Onesto dire: *il criterio
+   porta a pari*. Non: *guadagna*.
+3. **Peggiora alzando la soglia.** Un vantaggio vero cresce con la soglia; qui
+   crolla (0% → −12% → −23%). Gli scarti grandi sono soprattutto **rumore**
+   dell'exchange di apertura, che è sottile. `bfe_ap_valido` toglie i mercati
+   vuoti, non il rumore ordinario.
 
-- [ ] **Misurare se il segnale guadagna**, non solo se esiste: prendere le partite
-      dove `b365 > equo` e vedere il rendimento reale sulle due stagioni.
-      Walk-forward, senza guardare la chiusura.
-- [x] ~~Filtrare i valori anomali~~ → `bfe_ap_valido`, calcolata dal database.
-- [ ] **Rifare la misura del segnale** dell'11/09 con il filtro: i numeri (8,2%,
-      4,6%) includevano i mercati vuoti e sono da rivedere.
-- [ ] **Decidere la soglia**: qualunque scarto, o solo oltre il 2%?
+**Tracce, non dimostrate** (intervallo include lo zero): la **X** (+8,2%,
+n=516) e la **fascia di quota 3–5** (+9,7%, n=566). Per stagione: 24/25 +8%,
+25/26 −5%, 26/27 −27% su 58 scommesse — instabile.
+
+**Coerente con S6 line shopping** (+1,6%, IC che sfiora lo zero): stessa natura,
+stesso ordine di grandezza. Confrontare prezzi funziona quanto basta a non
+perdere, non ancora quanto basta a vincere.
+
+**Limiti della misura:** Bet365 e exchange di apertura possono essere raccolti in
+momenti diversi (parte dello scarto è movimento, non errore); le quote sono
+quelle pubblicate, non quelle che un conto reale otterrebbe.
+
+### Cosa renderebbe la misura più affilata
+
+- [ ] **Un secondo riferimento di apertura.** Oggi il solo riferimento onesto è
+      l'exchange, che è sottile. La **media di mercato di apertura** (`AvgH` nei
+      CSV, dal 2019/20) è più stabile e coprirebbe più stagioni. Va importata
+      come `avg_ap_*` in `partite` — oggi c'è solo la chiusura.
+- [ ] **Chiedere l'accordo fra due riferimenti**: Bet365 generoso sia rispetto
+      all'exchange sia rispetto alla media. Taglia il rumore di ciascuno.
+- [ ] **Aspettare i dati veri.** `prossime_partite` accumula quote con l'istante
+      esatto del download, per tutti i riferimenti insieme. Fra qualche mese sarà
+      il dataset più pulito che abbiamo: stesso momento, stessa fonte, nessun
+      dubbio sul timing.
+- [ ] **Rifare la misura** quando ci sono più stagioni con exchange. Due sono
+      poche: l'intervallo si stringe con la radice di n.
 
 ### Come rifare tutto da capo
 

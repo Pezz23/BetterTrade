@@ -132,6 +132,12 @@ sono sbagliati.
 L'exchange esiste solo **dalla stagione 24/25**: prima, quelle colonne sono
 vuote per forza.
 
+**Misurato il 16/09/2026** (`btscout/scripts/misura-valore.js`): il criterio
+porta il ROI da −7,9% (giocare a caso) a **+1,0% con IC [−11%, +13%]** su 777
+scommesse. **Cancella il margine del banco, non lo batte** — e alzare la soglia
+di scarto peggiora (>5% → −23%): gli scarti grandi sono rumore dell'exchange
+sottile. Non dire che "guadagna": non è dimostrato. Dettagli in STATO.md.
+
 ---
 
 ## Storico e calendario: due tabelle, due significati
