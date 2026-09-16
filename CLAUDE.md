@@ -200,6 +200,12 @@ tengono — sono appena stati messi a posto e non c'entrano con il problema.
   nessun valore hardcoded — `alpha(C.oro, .12)`, mai `rgba(201,168,76,0.12)`.
   `index.css` ne tiene una copia per il poco CSS fuori da React: se cambi un
   colore lì, riportalo in `theme.js` e viceversa.
+- **Navigazione**: 4 tasti in basso (Dashboard, Slot, Reporting, Bilancio) per
+  l'uso quotidiano; il menu ☰ in alto a destra per il resto (`VOCI_MENU` in
+  `App.jsx`). Una pagina nuova va nel menu, non come quinto tasto.
+- **L'indice di attendibilità** (`PartitePage.jsx`) usa `avg_ap_*` come
+  riferimento, non `bfe_ap_*`. Non cambiarlo: è quello che la misura ha
+  validato (STATO.md, "La misura che conta").
 - **Pezzi ricorrenti** in `src/components/ui.jsx`: `Card`, `Etichetta`,
   `StatCard`, `Btn`, `Input`, `Badge`. Prima di riscrivere una card a mano,
   guarda se c'è già.

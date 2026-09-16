@@ -4,7 +4,7 @@
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
 **Ultimo aggiornamento:** 9 settembre 2026
-**Fase corrente:** archivio, future e routine completi — prossimo passo: **l'app (fase 5)**
+**Fase corrente:** pagina Partite costruita — prossimo passo: **vederla su Vercel, poi il pulsante Aggiorna (fase 5) o le spin (fase 7)**
 
 ---
 
@@ -567,9 +567,9 @@ comunque con `ENOTFOUND`, aspettare un minuto e rilanciare.
 
 ---
 
-## 🔵 FASE 5 — Il menu di aggiornamento nell'app
+## 🔵 FASE 5 — Il pulsante Aggiorna nell'app
 
-- [ ] **Menu ad hamburger**, oltre ai 4 tasti in basso.
+- [x] ~~Menu ad hamburger~~ → fatto con la fase 6.
 - [ ] **Voce "Aggiorna dati"**: lancia l'import dello storico e delle partite
       future dall'app, senza terminale.
 - [ ] **Nodo tecnico da risolvere prima.** Gli import sono script Node che
@@ -579,12 +579,28 @@ comunque con `ENOTFOUND`, aspettare un minuto e rilanciare.
 
 ---
 
-## 🔵 FASE 6 — Vedere e cercare le partite nell'app
+## 🟢 FASE 6 — La pagina Partite — costruita il 16 settembre 2026
 
-- [ ] **Pagina Partite**: filtri per campionato, stagione, squadra, data, fascia
-      di quota.
-- [ ] **Dove girano i calcoli.** L'app non ha backend. Probabile risposta: viste
-      e funzioni in Postgres, che su 38 mila righe non fa fatica.
+- [x] **Menu ad hamburger** (☰ in alto a destra). I 4 tasti in basso restano
+      per l'uso quotidiano; il menu raccoglie il resto: **Partite** e, per gli
+      admin, **Utenti** (che era un quinto tasto). Il pulsante "Aggiorna" arriverà
+      qui con la Edge Function (fase 5).
+- [x] **Pagina Partite** (`src/pages/PartitePage.jsx`): le partite future da
+      `prossime_partite` con l'**indice di attendibilità** per ogni segno — lo
+      scarto fra Bet365 e la media di mercato normalizzata. Il riferimento è
+      `avg_ap_*`, **non l'exchange**: è quello che la misura ha validato.
+- [x] **Filtri**: soglia (tutte / >0 / >2% / >5%), campionato, ordine per indice
+      o per data. Sotto ogni quota lo scarto e il prezzo equo.
+- [x] **Verificata** con i permessi di un utente normale: 6 partite, 2 con
+      indice positivo (Betis–Getafe X +3,2%, Ath Madrid–Osasuna 2 +1,1%).
+- [x] **Spiegazione in pagina**: cos'è l'indice, cosa dice e cosa non dice
+      ("vantaggio atteso per singola scommessa, non una previsione").
+- [ ] **Da vedere su Vercel dopo il push.** Se la lista è vuota, non è un
+      errore: l'aggiornamento del venerdì non è ancora passato.
+
+I calcoli girano nel browser (una divisione per riga): con poche decine di
+partite future non serve niente lato database. Se un giorno servissero
+aggregazioni sullo storico, quelle vanno in una vista SQL.
 
 ---
 

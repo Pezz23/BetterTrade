@@ -6,6 +6,7 @@ import SlotPage from './pages/SlotPage'
 import DashboardPage from './pages/DashboardPage'
 import ReportingPage from './pages/ReportingPage'
 import BilancioPage from './pages/BilancioPage'
+import PartitePage from './pages/PartitePage'
 import { C, F, alpha } from './theme'
 
 // ── Tab bar bottom ────────────────────────────────────────────────────────────
@@ -15,10 +16,15 @@ const TABS_BASE = [
   { id:'reporting', label:'Reporting', icon:'◫' },
   { id:'bilancio',  label:'Bilancio',  icon:'◉' },
 ]
-const TAB_ADMIN = { id:'utenti', label:'Utenti', icon:'◎' }
+// Il menu ad hamburger: tutto quello che non sta nei 4 tasti in basso.
+// `soloAdmin` nasconde la voce, ma la protezione vera è la policy RLS.
+const VOCI_MENU = [
+  { id:'partite', label:'Partite',  icon:'⚽', desc:'Le prossime partite con l\'indice di attendibilità' },
+  { id:'utenti',  label:'Utenti',   icon:'◎',  desc:'Gestione utenti e password', soloAdmin:true },
+]
 
-function TabBar({ active, onChange, isAdmin }) {
-  const tabs = isAdmin ? [...TABS_BASE, TAB_ADMIN] : TABS_BASE
+function TabBar({ active, onChange }) {
+  const tabs = TABS_BASE
   return (
     <div style={{
       position:'fixed', bottom:0, left:0, right:0, zIndex:100,
@@ -48,7 +54,40 @@ function TabBar({ active, onChange, isAdmin }) {
 }
 
 // ── Header ────────────────────────────────────────────────────────────────────
-function Header({ currentUser, onLogout }) {
+function Menu({ aperto, onChiudi, onVai, attivo, isAdmin }) {
+  if (!aperto) return null
+  const voci = VOCI_MENU.filter(v => !v.soloAdmin || isAdmin)
+  return (
+    <>
+      {/* lo sfondo chiude il menu al tocco */}
+      <div onClick={onChiudi} style={{ position:'fixed', inset:0, zIndex:60, background:alpha(C.fondo, 0.6) }} />
+      <div style={{
+        position:'fixed', top:52, right:12, zIndex:70, minWidth:240,
+        background:C.pannello, border:`1px solid ${C.bordo}`, borderRadius:12, padding:6,
+        boxShadow:`0 12px 32px ${alpha(C.fondo, 0.8)}`,
+      }}>
+        {voci.map(v => {
+          const on = v.id === attivo
+          return (
+            <button key={v.id} onClick={() => { onVai(v.id); onChiudi() }} style={{
+              display:'flex', alignItems:'center', gap:12, width:'100%', textAlign:'left',
+              padding:'10px 12px', borderRadius:8, cursor:'pointer', border:'none',
+              background: on ? alpha(C.oro, 0.1) : 'transparent',
+            }}>
+              <span style={{ fontSize:18, width:24, textAlign:'center' }}>{v.icon}</span>
+              <span>
+                <div style={{ fontSize:13, fontWeight:600, color: on ? C.oro : C.testo, fontFamily:F.sans }}>{v.label}</div>
+                <div style={{ fontSize:10, color:C.spento, fontFamily:F.sans }}>{v.desc}</div>
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    </>
+  )
+}
+
+function Header({ currentUser, onLogout, onMenu, menuAperto }) {
   const roleColor = { superadmin:C.oro, admin:C.blu, user:C.menta }
   const roleLabel = { superadmin:'SuperAdmin', admin:'Admin', user:'User' }
   const rc = roleColor[currentUser?.role] || C.grigio
@@ -74,6 +113,11 @@ function Header({ currentUser, onLogout }) {
           </div>
         </div>
         <button onClick={onLogout} style={{ background:'transparent', border:`1px solid ${C.bordo}`, borderRadius:6, color:C.fioco, cursor:'pointer', fontSize:12, padding:'4px 8px', fontFamily:F.mono }}>⏻</button>
+        <button onClick={onMenu} aria-label="Menu" style={{
+          background: menuAperto ? alpha(C.oro, 0.12) : 'transparent',
+          border:`1px solid ${menuAperto ? alpha(C.oro, 0.4) : C.bordo}`, borderRadius:6,
+          color: menuAperto ? C.oro : C.testo, cursor:'pointer', fontSize:16, padding:'2px 9px', lineHeight:1.4,
+        }}>☰</button>
       </div>
     </div>
   )
@@ -83,6 +127,7 @@ function Header({ currentUser, onLogout }) {
 function AppShell() {
   const { currentUser, logout, isAdmin, booting } = useAuth()
   const [tab, setTab] = useState('dashboard')
+  const [menu, setMenu] = useState(false)
 
   // Il ripristino della sessione è asincrono: senza questa attesa comparirebbe
   // un lampo di schermata di login a ogni ricaricamento.
@@ -100,6 +145,7 @@ function AppShell() {
       case 'slot':      return <SlotPage />
       case 'reporting': return <ReportingPage />
       case 'bilancio':  return <BilancioPage />
+      case 'partite':   return <PartitePage />
       case 'utenti':    return <UtentiPage />
       default:          return <DashboardPage />
     }
@@ -107,11 +153,12 @@ function AppShell() {
 
   return (
     <div style={{ minHeight:'100vh', background:C.fondo, color:C.testo }}>
-      <Header currentUser={currentUser} onLogout={logout} />
+      <Header currentUser={currentUser} onLogout={logout} onMenu={() => setMenu(m => !m)} menuAperto={menu} />
+      <Menu aperto={menu} onChiudi={() => setMenu(false)} onVai={setTab} attivo={tab} isAdmin={isAdmin} />
       <div style={{ maxWidth:720, margin:'0 auto' }}>
         {renderPage()}
       </div>
-      <TabBar active={tab} onChange={setTab} isAdmin={isAdmin} />
+      <TabBar active={tab} onChange={setTab} />
     </div>
   )
 }
