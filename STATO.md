@@ -331,7 +331,7 @@ non può proporre partite da giocare, perché quelle partite non ci sono.
 | | Fonte | A cosa serve |
 |---|---|---|
 | **Storico** | `football-data.co.uk`, stagioni chiuse | Calcolare i parametri, fare ricerca e simulazioni |
-| **Calendario** | `football-data.co.uk/fixtures.csv` — **verificato il 10/09/2026** | Sapere quali partite si giocano e a che quota |
+| **Calendario** | `football-data.co.uk/fixtures.csv` (prossimo blocco, con Bet365) + **The Odds API** (3-4 settimane, consenso di 40 book) | Sapere quali partite si giocano e a che quota |
 
 Le due cose stanno in due tabelle separate e si incontrano solo quando una
 partita viene giocata: allora esce dal calendario ed entra nello storico.
@@ -579,14 +579,44 @@ scarti oltre il 5%. Cerca anche nei ±7 giorni, per i rinvii.
 pubblicato quei risultati (latenza normale, i risultati infrasettimanali escono
 nei giorni dopo). Al prossimo aggiornamento il collegamento scatta da solo.
 
+### Seconda fonte: The Odds API — 16 settembre, sera
+
+Football-data dà solo il prossimo blocco. Mattia voleva più partite senza
+aspettare venerdì: **The Odds API**, piano gratuito da 500 crediti al mese.
+Copre tutti e 15 i campionati, elenca le partite **tre-quattro settimane in
+anticipo** con le quote di 40+ bookmaker (Pinnacle e Betfair compresi).
+
+- [x] **`lib/odds-api.js`** e **`scripts/importa-prossime-odds.js`**: scrive in
+      `prossime_partite` la media (`avg_ap_*`), la massima e l'exchange; **non
+      tocca Bet365** — The Odds API non ce l'ha — così una riga arrivata da
+      football-data tiene la sua.
+- [x] **`lib/nomi-squadre.js`**: la mappa dei nomi, 146 tradotti ("Inter Milan"
+      → "Inter", "Atlético Madrid" → "Ath Madrid"), generata in automatico e
+      **rivista a mano**. Una trappola trovata nella revisione: "Paris Saint
+      Germain" era finito su "Paris FC", un'altra squadra. Un nome sconosciuto
+      viene segnalato e la partita saltata, mai inserita con un nome che non
+      aggancia lo storico.
+- [x] **Colonna `fonte`** in `prossime_partite` (`sql/12`): chi ha scritto
+      l'ultima fotografia.
+- [x] **Primo import: 161 partite fino al 12 ottobre**, tutti i nomi
+      riconosciuti, 35 bookmaker in media. Le 6 partite già presenti da
+      football-data si sono fuse sulle stesse righe: Bet365 conservato, consenso
+      aggiornato. Nessun doppione.
+- [x] Nella routine come passo 4, **solo con `--esegui`**: la prova a vuoto
+      costa comunque 30 crediti.
+
+**Crediti:** 30 per giro. Mattia prevede ~4 giri al mese → 120 su 500.
+Controllo: `x-requests-remaining` stampato a ogni import.
+
 ### La routine, in un comando
 
 ```bash
 cd btscout && node --env-file=.env scripts/aggiorna.js --esegui
 ```
 
-Fa tre cose in ordine: risultati → storico, future giocate → collegamento,
-nuove future. Se un passo fallisce si ferma lì. **È il comando che il pulsante
+Fa quattro cose in ordine: risultati → storico, future giocate → collegamento,
+prossimo blocco (football-data), tre settimane (The Odds API). Se un passo
+fallisce si ferma lì. **È il comando che il pulsante
 "Aggiorna" nell'app dovrà eseguire** (fase 5).
 
 **Quando:** martedì e venerdì, dopo le 18. Provata da cima a fondo il 16/09.

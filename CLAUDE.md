@@ -186,9 +186,14 @@ Entrambe hanno `bfe_ap_valido`. `prossime_partite` ha `scaricato_il`: una quota
 ha senso solo con l'istante in cui l'hai vista. L'app legge le future con
 `where data >= current_date`.
 
-La fonte delle future (`fixtures.csv`) non è una finestra di 7 giorni: è il
-prossimo blocco, sostituito ogni volta. **Si scarica martedì e venerdì
-pomeriggio** — se si salta il venerdì, il weekend non c'è.
+Le future arrivano da **due fonti** che si fondono sulla stessa riga:
+football-data (`fixtures.csv`, il prossimo blocco, l'unica con Bet365) e
+**The Odds API** (3-4 settimane, consenso di 40+ book, niente Bet365 — non
+sovrascrivere `b365_*` con null). I nomi di The Odds API passano da
+`lib/nomi-squadre.js`: un nome nuovo va aggiunto **a mano** dopo averlo
+verificato — l'automatico ha messo il PSG sul Paris FC. Chiave in
+`btscout/.env` (`ODDS_API_KEY`), 500 crediti/mese, 30 per giro, **anche la
+prova a vuoto li consuma**.
 
 Quando una futura si gioca, `riconcilia-prossime.js` le mette `partita_id` che
 punta alla riga di `partite`. Non si sposta e non si cancella: la futura resta
