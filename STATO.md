@@ -4,7 +4,7 @@
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
 **Ultimo aggiornamento:** 9 settembre 2026
-**Fase corrente:** partite future collegate — prossimo passo: **provarle venerdì, poi il menu nell'app**
+**Fase corrente:** criterio misurato e positivo (CLV +2%) — prossimo passo: **da future a storico, poi l'app**
 
 ---
 
@@ -26,6 +26,12 @@ e l'app **compila da sola** griglia e schedine.
 **Il criterio che interessa a Mattia (11 settembre):** riconoscere le partite in
 cui **la quota è più alta di quanto dovrebbe essere**. Non "chi vincerà", ma
 "questo prezzo è sbagliato in mio favore". Vedi la sezione qui sotto.
+
+**Come si userà (16 settembre):** l'app mostra una lista di partite future con
+un **indice di attendibilità** (lo scarto fra Bet365 e il consenso di mercato).
+Da quella lista si scelgono **a mano** 9 o 18 partite per riempire **2 spin**.
+Scelta manuale: l'app propone e misura, la persona decide. I dettagli durante
+lo sviluppo dell'app.
 
 ---
 
@@ -151,20 +157,99 @@ perdere, non ancora quanto basta a vincere.
 momenti diversi (parte dello scarto è movimento, non errore); le quote sono
 quelle pubblicate, non quelle che un conto reale otterrebbe.
 
-### Cosa renderebbe la misura più affilata
+### Il secondo riferimento cambia il verdetto — 16 settembre 2026, sera
 
-- [ ] **Un secondo riferimento di apertura.** Oggi il solo riferimento onesto è
-      l'exchange, che è sottile. La **media di mercato di apertura** (`AvgH` nei
-      CSV, dal 2019/20) è più stabile e coprirebbe più stagioni. Va importata
-      come `avg_ap_*` in `partite` — oggi c'è solo la chiusura.
-- [ ] **Chiedere l'accordo fra due riferimenti**: Bet365 generoso sia rispetto
-      all'exchange sia rispetto alla media. Taglia il rumore di ciascuno.
-- [ ] **Aspettare i dati veri.** `prossime_partite` accumula quote con l'istante
-      esatto del download, per tutti i riferimenti insieme. Fra qualche mese sarà
-      il dataset più pulito che abbiamo: stesso momento, stessa fonte, nessun
-      dubbio sul timing.
-- [ ] **Rifare la misura** quando ci sono più stagioni con exchange. Due sono
-      poche: l'intervallo si stringe con la radice di n.
+Aggiunte a `partite` le quote di **apertura** della media di mercato e della
+massima (`avg_ap_*`, `max_ap_*`, `sql/10`): 37.755 partite dal 2019/20, otto
+stagioni contro le tre dell'exchange. Il margine della media di apertura è
+uguale a quello di Bet365 (~1,06): non è un prezzo più affilato, è il
+**consenso** di 40 book — toglie gli errori del singolo bookmaker.
+
+**Il ROI resta rumoroso con qualunque riferimento:**
+
+| Riferimento | n | ROI (scarto > 0) | Forma |
+|---|---|---|---|
+| Exchange apertura | 777 | +1,0% [−11 … +13] | peggiora alzando la soglia |
+| **Media apertura** | 5.480 | −3,4% [−9 … +2,5] | **migliora**: >5% → +15,8% [−4 … +36] |
+| Accordo di entrambi | 181 | −15% | troppo pochi |
+
+Per stagione il segno del ROI cambia quasi ogni anno. A quota media 6, il conto
+economico su qualche centinaio di scommesse è quasi tutto varianza.
+
+### La misura che conta: il valore rispetto alla chiusura (CLV)
+
+La quota di **chiusura** — l'ultimo prezzo prima del fischio, con tutte le
+informazioni dentro — è la migliore stima disponibile della probabilità vera.
+Se le scommesse scelte hanno *in media* una quota Bet365 sopra la chiusura equa,
+la selezione ha **vantaggio atteso**, anche quando il ROI balla. È la misura
+che i professionisti usano al posto del ROI, perché ha venti volte meno rumore.
+
+**La chiusura qui valuta la selezione dopo il fatto. Non entra nella scelta.**
+Nessun senno di poi: si sceglie con l'apertura, si giudica con la chiusura.
+
+Selezione: *Bet365 apertura > media di mercato apertura normalizzata*.
+Valutazione: *quota Bet365 / media di mercato di chiusura normalizzata − 1*.
+
+| Selezione | n | CLV | IC 95% | |
+|---|---|---|---|---|
+| Tutte le scommesse | 113.082 | **−5,7%** | [−5,7 … −5,6] | il margine del banco |
+| Scarto > 0 | 5.480 | **+2,0%** | [+1,7 … +2,3] | ✓ |
+| Scarto > 2% | 2.602 | **+4,0%** | [+3,5 … +4,5] | ✓ |
+| Scarto > 5% | 907 | **+7,2%** | [+6,2 … +8,2] | ✓ |
+| *Exchange ap., scarto > 0* | 777 | *−2,1%* | *[−2,8 … −1,5]* | ✗ **perde** contro la chiusura |
+
+**Regge ovunque lo si guardi** (scarto > 0):
+
+| | | |
+|---|---|---|
+| **Per stagione** | positivo in 7 su 8, con IC sopra lo zero in 6 | 19/20 +3,3 · 20/21 +3,7 · 21/22 +1,3 · 22/23 +1,9 · 23/24 +1,1 · **24/25 −0,4** · 25/26 +1,5 · 26/27 +0,7 (n=102) |
+| **Per segno** | positivo su tutti e tre | 1: +1,7 · X: +1,9 · 2: +2,1 |
+| **Per fascia di quota** | cresce con la quota | 3–5: +0,9 · 5–10: +2,3 · 10+: +5,1 |
+| **Per campionato** | 12 su 15 con IC sopra lo zero, **nessuno negativo** | E0 +4,2 · T1 +4,1 · SP2 +2,9 · … · SP1 +0,1 · I1 +0,8 |
+
+**Cosa dice, e cosa non dice:**
+
+- **Dice:** quando la quota Bet365 di apertura è sopra il consenso di apertura,
+  in media resta sopra anche il consenso finale. Bet365 sta pagando **più del
+  prezzo vero** su quelle scommesse, di circa il 2% (7% con soglia 5%). Non è
+  rumore: 5.480 scommesse, otto stagioni, tre segni, quindici campionati.
+- **Dice anche:** l'exchange di apertura come riferimento **non funziona**. Le
+  scommesse che sembrano buone contro l'exchange sono *peggiori* della chiusura
+  (−2,1%): l'exchange all'apertura è troppo sottile, il suo "prezzo" è rumore.
+  **Il riferimento del progetto è la media di mercato di apertura, non l'exchange.**
+- **Non dice:** che giocando si guadagna il 2% a colpo sicuro. CLV +2% è il
+  vantaggio *atteso* per scommessa; il realizzato su 800 scommesse a quota 6
+  può stare ovunque fra −10% e +15%. Servono migliaia di scommesse perché il
+  realizzato converga sull'atteso.
+- **Non dice:** che il vantaggio resterà. La tendenza è in **calo**: +3,3% e
+  +3,7% nelle prime due stagioni, ~+1,5% nelle ultime. I mercati si fanno più
+  efficienti.
+- **Non dice** niente sulla struttura ad accumulator (tris, quaterne, full):
+  queste sono misure su singole. Combinare 3 o 4 scommesse moltiplica anche i
+  margini, non solo i vantaggi.
+
+**Coerenza con S6 line shopping** (+1,6%): stesso meccanismo — confrontare
+prezzi — e stesso ordine di grandezza. Ora però con una misura molto più
+robusta e otto stagioni invece di due.
+
+### L'indice di attendibilità per la lista delle partite
+
+È esattamente quello che serve alla fase 6 (pagina Partite) e alla fase 8
+(compilazione): per ogni partita futura, per ogni segno, **lo scarto fra la
+quota Bet365 e la media di mercato normalizzata**. `prossime_partite` ha già
+tutto quello che serve (`b365_*`, `avg_ap_*`). La soglia non va alzata troppo:
+sopra il 5% restano poche scommesse a quote alte.
+
+### Rilanciare la misura
+
+```bash
+cd btscout
+node --env-file=.env scripts/misura-valore.js --riferimento=media      # quella che conta
+node --env-file=.env scripts/misura-valore.js --riferimento=exchange   # per confronto
+```
+
+Da rifare a fine stagione, quando ci sono più dati. Se il CLV della stagione in
+corso scende sotto zero con IC stretto, il vantaggio è finito.
 
 ### Come rifare tutto da capo
 

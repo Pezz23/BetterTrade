@@ -17,31 +17,59 @@
 // Nessun modello, nessun parametro da stimare: quindi niente walk-forward da
 // fare. Il segnale è un confronto fra due numeri pubblici.
 //
-// Uso:  node --env-file=.env scripts/misura-valore.js
+// Riferimenti disponibili (--riferimento=):
+//   exchange   Betfair Exchange di apertura, normalizzato. Dal 24/25. Sottile.
+//   media      media di mercato di apertura (~40 book), normalizzata. Dal 19/20.
+//              Stesso margine di Bet365 (~1,06): non è più affilata, è il
+//              CONSENSO — toglie gli errori del singolo book, non il margine.
+//   entrambi   Bet365 generoso rispetto a TUTTI E DUE. Dal 24/25. Il rumore
+//              di ciascun riferimento è suo: chiedere l'accordo lo taglia.
+//
+// Uso:  node --env-file=.env scripts/misura-valore.js [--riferimento=exchange|media|entrambi]
 
 import { sql, chiudi } from '../lib/db.js';
 
-const righe = await sql`
-  select stagione, div, esito, b365_1, b365_x, b365_2, bfe_ap_1, bfe_ap_x, bfe_ap_2
-  from partite
-  where bfe_ap_valido and b365_1 is not null and b365_x is not null and b365_2 is not null`;
+const RIF = (process.argv.find(a => a.startsWith('--riferimento=')) || '--riferimento=exchange').split('=')[1];
+if (!['exchange', 'media', 'entrambi'].includes(RIF)) { console.error('✗ --riferimento: exchange | media | entrambi'); process.exit(1); }
 
-// Per ogni partita, tre possibili scommesse: esito, quota Bet365, quota equa,
-// scarto, e rendimento se giocata (quota−1 se vinta, −1 se persa).
+// Si prendono solo le partite dove il riferimento richiesto è un prezzo reale.
+const righe = RIF === 'media'
+  ? await sql`select stagione, div, esito, b365_1, b365_x, b365_2, avg_ap_1, avg_ap_x, avg_ap_2, bfe_ap_1, bfe_ap_x, bfe_ap_2, bfe_ap_valido, avg_1, avg_x, avg_2
+              from partite where avg_ap_1 is not null and b365_1 is not null and b365_x is not null and b365_2 is not null`
+  : await sql`select stagione, div, esito, b365_1, b365_x, b365_2, avg_ap_1, avg_ap_x, avg_ap_2, bfe_ap_1, bfe_ap_x, bfe_ap_2, bfe_ap_valido, avg_1, avg_x, avg_2
+              from partite where bfe_ap_valido and b365_1 is not null and b365_x is not null and b365_2 is not null
+                ${RIF === 'entrambi' ? sql`and avg_ap_1 is not null` : sql``}`;
+
+// Quota equa da una terna: probabilità implicite normalizzate a somma 1.
+const equa = (q1, qx, q2) => { const s = 1 / q1 + 1 / qx + 1 / q2; return [q1 * s, qx * s, q2 * s]; };
+
+// Per ogni partita, tre possibili scommesse: esito, quota Bet365, quota equa
+// secondo il riferimento, scarto, e rendimento (quota−1 se vinta, −1 se persa).
+// Con "entrambi" lo scarto è il MINORE dei due: Bet365 deve essere generoso
+// rispetto a tutti e due.
 const scommesse = [];
 for (const r of righe) {
-  const s = 1 / r.bfe_ap_1 + 1 / r.bfe_ap_x + 1 / r.bfe_ap_2;
-  const esiti = [['1', r.b365_1, r.bfe_ap_1 * s, 'H'], ['X', r.b365_x, r.bfe_ap_x * s, 'D'], ['2', r.b365_2, r.bfe_ap_2 * s, 'A']];
-  const quotaMin = Math.min(r.b365_1, r.b365_x, r.b365_2);
-  for (const [segno, quota, equo, codice] of esiti) {
+  const ex  = r.bfe_ap_valido ? equa(r.bfe_ap_1, r.bfe_ap_x, r.bfe_ap_2) : null;
+  const med = r.avg_ap_1 ? equa(r.avg_ap_1, r.avg_ap_x, r.avg_ap_2) : null;
+  const quote = [r.b365_1, r.b365_x, r.b365_2];
+  const codici = ['H', 'D', 'A'];
+  // La chiusura serve solo a VALUTARE la scommessa dopo, mai a sceglierla.
+  const chiusura = r.avg_1 ? equa(r.avg_1, r.avg_x, r.avg_2) : null;
+  const quotaMin = Math.min(...quote);
+  ['1', 'X', '2'].forEach((segno, i) => {
+    const q = quote[i];
+    let equo, scarto;
+    if (RIF === 'exchange')      { equo = ex[i];  scarto = q / ex[i] - 1; }
+    else if (RIF === 'media')    { equo = med[i]; scarto = q / med[i] - 1; }
+    else                         { equo = Math.max(ex[i], med[i]); scarto = Math.min(q / ex[i] - 1, q / med[i] - 1); }
     scommesse.push({
-      stagione: r.stagione, div: r.div, segno, quota, equo,
-      favorito: quota === quotaMin,
-      scarto: quota / equo - 1,
-      vinta: r.esito === codice,
-      rendimento: r.esito === codice ? quota - 1 : -1,
+      stagione: r.stagione, div: r.div, segno, quota: q, equo,
+      favorito: q === quotaMin, scarto,
+      vinta: r.esito === codici[i],
+      rendimento: r.esito === codici[i] ? q - 1 : -1,
+      clv: chiusura ? q / chiusura[i] - 1 : null,
     });
-  }
+  });
 }
 
 function riassunto(lista) {
@@ -65,7 +93,9 @@ const riga = (nome, r) => r
 const testata = () => console.log(`  ${'—'.padEnd(22)} ${'n'.padStart(6)} ${'vinte'.padStart(7)} ${'q.media'.padStart(7)} ${'ROI'.padStart(8)}  IC 95%`);
 
 const stagioni = [...new Set(righe.map(r => r.stagione))].sort();
-console.log(`\nMISURA DEL CRITERIO — ${righe.length} partite con exchange reale, stagioni ${stagioni.join(' ')}`);
+const nomeRif = { exchange: 'exchange di apertura', media: 'media di mercato di apertura', entrambi: 'exchange E media (accordo)' }[RIF];
+console.log(`\nMISURA DEL CRITERIO — riferimento: ${nomeRif}`);
+console.log(`${righe.length} partite, stagioni ${stagioni.join(' ')}`);
 console.log(`${scommesse.length} scommesse possibili (3 per partita)\n`);
 
 // ── Il punto di partenza: giocare tutto, a caso ─────────────────────────────
@@ -108,12 +138,39 @@ testata();
 for (const [da, a] of [[1, 1.5], [1.5, 2], [2, 3], [3, 5], [5, 100]])
   console.log(riga(`quota ${da}–${a === 100 ? '∞' : a}`, riassunto(scommesse.filter(b => b.scarto > 0 && b.quota >= da && b.quota < a))));
 
+// ── Valore rispetto alla chiusura ───────────────────────────────────────────
+// Il ROI su qualche centinaio di scommesse a quota 5-8 è quasi tutto rumore. La
+// quota di CHIUSURA — l'ultimo prezzo prima del fischio, con tutte le
+// informazioni dentro — è la migliore stima disponibile della probabilità vera.
+// Se le scommesse scelte hanno in media una quota Bet365 sopra la chiusura equa,
+// la selezione ha vantaggio atteso, anche quando il conto economico balla.
+// Qui la chiusura VALUTA la selezione dopo il fatto: non entra nella scelta.
+function clvStat(lista) {
+  const v = lista.map(b => b.clv).filter(x => x !== null);
+  const n = v.length; if (!n) return null;
+  const m = v.reduce((a, b) => a + b, 0) / n;
+  const va = v.reduce((a, b) => a + (b - m) ** 2, 0) / (n - 1 || 1);
+  return { n, m, ic: 1.96 * Math.sqrt(va / n) };
+}
+const rigaClv = (nome, r) => r
+  ? `  ${nome.padEnd(22)} ${String(r.n).padStart(6)} ${segno(r.m).padStart(8)}  [${segno(r.m - r.ic)} … ${segno(r.m + r.ic)}]${r.m - r.ic > 0 ? '  ✓ batte la chiusura' : r.m + r.ic < 0 ? '  ✗ perde contro la chiusura' : ''}`
+  : `  ${nome.padEnd(22)}      —`;
+console.log('VALORE RISPETTO ALLA CHIUSURA (CLV) — quota Bet365 giocata vs quota equa di chiusura');
+console.log(`  ${'—'.padEnd(22)} ${'n'.padStart(6)} ${'CLV'.padStart(8)}  IC 95%`);
+console.log(rigaClv('tutte le scommesse', clvStat(scommesse)));
+for (const soglia of [0, 0.02, 0.05]) console.log(rigaClv(`scarto > ${pct(soglia)}`, clvStat(scommesse.filter(b => b.scarto > soglia))));
+console.log('  per stagione, scarto > 0:');
+for (const st of stagioni) console.log(rigaClv(`    ${st}`, clvStat(scommesse.filter(b => b.scarto > 0 && b.stagione === st))));
+
 console.log(`
 COME LEGGERE
   ROI      rendimento medio per unità puntata. −6% = su 100 € giocati ne tornano 94.
   IC 95%   intervallo in cui sta il ROI vero con il 95% di confidenza.
            Se include lo zero, il risultato è compatibile con il caso.
   ✓        compare solo se l'intero intervallo è sopra lo zero.
+  CLV      quanto la quota giocata sta sopra la quota equa di chiusura. È il
+           vantaggio ATTESO per scommessa, con molto meno rumore del ROI:
+           +2% di CLV su 5.000 scommesse è dimostrato; +2% di ROI su 800 no.
 
 LIMITI DI QUESTA MISURA
   · Bet365 e exchange di apertura possono essere stati raccolti in momenti

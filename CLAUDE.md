@@ -132,11 +132,26 @@ sono sbagliati.
 L'exchange esiste solo **dalla stagione 24/25**: prima, quelle colonne sono
 vuote per forza.
 
-**Misurato il 16/09/2026** (`btscout/scripts/misura-valore.js`): il criterio
-porta il ROI da −7,9% (giocare a caso) a **+1,0% con IC [−11%, +13%]** su 777
-scommesse. **Cancella il margine del banco, non lo batte** — e alzare la soglia
-di scarto peggiora (>5% → −23%): gli scarti grandi sono rumore dell'exchange
-sottile. Non dire che "guadagna": non è dimostrato. Dettagli in STATO.md.
+### Misurato il 16/09/2026 — il riferimento giusto è la media di mercato
+
+`btscout/scripts/misura-valore.js --riferimento=media`. Selezione: Bet365
+apertura > **media di mercato di apertura** (`avg_ap_*`) normalizzata.
+
+- **L'exchange di apertura NON è il riferimento.** Sembrava l'ovvio candidato
+  (margine 1,007 alla chiusura) ma all'apertura è troppo sottile: le scommesse
+  scelte con l'exchange **perdono** contro la chiusura (CLV −2,1%). Il
+  riferimento del progetto è `avg_ap_*`, non `bfe_ap_*`.
+- **La misura che conta è il CLV**, non il ROI: quota giocata / quota equa di
+  chiusura − 1. La chiusura VALUTA dopo, non sceglie prima. Su 5.480 scommesse
+  in otto stagioni: **CLV +2,0% [+1,7 … +2,3]**, positivo in 7 stagioni su 8,
+  su tutti e tre i segni, in 12 campionati su 15 e in nessuno negativo.
+  Con scarto > 5%: +7,2% su 907.
+- **Il ROI realizzato è rumore** a queste quote (media 6): −3,4% [−9 … +2,5] su
+  5.480. Non contraddice il CLV, è varianza. Non promettere rendimenti.
+- **Il vantaggio è in calo**: +3,5% nelle prime stagioni, ~+1,5% nelle ultime.
+- **Vale su singole.** Niente è stato misurato su accumulator.
+
+Dettagli, tabelle e limiti in STATO.md.
 
 ---
 

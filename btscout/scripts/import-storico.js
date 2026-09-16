@@ -84,11 +84,15 @@ const COLONNE = {
   // b365 è la quota che prendi, bfe_ap è quanto vale secondo l'exchange.
   b365_1: 'B365H', b365_x: 'B365D', b365_2: 'B365A',           // Bet365 (10 stagioni)
   bfe_ap_1: 'BFEH', bfe_ap_x: 'BFED', bfe_ap_2: 'BFEA',        // exchange (dalla 24/25)
+  avg_ap_1: 'AvgH', avg_ap_x: 'AvgD', avg_ap_2: 'AvgA',        // media di mercato (dal 19/20)
+  max_ap_1: 'MaxH', max_ap_x: 'MaxD', max_ap_2: 'MaxA',        // migliore sul mercato (dal 19/20)
   // Over/Under 2.5
   avg_over25: 'AvgC>2.5', avg_under25: 'AvgC<2.5',           // media chiusura
   bfe_ch_over25: 'BFEC>2.5', bfe_ch_under25: 'BFEC<2.5',     // exchange chiusura
   b365_over25: 'B365>2.5', b365_under25: 'B365<2.5',         // Bet365 apertura
   bfe_ap_over25: 'BFE>2.5', bfe_ap_under25: 'BFE<2.5',       // exchange apertura
+  avg_ap_over25: 'Avg>2.5', avg_ap_under25: 'Avg<2.5',       // media apertura
+  max_ap_over25: 'Max>2.5', max_ap_under25: 'Max<2.5',       // massima apertura
 };
 
 // Statistiche di gioco (interi). Materia prima per i modelli: i tiri in porta
@@ -222,11 +226,13 @@ const COLONNE_DB = [
   'ps_1', 'ps_x', 'ps_2',
   'bfe_ch_1', 'bfe_ch_x', 'bfe_ch_2',
   'bfe_ap_1', 'bfe_ap_x', 'bfe_ap_2',
+  'avg_ap_1', 'avg_ap_x', 'avg_ap_2', 'max_ap_1', 'max_ap_x', 'max_ap_2',
   'avg_1', 'avg_x', 'avg_2', 'max_1', 'max_x', 'max_2',
   'b365_1', 'b365_x', 'b365_2',
   'avg_over25', 'avg_under25',
   'bfe_ch_over25', 'bfe_ch_under25',
   'bfe_ap_over25', 'bfe_ap_under25',
+  'avg_ap_over25', 'avg_ap_under25', 'max_ap_over25', 'max_ap_under25',
   'b365_over25', 'b365_under25',
 ];
 
