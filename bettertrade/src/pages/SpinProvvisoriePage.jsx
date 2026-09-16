@@ -93,15 +93,18 @@ export default function SpinProvvisoriePage() {
 
       {errore && <Card colore={C.rosso}><div style={{ color: C.rosso, fontSize: 13, fontFamily: F.sans }}>⚠️ {errore}</div></Card>}
 
+      {/* Le spin una accanto all'altra; su schermo stretto vanno a capo. */}
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(300px, 1fr))`, gap: 16 }}>
       {!caricamento && automatiche.map((auto, i) => (
-        <Card key={i} style={{ marginBottom: 16, padding: '14px' }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: C.testo, fontFamily: F.sans, marginBottom: 10 }}>Spin {i + 1}</div>
+        <Card key={i} style={{ padding: '14px' }}>
+          <div style={{ fontSize: 30, fontWeight: 800, color: C.oro, fontFamily: F.sans, letterSpacing: 2, marginBottom: 12 }}>SPIN {i + 1}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <Griglia titolo="Automatica · per attendibilità" colore={C.spento} celle={auto} votiDi={votiDi} />
             <Griglia titolo="Con le stelline · le votate prima" colore={C.oro} celle={votate[i]} riferimento={auto} votiDi={votiDi} />
           </div>
         </Card>
       ))}
+      </div>
     </div>
   )
 }
