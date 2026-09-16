@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import LoginPage from './pages/LoginPage'
+import SpinProvvisoriePage from './pages/SpinProvvisoriePage'
 import UtentiPage from './pages/UtentiPage'
 import SlotPage from './pages/SlotPage'
 import DashboardPage from './pages/DashboardPage'
@@ -20,6 +21,7 @@ const TABS_BASE = [
 // `soloAdmin` nasconde la voce, ma la protezione vera è la policy RLS.
 const VOCI_MENU = [
   { id:'partite', label:'Partite',  icon:'⚽', desc:'Le prossime partite con l\'indice di attendibilità' },
+  { id:'provvisorie', label:'Spin provvisorie', icon:'🎰', desc:'Le spin compilate da sole, in anteprima', soloAdmin:true },
   { id:'utenti',  label:'Utenti',   icon:'◎',  desc:'Gestione utenti e password', soloAdmin:true },
 ]
 
@@ -146,6 +148,7 @@ function AppShell() {
       case 'reporting': return <ReportingPage />
       case 'bilancio':  return <BilancioPage />
       case 'partite':   return <PartitePage />
+      case 'provvisorie': return <SpinProvvisoriePage />
       case 'utenti':    return <UtentiPage />
       default:          return <DashboardPage />
     }

@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo } from 'react'
-import { supabase } from '../supabase'
+import { useState, useMemo } from 'react'
+import { usaProssime } from '../hooks/usaProssime'
 import { useAuth } from '../context/AuthContext'
 import { C, F, alpha } from '../theme'
 import { Card, Etichetta } from '../components/ui'
 import RigaPartita, { CATEGORIE, pct, giorno } from '../components/RigaPartita'
-import { valuta, categoria, FINESTRE, SOGLIE_DEFAULT } from '../lib/attendibilita'
+import { categoria, FINESTRE, SOGLIE_DEFAULT } from '../lib/attendibilita'
 
 // La lista delle partite future, ordinata per attendibilità.
 // I calcoli stanno in lib/attendibilita.js, la riga in components/RigaPartita.jsx:
@@ -19,11 +19,8 @@ const pillola = (on, colore = C.oro) => ({
 const campo = { padding: '6px 10px', borderRadius: 20, background: C.pozzo, border: `1px solid ${C.bordo}`, color: C.testo, fontFamily: F.mono, fontSize: 11, outline: 'none', width: 74 }
 
 export default function PartitePage() {
-  const { currentUser, isAdmin } = useAuth()
-  const [righe, setRighe] = useState([])
-  const [voti, setVoti] = useState([])     // [{ prossima_id, user_id }]
-  const [caricamento, setCaricamento] = useState(true)
-  const [errore, setErrore] = useState(null)
+  const { isAdmin } = useAuth()
+  const { righe, vota, votiDi, mioVoto, caricamento, errore } = usaProssime()
   const [soglie, setSoglie] = useState(SOGLIE_DEFAULT)
   const [finestra, setFinestra] = useState('settimana')
   const [campionato, setCampionato] = useState('')
@@ -31,39 +28,6 @@ export default function PartitePage() {
   const [quotaMax, setQuotaMax] = useState('')
   const [soloSopraSoglia, setSoloSopraSoglia] = useState(false)
   const [mostraSoglie, setMostraSoglie] = useState(false)
-
-  useEffect(() => {
-    async function carica() {
-      const oggi = new Date().toISOString().slice(0, 10)
-      const { data, error } = await supabase
-        .from('prossime_partite')
-        .select('id, div, campionato, data, ora, casa, trasferta, scaricato_il, fonte, book, book_1, book_x, book_2, b365_1, b365_x, b365_2, b365_over25, avg_ap_1, avg_ap_x, avg_ap_2, max_ap_1, max_ap_x, max_ap_2')
-        .gte('data', oggi).order('data').order('ora')
-      if (error) setErrore(error.message)
-      else setRighe((data || []).map(valuta).filter(r => r.prob !== null))
-      // I voti: se la tabella non c'è ancora, la lista resta senza stelle attive.
-      const { data: v } = await supabase.from('voti_partite').select('prossima_id, user_id')
-      setVoti(v || [])
-      setCaricamento(false)
-    }
-    carica()
-  }, [])
-
-  // Voto: una riga per admin per partita. Si scrive prima in memoria — la
-  // risposta del database arriva dopo — e se fallisce si torna indietro.
-  async function vota(prossimaId) {
-    if (!isAdmin || !currentUser) return
-    const mio = voti.some(v => v.prossima_id === prossimaId && v.user_id === currentUser.id)
-    const prima = voti
-    setVoti(mio ? voti.filter(v => !(v.prossima_id === prossimaId && v.user_id === currentUser.id))
-                : [...voti, { prossima_id: prossimaId, user_id: currentUser.id }])
-    const { error } = mio
-      ? await supabase.from('voti_partite').delete().eq('prossima_id', prossimaId).eq('user_id', currentUser.id)
-      : await supabase.from('voti_partite').insert({ prossima_id: prossimaId, user_id: currentUser.id })
-    if (error) { setVoti(prima); setErrore(`Voto non salvato: ${error.message}`) }
-  }
-  const votiDi = id => voti.filter(v => v.prossima_id === id).length
-  const mioVoto = id => !!currentUser && voti.some(v => v.prossima_id === id && v.user_id === currentUser.id)
 
   // Per il menu a tendina: "I1 – Serie A"
   const campionati = useMemo(() => {

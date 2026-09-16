@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../supabase'
 import { C, F, alpha } from '../theme'
+import { DISPOSIZIONE } from '../lib/spin'
 
 const COMBOS = [
   { id:1, nome:'Tris 1-5-2',       tipo:'tris',    pos:[1,5,2]              },
@@ -19,7 +20,7 @@ export const PRONOSTICI = ['1','X','2','1X','X2','12','1+O1,5','2+O1,5','1+O2,5'
 const SPIN_LABELS = ['Spin 1','Spin 2','Spin 3','Spin 4']
 const TIPO_COLOR  = { tris:C.verde, quaterna:C.blu, full:C.oro }
 const TIPO_BG     = { tris:alpha(C.verde,0.10), quaterna:alpha(C.bluPieno,0.10), full:alpha(C.oro,0.10) }
-const SLOT_GRID   = [[1,5,2],[6,9,7],[3,8,4]]
+const SLOT_GRID   = DISPOSIZIONE
 const TILE_BASE   = {
   1:{bg:alpha(C.giallo,0.15),border:alpha(C.giallo,0.35),color:C.oroChiaro},
   2:{bg:alpha(C.giallo,0.15),border:alpha(C.giallo,0.35),color:C.oroChiaro},
