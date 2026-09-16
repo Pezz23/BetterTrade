@@ -34,19 +34,53 @@ const mancanti = [];
 for (const s of STAGIONI) for (const d of Object.keys(CAMPIONATI)) {
   if (!conteggi.some(r => r.stagione === s && r.div === d)) mancanti.push(`${s}/${d}`);
 }
-console.log(mancanti.length ? `\n⚠ Combinazioni assenti: ${mancanti.join(', ')}` : '\nTutte le 100 combinazioni stagione/campionato sono presenti.');
+const attese = STAGIONI.length * Object.keys(CAMPIONATI).length;
+console.log(mancanti.length ? `\n⚠ Combinazioni assenti: ${mancanti.join(', ')}` : `\nTutte le ${attese} combinazioni stagione/campionato sono presenti.`);
 
 // 2. Una squadra con troppe poche partite in una stagione = import parziale
 //    o nome incoerente che spezza lo storico in due.
-console.log('\n=== Squadre con meno di 10 partite in una stagione ===');
+//    La stagione in corso si esclude: a settembre ogni squadra ha 3-5 partite
+//    e il controllo segnalerebbe tutte quante, seppellendo i problemi veri.
+const inCorso = STAGIONI[STAGIONI.length - 1];
+console.log(`\n=== Squadre con meno di 10 partite in una stagione (esclusa la ${inCorso}, in corso) ===`);
 const poche = await sql`
   SELECT stagione, div, squadra, COUNT(*)::int AS n FROM (
-    SELECT stagione, div, casa AS squadra FROM partite
+    SELECT stagione, div, casa AS squadra FROM partite WHERE stagione <> ${inCorso}
     UNION ALL
-    SELECT stagione, div, trasferta AS squadra FROM partite
+    SELECT stagione, div, trasferta AS squadra FROM partite WHERE stagione <> ${inCorso}
   ) t GROUP BY stagione, div, squadra HAVING COUNT(*) < 10 ORDER BY n
 `;
 console.log(poche.length ? poche.map(r => `  ${r.stagione}/${r.div}  ${r.squadra}: ${r.n}`).join('\n') : '  (nessuna)');
+
+// 2b. Un club che cambia nome fra una stagione e l'altra non si vede dal
+//     controllo sopra: dentro ogni stagione i conti tornano. Si cercano coppie
+//     di nomi simili che non giocano MAI nella stessa stagione — se coesistono
+//     sono due club veri, se si alternano è probabilmente lo stesso club.
+console.log('\n=== Possibili rinomine fra stagioni (nomi simili che non coesistono mai) ===');
+const squadre = await sql`
+  SELECT div, casa AS squadra, array_agg(DISTINCT stagione ORDER BY stagione) AS stagioni
+  FROM partite GROUP BY div, casa`;
+const norm = x => x.toLowerCase().replace(/[^a-z0-9]/g, '');
+const perDiv = {};
+for (const r of squadre) (perDiv[r.div] ??= []).push(r);
+// Coppie simili nel nome ma club diversi, già verificate: non segnalarle più.
+const NON_ALIAS = new Set([
+  'SP2|Lorca|Mallorca',              // due città diverse
+  'T1|Gaziantep|Gaziantepspor',      // Gaziantepspor è fallito nel 2020; Gaziantep è l'ex Gazişehir
+]);
+const chiave = (div, a, b) => [a, b].sort().reduce((k, x) => k + '|' + x, div);
+const sospetti = [];
+for (const lista of Object.values(perDiv)) {
+  for (let i = 0; i < lista.length; i++) for (let j = i + 1; j < lista.length; j++) {
+    const a = norm(lista[i].squadra), b = norm(lista[j].squadra);
+    const affini = a.includes(b) || b.includes(a) || (a.slice(0, 5) === b.slice(0, 5) && Math.abs(a.length - b.length) <= 4);
+    if (!affini) continue;
+    const coesistono = lista[i].stagioni.some(s => lista[j].stagioni.includes(s));
+    if (coesistono || NON_ALIAS.has(chiave(lista[i].div, lista[i].squadra, lista[j].squadra))) continue;
+    sospetti.push(`  ${lista[i].div}  "${lista[i].squadra}" (${lista[i].stagioni.join(',')})  ↔  "${lista[j].squadra}" (${lista[j].stagioni.join(',')})`);
+  }
+}
+console.log(sospetti.length ? sospetti.join('\n') + '\n  → se sono lo stesso club, aggiungerli ad ALIAS in import-storico.js' : '  (nessuna)');
 
 // 3. Coerenza fra esito e gol: se non torna, il parser ha sbagliato colonna.
 const [{ incoerenti }] = await sql`

@@ -6,7 +6,7 @@ Due pezzi nello stesso repo, non ancora collegati:
 | | |
 |---|---|
 | `bettertrade/` | **L'app.** React + Vite + Supabase. Registra spin, giornate e bankroll di 6 persone. |
-| `btscout/` | **Il motore.** Node, nessun frontend: modelli, backtest, import. Le 38.613 partite ora stanno in Supabase con il resto. |
+| `btscout/` | **Il motore.** Node, nessun frontend: modelli, backtest, import. Le 53.796 partite di 15 campionati stanno in Supabase con il resto. |
 
 ---
 
@@ -184,6 +184,17 @@ tengono — sono appena stati messi a posto e non c'entrano con il problema.
   implicito 1,007 contro 1,033 di Pinnacle e 1,073 della media di mercato.
   Le stagioni 24/25 e 25/26 hanno entrambi, quindi il passaggio è calibrabile.
   **Uno script che usa `ps_*` perde silenziosamente la stagione in corso.**
+- **football-data risponde 200 anche ai codici che non esistono.** Reindirizza
+  su un file simile: `P2.csv` → `SP2.csv`. Sono entrate 4.675 partite spagnole
+  etichettate come portoghesi prima di accorgersene dai nomi delle squadre.
+  L'import ora controlla che la colonna `Div` dentro il file coincida con il
+  codice richiesto. **Un 200 dice che il server ha risposto, non che ha risposto
+  quello che hai chiesto.**
+- **Un club che cambia nome spezza il suo storico in due.** Dentro una stagione
+  i conti tornano, quindi il controllo "poche partite" non lo vede. `ALIAS` in
+  `import-storico.js` mappa sul nome attuale; `verifica-storico.js` cerca nomi
+  simili che non coesistono mai nella stessa stagione. I falsi positivi noti
+  stanno in `NON_ALIAS`.
 - **Le date dell'archivio erano istanti UTC.** Nel dump di Neon
   `2016-08-25T22:00:00.000Z` sono le 00:00 del **26** agosto ora italiana:
   tagliare i primi dieci caratteri sposta tutto indietro di un giorno. Si
@@ -221,7 +232,8 @@ node --env-file=.env scripts/verifica-partite.js   # confronto con la sorgente
 
 cd btscout && npm install
 node --env-file=.env scripts/verifica-storico.js   # coerenza dell'archivio
-node --env-file=.env scripts/import-storico.js     # scarica i CSV e aggiorna
+node --env-file=.env scripts/import-storico.js --stagioni=2627      # aggiornamento settimanale
+node --env-file=.env scripts/import-storico.js --campionati=P1,N1   # solo alcuni campionati
 node scripts/backtest.js                           # gira offline, dalla cache
 ```
 

@@ -4,14 +4,14 @@
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
 **Ultimo aggiornamento:** 9 settembre 2026
-**Fase corrente:** archivio a oggi — prossimo passo: **censire e ampliare i campionati**
+**Fase corrente:** 15 campionati, 53.796 partite — prossimo passo: **le partite future**
 
 ---
 
 ## Dove siamo in una riga
 
 **L'app e l'archivio sono ora nello stesso database.** `bettertrade/` (React+Vite,
-in produzione su Vercel) e le 38.613 partite vivono entrambi in Supabase;
+in produzione su Vercel) e le 53.796 partite di 15 campionati vivono entrambi in Supabase;
 `btscout/` resta il motore che le importa e le analizza. Sicurezza chiusa, numeri
 chiusi, archivio dentro: adesso si costruisce sopra.
 
@@ -262,18 +262,82 @@ Pinnacle. Non è un ripiego: è il prezzo più onesto che abbiamo mai avuto.
 
 ---
 
-## 🟠 FASE 3 — Censire e ampliare i campionati
+## ✅ FASE 3 — Censire e ampliare i campionati — fatta il 16 settembre 2026
 
-- [ ] **Fare l'elenco di quelli presenti.** Oggi sono 10: Inghilterra, Italia,
-      Spagna, Germania, Francia, prime due divisioni ciascuna
-      (`E0 E1 · I1 I2 · SP1 SP2 · D1 D2 · F1 F2`).
-- [ ] **Elencare quelli disponibili su football-data** e non ancora presi.
-      Dal file delle partite future si vedono già `E2`, `G1` (Grecia), `N1`
-      (Olanda), `P1` (Portogallo), `SC0` (Scozia): sono nello stesso formato.
-- [ ] **Decidere quali aggiungere.** Più campionati significa più partite fra
-      cui scegliere, ma anche più nomi squadra da tenere allineati.
-- [ ] **Importare e verificare.** Dopo ogni aggiunta, `verifica-storico.js`:
-      con più campionati il problema degli alias di squadra cresce.
+### Cosa c'è ora: 15 campionati, 53.796 partite
+
+| Paese | 1ª serie | 2ª serie |
+|---|---|---|
+| Inghilterra | E0 Premier League | E1 Championship |
+| Italia | I1 Serie A | I2 Serie B |
+| Spagna | SP1 Liga | SP2 Liga 2 |
+| Germania | D1 Bundesliga | D2 2. Bundesliga |
+| Francia | F1 Ligue 1 | F2 Ligue 2 |
+| **Portogallo** | **P1 Primeira Liga** | *non pubblicata* |
+| **Olanda** | **N1 Eredivisie** | *non pubblicata* |
+| **Turchia** | **T1 Süper Lig** | *non pubblicata* |
+| **Belgio** | **B1 Pro League** | *non pubblicata* |
+| **Scozia** | **SC0 Premiership** | — |
+
+I cinque in grassetto sono nuovi: **14.714 partite**, 11 stagioni ciascuno,
+exchange dalla 24/25 come gli altri. Verificati per nome delle squadre, non
+solo per codice (vedi sotto perché).
+
+Copertura dell'exchange di apertura sulle stagioni recenti, dopo l'aggiunta:
+2024/25 **100%** · 2025/26 **93%** · 2026/27 **97%**.
+
+### Cosa NON c'è, e perché
+
+- **Seconde serie di Portogallo, Olanda, Turchia, Belgio**: football-data non
+  le pubblica. Non esistono sulla fonte.
+- **Giappone (J1)**: esiste, ma in un'altra sezione del sito e in un altro
+  formato — un solo file dal 2012, **solo quote di chiusura**, niente apertura né
+  statistiche. Per il criterio del progetto (Bet365 apertura contro exchange
+  apertura) è inutilizzabile. Escluso.
+- **Serie minori inglesi e scozzesi** (E2, E3, EC, SC1-3): disponibili, stesso
+  formato, ma mercati sottili — l'exchange di apertura sarebbe larghissimo e
+  "Bet365 paga più dell'exchange" diventerebbe frequente e vuoto. Rimandate a
+  quando avremo visto se il segnale funziona su mercati liquidi.
+- **Grecia (G1)**: disponibile, non richiesta.
+
+### ⚠️ L'errore del P2, da non rifare
+
+Avevo annunciato che la seconda serie portoghese esisteva: `P2.csv` rispondeva
+HTTP 200 con 462 righe. **Era falso.** Il server reindirizza i codici inesistenti
+su un file simile — `P2.csv` → `SP2.csv` — e ho importato **4.675 partite della
+Segunda spagnola etichettate come portoghesi**. Le squadre erano Mallorca,
+Getafe, Alaves: bastava guardarle.
+
+Rimosse (verificato che fossero duplicati esatti di SP2, riga per riga), e
+messa una **guardia nell'import**: la colonna `Div` dentro il file deve
+coincidere con il codice richiesto, altrimenti si ferma. Provata su P2: blocca.
+
+**Regola:** un HTTP 200 dice che il server ha risposto, non che ha risposto
+quello che hai chiesto. Guardare il contenuto, sempre.
+
+### Rinomine trovate e sistemate
+
+Un club che cambia nome fra due stagioni spezza il suo storico in due squadre.
+Trovate due, mappate sul nome attuale sia nel database che in `ALIAS`
+(`import-storico.js`) per le importazioni future:
+
+| Campionato | Vecchio nome | Nome attuale | Motivo |
+|---|---|---|---|
+| B1 | Waasland-Beveren | Beveren | rinominato SK Beveren nel 2022 |
+| T1 | Erzurum BB | Erzurumspor | BB Erzurumspor → Erzurumspor FK |
+
+**Non** unite, perché sono club diversi: `Gaziantepspor` (fallito nel 2020) e
+`Gaziantep` (ex Gazişehir); `Lorca` e `Mallorca`. Registrate in `NON_ALIAS`
+dentro `verifica-storico.js` così non vengono più segnalate.
+
+### Strumenti migliorati
+
+- `import-storico.js --campionati=P1,N1` — importa solo alcuni campionati,
+  senza riscaricare gli altri.
+- `verifica-storico.js` ora **esclude la stagione in corso** dal controllo
+  "squadre con poche partite" (a settembre le segnalava tutte) e ha un
+  **controllo nuovo sulle rinomine fra stagioni**: cerca nomi simili che non
+  giocano mai nella stessa stagione. Avrebbe trovato Beveren ed Erzurum da solo.
 
 ---
 
@@ -371,7 +435,7 @@ L'obiettivo finale. Ha senso solo dopo tutte le fasi precedenti.
 
 ## Nodi da decidere
 
-1. **Quali campionati aggiungere** (fase 3).
+1. ~~Quali campionati aggiungere~~ — deciso: i 9 paesi che Mattia seguiva + Scozia.
 2. **Con che cadenza scaricare le partite future** (fase 4): a mano due volte a
    settimana, o schedulato.
 3. **Quando fare la Edge Function** (fase 5): serve a tre cose insieme —

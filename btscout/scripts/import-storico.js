@@ -3,6 +3,7 @@
 // Uso:
 //   node --env-file=.env scripts/import-storico.js                  # tutte le stagioni
 //   node --env-file=.env scripts/import-storico.js --stagioni=2627  # solo quella in corso
+//   node --env-file=.env scripts/import-storico.js --campionati=P1,P2 # solo alcuni campionati
 //
 // È idempotente: rilanciarlo non duplica nulla e aggiorna le partite già
 // presenti. Serve per la stagione in corso, che cambia ogni settimana.
@@ -16,6 +17,15 @@ export const CAMPIONATI = {
   SP1: 'Liga', SP2: 'Liga 2',
   D1: 'Bundesliga', D2: '2. Bundesliga',
   F1: 'Ligue 1', F2: 'Ligue 2',
+  // Aggiunti il 16 settembre 2026: i paesi che Mattia seguiva già, più la
+  // Scozia. Football-data pubblica di questi paesi solo la prima serie —
+  // Olanda, Turchia, Belgio e anche Portogallo. Stessa storia degli altri:
+  // 10 stagioni, exchange dalla 24/25.
+  P1: 'Primeira Liga',   // P2 NON esiste: il server reindirizza su SP2 (verificato 16/09/2026)
+  N1: 'Eredivisie',
+  T1: 'Süper Lig',
+  B1: 'Pro League',
+  SC0: 'Premiership',
 };
 
 export const STAGIONI = ['1617', '1718', '1819', '1920', '2021', '2122', '2223', '2324', '2425', '2526', '2627'];
@@ -26,6 +36,21 @@ export const STAGIONI = ['1617', '1718', '1819', '1920', '2021', '2122', '2223',
 // dopo un cambio di schema, sprecato ogni settimana. Con --stagioni=2627 si
 // aggiorna solo quella in corso, che è il caso normale — i risultati arrivano
 // man mano e l'upsert li sovrascrive.
+// Stessa cosa per i campionati: aggiungerne uno nuovo non deve costare il
+// re-download degli altri dieci.
+function campionatiRichiesti() {
+  const arg = process.argv.find(a => a.startsWith('--campionati='));
+  if (!arg) return Object.keys(CAMPIONATI);
+  const chiesti = arg.split('=')[1].split(',').map(x => x.trim()).filter(Boolean);
+  const sconosciuti = chiesti.filter(x => !CAMPIONATI[x]);
+  if (sconosciuti.length) {
+    console.error(`✗ campionati non riconosciuti: ${sconosciuti.join(', ')}`);
+    console.error(`  disponibili: ${Object.keys(CAMPIONATI).join(' ')}`);
+    process.exit(1);
+  }
+  return chiesti;
+}
+
 function stagioniRichieste() {
   const arg = process.argv.find(a => a.startsWith('--stagioni='));
   if (!arg) return STAGIONI;
@@ -85,6 +110,12 @@ const STAT = {
 // una stagione — vedi scripts/verifica-storico.js.
 const ALIAS = {
   SP2: { 'Leonesa': 'Cultural Leonesa' },
+  // Trovati il 16/09/2026 aggiungendo i campionati nuovi. Si mappa sul nome
+  // ATTUALE, così le partite future entrano già col nome giusto.
+  B1:  { 'Waasland-Beveren': 'Beveren' },      // rinominato SK Beveren nel 2022
+  T1:  { 'Erzurum BB': 'Erzurumspor' },        // BB Erzurumspor → Erzurumspor FK
+  // NON è un alias: Gaziantepspor (fallito nel 2020) e Gaziantep (ex Gazişehir)
+  // sono due club diversi che hanno giocato in T1 in anni diversi.
 };
 
 function normalizzaSquadra(nome, div) {
@@ -131,7 +162,17 @@ export async function scarica(stagione, div) {
   const url = `https://www.football-data.co.uk/mmz4281/${stagione}/${div}.csv`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`${url} → HTTP ${res.status}`);
-  return parseCsv(await res.text());
+  const righe = parseCsv(await res.text());
+
+  // Il server risponde 200 anche a codici che non esistono, reindirizzando su
+  // un file simile: P2.csv → SP2.csv. È successo il 16/09/2026 e ha messo in
+  // archivio 4.675 partite spagnole etichettate come portoghesi. La colonna Div
+  // dentro il file dice la verità: se non coincide, il campionato non esiste.
+  const divNelFile = righe[0]?.Div;
+  if (divNelFile && divNelFile !== div) {
+    throw new Error(`${div}/${stagione}: il file contiene "${divNelFile}", non "${div}" — il campionato ${div} non esiste su football-data (redirect da ${res.url})`);
+  }
+  return righe;
 }
 
 export function estrai(righe, stagione, div) {
@@ -222,10 +263,12 @@ async function main() {
   const tutte = [];
   const problemi = [];
   const stagioni = stagioniRichieste();
-  console.log(`Stagioni da importare: ${stagioni.join(' ')}\n`);
+  const campionati = campionatiRichiesti();
+  console.log(`Stagioni: ${stagioni.join(' ')}`);
+  console.log(`Campionati: ${campionati.join(' ')}\n`);
   for (const stagione of stagioni) {
     const conteggi = [];
-    for (const div of Object.keys(CAMPIONATI)) {
+    for (const div of campionati) {
       const righe = await scarica(stagione, div); // se la rete cade, lancia e abortisce
       const { partite, scartate } = estrai(righe, stagione, div);
       tutte.push(...partite);
