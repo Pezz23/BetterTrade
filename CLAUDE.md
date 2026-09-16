@@ -235,9 +235,14 @@ tengono — sono appena stati messi a posto e non c'entrano con il problema.
   `App.jsx`). Una pagina nuova va nel menu, non come quinto tasto.
 - **L'attendibilità è in `src/lib/attendibilita.js`**, solo calcoli: probabilità
   dal consenso (`avg_ap_*`, non l'exchange), regole di gioco, categorie, finestra
-  della settimana. La usa `PartitePage.jsx` e la userà la compilazione delle
-  spin: **non duplicare la logica nelle pagine.** La riga della lista è
-  `components/RigaPartita.jsx`.
+  della settimana. **La composizione delle spin è in `src/lib/spin.js`**
+  (candidate, ordine con le stelline, celle della griglia, scrittura). Le
+  pagine (`PartitePage`, `SpinProvvisoriePage`) leggono partite e voti dallo
+  stesso hook `hooks/usaProssime.js`: **non duplicare la logica nelle pagine.**
+  La riga della lista è `components/RigaPartita.jsx`.
+- **Le librerie in `src/lib/` importano con l'estensione** (`'./attendibilita.js'`):
+  Vite non se ne accorge e Node le può eseguire da terminale per provarle sui
+  dati veri, senza browser.
 - **Pezzi ricorrenti** in `src/components/ui.jsx`: `Card`, `Etichetta`,
   `StatCard`, `Btn`, `Input`, `Badge`. Prima di riscrivere una card a mano,
   guarda se c'è già.

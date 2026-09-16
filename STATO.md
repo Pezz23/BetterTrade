@@ -13,7 +13,8 @@
 **L'app e l'archivio sono ora nello stesso database.** `bettertrade/` (React+Vite,
 in produzione su Vercel) e le 53.796 partite di 15 campionati vivono entrambi in Supabase;
 `btscout/` resta il motore che le importa e le analizza. Sicurezza chiusa, numeri
-chiusi, archivio dentro: adesso si costruisce sopra.
+chiusi, archivio dentro. Sopra ci sono già la pagina Partite (attendibilità,
+stelline, forma) e le **Spin provvisorie** che compilano la griglia da sole.
 
 ---
 
@@ -733,19 +734,44 @@ ordine di gravità:
 
 ---
 
-## ⚪ FASE 8 — Selezione e compilazione automatica
+## 🟢 FASE 8 — Selezione e compilazione automatica — prima versione il 16 settembre 2026
 
-L'obiettivo finale. Ha senso solo dopo tutte le fasi precedenti.
+Costruita **senza aspettare la fase 7**: scrive nella griglia di oggi
+(`griglia.spins`, il JSON che `SlotPage` già legge) e si corregge in Slot come
+sempre. Ogni cella porta anche `prossima_id`: nessuno lo legge ancora, ma le
+spin compilate così sono già agganciate all'archivio quando si farà la fase 7.
 
-- [ ] **Definire i parametri** con cui si scelgono le "migliori partite".
-      Da discutere nel dettaglio quando ci arriviamo.
-- [ ] **Filtri sulle quote** sopra la selezione.
-- [ ] **Simulare il criterio sullo storico prima di metterlo nell'app.**
-      L'archivio serve esattamente a questo: qualunque criterio si scelga, si
-      può vedere come sarebbe andato sulle 38.613 partite passate senza
-      rischiare niente. È gratis e va fatto prima, non dopo.
-- [ ] **Compilazione automatica** della griglia e delle 8 schedine dalle partite
-      scelte.
+### Come sceglie (deciso con Mattia il 16/09)
+- Candidate: le partite **sopra soglia** (soglie di default) **fino a lunedì**.
+- Ordine **automatico**: attendibilità. Ordine **con le stelline**: i voti
+  comandano (3 > 2 > 1 > 0), a parità l'attendibilità.
+- La prima va al **centro** (9), le 4 dopo agli **angoli** (1-4), le 4 dopo ai
+  **lati** (5-8). Ogni spin prende le 9 successive: **una partita, una spin**.
+  Se le candidate finiscono la spin resta a metà — non si inventa.
+- Campionati non mescolati di proposito: "non è un grosso problema".
+- La quota delle combinate con l'over resta **vuota** (nessuna fonte dà l'over
+  1,5): la scrive chi compila leggendola sul book.
+
+### Fatto
+- [x] Tendina del pronostico in griglia: `1 X 2 1X X2 12 1+O1,5 2+O1,5 1+O2,5 2+O2,5`.
+- [x] `src/lib/spin.js`: candidate, componi, conStelline, cellaDa, compilaSpin.
+      Solo calcoli, provabile da Node (gli import hanno l'estensione).
+- [x] `src/hooks/usaProssime.js`: partite + voti, condiviso con la pagina Partite.
+- [x] **Pagina "Spin provvisorie"** (menu ☰, solo admin): quante spin (1-4),
+      le spin in orizzontale, per ognuna la griglia automatica sopra e quella
+      con le stelline sotto, con le celle diverse accese in oro.
+- [x] **"Compila spin n.X"** sotto ogni griglia: scrive le 9 celle, cancella
+      le spunte delle schedine di quella spin, chiede conferma se era piena.
+- [ ] **Da provare dal vivo**: primo clic su "Compila spin n.1" da Mattia dopo
+      il push (griglia vuota al 16/09, prova senza rischi); io verifico dal DB.
+
+### Da fare
+- [ ] **Simulare il criterio sullo storico** prima di fidarsi: la stessa
+      composizione applicata alle stagioni passate dice quante spin sarebbero
+      uscite. L'archivio serve a questo.
+- [ ] Filtri (quota, campionato) sopra la selezione, se serviranno.
+- [ ] Escludere una partita dall'anteprima con un clic, senza doverla
+      correggere dopo in Slot.
 
 ---
 
