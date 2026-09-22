@@ -30,10 +30,11 @@ function Scudetto({ nome, colore, dim = 44 }) {
   )
 }
 
-const Blocco = ({ titolo, extra, children, style }) => (
+const Blocco = ({ titolo, extra, children, style, sottolinea }) => (
   <div style={{ background: C.card, border: `1px solid ${C.bordo}`, borderRadius: 12, padding: '13px 14px', ...style }}>
     {titolo && (
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10,
+        ...(sottolinea ? { paddingBottom: 9, borderBottom: `1px solid ${C.bordoChiaro}` } : {}) }}>
         <Etichetta colore={C.testo} style={{ fontSize: 13, letterSpacing: '0.12em', fontWeight: 700 }}>{titolo}</Etichetta>
         {extra && <Etichetta colore={C.testo} style={{ fontSize: 12, fontWeight: 600 }}>{extra}</Etichetta>}
       </div>
@@ -169,7 +170,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
 
       {forma && <>
         {/* ── 3. La forma ───────────────────────────────────────────── */}
-        <Blocco titolo="📈 Forma" extra="ultime 5">
+        <Blocco titolo="📈 Forma" extra="ultime 5" sottolinea>
           {squadre.map(sq => {
             const s = striscia(forma.ultimi5[sq])
             return (
@@ -190,7 +191,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
             )
           })}
           <div style={{ marginTop: 11, paddingTop: 11, borderTop: `1px solid ${C.bordoChiaro}` }}>
-            <Etichetta colore={C.testo} style={{ fontSize: 13, letterSpacing: '0.12em', fontWeight: 700, marginBottom: 9 }}>⚽ gol fatti / subiti · stagione</Etichetta>
+            <Etichetta colore={C.testo} style={{ fontSize: 13, letterSpacing: '0.12em', fontWeight: 700, paddingBottom: 9, marginBottom: 9, borderBottom: `1px solid ${C.bordoChiaro}` }}>⚽ gol fatti / subiti · stagione</Etichetta>
             {squadre.map(sq => {
               const g = forma.gol[sq]
               return (
@@ -203,7 +204,6 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
                 </div>
               )
             })}
-            <div style={{ marginTop: 10, borderTop: `1px solid ${C.bordoChiaro}` }} />
           </div>
         </Blocco>
 
