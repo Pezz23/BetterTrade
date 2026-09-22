@@ -792,6 +792,58 @@ aggregazioni sullo storico, quelle vanno in una vista SQL.
 
 ---
 
+## 🟢 FASE 10 — La scheda della partita — 22 settembre 2026, in corso
+
+Restyling partito da un mockup che Mattia ha fatto con ChatGPT. Il pannello
+che si apriva dentro la riga è diventato una **scheda a tutto schermo**
+(`components/DettaglioPartita.jsx`), pensata prima per il telefono. Il clic
+sulla riga la apre, il `‹` torna alla lista. `FormaPartita.jsx` è stato
+eliminato: la sua query vive ora in `hooks/usaForma.js`, usato dalla scheda.
+
+### Tre cose del mockup che NON abbiamo seguito, e perché
+1. **Niente loghi dei club.** Nel database le squadre sono solo nomi di
+   football-data, senza codici: servirebbero **282 squadre mappate a mano** su
+   una fonte esterna, e i crest sono marchi. Al loro posto **le iniziali su un
+   tondo** (`Scudetto`). I loghi veri restano una fase a sé.
+2. **Niente riquadro rosso "VALORE −5,6%".** Misurato sulle 103 partite
+   quotate del 22/09: lo scarto contro la quota equa è **negativo su tutte**
+   (media −6,0%, mai positivo). Non è il valore della giocata, **è la ricarica
+   del book** — l'equa la calcoliamo dal consenso senza margine. Un riquadro
+   rosso su tutte le partite non informa, spaventa. Al suo posto il confronto
+   con la **massima di mercato** (`max_ap_*`), che può essere positivo o
+   negativo e dice "altrove pagano meglio". Il margine resta nei dettagli, in
+   grigio. **Se qualcuno rimetterà un indicatore di valore, ricordarsi questo.**
+3. **Rimessi tre dati che il mockup perdeva**: le stelline (il voto degli
+   admin, che serve alle spin provvisorie), la **giocata vera** (`1X`,
+   `1+O1,5`, non il segno secco) e la **striscia over/under**.
+
+### Com'è fatta, dall'alto
+1. **Evento + giocata in un unico riquadro**, separati da una riga spessa nel
+   colore della categoria: badge campionato e categoria, stellina, poi
+   **squadra sinistra — attendibilità con barra — squadra destra** (nomi in
+   maiuscolo, la favorita accesa), 📅 data e 🕐 ora; sotto la giocata con la
+   quota grande, MAX/MEDIA/EQUO e il confronto con la massima.
+2. **📈 Forma** — due strisce per squadra (V/N/P e U/O) separate da una linea
+   verticale, poi **⚽ gol fatti / subiti**.
+3. **🏆 Classifica** — posizione e punti, **V/N/P della stagione**, e sotto la
+   posizione per forma con la freccia ▲▼ di quante posizioni sale o scende.
+   La barra dei punti è stata tolta: "non mi dice nulla" (Mattia).
+   I conti li aggiunge `sql/17-classifica-esiti.sql` dentro `forma_partita`.
+4. **Scontri diretti** con la riga di sintesi (vinte / pareggi / vinte).
+5. **Consenso** 1/X/2 a barre.
+6. **Dettagli completi**, collassato: tutte le terne di quote, over/under 2,5,
+   il margine del book, fonte e istante di scarico.
+
+### Resta da fare
+- [ ] **La lista** (`PartitePage` + `RigaPartita`): è il pezzo dove si sceglie,
+      e non è ancora stato toccato. Mattia: "sicuramente dovremo sistemare
+      anche la lista".
+- [ ] Rifinire i blocchi 4-6 della scheda (finora rivisti evento, giocata,
+      forma, classifica).
+- [ ] Provare su telefono vero: finora solo browser desktop.
+
+---
+
 ## 🔵 FASE 7 — Il modello dei dati delle spin
 
 Qui si riscrive. Lo schema attuale non regge l'obiettivo, per tre motivi in
