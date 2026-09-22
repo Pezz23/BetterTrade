@@ -106,8 +106,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
         {/* attendibilità: l'unico numero davvero grande, in mezzo e in alto */}
         <div style={{ textAlign: 'center', margin: '14px 0 4px' }}>
           <Etichetta style={{ fontSize: 10, letterSpacing: '0.14em', marginBottom: 5 }}>attendibilità</Etichetta>
-          <div style={{ fontSize: 44, fontWeight: 700, fontFamily: F.mono, color: c.colore, lineHeight: 0.95 }}>{pct(p.probGiocata)}</div>
-          <div style={{ maxWidth: 200, margin: '9px auto 0' }}>
+          <div style={{ maxWidth: 220, margin: '0 auto' }}>
             <Barra frazione={p.probGiocata} colore={c.colore} altezza={7} />
           </div>
         </div>
@@ -116,8 +115,12 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'start', gap: 8, marginTop: 16 }}>
           {[[p.casa, '1'], [p.trasferta, '2']].map(([sq, segno], i) => (
             <div key={sq} style={{ display: 'contents' }}>
+              {/* la percentuale sta fra le due squadre: è il numero che le mette a confronto */}
               {i === 1 && (
-                <div style={{ alignSelf: 'center', fontSize: 11, fontFamily: F.mono, color: C.fioco, letterSpacing: '0.1em', padding: '0 2px' }}>VS</div>
+                <div style={{ alignSelf: 'center', textAlign: 'center', padding: '0 4px' }}>
+                  <div style={{ fontSize: 26, fontWeight: 700, fontFamily: F.mono, color: c.colore, lineHeight: 1 }}>{pct(p.probGiocata)}</div>
+                  <div style={{ fontSize: 10, fontFamily: F.mono, color: C.fioco, letterSpacing: '0.1em', marginTop: 4 }}>VS</div>
+                </div>
               )}
               <div style={{ textAlign: 'center', minWidth: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
