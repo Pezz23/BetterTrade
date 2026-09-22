@@ -133,10 +133,9 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
           <span style={{ fontSize: 14, fontWeight: 600, fontFamily: F.mono, color: C.testo }}>📅 {giorno(p.data).toUpperCase()}</span>
           {p.ora && <span style={{ fontSize: 14, fontWeight: 600, fontFamily: F.mono, color: C.testo }}>🕐 {p.ora.slice(0, 5)}</span>}
         </div>
-      </div>
 
-      {/* ── 2. La giocata ───────────────────────────────────────────── */}
-      <Blocco>
+        {/* ── La giocata, nello stesso riquadro dell'evento ──────────── */}
+        <div style={{ marginTop: 13, paddingTop: 13, borderTop: `1px solid ${C.bordo}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 10,
             background: alpha(c.colore, 0.08), border: `1px solid ${alpha(c.colore, 0.35)}`, flex: '1 1 190px' }}>
@@ -162,7 +161,8 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
           </div>
         )}
         {p.nota && <div style={{ marginTop: 6, fontSize: 11, fontFamily: F.sans, color: C.fioco, lineHeight: 1.5 }}>{p.nota}</div>}
-      </Blocco>
+        </div>
+      </div>
 
       {errore && <Blocco><div style={{ color: C.rosso, fontSize: 12, fontFamily: F.sans }}>⚠️ {errore}</div></Blocco>}
       {!forma && !errore && <Blocco><div style={{ color: C.spento, fontSize: 12, fontFamily: F.mono }}>carico la forma…</div></Blocco>}
