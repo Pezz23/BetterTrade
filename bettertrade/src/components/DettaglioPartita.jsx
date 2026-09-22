@@ -34,8 +34,8 @@ const Blocco = ({ titolo, extra, children, style }) => (
   <div style={{ background: C.card, border: `1px solid ${C.bordo}`, borderRadius: 12, padding: '13px 14px', ...style }}>
     {titolo && (
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
-        <Etichetta colore={C.grigio} style={{ fontSize: 11, letterSpacing: '0.12em', fontWeight: 600 }}>{titolo}</Etichetta>
-        {extra && <Etichetta style={{ fontSize: 10 }}>{extra}</Etichetta>}
+        <Etichetta colore={C.testo} style={{ fontSize: 13, letterSpacing: '0.12em', fontWeight: 700 }}>{titolo}</Etichetta>
+        {extra && <Etichetta colore={C.testo} style={{ fontSize: 12, fontWeight: 600 }}>{extra}</Etichetta>}
       </div>
     )}
     {children}
@@ -169,18 +169,19 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
 
       {forma && <>
         {/* ── 3. La forma ───────────────────────────────────────────── */}
-        <Blocco titolo="Forma" extra="ultime 5">
+        <Blocco titolo="📈 Forma" extra="ultime 5">
           {squadre.map(sq => {
             const s = striscia(forma.ultimi5[sq])
             return (
               <div key={sq} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 13, fontWeight: 600, fontFamily: F.sans, color: C.testo, flex: '1 1 110px', minWidth: 0 }}>{sq}</span>
+                <span style={{ fontSize: 14, fontWeight: 700, textTransform: 'uppercase', fontFamily: F.sans, color: C.testo, flex: '1 1 110px', minWidth: 0 }}>{sq}</span>
                 {s.length === 0
                   ? <span style={{ fontSize: 11, color: C.fantasma, fontFamily: F.sans }}>nessuna partita giocata</span>
                   : <>
                     <span style={{ display: 'inline-flex', gap: 4 }}>
                       {s.map((m, i) => <Chip key={i} testo={m.esito} colore={ESITO[m.esito]} titolo={m.titolo} />)}
                     </span>
+                    <span style={{ width: 1, alignSelf: 'stretch', minHeight: 26, background: C.bordoChiaro }} />
                     <span style={{ display: 'inline-flex', gap: 4 }}>
                       {s.map((m, i) => <Chip key={i} testo={m.over ? 'O' : 'U'} colore={m.over ? C.celeste : C.grigioFioco} titolo={`${m.titolo} · ${m.over ? 'over' : 'under'} 2,5`} />)}
                     </span>
@@ -189,16 +190,16 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
             )
           })}
           <div style={{ marginTop: 10, paddingTop: 9, borderTop: `1px solid ${C.bordoTenue}` }}>
-            <Etichetta style={{ marginBottom: 7 }}>gol fatti / subiti · stagione</Etichetta>
+            <Etichetta colore={C.testo} style={{ fontSize: 13, letterSpacing: '0.12em', fontWeight: 700, marginBottom: 9 }}>⚽ gol fatti / subiti · stagione</Etichetta>
             {squadre.map(sq => {
               const g = forma.gol[sq]
               return (
-                <div key={sq} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontFamily: F.mono, fontSize: 13 }}>
-                  <span style={{ fontFamily: F.sans, fontWeight: 600, color: C.testo, flex: 1, minWidth: 0 }}>{sq}</span>
-                  <b style={{ color: C.verde }}>{g.fatti}</b><span style={{ color: C.spento, fontSize: 11 }}>fatti</span>
+                <div key={sq} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', fontFamily: F.mono, fontSize: 13 }}>
+                  <span style={{ fontFamily: F.sans, fontWeight: 700, fontSize: 14, textTransform: 'uppercase', color: C.testo, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sq}</span>
+                  <b style={{ color: C.verde, fontSize: 18 }}>{g.fatti}</b><span style={{ color: C.spento, fontSize: 12 }}>fatti</span>
                   <span style={{ color: C.fantasma }}>|</span>
-                  <b style={{ color: C.rosso }}>{g.subiti}</b><span style={{ color: C.spento, fontSize: 11 }}>subiti</span>
-                  <span style={{ color: C.fantasma, fontSize: 11 }}>({g.partite})</span>
+                  <b style={{ color: C.rosso, fontSize: 18 }}>{g.subiti}</b><span style={{ color: C.spento, fontSize: 12 }}>subiti</span>
+                  <span style={{ color: C.fantasma, fontSize: 12 }}>({g.partite})</span>
                 </div>
               )
             })}
