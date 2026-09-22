@@ -135,7 +135,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
         </div>
 
         {/* ── La giocata, nello stesso riquadro dell'evento ──────────── */}
-        <div style={{ marginTop: 13, paddingTop: 13, borderTop: `1px solid ${C.bordo}` }}>
+        <div style={{ marginTop: 14, paddingTop: 14, borderTop: `2px solid ${alpha(c.colore, 0.35)}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 10,
             background: alpha(c.colore, 0.08), border: `1px solid ${alpha(c.colore, 0.35)}`, flex: '1 1 190px' }}>
