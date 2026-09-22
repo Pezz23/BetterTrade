@@ -189,7 +189,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
               </div>
             )
           })}
-          <div style={{ marginTop: 10, paddingTop: 9, borderTop: `1px solid ${C.bordoTenue}` }}>
+          <div style={{ marginTop: 11, paddingTop: 11, borderTop: `1px solid ${C.bordoChiaro}` }}>
             <Etichetta colore={C.testo} style={{ fontSize: 13, letterSpacing: '0.12em', fontWeight: 700, marginBottom: 9 }}>⚽ gol fatti / subiti · stagione</Etichetta>
             {squadre.map(sq => {
               const g = forma.gol[sq]
@@ -203,6 +203,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
                 </div>
               )
             })}
+            <div style={{ marginTop: 10, borderTop: `1px solid ${C.bordoChiaro}` }} />
           </div>
         </Blocco>
 
