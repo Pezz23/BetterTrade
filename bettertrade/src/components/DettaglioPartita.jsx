@@ -103,26 +103,37 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
           <Stella voti={voti} mio={mio} puoVotare={puoVotare} onVota={onVota} />
         </div>
 
-        {/* attendibilità: l'unico numero davvero grande della scheda */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, marginTop: 12 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <Etichetta style={{ fontSize: 10, letterSpacing: '0.12em', marginBottom: 6 }}>attendibilità</Etichetta>
-            <Barra frazione={p.probGiocata} colore={c.colore} altezza={8} />
+        {/* attendibilità: l'unico numero davvero grande, in mezzo e in alto */}
+        <div style={{ textAlign: 'center', margin: '14px 0 4px' }}>
+          <Etichetta style={{ fontSize: 10, letterSpacing: '0.14em', marginBottom: 5 }}>attendibilità</Etichetta>
+          <div style={{ fontSize: 44, fontWeight: 700, fontFamily: F.mono, color: c.colore, lineHeight: 0.95 }}>{pct(p.probGiocata)}</div>
+          <div style={{ maxWidth: 200, margin: '9px auto 0' }}>
+            <Barra frazione={p.probGiocata} colore={c.colore} altezza={7} />
           </div>
-          <div style={{ fontSize: 34, fontWeight: 700, fontFamily: F.mono, color: c.colore, lineHeight: 0.9 }}>{pct(p.probGiocata)}</div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 10, marginTop: 14 }}>
-          <Scudetto nome={p.casa} colore={p.segno === '1' ? c.colore : C.grigioFioco} />
-          <div style={{ textAlign: 'center', minWidth: 0 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, fontFamily: F.sans, color: p.segno === '1' ? C.testo : C.spento, lineHeight: 1.2 }}>{p.casa}</div>
-            <div style={{ fontSize: 10, color: C.fioco, fontFamily: F.mono, margin: '3px 0' }}>— vs —</div>
-            <div style={{ fontSize: 15, fontWeight: 700, fontFamily: F.sans, color: p.segno === '2' ? C.testo : C.spento, lineHeight: 1.2 }}>{p.trasferta}</div>
-          </div>
-          <Scudetto nome={p.trasferta} colore={p.segno === '2' ? c.colore : C.grigioFioco} />
+        {/* le due squadre, una per lato: i nomi lunghi vanno a capo, non si tagliano */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'start', gap: 8, marginTop: 16 }}>
+          {[[p.casa, '1'], [p.trasferta, '2']].map(([sq, segno], i) => (
+            <div key={sq} style={{ display: 'contents' }}>
+              {i === 1 && (
+                <div style={{ alignSelf: 'center', fontSize: 11, fontFamily: F.mono, color: C.fioco, letterSpacing: '0.1em', padding: '0 2px' }}>VS</div>
+              )}
+              <div style={{ textAlign: 'center', minWidth: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+                  <Scudetto nome={sq} colore={p.segno === segno ? c.colore : C.grigioFioco} dim={52} />
+                </div>
+                <div style={{
+                  fontSize: 'clamp(15px, 5.2vw, 22px)', fontWeight: 800, fontFamily: F.sans, letterSpacing: '0.02em',
+                  textTransform: 'uppercase', lineHeight: 1.15, overflowWrap: 'anywhere',
+                  color: p.segno === segno ? C.testo : C.spento,
+                }}>{sq}</div>
+              </div>
+            </div>
+          ))}
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 12, paddingTop: 10, borderTop: `1px solid ${C.bordoTenue}` }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 14, paddingTop: 10, borderTop: `1px solid ${C.bordoTenue}` }}>
           <span style={{ fontSize: 14, fontWeight: 600, fontFamily: F.mono, color: C.testo }}>{giorno(p.data).toUpperCase()}</span>
           {p.ora && <span style={{ fontSize: 14, fontWeight: 600, fontFamily: F.mono, color: C.spento }}>{p.ora.slice(0, 5)}</span>}
         </div>
