@@ -208,27 +208,41 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
         </Blocco>
 
         {/* ── 4. La classifica ──────────────────────────────────────── */}
-        <Blocco titolo="Classifica">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: 10 }}>
+        <Blocco titolo="🏆 Classifica" extra={`su ${forma.classifica?.[p.casa]?.squadre ?? '—'} squadre`} sottolinea>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
             {squadre.map(sq => {
               const cl = forma.classifica?.[sq]
               if (!cl) return <div key={sq} style={{ fontSize: 12, color: C.fantasma, fontFamily: F.sans }}>{sq}: —</div>
               const meglio = cl.posizione_forma < cl.posizione, peggio = cl.posizione_forma > cl.posizione
+              const conti = (v, n, pe) => (
+                <div style={{ display: 'flex', gap: 5, fontFamily: F.mono, fontSize: 13, fontWeight: 700 }}>
+                  <span style={{ color: C.verde }}>{v}V</span>
+                  <span style={{ color: C.fantasma }}>·</span>
+                  <span style={{ color: C.giallo }}>{n}N</span>
+                  <span style={{ color: C.fantasma }}>·</span>
+                  <span style={{ color: C.rosso }}>{pe}P</span>
+                </div>
+              )
               return (
-                <div key={sq} style={{ background: C.pozzo, border: `1px solid ${C.bordo}`, borderRadius: 10, padding: '10px 12px' }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, fontFamily: F.sans, color: C.testo, marginBottom: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sq}</div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                    <span style={{ fontSize: 28, fontWeight: 700, fontFamily: F.mono, color: C.testo, lineHeight: 1 }}>{cl.posizione}°</span>
-                    <span style={{ fontSize: 12, fontFamily: F.mono, color: C.spento }}>{cl.punti} pt</span>
+                <div key={sq} style={{ background: C.pozzo, border: `1px solid ${C.bordo}`, borderRadius: 10, padding: '11px 12px' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', fontFamily: F.sans, color: C.testo, marginBottom: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sq}</div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
+                    <span style={{ fontSize: 30, fontWeight: 700, fontFamily: F.mono, color: C.testo, lineHeight: 1 }}>{cl.posizione}°</span>
+                    <span style={{ fontSize: 13, fontFamily: F.mono, color: C.oro, fontWeight: 700 }}>{cl.punti} pt</span>
                   </div>
-                  <div style={{ marginTop: 9 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <Etichetta style={{ fontSize: 9 }}>forma</Etichetta>
-                      <span style={{ fontSize: 11, fontWeight: 700, fontFamily: F.mono, color: meglio ? C.verde : peggio ? C.rosso : C.testo }}>{cl.posizione_forma}°</span>
+                  <div style={{ marginTop: 7 }}>{conti(cl.vinte, cl.pari, cl.perse)}</div>
+                  <div style={{ fontSize: 10, fontFamily: F.mono, color: C.fioco, marginTop: 3 }}>in {cl.giocate} partite</div>
+
+                  {/* La classifica delle ultime 5: dice se sta salendo o scendendo. */}
+                  <div style={{ marginTop: 10, paddingTop: 9, borderTop: `1px solid ${C.bordoChiaro}` }}>
+                    <Etichetta style={{ fontSize: 9, marginBottom: 5 }}>forma · ultime {cl.giocate_forma}</Etichetta>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
+                      <span style={{ fontSize: 22, fontWeight: 700, fontFamily: F.mono, lineHeight: 1, color: meglio ? C.verde : peggio ? C.rosso : C.testo }}>{cl.posizione_forma}°</span>
+                      <span style={{ fontSize: 12, fontFamily: F.mono, color: C.spento }}>{cl.punti_forma} pt</span>
+                      {meglio && <span style={{ fontSize: 12, color: C.verde }}>▲{cl.posizione - cl.posizione_forma}</span>}
+                      {peggio && <span style={{ fontSize: 12, color: C.rosso }}>▼{cl.posizione_forma - cl.posizione}</span>}
                     </div>
-                    {/* 15 punti = cinque vittorie: la barra dice quanto ha raccolto */}
-                    <Barra frazione={cl.punti_forma / 15} colore={meglio ? C.verde : peggio ? C.rosso : C.oro} />
-                    <div style={{ marginTop: 4, fontSize: 10, fontFamily: F.mono, color: C.fioco }}>{cl.punti_forma} pt nelle ultime 5 · su {cl.squadre} squadre</div>
+                    <div style={{ marginTop: 6 }}>{conti(cl.vinte_forma, cl.pari_forma, cl.perse_forma)}</div>
                   </div>
                 </div>
               )
