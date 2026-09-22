@@ -61,12 +61,13 @@ Dopo ogni modifica ai dati:
 node --env-file=.env scripts/verifica-coerenza.js
 ```
 
-### 2. Il login passa da `emailDi()`, che esiste in due copie
+### 2. Il login passa da `emailDi()`, che esiste in tre copie
 
 Gli utenti non hanno email e non ne useranno una: entrano con **username +
 password**. L'identificatore che Supabase Auth pretende è sintetico e invisibile,
-costruito da `emailDi()` — che vive in `src/context/AuthContext.jsx` **e** in
-`scripts/_admin.js`. **Devono restare identiche**, o il login non trova l'account.
+costruito da `emailDi()` — che vive in `src/context/AuthContext.jsx`, in
+`scripts/_admin.js` **e**, in SQL, come `email_di()` (`sql/16`, la usa
+`crea_utente`). **Devono restare identiche**, o il login non trova l'account.
 
 ### 3. Le password non tornano nel database
 
@@ -92,11 +93,19 @@ Bypassa ogni regola. Sta in `.env` (gitignorato) e la usano solo gli script Node
 Nel frontend può stare solo `VITE_SUPABASE_ANON_KEY`, che è pubblica per
 progetto: a proteggere è RLS, non nasconderla.
 
-Per questo **creare utenti e resettare la password di altri sono usciti
-dall'interfaccia** e vivono in `scripts/`. **Stanno per rientrare** (fase 9 in
-STATO.md) attraverso due funzioni SQL `security definer` che scrivono in
-`auth.users` — la stessa strada di `ricalcola_bankroll`, non una Edge Function.
-La chiave resta fuori dal browser comunque.
+**Creare utenti, assegnare password ed eliminare account si fanno dall'app**
+(pagina Utenti) senza che la chiave entri nel browser: li esegue il database,
+con tre funzioni `security definer` in `sql/16` — `crea_utente`,
+`assegna_password`, `elimina_utente` — la stessa strada di `ricalcola_bankroll`.
+
+⚠️ **Solo il superadmin** le può chiamare, e il controllo è **dentro la
+funzione** (`esigi_superadmin()`): gli admin normali vengono respinti dal
+database, non dal JSX. ⚠️ `crea_utente` costruisce l'email sintetica con
+`email_di()` in SQL: è la **terza copia** di `emailDi()` e deve restare
+identica alle due JS. ⚠️ `elimina_utente` cancella **anche** la riga in
+`auth.users`: prima l'app toglieva solo quella in `public.users` e quello
+username restava bruciato per sempre. Gli script in `scripts/` restano come
+riserva da terminale.
 
 ---
 
@@ -321,8 +330,8 @@ node --env-file=.env scripts/confronta-utenti.js MarcoM Christian
 node --env-file=.env scripts/allinea-utenti.js  MarcoM Christian [--esegui]
 node --env-file=.env scripts/allinea-totale.js  3955.66 [--esegui]
 
-node --env-file=.env scripts/crea-utente.js mario user 500 "Mario Rossi"
-node --env-file=.env scripts/reset-password.js Bermani
+node --env-file=.env scripts/crea-utente.js mario user 500 "Mario Rossi"   # riserva: ora si fa dall'app
+node --env-file=.env scripts/reset-password.js Bermani                    # riserva: ora si fa dall'app
 node --env-file=.env scripts/prova-login.js Admin <password>
 
 cd bettertrade

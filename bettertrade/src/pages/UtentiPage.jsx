@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { supabase } from '../supabase'
 import { C, F, alpha } from '../theme'
 
 const S = {
@@ -27,6 +26,8 @@ const S = {
   bkInp: { background:'transparent', border:'none', outline:'none', color:C.oro, fontSize:13, fontFamily:F.mono, width:75, padding:'0 8px', fontWeight:500 },
   delBtn:{ background:alpha(C.rosso,0.08), border:`1px solid ${alpha(C.rosso,0.18)}`, borderRadius:6, color:C.rosso, fontSize:11, cursor:'pointer', padding:'5px 10px', fontFamily:F.sans },
   empty: { padding:40, textAlign:'center', color:C.fantasma, fontSize:14, fontFamily:F.sans },
+  pwBtn: { background:alpha(C.oro,0.10), border:`1px solid ${alpha(C.oro,0.3)}`, borderRadius:6, color:C.oro, fontSize:11, cursor:'pointer', padding:'5px 10px', fontFamily:F.sans },
+  select:{ background:C.pozzo, border:`1px solid ${C.bordo}`, borderRadius:7, padding:'9px 12px', color:C.testo, fontSize:14, fontFamily:F.sans, outline:'none', width:'100%' },
 }
 
 const ROLE_STYLE = {
@@ -35,8 +36,10 @@ const ROLE_STYLE = {
   user:       { bg:alpha(C.verde,0.10),   color:C.menta, av:alpha(C.verde,0.10),   avc:C.menta },
 }
 
+const VUOTO = { username:'', password:'', ruolo:'user', nome:'', bankroll:'' }
+
 export default function UtentiPage() {
-  const { currentUser, users, fetchUsers, cambiaMiaPassword, deleteUser, isSuperAdmin, isAdmin } = useAuth()
+  const { currentUser, users, fetchUsers, cambiaMiaPassword, creaUtente, assegnaPassword, deleteUser, isSuperAdmin, isAdmin } = useAuth()
   const [showPw, setShowPw] = useState(false)
   const [miaPw, setMiaPw]   = useState('')
   const [err, setErr] = useState('')
@@ -44,14 +47,43 @@ export default function UtentiPage() {
   const [busy, setBusy] = useState(false)
   const [savingPw, setSavingPw] = useState(false)
   const [pwOk, setPwOk] = useState('')
+  const [nuovo, setNuovo] = useState(null)          // il form, null quando è chiuso
+  const [cambio, setCambio] = useState(null)        // { username, password } della riga aperta
 
   useEffect(() => { if (isAdmin) fetchUsers() }, [])
 
+  const campo = (k, v) => setNuovo(n => ({ ...n, [k]: v }))
+
+  async function salvaNuovo() {
+    setErr(''); setOk(''); setBusy(true)
+    const r = await creaUtente(nuovo)
+    setBusy(false)
+    if (!r.ok) { setErr(r.error); return }
+    // La password si vede una volta sola: dopo è hashata e non si rilegge.
+    setOk(`Utente @${nuovo.username} creato. Password: ${nuovo.password} — segnala adesso, non si rilegge più.`)
+    setNuovo(null)
+  }
+
+  async function salvaPasswordDi(u) {
+    setErr(''); setOk(''); setBusy(true)
+    const r = await assegnaPassword(u.username, cambio.password)
+    setBusy(false)
+    if (!r.ok) { setErr(r.error); return }
+    setOk(`Password di @${u.username} aggiornata: ${cambio.password}`)
+    setCambio(null)
+  }
+
+  async function elimina(u) {
+    if (!confirm(`Elimina @${u.username}? Sparisce anche il suo accesso.`)) return
+    setErr(''); setOk('')
+    const r = await deleteUser(u.id)
+    if (!r.ok) setErr(r.error); else setOk(`@${u.username} eliminato`)
+  }
+
   const visible = isSuperAdmin ? users : users.filter(u => u.created_by === currentUser?.id || u.role === 'user')
 
-  // Cambio password della PROPRIA utenza. Per resettare quella di qualcun altro
-  // serve la chiave service_role, che nel browser non può stare: si usa
-  // `node --env-file=.env scripts/reset-password.js <username>`.
+  // Cambio password della PROPRIA utenza: la fa Supabase Auth per l'utente
+  // loggato. Quella di un altro la assegna il superadmin con la 🔑 sulla riga.
   async function salvaMiaPassword() {
     setErr(''); setPwOk(''); setSavingPw(true)
     const r = await cambiaMiaPassword(miaPw)
@@ -65,9 +97,16 @@ export default function UtentiPage() {
       <h1 style={S.h1}>Gestione Utenti</h1>
       <p style={S.sub}>{users.length} utenti nel database</p>
 
-      <button style={S.addBtn} onClick={() => { setShowPw(v=>!v); setErr(''); setPwOk('') }}>
-        {showPw ? '✕ Annulla' : '🔑 Cambia la mia password'}
-      </button>
+      <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+        <button style={S.addBtn} onClick={() => { setShowPw(v=>!v); setErr(''); setPwOk('') }}>
+          {showPw ? '✕ Annulla' : '🔑 Cambia la mia password'}
+        </button>
+        {isSuperAdmin && (
+          <button style={S.addBtn} onClick={() => { setNuovo(n => n ? null : { ...VUOTO }); setErr(''); setOk('') }}>
+            {nuovo ? '✕ Annulla' : '＋ Nuovo utente'}
+          </button>
+        )}
+      </div>
 
       {ok && <div style={S.ok}>✅ {ok}</div>}
       {pwOk && <div style={S.ok}>✅ {pwOk}</div>}
@@ -86,20 +125,43 @@ export default function UtentiPage() {
         </div>
       )}
 
-      {isAdmin && (
-        <div style={{ ...S.formCard, borderColor:alpha(C.bluPieno,0.2), background:alpha(C.bluPieno,0.05) }}>
-          <div style={{ fontSize:13, fontWeight:600, color:C.blu, fontFamily:F.sans, marginBottom:8 }}>
-            Creare utenti e resettare password
-          </div>
-          <div style={{ fontSize:12, color:C.grigioScuro, lineHeight:1.7, fontFamily:F.sans }}>
-            Queste due operazioni richiedono la chiave <code style={{color:C.oro}}>service_role</code>, che
-            non può stare nel browser: chiunque la leggesse avrebbe accesso completo al database.
-            Si fanno da terminale, nella cartella <code style={{color:C.oro}}>bettertrade/</code>:
-            <div style={{ marginTop:10, padding:'10px 12px', background:C.pozzo, border:`1px solid ${C.bordo}`, borderRadius:7, fontFamily:F.mono, fontSize:11, color:C.grigio, lineHeight:2 }}>
-              node --env-file=.env scripts/crea-utente.js<br/>
-              node --env-file=.env scripts/reset-password.js &lt;username&gt;
+      {nuovo && (
+        <div style={S.formCard}>
+          <div style={S.grid}>
+            <div style={S.field}>
+              <label style={S.label}>Username (lettere e cifre)</label>
+              <input style={S.input} value={nuovo.username} autoFocus placeholder="mario"
+                onChange={e=>campo('username', e.target.value)} />
+            </div>
+            <div style={S.field}>
+              <label style={S.label}>Nome visualizzato</label>
+              <input style={S.input} value={nuovo.nome} placeholder="Mario Rossi"
+                onChange={e=>campo('nome', e.target.value)} />
+            </div>
+            <div style={S.field}>
+              <label style={S.label}>Password (la scegli tu, minimo 6)</label>
+              <input style={S.input} value={nuovo.password} placeholder="fuoco-530"
+                onChange={e=>campo('password', e.target.value)} />
+            </div>
+            <div style={S.field}>
+              <label style={S.label}>Ruolo</label>
+              <select style={S.select} value={nuovo.ruolo} onChange={e=>campo('ruolo', e.target.value)}>
+                <option value="user">user</option>
+                <option value="admin">admin</option>
+                <option value="superadmin">superadmin</option>
+              </select>
+            </div>
+            <div style={S.field}>
+              <label style={S.label}>Bankroll iniziale</label>
+              <input style={S.input} value={nuovo.bankroll} placeholder="0" inputMode="decimal"
+                onChange={e=>campo('bankroll', e.target.value)} />
             </div>
           </div>
+          {err && <div style={{...S.err, marginTop:12}}>⚠️ {err}</div>}
+          <button style={S.saveBtn} onClick={salvaNuovo}
+            disabled={busy || nuovo.username.length < 3 || nuovo.password.length < 6}>
+            {busy ? 'Creazione…' : 'Crea utente'}
+          </button>
         </div>
       )}
 
@@ -109,7 +171,8 @@ export default function UtentiPage() {
         {visible.map((u, i) => {
           const rs = ROLE_STYLE[u.role] || ROLE_STYLE.user
           return (
-            <div key={u.id} style={{ ...S.row, borderBottom: i < visible.length-1 ? `1px solid ${C.bordoTenue}` : 'none' }}>
+            <div key={u.id}>
+            <div style={{ ...S.row, borderBottom: i < visible.length-1 ? `1px solid ${C.bordoTenue}` : 'none' }}>
               <div style={{ display:'flex', alignItems:'center', gap:12 }}>
                 <div style={{ ...S.avatar, background:rs.av, color:rs.avc }}>
                   {(u.display_name||u.username).substring(0,2).toUpperCase()}
@@ -127,10 +190,26 @@ export default function UtentiPage() {
                     {(u.bankroll||0).toFixed(2)}
                   </span>
                 </div>
+                {isSuperAdmin && (
+                  <button style={S.pwBtn} title="Assegna una password"
+                    onClick={()=>{ setErr(''); setOk(''); setCambio(c => c?.username === u.username ? null : { username:u.username, password:'' }) }}>🔑</button>
+                )}
                 {isSuperAdmin && u.role !== 'superadmin' && (
-                  <button style={S.delBtn} onClick={()=>{ if(confirm(`Elimina @${u.username}?`)) deleteUser(u.id) }}>✕</button>
+                  <button style={S.delBtn} onClick={()=>elimina(u)}>✕</button>
                 )}
               </div>
+            </div>
+            {cambio?.username === u.username && (
+              <div style={{ padding:'0 18px 14px', display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
+                <input style={{ ...S.input, width:200 }} autoFocus value={cambio.password}
+                  placeholder="Nuova password" onChange={e=>setCambio({ ...cambio, password:e.target.value })} />
+                <button style={{ ...S.saveBtn, marginTop:0, padding:'9px 16px', fontSize:13 }}
+                  disabled={busy || cambio.password.length < 6} onClick={()=>salvaPasswordDi(u)}>
+                  {busy ? 'Salvo…' : `Assegna a @${u.username}`}
+                </button>
+                <span style={{ fontSize:11, color:C.spento, fontFamily:F.sans }}>La scegli tu: falla dicibile a voce.</span>
+              </div>
+            )}
             </div>
           )
         })}

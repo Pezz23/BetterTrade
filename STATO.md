@@ -663,29 +663,52 @@ comunque con `ENOTFOUND`, aspettare un minuto e rilanciare.
 
 ---
 
-## 🔵 FASE 9 — Le credenziali dentro l'app — decisa il 16 settembre 2026, sera
+## ✅ FASE 9 — Le credenziali dentro l'app — fatta il 22 settembre 2026
 
 Mattia: "non mi serve troppa sicurezza, qui ci sono solo dati; vorrei gestire
-le credenziali direttamente da dentro l'app". Oggi creare un utente e cambiare
-la password di un altro stanno in `scripts/` perché servono la `service_role`.
+le credenziali direttamente da dentro l'app". Creare un utente e cambiare la
+password di un altro vivevano in `scripts/` perché servono la `service_role`.
 
-**La strada scelta: due funzioni SQL in `security definer`**, come
-`ricalcola_bankroll`, che scrivono in `auth.users` con l'hash fatto da Postgres.
-Niente Edge Function, niente servizio in più: SQL che applico e provo io.
+**Fatto senza Edge Function**: le esegue il database, `sql/16-gestione-utenti.sql`,
+tre funzioni `security definer` come `ricalcola_bankroll`. La chiave resta
+fuori dal browser.
 
-- [ ] `crea_utente(username, password, ruolo, nome, bankroll_iniziale)`: riga in
-      `auth.users` (email sintetica di `emailDi()`, **stessa regola delle due
-      copie JS**) + riga in `users`. Solo chi è admin la può chiamare.
-- [ ] `reset_password(username, password)`: cambia l'hash. Solo admin.
-- [ ] Pagina Utenti: **Nuovo utente** (password proposta pronunciabile,
-      modificabile prima di salvare) e **Reset password** su ogni riga.
-- [ ] `prova-permessi.js`: un utente normale che chiama le due funzioni deve
-      ricevere errore.
-- [ ] Gli script in `scripts/` restano come riserva.
+### Deciso il 22/09
+- **Solo il superadmin** crea, assegna password ed elimina. Gli altri admin
+  votano le partite e compilano le spin, niente account.
+- **Password sempre hashate**, mai in chiaro nel database. **Le assegna il
+  superadmin** (non generate a caso): si vedono una volta sola, nel messaggio
+  di conferma.
 
-**Le password restano hashate**: non si rileggono, si resettano. Proposto di
-non salvarle in chiaro; Mattia non ha ancora risposto. **Da decidere anche chi
-può farlo: solo superadmin (proposta) o tutti gli admin.**
+### Fatto
+- [x] `crea_utente(username, password, ruolo, nome, bankroll)`: riga in
+      `auth.users` (password bcrypt via `extensions.crypt`), riga in
+      `auth.identities` — senza, GoTrue non riconosce l'account come
+      email/password — e riga in `public.users`. Controlla username libero,
+      formato, password ≥ 6, ruolo valido, e che l'email sintetica non collida.
+- [x] `assegna_password(username, password)`.
+- [x] `elimina_utente(user_id)`: **chiude una falla vera** — `deleteUser`
+      cancellava solo `public.users`, l'account Auth restava e quello username
+      non era più ricreabile (l'email risultava presa).
+- [x] `email_di()` in SQL: **terza copia** di `emailDi()`, da tenere allineata.
+- [x] Pagina Utenti: "＋ Nuovo utente" (username, nome, password, ruolo,
+      bankroll) e 🔑 su ogni riga per assegnare una password. Via il riquadro
+      che spiegava come fare da terminale.
+- [x] `AuthContext`: `creaUtente`, `assegnaPassword`, `deleteUser` via RPC.
+- [x] `prova-permessi.js`: sei controlli nuovi — né utente né admin possono
+      chiamare le tre funzioni. **Tutti verdi il 22/09.**
+
+### Verificato dall'API, non solo compilato
+Quattordici controlli con account veri creati e poi cancellati: utente normale
+respinto, superadmin crea, **il nuovo account fa login davvero** (è la prova
+che conta: la password hashata dal database è accettata da GoTrue), password
+riassegnata (la vecchia non entra più), username già preso / con spazio /
+password corta rifiutati, eliminazione che rimuove anche l'account Auth e
+username di nuovo riusabile.
+
+### Resta
+- [ ] Gli script `crea-utente.js` e `reset-password.js` restano come riserva.
+- [ ] Da provare dall'app da Mattia (finora provato solo via API).
 
 ---
 

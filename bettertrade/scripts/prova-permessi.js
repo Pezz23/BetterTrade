@@ -123,5 +123,27 @@ if (partitaProva && uA && pA) {
   console.log('\n  · voti: nessuna partita futura in tabella, controlli saltati');
 }
 
+// ── La gestione degli account (sql/16) ──────────────────────────────────────
+// Le tre funzioni sono riservate al superadmin: qui si controlla che chi
+// superadmin non è venga respinto. Il percorso felice lo prova chi ha le
+// credenziali del superadmin, dall'app.
+{
+  console.log(`\nACCOUNT — solo il superadmin`);
+  const prove = [
+    ['crea_utente',      { p_username: 'ProvaVietata', p_password: 'prova-123' }],
+    ['assegna_password', { p_username: N.me.username, p_password: 'prova-123' }],
+    ['elimina_utente',   { p_user_id: N.me.id }],
+  ];
+  for (const [chi, s2] of [[N, 'utente'], [uA && pA ? await entra(uA, pA) : null, 'admin']]) {
+    if (!chi) continue;
+    for (const [fn, args] of prove) {
+      const { error } = await chi.s.rpc(fn, args);
+      esito(false, !error, `${s2} chiama ${fn}`);
+    }
+  }
+  const { data: dopo } = await servizio.from('users').select('id').eq('id', N.me.id);
+  esito(true, !!(dopo && dopo.length), 'dopo i tentativi l\'utente esiste ancora');
+}
+
 console.log(falliti ? `\n✗ ${falliti} controlli falliti\n` : '\n✓ tutti i permessi si comportano come previsto\n');
 process.exit(falliti ? 1 : 0);

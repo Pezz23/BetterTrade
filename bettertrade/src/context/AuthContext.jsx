@@ -91,9 +91,8 @@ export function AuthProvider({ children }) {
     setUsers([])
   }
 
-  // Cambia la password di CHI È LOGGATO. Per cambiare quella di un altro utente
-  // serve la chiave service_role, che non può stare nel browser:
-  // usa `node --env-file=.env scripts/reset-password.js <username>`.
+  // Cambia la password di CHI È LOGGATO. Quella di un altro la assegna il
+  // superadmin con assegnaPassword(), più sotto.
   async function cambiaMiaPassword(nuova) {
     if (!nuova || nuova.length < 6) return { ok: false, error: 'Almeno 6 caratteri' }
     const { error } = await supabase.auth.updateUser({ password: nuova })
@@ -112,9 +111,30 @@ export function AuthProvider({ children }) {
     return nuovo
   }
 
+  // Creare un utente, assegnargli una password ed eliminarlo: le fa il
+  // database (sql/16), in security definer. Servivano la chiave service_role
+  // e il terminale; il controllo "solo superadmin" è dentro la funzione SQL,
+  // non qui — qui si nascondono i bottoni, là si protegge.
+  async function creaUtente({ username, password, ruolo = 'user', nome = '', bankroll = 0 }) {
+    const { data, error } = await supabase.rpc('crea_utente', {
+      p_username: username, p_password: password, p_ruolo: ruolo,
+      p_nome: nome, p_bankroll: Number(bankroll) || 0,
+    })
+    if (error) return { ok: false, error: error.message }
+    await fetchUsers()
+    return { ok: true, id: data }
+  }
+
+  async function assegnaPassword(username, password) {
+    const { error } = await supabase.rpc('assegna_password', { p_username: username, p_password: password })
+    return error ? { ok: false, error: error.message } : { ok: true }
+  }
+
   async function deleteUser(userId) {
-    if (currentUser?.role !== 'superadmin') return { ok: false, error: 'Solo SuperAdmin' }
-    await supabase.from('users').delete().eq('id', userId)
+    // Cancellava solo la riga in users: l'account Auth restava e bruciava
+    // quello username per sempre. Ora li toglie entrambi la funzione SQL.
+    const { error } = await supabase.rpc('elimina_utente', { p_user_id: userId })
+    if (error) return { ok: false, error: error.message }
     await fetchUsers()
     return { ok: true }
   }
@@ -160,7 +180,7 @@ export function AuthProvider({ children }) {
       currentUser, users, loading, booting,
       pct, numSlot, savePct, saveNumSlot,
       login, logout, fetchUsers, cambiaMiaPassword,
-      aggiornaSaldo, deleteUser,
+      aggiornaSaldo, deleteUser, creaUtente, assegnaPassword,
       getTotalBankroll, getMyBase, getTotalBase, calcSchedule,
       isSuperAdmin, isAdmin,
     }}>
