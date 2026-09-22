@@ -31,6 +31,10 @@ import { traduci } from '../lib/nomi-squadre.js';
 import { CAMPIONATI } from './import-storico.js';
 
 const ESEGUI = process.argv.includes('--esegui');
+// Un campionato per volta: ogni chiamata costa un credito, e quando il DNS ne
+// fa cadere due o tre non ha senso ripagare tutti gli altri per riprenderli.
+const soloArg = process.argv.find(a => a.startsWith('--campionati='));
+const SOLO = soloArg ? soloArg.split('=')[1].split(',').map(x => x.trim().toUpperCase()) : null;
 const BOOK = process.env.ODDS_BOOK || 'codere_it';
 
 // Nomi validi per campionato: quelli visti nell'archivio nelle ultime due stagioni.
@@ -52,7 +56,14 @@ const massimo = v => v.length ? Math.max(...v) : null;
 const righe = [], sconosciute = new Map(), riepilogo = [];
 let creditiUsati = 0, creditiRimasti = null;
 
-for (const div of Object.keys(SPORT)) {
+const daFare = Object.keys(SPORT).filter(d => !SOLO || SOLO.includes(d));
+if (SOLO) {
+  const ignoti = SOLO.filter(d => !SPORT[d]);
+  if (ignoti.length) { console.error(`✗ campionati senza corrispondenza su The Odds API: ${ignoti.join(', ')}`); process.exit(1); }
+  console.log(`Solo: ${daFare.join(' ')}\n`);
+}
+
+for (const div of daFare) {
   let dati;
   try {
     const r = await quote(div);

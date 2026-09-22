@@ -345,6 +345,7 @@ node --env-file=.env scripts/aggiorna.js --esegui                   # LA ROUTINE
 #   = import-storico --stagioni=2627 → riconcilia-prossime → importa-prossime
 node --env-file=.env scripts/misura-valore.js --riferimento=media   # il criterio, a fine stagione
 node --env-file=.env scripts/import-storico.js --campionati=P1,N1   # solo alcuni campionati
+node --env-file=.env scripts/importa-prossime-odds.js --campionati=E0,I1 --esegui   # riprende i campionati caduti (1 credito l'uno)
 node scripts/backtest.js                           # gira offline, dalla cache
 ```
 

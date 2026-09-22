@@ -652,6 +652,36 @@ comunque con `ENOTFOUND`, aspettare un minuto e rilanciare.
 
 ---
 
+## 📅 Aggiornamento del 22 settembre 2026 — e la sosta lunga
+
+`aggiorna.js --esegui` eseguito. Archivio a **53.951 partite**, stagione in
+corso 862, ultima giocata **20/09**. Riconciliazione: 155 future su 156
+collegate allo storico.
+
+**⚠️ Non ci sono partite fino al 9 ottobre.** Non è un errore dell'import: lo
+dicono entrambe le fonti. `fixtures.csv` è fermo al blocco 18-20/09 e
+l'elenco eventi di The Odds API (gratis, `eventi()`) per I1 ed E0 salta da
+subito al 10 ottobre. Nelle stagioni 24/25 e 25/26 la Serie A giocava il
+27-29 settembre: quest'anno no — è la sosta lunga del calendario post-Mondiale.
+**Unica eccezione: SP2, che gioca il 25-28/09** (le seconde serie spesso
+giocano durante le soste).
+
+Conseguenza pratica per la pagina Partite: **questa settimana la finestra
+"fino a lunedì" è vuota** tranne 11 partite di SP2. Il blocco vero è
+**9-19 ottobre, 189 partite** già in tabella con il consenso.
+
+- Crediti The Odds API: **368 rimasti** su 500 (24 + 6 oggi).
+- Tre campionati (E0, E1, I1) sono caduti per DNS durante il passo 4 e sono
+  stati ripresi da soli: da qui `importa-prossime-odds.js --campionati=E0,E1,I1`,
+  che costa 3 crediti invece di 24.
+- Una futura resta scollegata: **SP1 Levante-Ath Bilbao del 16/09, mai
+  giocata** (rinviata). Resta come fotografia, è il comportamento giusto.
+- `verifica-storico.js`: nessuna anomalia — 0 esiti incoerenti, 0 quote fuori
+  scala, nessuna rinomina sospetta, margini nel range.
+- Gestione utenti provata da Mattia dall'app: **Marco e Nico creati** il 22/09.
+
+---
+
 ## 🔵 FASE 5 — Il pulsante Aggiorna nell'app
 
 - [x] ~~Menu ad hamburger~~ → fatto con la fase 6.
