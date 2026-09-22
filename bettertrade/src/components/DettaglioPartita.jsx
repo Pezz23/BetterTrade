@@ -130,8 +130,8 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 14, paddingTop: 10, borderTop: `1px solid ${C.bordoTenue}` }}>
-          <span style={{ fontSize: 14, fontWeight: 600, fontFamily: F.mono, color: C.testo }}>{giorno(p.data).toUpperCase()}</span>
-          {p.ora && <span style={{ fontSize: 14, fontWeight: 600, fontFamily: F.mono, color: C.spento }}>{p.ora.slice(0, 5)}</span>}
+          <span style={{ fontSize: 14, fontWeight: 600, fontFamily: F.mono, color: C.testo }}>📅 {giorno(p.data).toUpperCase()}</span>
+          {p.ora && <span style={{ fontSize: 14, fontWeight: 600, fontFamily: F.mono, color: C.testo }}>🕐 {p.ora.slice(0, 5)}</span>}
         </div>
       </div>
 
