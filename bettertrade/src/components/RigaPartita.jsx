@@ -1,10 +1,8 @@
-import { useState } from 'react'
 import { C, F, alpha } from '../theme'
 import { Card, Etichetta, Badge } from '../components/ui'
-import FormaPartita from './FormaPartita'
 
-// Una partita nella lista: squadre, attendibilità, giocata suggerita. Si apre
-// al tocco e mostra consenso, quote e scarto.
+// Una partita nella lista: squadre, attendibilità, giocata suggerita. Al tocco
+// si apre la scheda completa (components/DettaglioPartita.jsx).
 
 export const CATEGORIE = {
   centro: { nome: 'Centro', colore: C.menta,     desc: 'la partita perfetta' },
@@ -33,11 +31,10 @@ function Stella({ voti, mio, puoVotare, onVota }) {
   )
 }
 
-export default function RigaPartita({ p, cat, voti = 0, mio = false, puoVotare = false, onVota }) {
+export default function RigaPartita({ p, cat, voti = 0, mio = false, puoVotare = false, onVota, onApri }) {
   const c = CATEGORIE[cat]
-  const [aperta, setAperta] = useState(false)
   return (
-    <Card style={{ padding: '12px 14px', borderColor: cat !== 'no' ? alpha(c.colore, 0.35) : undefined, cursor: 'pointer' }} onClick={() => setAperta(v => !v)}>
+    <Card style={{ padding: '12px 14px', borderColor: cat !== 'no' ? alpha(c.colore, 0.35) : undefined, cursor: 'pointer' }} onClick={onApri}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
@@ -78,19 +75,6 @@ export default function RigaPartita({ p, cat, voti = 0, mio = false, puoVotare =
         )}
       </div>
 
-      {aperta && (
-        <>
-          <FormaPartita div={p.div} casa={p.casa} trasferta={p.trasferta} />
-          <div style={{ marginTop: 8, paddingTop: 6, borderTop: `1px solid ${C.bordoTenue}`, fontSize: 10, fontFamily: F.mono, color: C.fantasma, lineHeight: 1.7 }}>
-            consenso 1 {pct(p.p.p1)} · X {pct(p.p.px)} · 2 {pct(p.p.p2)}
-            {p.q1 && <> · {p.quotaFonte} {p.q1}/{p.qx}/{p.q2}</>}
-            {p.max_ap_1 && <> · max {p.max_ap_1}/{p.max_ap_x}/{p.max_ap_2}</>}
-            {p.scarto !== null && <> · sul {p.segno} paga <span style={{ color: p.scarto >= 0 ? C.verde : C.rosso }}>{pctSegno(p.scarto)}</span> vs equo {p.equo.toFixed(2)}</>}
-            {p.nota && <div>{p.nota}</div>}
-            <div>fonte {p.fonte || '—'} · {new Date(p.scaricato_il).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</div>
-          </div>
-        </>
-      )}
     </Card>
   )
 }

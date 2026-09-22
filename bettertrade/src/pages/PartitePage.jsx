@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { C, F, alpha } from '../theme'
 import { Card, Etichetta } from '../components/ui'
 import RigaPartita, { CATEGORIE, pct, giorno } from '../components/RigaPartita'
+import DettaglioPartita from '../components/DettaglioPartita'
 import { categoria, FINESTRE, SOGLIE_DEFAULT } from '../lib/attendibilita'
 
 // La lista delle partite future, ordinata per attendibilità.
@@ -28,6 +29,7 @@ export default function PartitePage() {
   const [quotaMax, setQuotaMax] = useState('')
   const [soloSopraSoglia, setSoloSopraSoglia] = useState(false)
   const [mostraSoglie, setMostraSoglie] = useState(false)
+  const [apertaId, setApertaId] = useState(null)    // la partita aperta a tutto schermo
 
   // Per il menu a tendina: "I1 – Serie A"
   const campionati = useMemo(() => {
@@ -68,6 +70,17 @@ export default function PartitePage() {
   }, [inFinestra, soglie])
 
   const ultimaData = inFinestra.reduce((m, r) => (r.data > m ? r.data : m), '')
+
+  // La scheda di una partita prende tutta la pagina: sul telefono è l'unico
+  // modo di leggerla, e la lista resta dov'era quando si torna indietro.
+  const aperta = righe.find(r => r.id === apertaId)
+  if (aperta) return (
+    <div style={{ padding: 12, maxWidth: 560, margin: '0 auto' }}>
+      <DettaglioPartita p={aperta} cat={categoria(aperta.probGiocata, soglie)}
+        voti={votiDi(aperta.id)} mio={mioVoto(aperta.id)} puoVotare={isAdmin}
+        onVota={() => vota(aperta.id)} onChiudi={() => setApertaId(null)} />
+    </div>
+  )
 
   return (
     <div style={{ padding: '16px' }}>
@@ -148,7 +161,8 @@ export default function PartitePage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {visibili.map(p => (
           <RigaPartita key={p.id} p={p} cat={categoria(p.probGiocata, soglie)}
-            voti={votiDi(p.id)} mio={mioVoto(p.id)} puoVotare={isAdmin} onVota={() => vota(p.id)} />
+            voti={votiDi(p.id)} mio={mioVoto(p.id)} puoVotare={isAdmin} onVota={() => vota(p.id)}
+            onApri={() => setApertaId(p.id)} />
         ))}
       </div>
 
