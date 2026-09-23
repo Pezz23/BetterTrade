@@ -148,7 +148,9 @@ function SlotVisiva({tiles}) {
     if (!t||!hasResults) return {bg:base.bg,border:base.border,color:base.color,glow:false}
     if (t.result==='win') return {bg:alpha(C.verde,0.20),border:alpha(C.verde,0.60),color:C.verde,glow:true,glowColor:alpha(C.verde,0.4)}
     if (t.result==='loss') return {bg:alpha(C.rosso,0.15),border:alpha(C.rosso,0.50),color:C.rosso,glow:false}
-    return {bg:alpha(C.grigioCupo,0.15),border:alpha(C.grigioCupo,0.30),color:C.fioco,glow:false}
+    // Ancora da giocare: resta del suo colore di posizione (giallo agli angoli,
+    // celeste ai lati, grigio al centro), non spenta.
+    return {bg:base.bg,border:base.border,color:base.color,glow:false}
   }
   const winCombos=COMBOS.filter(c=>comboStatus(tiles,c.pos)==='win')
   return (
@@ -157,8 +159,8 @@ function SlotVisiva({tiles}) {
       {/* Nove caselle attaccate: il bordo esterno è spesso, le righe interne
           sono solo lo sfondo che passa fra le celle (gap di 1px). */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:1,width:'100%',
-        background:C.bordoChiaro,border:`6px solid ${C.acciaio}`,overflow:'hidden',
-        boxShadow:`0 0 0 1px ${C.quasiNero}, inset 0 0 0 1px ${alpha(C.acciaio,0.25)}`}}>
+        background:C.bianco,border:`3px solid ${C.oro}`,overflow:'hidden',
+        boxShadow:`0 0 0 1px ${C.quasiNero}`}}>
         {SLOT_GRID.flat().map(partita=>{
           const ts=getTileStyle(partita),t=tiles.find(t=>t.id===partita)
           return (
