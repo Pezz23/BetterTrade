@@ -3,8 +3,8 @@
 > To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 9 settembre 2026
-**Fase corrente:** pagina Partite su attendibilità, criterio chiarito — prossimo passo: **venerdì il primo weekend, poi le spin (fase 7)**
+**Ultimo aggiornamento:** 23 settembre 2026
+**Prossimo passo:** il **lotto 1** della to-do qui sotto (testata e navigazione)
 
 ---
 
@@ -13,8 +13,97 @@
 **L'app e l'archivio sono ora nello stesso database.** `bettertrade/` (React+Vite,
 in produzione su Vercel) e le 53.796 partite di 15 campionati vivono entrambi in Supabase;
 `btscout/` resta il motore che le importa e le analizza. Sicurezza chiusa, numeri
-chiusi, archivio dentro. Sopra ci sono già la pagina Partite (attendibilità,
-stelline, forma) e le **Spin provvisorie** che compilano la griglia da sole.
+chiusi, archivio dentro. Sopra ci sono la pagina Partite (attendibilità, resa,
+stelline, forma), la **scheda della partita**, le **Spin provvisorie** che
+compilano la griglia da sole, la griglia **agganciata alle partite vere** e il
+**rendiconto** che misura come stiamo andando.
+
+---
+
+---
+
+# 🗂 LA TO-DO LIST
+
+> Riscritta e rinumerata il 23 settembre 2026. Le voci sono raggruppate in
+> **lotti**: cose che toccano gli stessi file e conviene fare insieme.
+> Le fasi storiche restano più sotto, come racconto di come ci siamo arrivati.
+
+## Lotto 1 — Testata e navigazione
+*Tocca `App.jsx` e basta: mezz'ora, e si vede subito.*
+
+1. **Il menu ☰ deve aprire una pagina che arriva fino in fondo.** Oggi le
+   pagine aperte dal menu si fermano prima del bordo inferiore.
+2. **Il tasto di uscita al posto delle iniziali**, quindi a sinistra del nome
+   utente, **colorato di giallo**.
+
+## Lotto 2 — Il voto della partita e i filtri della lista
+*Tocca `lib/attendibilita.js`, `PartitePage.jsx`, `RigaPartita.jsx`. Le tre
+voci si toccano fra loro: il filtro ha senso solo dopo il voto, e la barra dei
+filtri va rifatta comunque.*
+
+3. **Voto della partita da 1 a 10, con due decimali**, ricavato da
+   attendibilità × resa. ⚠️ **Attenzione al nome**: "voto" è già la stellina
+   degli admin (`voti_partite`). Servono due parole diverse — per esempio
+   **punteggio** per questo, **stelline** per quello delle persone.
+   Da decidere con Mattia: come si mappa il prodotto su 1-10 (la scala non è
+   ovvia: attendibilità 75% × resa 96% = 0,72 → che voto è?).
+4. **Filtro per punteggio** nella lista (minimo, come quello sulla quota).
+5. **Sistemare graficamente i filtri** della pagina Partite: oggi sono pillole
+   e campi messi in fila, stretti e disordinati su telefono.
+
+## Lotto 3 — Storico
+*Tocca `StoricoPage.jsx`.*
+
+6. **Le ultime chiuse: 30 partite invece di 12**, con le prime 10 visibili e
+   le altre **dentro un menu a scomparsa**.
+
+## Lotto 4 — Finire la scheda e la lista
+*Il restyling è a metà: mancano i blocchi in fondo.*
+
+7. Rifinire **scontri diretti** e **consenso** nella scheda della partita.
+8. **Provare su telefono vero** (finora solo browser desktop): 375, 390, 430px.
+
+## Lotto 5 — Le spin, da qui in avanti
+*Ora che la griglia conosce le partite vere.*
+
+9. **Rifare le spin 1 e 2 in griglia**: sono del 20/09, con le vecchie regole
+   (1X, X2), su partite già giocate, e una cella ha il nome storpiato
+   ("dd - Santander").
+10. **Escludere una partita dall'anteprima** delle Spin provvisorie con un
+    clic, senza doverla correggere dopo in Slot.
+11. **Confrontare le giocate vere con le proposte** nel rendiconto: adesso è
+    possibile, perché ogni casella porta `prossima_id`.
+12. **Lo storico delle spin**: oggi le 4 spin sono un blob JSON in una riga
+    sola condivisa (`griglia` id=1). Niente spin passate, e due admin che
+    editano insieme si sovrascrivono.
+
+## Lotto 6 — Aggiornamento dei dati
+13. **Installare l'aggiornamento automatico** (`btscout/aggiornamento.plist`,
+    launchd martedì e venerdì 18:30) — pronto, servono due comandi.
+14. **Lanciare il rendiconto ogni settimana** dopo l'aggiornamento e annotare
+    la riga.
+15. **Il pulsante "Aggiorna" nell'app** (ex fase 5): serve una Supabase Edge
+    Function. Meno urgente ora che ci sono chat e launchd.
+
+## Lotto 7 — Pulizia
+16. **Annidamento `BetterTrade/bettertrade/`** — una cartella di troppo.
+17. **README.md vuoto**; `btscout/CLAUDE.md` e `btscout/STATO.md` parlano
+    ancora di BTScout come progetto a sé.
+18. **`btscout/api/` + `index.html`**: PWA di chat mai deployata, da cancellare
+    se non serve.
+19. **`calcSchedule` arrotonda a zero** (`Math.floor` in `AuthContext.jsx`):
+    con base bassa produce €0 su tutte le voci. Correggerlo cambia gli importi
+    giocati — è una decisione, non una pulizia.
+20. **Nessun ambiente di prova su Vercel**: ogni push va in produzione, ed è
+    già costato una schermata nera.
+21. **I backtest usano ancora `ps_*`** (Pinnacle), che dalla stagione 26/27 non
+    esiste più: perdono la stagione in corso in silenzio.
+
+## Da decidere, non da fare
+- **Come si mappa il punteggio 1-10** (voce 3).
+- **Le spin esistenti si migrano o si riparte puliti** (voce 12).
+- **Vietare i bankroll negativi** a livello di database (`check (bankroll >= 0)`)
+  o tenerli come segnale d'allarme.
 
 ---
 
