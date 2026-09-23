@@ -44,6 +44,7 @@ export const C = {
   viola:  '#a855f7',  // riga evidenziata
   menta:  '#4ade80',  // ruolo user
   oroChiaro: '#f0d060',
+  acciaio:   '#9aa3ab',  // la cornice della slot: argento spento, non bianco
   celeste:   '#7dd3fc',
 
   // Tinte usate solo come sfondo trasparente. Sono più sature delle

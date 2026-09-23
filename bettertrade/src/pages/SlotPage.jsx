@@ -156,8 +156,9 @@ function SlotVisiva({tiles}) {
       <div style={{fontSize:9,color:C.spento,fontFamily:F.mono,letterSpacing:4,textTransform:'uppercase',marginBottom:12,textAlign:'center'}}>Slot</div>
       {/* Nove caselle attaccate: il bordo esterno è spesso, le righe interne
           sono solo lo sfondo che passa fra le celle (gap di 1px). */}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:1,maxWidth:300,margin:'0 auto',
-        background:C.bordoChiaro,border:`3px solid ${C.bordo}`,overflow:'hidden'}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:1,width:'100%',
+        background:C.bordoChiaro,border:`6px solid ${C.acciaio}`,overflow:'hidden',
+        boxShadow:`0 0 0 1px ${C.quasiNero}, inset 0 0 0 1px ${alpha(C.acciaio,0.25)}`}}>
         {SLOT_GRID.flat().map(partita=>{
           const ts=getTileStyle(partita),t=tiles.find(t=>t.id===partita)
           return (
