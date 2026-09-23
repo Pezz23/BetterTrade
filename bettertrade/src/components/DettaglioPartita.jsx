@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { C, F, alpha } from '../theme'
 import { Etichetta } from './ui'
 import { usaForma, striscia } from '../hooks/usaForma'
-import { CATEGORIE, pct, giorno } from './RigaPartita'
+import TestataPartita, { CATEGORIE, Scudetto, Stella, Barra, pct, giorno } from './TestataPartita'
 import { quotaDoppia } from '../lib/attendibilita'
 import { pronosticoDa } from '../lib/spin'
 
@@ -15,20 +15,6 @@ import { pronosticoDa } from '../lib/spin'
 // cambia lì.
 
 const ESITO = { V: C.verde, N: C.giallo, P: C.rosso }
-
-// I loghi dei club non li abbiamo (nel database le squadre sono solo nomi).
-// Al loro posto le iniziali su un tondo: costa zero e non finge.
-function Scudetto({ nome, colore, dim = 44 }) {
-  const iniziali = nome.split(/[\s-]+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase()
-  return (
-    <div style={{
-      width: dim, height: dim, borderRadius: '50%', flexShrink: 0,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: alpha(colore, 0.12), border: `1px solid ${alpha(colore, 0.35)}`,
-      color: colore, fontFamily: F.mono, fontWeight: 700, fontSize: dim * 0.32,
-    }}>{iniziali}</div>
-  )
-}
 
 const Blocco = ({ titolo, extra, children, style, sottolinea }) => (
   <div style={{ background: C.card, border: `1px solid ${C.bordo}`, borderRadius: 12, padding: '13px 14px', ...style }}>
@@ -50,26 +36,6 @@ const Chip = ({ testo, colore, titolo }) => (
     background: alpha(colore, 0.15), color: colore, border: `1px solid ${alpha(colore, 0.4)}`,
   }}>{testo}</span>
 )
-
-// Una barra: la quota parte di quanto vale, non da zero.
-const Barra = ({ frazione, colore, altezza = 6 }) => (
-  <div style={{ height: altezza, borderRadius: altezza, background: C.quasiNero, overflow: 'hidden' }}>
-    <div style={{ width: `${Math.max(0, Math.min(1, frazione)) * 100}%`, height: '100%', background: colore, borderRadius: altezza }} />
-  </div>
-)
-
-function Stella({ voti, mio, puoVotare, onVota }) {
-  return (
-    <button onClick={e => { e.stopPropagation(); if (puoVotare) onVota() }} disabled={!puoVotare}
-      title={puoVotare ? (mio ? 'Togli il tuo voto' : 'Vota questa partita') : `${voti} voti`}
-      style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20,
-        background: voti ? alpha(C.oro, 0.10) : 'transparent', border: `1px solid ${voti ? alpha(C.oro, 0.3) : C.bordo}`,
-        cursor: puoVotare ? 'pointer' : 'default' }}>
-      <span style={{ fontSize: 16, lineHeight: 1, color: mio ? C.oro : voti ? alpha(C.oro, 0.55) : C.fioco }}>{voti ? '★' : '☆'}</span>
-      <span style={{ fontSize: 11, fontFamily: F.mono, fontWeight: 700, color: voti ? C.oro : C.fioco }}>{voti}/3</span>
-    </button>
-  )
-}
 
 export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVotare = false, onVota, onChiudi }) {
   const [dettagli, setDettagli] = useState(false)
@@ -104,36 +70,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
           <Stella voti={voti} mio={mio} puoVotare={puoVotare} onVota={onVota} />
         </div>
 
-        {/* le due squadre, una per lato: i nomi lunghi vanno a capo, non si tagliano */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'start', gap: 8, marginTop: 14 }}>
-          {[[p.casa, '1'], [p.trasferta, '2']].map(([sq, segno], i) => (
-            <div key={sq} style={{ display: 'contents' }}>
-              {/* l'attendibilità sta fra le due squadre: è il numero che le mette a confronto */}
-              {i === 1 && (
-                <div style={{ alignSelf: 'center', textAlign: 'center', padding: '0 6px', minWidth: 96 }}>
-                  <Etichetta style={{ fontSize: 9, letterSpacing: '0.12em', marginBottom: 4 }}>attendibilità</Etichetta>
-                  <div style={{ fontSize: 26, fontWeight: 700, fontFamily: F.mono, color: c.colore, lineHeight: 1 }}>{pct(p.probGiocata)}</div>
-                  <div style={{ marginTop: 7 }}><Barra frazione={p.probGiocata} colore={c.colore} altezza={6} /></div>
-                </div>
-              )}
-              <div style={{ textAlign: 'center', minWidth: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
-                  <Scudetto nome={sq} colore={p.segno === segno ? c.colore : C.grigioFioco} dim={52} />
-                </div>
-                <div style={{
-                  fontSize: 'clamp(15px, 5.2vw, 22px)', fontWeight: 800, fontFamily: F.sans, letterSpacing: '0.02em',
-                  textTransform: 'uppercase', lineHeight: 1.15, overflowWrap: 'anywhere',
-                  color: p.segno === segno ? C.testo : C.spento,
-                }}>{sq}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 14, paddingTop: 10, borderTop: `1px solid ${C.bordoTenue}` }}>
-          <span style={{ fontSize: 14, fontWeight: 600, fontFamily: F.mono, color: C.testo }}>📅 {giorno(p.data).toUpperCase()}</span>
-          {p.ora && <span style={{ fontSize: 14, fontWeight: 600, fontFamily: F.mono, color: C.testo }}>🕐 {p.ora.slice(0, 5)}</span>}
-        </div>
+        <div style={{ marginTop: 14 }}><TestataPartita p={p} cat={cat} /></div>
 
         {/* ── La giocata, nello stesso riquadro dell'evento ──────────── */}
         <div style={{ marginTop: 14, paddingTop: 14, borderTop: `2px solid ${alpha(c.colore, 0.35)}` }}>
