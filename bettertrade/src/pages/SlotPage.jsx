@@ -161,8 +161,10 @@ function SlotVisiva({tiles}) {
         boxShadow:`0 0 0 1px ${C.quasiNero}`}}>
         {SLOT_GRID.flat().map(partita=>{
           const ts=getTileStyle(partita),t=tiles.find(t=>t.id===partita)
+          // La tinta della casella è semitrasparente e sotto passa la griglia
+          // bianca: senza un fondo opaco le caselle si illuminano di biancastro.
           return (
-            <div key={partita} style={{background:ts.bg,padding:'14px 6px',textAlign:'center',
+            <div key={partita} style={{background:`linear-gradient(${ts.bg},${ts.bg}), ${C.card}`,padding:'14px 6px',textAlign:'center',
               boxShadow:ts.glow?`inset 0 0 14px ${ts.glowColor}`:'none',transition:'background 0.3s ease'}}>
               <div style={{fontSize:11,fontWeight:700,color:ts.color,fontFamily:F.mono,marginBottom:2,opacity:0.65}}>{partita}</div>
               <div style={{fontSize:14,fontWeight:700,color:ts.color,fontFamily:F.mono}}>{t?.pronostico||'-'}</div>
