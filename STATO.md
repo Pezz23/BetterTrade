@@ -844,6 +844,41 @@ eliminato: la sua query vive ora in `hooks/usaForma.js`, usato dalla scheda.
 
 ---
 
+## 🎯 23 settembre 2026 — via la doppia chance
+
+Mattia: *"vorrei che l'algoritmo puntasse direttamente 1 o 2 con le relative
+quote. Escludiamo tutte le 1X e X2, troppo conservative. Questa settimana ne
+hai prese 15 su 18, ma erano quasi tutte con la X."*
+
+### Misurato prima di cambiare — 155 future poi giocate
+| | prese | |
+|---|---|---|
+| Tutte le proposte sopra soglia (regole vecchie) | 82/127 | **65%** |
+| — di cui doppia chance | 57/89 | 64% |
+| — favorito + over 1,5 | 6/7 | 86% |
+| — segno secco | 19/31 | 61% |
+| **Le stesse partite giocate a secco** | 57/127 | **45%** |
+
+**25 delle 57 doppie vinte sono finite in pareggio**: il 44% viveva della X.
+L'osservazione di Mattia era giusta, e il prezzo del cambio è noto: **−20
+punti di partite prese**, in cambio di giocate che dicono quello che pensano.
+
+### Fatto
+- [x] `lib/attendibilita.js`: via la regola `REGOLA_DOPPIA`, via `quotaDoppia`
+      e `probDoppia`. Resta `REGOLA_OVER` (sotto 1,25 → favorito + over 1,5).
+- [x] **Soglie scese a 75 / 62 / 52** (erano 80/65/55). Sulle 189 future il
+      secco dà 3 partite sopra l'80% e 11 sopra il 75%: con le vecchie soglie
+      il centro sarebbe rimasto vuoto. Restano regolabili con ⚙ nella lista.
+- [x] Verificato sui dati veri: 189 future → **11 centro, 23 gialle, 30 blu**,
+      125 sotto soglia. Le uniche giocate proposte ora sono `1`, `2` e
+      `# + over 1,5`.
+
+⚠️ **La X resta esclusa.** Mattia ha scritto "1, x o 2": inteso come "i tre
+segni secchi invece delle combo", non come riapertura della X — che la sua
+regola di partenza vietava. **Da confermare.**
+
+---
+
 ## 🔵 FASE 7 — Il modello dei dati delle spin
 
 Qui si riscrive. Lo schema attuale non regge l'obiettivo, per tre motivi in

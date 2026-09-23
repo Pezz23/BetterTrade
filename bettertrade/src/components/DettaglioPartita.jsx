@@ -3,7 +3,6 @@ import { C, F, alpha } from '../theme'
 import { Etichetta } from './ui'
 import { usaForma, striscia } from '../hooks/usaForma'
 import TestataPartita, { CATEGORIE, Scudetto, Stella, Barra, pct, giorno } from './TestataPartita'
-import { quotaDoppia } from '../lib/attendibilita'
 import { pronosticoDa } from '../lib/spin'
 
 // La scheda di una partita: tutto quello che sappiamo, in blocchi.
@@ -47,9 +46,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
   // La massima di mercato sulla stessa giocata: è il confronto che dice
   // qualcosa ("altrove pagano meglio"). Lo scarto contro la quota equa non lo
   // direbbe: essendo l'equa senza margine, sarebbe negativo su tutte.
-  const massima = p.giocata === '1X' ? quotaDoppia(p.max_ap_1, p.max_ap_x)
-                : p.giocata === 'X2' ? quotaDoppia(p.max_ap_x, p.max_ap_2)
-                : p.segno === '1' ? p.max_ap_1 : p.max_ap_2
+  const massima = p.segno === '1' ? p.max_ap_1 : p.max_ap_2
   const quotaMostrata = p.quotaGiocata ?? p.quota
   const vsMassima = quotaMostrata && massima ? quotaMostrata / massima - 1 : null
   const segnoPct = v => (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%'

@@ -7,16 +7,23 @@
 // modello e nessun indice di forma lo migliora: misurato anche quello.
 // Vedi STATO.md, "La misura che conta" e "Il segnale Como".
 //
-// Le regole di Mattia (16/09/2026):
-//   · si gioca 1 o 2, mai la X secca
+// Le regole di Mattia (16/09/2026, riviste il 23/09):
+//   · si gioca il segno secco, 1 o 2 — mai la X
 //   · quota < 1,25  → favorito + over 1,5 (se non basta, over 2,5)
-//   · quota > 1,90  → doppia chance (1X o X2), e l'attendibilità è quella
-//                     della doppia, non del segno secco
 //   · gialli = le più attendibili, blu = sacrificabili, centro = la perfetta
+//
+// La doppia chance è stata tolta il 23/09: "troppo conservativa". Misurato
+// sulle 127 proposte già giocate, le doppie prendevano il 64% ma 25 delle 57
+// vinte erano finite in pareggio — si vinceva grazie alla X, non al pronostico.
+// Le stesse partite giocate a secco: 45%. Si accetta di prenderne meno,
+// giocando quello che si è davvero previsto.
+//
+// Conseguenza: le probabilità crollano (una doppia sta al 75%, il secco sotto)
+// e le soglie sono state abbassate di conseguenza. Sulle 189 partite future
+// del 23/09: 3 sopra l'80%, 11 sopra il 75%, 28 sopra il 65%, 58 sopra il 55%.
 
 export const REGOLA_OVER = 1.25
-export const REGOLA_DOPPIA = 1.90
-export const SOGLIE_DEFAULT = { centro: 0.80, giallo: 0.65, blu: 0.55 }
+export const SOGLIE_DEFAULT = { centro: 0.75, giallo: 0.62, blu: 0.52 }
 
 /** Probabilità normalizzate da una terna di quote: toglie il margine. */
 export function probabilita(q1, qx, q2) {
@@ -24,9 +31,6 @@ export function probabilita(q1, qx, q2) {
   const s = 1 / q1 + 1 / qx + 1 / q2
   return { p1: 1 / q1 / s, px: 1 / qx / s, p2: 1 / q2 / s }
 }
-
-/** Quota doppia chance da due quote secche: 1/(1/a + 1/b). È come la prezzano i book. */
-export const quotaDoppia = (a, b) => (a && b) ? 1 / (1 / a + 1 / b) : null
 
 /**
  * Arricchisce una riga di prossime_partite con attendibilità e giocata.
@@ -59,18 +63,13 @@ export function valuta(r) {
     giocata = `${segno} + over 1,5`
     quotaGiocata = null
     nota = `quota ${quota} sotto ${REGOLA_OVER}: si aggiunge l'over 1,5 (se non basta, over 2,5 @${r.b365_over25 ?? '—'}). La quota combinata va letta sul book.`
-  } else if (quota && quota > REGOLA_DOPPIA) {
-    giocata = segno === '1' ? '1X' : 'X2'
-    quotaGiocata = segno === '1' ? quotaDoppia(q1, qx) : quotaDoppia(qx, q2)
-    nota = `quota ${quota} sopra ${REGOLA_DOPPIA}: doppia chance, stimata dalle quote 1X2`
   }
 
-  const probDoppia = segno === '1' ? p.p1 + p.px : p.p2 + p.px
   // Per "+ over" resta la probabilità del segno: un limite superiore, perché la
   // combinata vale meno (manca l'1-0) e non abbiamo le quote per dirlo.
-  const probGiocata = giocata.length === 2 ? probDoppia : prob
+  const probGiocata = prob
 
-  return { ...r, p, segno, prob, quota, quotaFonte, q1, qx, q2, equo, scarto, giocata, quotaGiocata, nota, probDoppia, probGiocata }
+  return { ...r, p, segno, prob, quota, quotaFonte, q1, qx, q2, equo, scarto, giocata, quotaGiocata, nota, probGiocata }
 }
 
 // Il nome leggibile del bookmaker di riferimento, dalla chiave di The Odds API.

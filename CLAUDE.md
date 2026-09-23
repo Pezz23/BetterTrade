@@ -123,8 +123,16 @@ conservativo (+3,3 punti, favourite-longshot bias). Nessun modello e nessun
 indice di forma migliora il consenso: misurato (`misura-forma.js`), il mercato
 si aggiusta entro cinque partite. **Como e Sunderland erano eccezioni.**
 
-**Le regole di gioco:** mai la X secca · quota < 1,25 → favorito + over 1,5 ·
-quota > 1,90 → doppia chance, e allora l'attendibilità è quella della doppia.
+**Le regole di gioco:** si gioca il **segno secco**, 1 o 2 · mai la X ·
+quota < 1,25 → favorito + over 1,5.
+
+⚠️ **La doppia chance è stata tolta il 23/09/2026** — "troppo conservativa".
+Misurato sulle 127 proposte già giocate: le doppie prendevano il 64%, ma **25
+delle 57 vinte erano pareggi** (si vinceva grazie alla X, non al pronostico);
+le stesse partite a secco fanno il 45%. Si accetta di prenderne meno, giocando
+quello che si è davvero previsto. Le soglie sono scese di conseguenza a
+**75 / 62 / 52** (con le doppie erano 80/65/55): il secco ha probabilità molto
+più basse, e con le vecchie soglie il "centro" restava vuoto.
 **La spin:** gialli (angoli) le più attendibili, blu (lati) sacrificabili, centro
 la perfetta — il centro sta in 3 schedine, i gialli in 3, i blu in 2.
 
