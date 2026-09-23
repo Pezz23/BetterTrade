@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import LoginPage from './pages/LoginPage'
 import SpinProvvisoriePage from './pages/SpinProvvisoriePage'
+import StoricoPage from './pages/StoricoPage'
 import UtentiPage from './pages/UtentiPage'
 import SlotPage from './pages/SlotPage'
 import DashboardPage from './pages/DashboardPage'
@@ -22,6 +23,7 @@ const TABS_BASE = [
 const VOCI_MENU = [
   { id:'partite', label:'Partite',  icon:'⚽', desc:'Le prossime partite con l\'indice di attendibilità' },
   { id:'provvisorie', label:'Spin provvisorie', icon:'🎰', desc:'Le spin compilate da sole, in anteprima', soloAdmin:true },
+  { id:'storico',     label:'Storico',          icon:'📚', desc:'L\'archivio e come stanno andando le proposte' },
   { id:'utenti',  label:'Utenti',   icon:'◎',  desc:'Gestione utenti e password', soloAdmin:true },
 ]
 
@@ -149,6 +151,7 @@ function AppShell() {
       case 'bilancio':  return <BilancioPage />
       case 'partite':   return <PartitePage />
       case 'provvisorie': return <SpinProvvisoriePage />
+      case 'storico':   return <StoricoPage />
       case 'utenti':    return <UtentiPage />
       default:          return <DashboardPage />
     }

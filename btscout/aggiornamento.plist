@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- L'aggiornamento automatico, martedì e venerdì alle 18:30.
+     Installazione:
+       cp btscout/aggiornamento.plist ~/Library/LaunchAgents/local.bettertrade.aggiorna.plist
+       launchctl load ~/Library/LaunchAgents/local.bettertrade.aggiorna.plist
+     Il log finisce in btscout/aggiornamento.log. Se il Mac è spento all'ora
+     prevista, launchd lo esegue appena si riaccende. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>local.bettertrade.aggiorna</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/node</string>
+    <string>--env-file=.env</string>
+    <string>scripts/aggiorna.js</string>
+    <string>--esegui</string>
+  </array>
+  <key>WorkingDirectory</key><string>/Users/IA/Desktop/CW/Github/BetterTrade/btscout</string>
+  <key>StandardOutPath</key><string>/Users/IA/Desktop/CW/Github/BetterTrade/btscout/aggiornamento.log</string>
+  <key>StandardErrorPath</key><string>/Users/IA/Desktop/CW/Github/BetterTrade/btscout/aggiornamento.log</string>
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Weekday</key><integer>2</integer><key>Hour</key><integer>18</integer><key>Minute</key><integer>30</integer></dict>
+    <dict><key>Weekday</key><integer>5</integer><key>Hour</key><integer>18</integer><key>Minute</key><integer>30</integer></dict>
+  </array>
+</dict>
+</plist>
