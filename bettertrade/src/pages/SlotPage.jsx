@@ -148,9 +148,7 @@ function SlotVisiva({tiles}) {
     if (!t||!hasResults) return {bg:base.bg,border:base.border,color:base.color,glow:false}
     if (t.result==='win') return {bg:alpha(C.verde,0.20),border:alpha(C.verde,0.60),color:C.verde,glow:true,glowColor:alpha(C.verde,0.4)}
     if (t.result==='loss') return {bg:alpha(C.rosso,0.15),border:alpha(C.rosso,0.50),color:C.rosso,glow:false}
-    // Ancora da giocare: resta del suo colore di posizione (giallo agli angoli,
-    // celeste ai lati, grigio al centro), non spenta.
-    return {bg:base.bg,border:base.border,color:base.color,glow:false}
+    return {bg:alpha(C.grigioCupo,0.15),border:alpha(C.grigioCupo,0.30),color:C.fioco,glow:false}
   }
   const winCombos=COMBOS.filter(c=>comboStatus(tiles,c.pos)==='win')
   return (
