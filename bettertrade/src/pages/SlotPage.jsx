@@ -182,15 +182,16 @@ function SlotVisiva({tiles}) {
           )
         })}
       </div>
-      {winCombos.length>0&&(
-        <div style={{marginTop:14,display:'flex',flexWrap:'wrap',gap:6,justifyContent:'center'}}>
-          {winCombos.map(c=>(
-            <div key={c.id} style={{fontSize:10,fontWeight:600,padding:'3px 10px',borderRadius:20,background:TIPO_BG[c.tipo],color:TIPO_COLOR[c.tipo],border:`1px solid ${TIPO_COLOR[c.tipo]}55`,fontFamily:F.mono,boxShadow:`0 0 8px ${TIPO_COLOR[c.tipo]}44`}}>
-              ✓ {c.nome}
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Lo spazio è sempre occupato, anche senza combinazioni vinte: altrimenti
+          la riga compare di colpo quando si inserisce un esito e spinge giù la
+          pagina sotto le dita. */}
+      <div style={{marginTop:14,minHeight:22,display:'flex',flexWrap:'wrap',gap:6,justifyContent:'center'}}>
+        {winCombos.map(c=>(
+          <div key={c.id} style={{fontSize:10,fontWeight:600,padding:'3px 10px',borderRadius:20,background:TIPO_BG[c.tipo],color:TIPO_COLOR[c.tipo],border:`1px solid ${TIPO_COLOR[c.tipo]}55`,fontFamily:F.mono,boxShadow:`0 0 8px ${TIPO_COLOR[c.tipo]}44`}}>
+            ✓ {c.nome}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
