@@ -12,7 +12,9 @@ import { supabase } from '../supabase'
 // e quella con le stelline (le votate prima). Le celle in cui le due
 // differiscono si accendono. La logica è in lib/spin.js.
 
-const SPIN = [1, 2, 3, 4]
+// La quarta spin è "Fun", libera e scritta a mano: la compilazione automatica
+// riempie solo le tre agganciate al calendario.
+const SPIN = [1, 2, 3]
 
 function Cella({ pos, partita, votiDi, diversa }) {
   const cat = partita ? categoria(partita.probGiocata, SOGLIE_DEFAULT) : 'no'
@@ -96,12 +98,12 @@ function Griglia({ titolo, colore, celle, riferimento, votiDi, indice, piena, on
 
 export default function SpinProvvisoriePage() {
   const { righe, votiDi, caricamento, errore } = usaProssime()
-  const [quante, setQuante] = useState(2)
+  const [quante, setQuante] = useState(3)
   // Quali spin della griglia hanno già qualcosa dentro: per la conferma.
-  const [piene, setPiene] = useState([false, false, false, false])
+  const [piene, setPiene] = useState([false, false, false])
   async function leggiGriglia() {
     const { data } = await supabase.from('griglia').select('spins').eq('id', 1).single()
-    setPiene([0, 1, 2, 3].map(i => spinPiena(data?.spins?.[i])))
+    setPiene([0, 1, 2].map(i => spinPiena(data?.spins?.[i])))
   }
   useEffect(() => { leggiGriglia() }, [])
 

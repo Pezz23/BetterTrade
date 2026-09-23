@@ -2,7 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../supabase'
 import { C, F, alpha } from '../theme'
-import { DISPOSIZIONE } from '../lib/spin'
+import { DISPOSIZIONE, cellaDa } from '../lib/spin'
+import { usaProssime } from '../hooks/usaProssime'
+import SceltaPartita from '../components/SceltaPartita'
 
 const COMBOS = [
   { id:1, nome:'Tris 1-5-2',       tipo:'tris',    pos:[1,5,2]              },
@@ -19,7 +21,10 @@ const COMBOS = [
 // l'esito più probabile (0,36% delle partite in archivio) e la doppia chance
 // è stata tolta il 23/09/2026.
 export const PRONOSTICI = ['1','2','1+O1,5','2+O1,5','1+O2,5','2+O2,5']
-const SPIN_LABELS = ['Spin 1','Spin 2','Spin 3','Spin 4']
+// Le prime tre spin sono agganciate alle partite vere del calendario; la
+// quarta è libera — "Fun": si scrive quello che si vuole, senza collegamento.
+const SPIN_LABELS = ['Spin 1','Spin 2','Spin 3','Fun']
+export const SPIN_LIBERA = 3
 const TIPO_COLOR  = { tris:C.verde, quaterna:C.blu, full:C.oro }
 const TIPO_BG     = { tris:alpha(C.verde,0.10), quaterna:alpha(C.bluPieno,0.10), full:alpha(C.oro,0.10) }
 const SLOT_GRID   = DISPOSIZIONE
@@ -36,7 +41,7 @@ const TILE_BASE   = {
 }
 
 function emptyTiles() {
-  return Array.from({length:9},(_,i)=>({id:i+1,casa:'',ospite:'',pronostico:'',quota:'',data:'',result:''}))
+  return Array.from({length:9},(_,i)=>({id:i+1,casa:'',ospite:'',pronostico:'',quota:'',data:'',result:'',prossima_id:null}))
 }
 function emptySpins() { return [0,1,2,3].map(()=>emptyTiles()) }
 function isOggi(dataStr) {
@@ -62,9 +67,11 @@ const cell=(extra={})=>({
 })
 
 // ── TabellaGriglia ────────────────────────────────────────────────────────────
-function TabellaGriglia({tiles,isAdmin,onUpdate,onReset,syncing}) {
+function TabellaGriglia({tiles,isAdmin,onUpdate,onCambia,onReset,syncing,libera,partite}) {
   const [confirmReset,setConfirmReset]=useState(false)
-  const COLS='64px 1fr 12px 1fr 52px 54px 80px'   // 64: ci deve stare '1+O1,5'
+  // Sulle spin agganciate la partita è una casella sola (il menu con ricerca);
+  // sulla spin libera restano i due campi di testo come sempre.
+  const COLS=libera?'64px 1fr 12px 1fr 52px 54px 80px':'64px 1fr 52px 54px 80px'   // 64: ci deve stare '1+O1,5'
   function handleReset() {
     if (!confirmReset){setConfirmReset(true);setTimeout(()=>setConfirmReset(false),3000);return}
     onReset();setConfirmReset(false)
@@ -74,7 +81,7 @@ function TabellaGriglia({tiles,isAdmin,onUpdate,onReset,syncing}) {
       {syncing&&<div style={{fontSize:10,color:C.spento,fontFamily:F.mono,marginBottom:8,textAlign:'right'}}>⟳ Sincronizzazione…</div>}
       {!isAdmin&&<div style={{background:alpha(C.bluPieno,0.08),border:`1px solid ${alpha(C.bluPieno,0.2)}`,borderRadius:8,padding:'9px 12px',fontSize:12,color:C.blu,fontFamily:F.sans,marginBottom:12}}>Modalità lettura</div>}
       <div style={{display:'grid',gridTemplateColumns:COLS,gap:4,padding:'0 2px',marginBottom:4}}>
-        {['Pron.','Casa','','Ospite','Quota','Data','Ris.'].map((h,i)=>(
+        {(libera?['Pron.','Casa','','Ospite','Quota','Data','Ris.']:['Pron.','Partita','Quota','Data','Ris.']).map((h,i)=>(
           <div key={`col-${i}`} style={{fontSize:9,color:C.spento,fontFamily:F.mono,textTransform:'uppercase',letterSpacing:'0.07em',textAlign:'center',padding:'4px 0'}}>{h}</div>
         ))}
       </div>
@@ -91,9 +98,16 @@ function TabellaGriglia({tiles,isAdmin,onUpdate,onReset,syncing}) {
                 value={t.pronostico} disabled={!isAdmin} onChange={e=>onUpdate(t.id,'pronostico',e.target.value)}>
                 <option value="">-</option>{PRONOSTICI.map(v=><option key={v} value={v}>{v}</option>)}
               </select>
-              <input style={cell()} placeholder="Casa" value={t.casa} disabled={!isAdmin} onChange={e=>onUpdate(t.id,'casa',e.target.value)}/>
-              <div style={{fontSize:10,color:C.fantasma,textAlign:'center',fontFamily:F.mono}}>-</div>
-              <input style={cell()} placeholder="Ospite" value={t.ospite} disabled={!isAdmin} onChange={e=>onUpdate(t.id,'ospite',e.target.value)}/>
+              {libera?<>
+                <input style={cell()} placeholder="Casa" value={t.casa} disabled={!isAdmin} onChange={e=>onUpdate(t.id,'casa',e.target.value)}/>
+                <div style={{fontSize:10,color:C.fantasma,textAlign:'center',fontFamily:F.mono}}>-</div>
+                <input style={cell()} placeholder="Ospite" value={t.ospite} disabled={!isAdmin} onChange={e=>onUpdate(t.id,'ospite',e.target.value)}/>
+              </>:
+                <SceltaPartita casa={t.casa} ospite={t.ospite} collegata={!!t.prossima_id} partite={partite}
+                  disabled={!isAdmin}
+                  onScegli={p=>onCambia(t.id,cellaDa(t.id,p))}
+                  onLibera={()=>onCambia(t.id,{id:t.id,casa:'',ospite:'',pronostico:'',quota:'',data:'',result:'',prossima_id:null})}/>
+              }
               <input style={cell({textAlign:'center',color:C.oro,padding:'5px 4px'})}
                 type="number" step="0.01" min="1" placeholder="@"
                 value={t.quota} disabled={!isAdmin} onChange={e=>onUpdate(t.id,'quota',e.target.value)}/>
@@ -265,6 +279,9 @@ function Schedine({tiles,isAdmin,sched,isWip,spinIdx}) {
 // ── SlotPage ──────────────────────────────────────────────────────────────────
 export default function SlotPage() {
   const {isAdmin,isSuperAdmin,getMyBase,getTotalBase,calcSchedule} = useAuth()
+  // Le partite future valutate: le stesse della pagina Partite e delle spin
+  // provvisorie, dallo stesso hook.
+  const {righe:partite} = usaProssime()
   const [activeSpin,setActiveSpin] = useState(0)
   const [activeTab,setActiveTab]   = useState('griglia')
   const [spins,setSpinsState]      = useState(emptySpins)
@@ -308,6 +325,12 @@ export default function SlotPage() {
     setSpins(prev=>prev.map((spin,si)=>si===activeSpin?spin.map(t=>t.id===id?{...t,[field]:val}:t):spin))
   }
 
+  // Sostituisce l'intera casella: serve quando si sceglie una partita dal
+  // calendario, che porta con sé squadre, data, giocata, quota e prossima_id.
+  function cambiaTile(id,cella) {
+    setSpins(prev=>prev.map((spin,si)=>si===activeSpin?spin.map(t=>t.id===id?{...cella,result:t.result}:t):spin))
+  }
+
   async function resetSpin() {
     setSpins(prev=>prev.map((spin,si)=>si===activeSpin?emptyTiles():spin))
     // Reset spunte su Supabase
@@ -343,7 +366,8 @@ export default function SlotPage() {
         ))}
       </div>
       {activeTab==='griglia'
-        ?<TabellaGriglia tiles={tiles} isAdmin={isAdmin} onUpdate={updateTile} onReset={resetSpin} syncing={syncing}/>
+        ?<TabellaGriglia tiles={tiles} isAdmin={isAdmin} onUpdate={updateTile} onCambia={cambiaTile}
+           onReset={resetSpin} syncing={syncing} libera={activeSpin===SPIN_LIBERA} partite={partite}/>
         :<Schedine tiles={tiles} isAdmin={isAdmin} sched={sched} isWip={isWip} spinIdx={activeSpin}/>
       }
     </div>
