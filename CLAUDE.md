@@ -124,7 +124,10 @@ indice di forma migliora il consenso: misurato (`misura-forma.js`), il mercato
 si aggiusta entro cinque partite. **Como e Sunderland erano eccezioni.**
 
 **Le regole di gioco:** si gioca il **segno secco**, 1 o 2 · mai la X ·
-quota < 1,25 → favorito + over 1,5.
+quota < 1,25 → favorito + over 1,5, e lì l'attendibilità è quella del segno
+**scontata di `FATTORE_OVER` = 0,908** (misurato: fra i favoriti che vincono,
+il 90,8% ha almeno due gol). Senza quello sconto si dichiarava 81% e si
+prendeva il 76%.
 
 ⚠️ **La doppia chance è stata tolta il 23/09/2026** — "troppo conservativa".
 Misurato sulle 127 proposte già giocate: le doppie prendevano il 64%, ma **25
@@ -351,6 +354,7 @@ node --env-file=.env scripts/verifica-storico.js   # coerenza dell'archivio (set
 node --env-file=.env scripts/audit-archivio.js     # controllo completo (dopo ogni campionato nuovo)
 node --env-file=.env scripts/aggiorna.js --esegui                   # LA ROUTINE: martedì e venerdì dopo le 18
 #   = import-storico --stagioni=2627 → riconcilia-prossime → importa-prossime
+node --env-file=.env scripts/rendiconto.js          # IL RENDICONTO: calibrazione + resa delle proposte
 node --env-file=.env scripts/misura-valore.js --riferimento=media   # il criterio, a fine stagione
 node --env-file=.env scripts/import-storico.js --campionati=P1,N1   # solo alcuni campionati
 node --env-file=.env scripts/importa-prossime-odds.js --campionati=E0,I1 --esegui   # riprende i campionati caduti (1 credito l'uno)

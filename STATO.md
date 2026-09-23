@@ -887,6 +887,61 @@ il mercato non ci dà vantaggio. Tolta anche dalla tendina della griglia
 
 ---
 
+## 📊 Il rendiconto — 23 settembre 2026
+
+`btscout/scripts/rendiconto.js`. Nato dalla domanda di Mattia: "capire se
+stiamo facendo bene e cosa migliorare". Due parti, perché ci sono due dati:
+
+- **A. Calibrazione sull'archivio** (37.910 partite dal 19/20): il criterio
+  applicato all'indietro con le sole quote di **apertura**. Dice se "75%" vale
+  davvero 75%.
+- **B. Le proposte vere** (`prossime_partite` riconciliate, 155 e in crescita):
+  resa per categoria, fedeltà delle quote, e le stelline.
+  ⚠️ **Ricostruita con le regole di oggi**, non è il registro delle giocate —
+  quello sta in `griglia`, non ancora collegata.
+
+### Cosa ha trovato subito: l'over non era scontato
+Sulle combinate `favorito + over 1,5` si dichiarava **81,1%** e si prendeva
+**76,2%**. Il segno da solo vince l'83,9%, ma solo il **90,8%** di quelle
+partite ha almeno due gol. Introdotto `FATTORE_OVER = 0,908` in
+`lib/attendibilita.js`: la combinata ora dichiara 73,6% e ne prende 76,2%.
+
+### La calibrazione, dopo la correzione
+| dichiarato | reale | scarto |
+|---|---|---|
+| 50-55% | 53,2% | +0,8 |
+| 55-60% | 59,8% | +2,4 |
+| 60-65% | 64,6% | +2,2 |
+| 65-70% | 71,9% | +4,4 |
+| 70-75% | 74,8% | +2,5 |
+| 75-80% | 81,2% | +4,6 |
+| 80-90% | 91,5% | +10,4 |
+
+**Il criterio è prudente in ogni fascia**: promette meno di quanto mantiene.
+È il favourite-longshot bias già misurato, e va nella direzione giusta.
+Per categoria: centro 82,0% (dichiarato 76,9), giallo 71,4% (68,4), blu 58,4%
+(56,4).
+
+### Quanto è rara una spin perfetta
+Prendendo le 9 più attendibili di ogni campionato e stagione: **caselle
+indovinate 65,4%**, ma **spin piene 62 su 1.422, il 4,4%** (attese 34, quindi
+anche qui si fa meglio del previsto). Una spin perfetta capita una volta su
+23: è la matematica delle nove caselle, non un difetto del criterio.
+
+### Le proposte vere (57 sopra soglia, dal 16/09)
+33 prese su 57 (57,9%, atteso 62,2%) — centro 7/9, giallo 9/12, blu 17/36.
+Le blu sono la parte debole, e sono le sacrificabili: coerente.
+Quote viste prima contro Bet365 registrata dopo: **+1,5%**, la fotografia è
+fedele. Stelline: **1 sola partita votata**, non c'è ancora niente da leggere.
+
+### Da fare
+- [ ] Rilanciarlo ogni settimana dopo `aggiorna.js` e annotare la riga.
+- [ ] Portarlo nell'app come pagina "Rendiconto" quando ci sarà più storia.
+- [ ] Quando `griglia` sarà collegata (fase 7), confrontare le proposte con
+      **quello che il gruppo ha davvero giocato**: è un'altra domanda.
+
+---
+
 ## 🔵 FASE 7 — Il modello dei dati delle spin
 
 Qui si riscrive. Lo schema attuale non regge l'obiettivo, per tre motivi in

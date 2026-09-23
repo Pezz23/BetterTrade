@@ -9,7 +9,8 @@
 //
 // Le regole di Mattia (16/09/2026, riviste il 23/09):
 //   · si gioca il segno secco, 1 o 2 — mai la X
-//   · quota < 1,25  → favorito + over 1,5 (se non basta, over 2,5)
+//   · quota < 1,25  → favorito + over 1,5 (se non basta, over 2,5), e
+//     l'attendibilità è quella del segno scontata del fattore over (FATTORE_OVER)
 //   · gialli = le più attendibili, blu = sacrificabili, centro = la perfetta
 //
 // La doppia chance è stata tolta il 23/09: "troppo conservativa". Misurato
@@ -23,6 +24,13 @@
 // del 23/09: 3 sopra l'80%, 11 sopra il 75%, 28 sopra il 65%, 58 sopra il 55%.
 
 export const REGOLA_OVER = 1.25
+
+// Quando si aggiunge l'over 1,5 non basta che il favorito vinca: servono anche
+// due gol. Misurato sull'archivio (rendiconto.js, 1.411 partite dal 19/20):
+// fra le volte in cui il favorito ha vinto, il 90,8% aveva almeno due gol.
+// Senza questa correzione l'attendibilità dichiarata era 81,1% e la resa
+// vera 76,2% — cinque punti di troppo, sempre sulle partite più importanti.
+export const FATTORE_OVER = 0.908
 export const SOGLIE_DEFAULT = { centro: 0.75, giallo: 0.62, blu: 0.52 }
 
 /** Probabilità normalizzate da una terna di quote: toglie il margine. */
@@ -65,9 +73,9 @@ export function valuta(r) {
     nota = `quota ${quota} sotto ${REGOLA_OVER}: si aggiunge l'over 1,5 (se non basta, over 2,5 @${r.b365_over25 ?? '—'}). La quota combinata va letta sul book.`
   }
 
-  // Per "+ over" resta la probabilità del segno: un limite superiore, perché la
-  // combinata vale meno (manca l'1-0) e non abbiamo le quote per dirlo.
-  const probGiocata = prob
+  // Sulla combinata la probabilità è quella del segno scontata del fattore
+  // misurato: non abbiamo le quote dell'over 1,5, ma abbiamo lo storico.
+  const probGiocata = giocata.includes('over') ? prob * FATTORE_OVER : prob
 
   return { ...r, p, segno, prob, quota, quotaFonte, q1, qx, q2, equo, scarto, giocata, quotaGiocata, nota, probGiocata }
 }
