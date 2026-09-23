@@ -31,7 +31,7 @@ export const REGOLA_OVER = 1.25
 // Senza questa correzione l'attendibilità dichiarata era 81,1% e la resa
 // vera 76,2% — cinque punti di troppo, sempre sulle partite più importanti.
 export const FATTORE_OVER = 0.908
-export const SOGLIE_DEFAULT = { centro: 0.80, giallo: 0.74, blu: 0.68 }
+export const SOGLIE_DEFAULT = { centro: 0.78, giallo: 0.72, blu: 0.65 }
 
 /** Probabilità normalizzate da una terna di quote: toglie il margine. */
 export function probabilita(q1, qx, q2) {

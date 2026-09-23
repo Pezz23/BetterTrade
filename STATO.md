@@ -737,8 +737,9 @@ casella è a −2%, un tris è a −6%. La struttura amplifica la varianza, il
 vantaggio può venire solo dalla scelta delle caselle.
 
 ### Fatto
-- [x] **Soglie 80 / 74 / 68** (`SOGLIE_DEFAULT`). Sulle 189 future:
-      1 centro, 5 gialle, 13 blu — 19 partite, abbastanza per due spin.
+- [x] **Soglie 78 / 72 / 65** (`SOGLIE_DEFAULT`), dopo un primo giro a
+      80/74/68. Sulle 189 future: 1 centro, 10 gialle, 16 blu — 27 partite,
+      tre spin piene.
 - [x] **La resa attesa** accanto all'attendibilità, in lista e nella scheda:
       `quota × probabilità`, 100% = pareggio. Per le combinate con l'over la
       quota non esiste in nessuna fonte: si stima dividendo quella del segno
