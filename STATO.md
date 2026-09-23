@@ -5,6 +5,8 @@
 
 **Ultimo aggiornamento:** 23 settembre 2026
 **Prossimo passo:** il **lotto 1** della to-do qui sotto (testata e navigazione)
+**Da decidere prima del lotto 2:** come si chiama il punteggio 1-10 (il nome
+"voto" è già preso dalle stelline) e come si mappa la scala.
 
 ---
 

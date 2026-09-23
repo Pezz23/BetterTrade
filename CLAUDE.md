@@ -17,6 +17,11 @@ punto esatto in cui siamo. **Alla fine aggiornalo.** Se una task cambia stato e 
 file non lo riflette, la sessione dopo riparte da informazioni sbagliate.
 Aggiornare STATO.md fa parte del lavoro, non è un extra.
 
+La to-do sta **in cima al file**, divisa in **lotti** (voci che toccano gli
+stessi file e conviene fare insieme), rinumerata il 23/09/2026. Sotto ci sono
+le fasi storiche: servono a capire *perché* una cosa è fatta così, non cosa
+manca. Quando un lotto finisce, va spuntato lì.
+
 ---
 
 ## Come lavorare con Mattia
@@ -262,14 +267,20 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   colore lì, riportalo in `theme.js` e viceversa.
 - **Navigazione**: 4 tasti in basso (Dashboard, Slot, Reporting, Bilancio) per
   l'uso quotidiano; il menu ☰ in alto a destra per il resto (`VOCI_MENU` in
-  `App.jsx`). Una pagina nuova va nel menu, non come quinto tasto.
+  `App.jsx`): **Partite, Spin provvisorie, Storico, Utenti**. Una pagina nuova
+  va nel menu, non come quinto tasto.
 - **L'attendibilità è in `src/lib/attendibilita.js`**, solo calcoli: probabilità
   dal consenso (`avg_ap_*`, non l'exchange), regole di gioco, categorie, finestra
   della settimana. **La composizione delle spin è in `src/lib/spin.js`**
   (candidate, ordine con le stelline, celle della griglia, scrittura). Le
   pagine (`PartitePage`, `SpinProvvisoriePage`) leggono partite e voti dallo
   stesso hook `hooks/usaProssime.js`: **non duplicare la logica nelle pagine.**
-  La riga della lista è `components/RigaPartita.jsx`.
+  La riga della lista è `components/RigaPartita.jsx`, la scheda intera
+  `components/DettaglioPartita.jsx`, e **la testata (squadre, attendibilità,
+  resa, data) è la stessa per tutt'e due**: `components/TestataPartita.jsx`,
+  in versione compatta o grande. Cambiarla lì cambia entrambe — è voluto.
+  Le sigle dei campionati a schermo (ITA1, ENG1…) stanno in `lib/campionati.js`
+  e **non toccano il database**: `div` resta quella di football-data.
 - **Le librerie in `src/lib/` importano con l'estensione** (`'./attendibilita.js'`):
   Vite non se ne accorge e Node le può eseguire da terminale per provarle sui
   dati veri, senza browser.
@@ -327,6 +338,15 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   tagliare i primi dieci caratteri sposta tutto indietro di un giorno. Si
   ricostruisce la data dai componenti locali — `giornoLocale()` in
   `bettertrade/scripts/importa-partite.js`.
+- **Niente deve cambiare altezza quando arriva un dato.** Nella slot il ✓/✗ è
+  più grande del pronostico e allungava la casella; la riga delle combinazioni
+  vinte compariva dal nulla e spingeva giù la pagina sotto le dita. Si risolve
+  riservando lo spazio (altezza fissa, `minHeight`), non sperando che il
+  contenuto sia della misura giusta.
+- **Una tinta semitrasparente su uno sfondo chiaro si illumina.** Le caselle
+  della slot usano `alpha(...)`: con la griglia bianca sotto diventavano
+  biancastre, e il grigio "spento" sul fondo opaco sembrava nero. Serve un
+  fondo opaco sotto la tinta: `linear-gradient(tinta,tinta), C.card`.
 - **Nel convertire i colori, `rgba()` e `#hex` dello stesso nome sono tinte
   diverse.** `rgba(59,130,246)` è `#3b82f6`, non il `#60a5fa` usato per il testo.
   Sono token separati in `theme.js` (`bluPieno`, `giallo`, `celestePieno`).
