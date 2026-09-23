@@ -682,6 +682,37 @@ Conseguenza pratica per la pagina Partite: **questa settimana la finestra
 
 ---
 
+## 🎨 23 settembre 2026 — sigle dei campionati e restyling della slot
+
+### Le sigle: ITA1, ENG1, ESP1…
+`src/lib/campionati.js`. ⚠️ **Solo a schermo**: nel database la colonna `div`
+resta quella di football-data (`I1`, `E0`, `SC0`), perché è la chiave con cui
+arrivano i file ogni martedì e venerdì e sta in tutte le 53.951 righe. Cambiate
+in lista, scheda, filtri, spin provvisorie, storico e ricerca della griglia —
+dove si può cercare anche scrivendo `ITA1`. Un campionato nuovo va aggiunto
+**anche lì**, o mostra la sigla originale (brutta ma innocua).
+
+### La slot, com'è finita dopo una manciata di aggiustamenti
+Nove caselle **attaccate**, senza angoli arrotondati, **larghe quanto la
+tabella** sopra. Cornice **oro da 3px**, griglia interna **bianca da 1px**
+(ottenuta col `gap:1` sullo sfondo del contenitore).
+
+Tre trappole trovate strada facendo, tutte di impaginazione:
+1. **Le tinte delle caselle sono semitrasparenti**: con la griglia bianca sotto
+   si illuminavano di biancastro. Serve un fondo opaco —
+   `linear-gradient(tinta,tinta), C.card`.
+2. **Spegnere le caselle non giocate** (grigio scuro) con quel fondo opaco le
+   faceva sembrare **nere**: ora restano del loro colore di posizione.
+3. **Niente deve cambiare altezza quando arriva un esito.** Il ✓/✗ prende il
+   posto del pronostico sulla stessa riga, che ha **altezza fissa 24px**; e la
+   riga delle combinazioni vinte **occupa sempre il suo spazio** (22px), o al
+   primo esito compariva dal nulla e spingeva giù la pagina.
+
+Nuovi token in `theme.js`: `acciaio` (argento spento, provato e scartato per la
+cornice) e `bianco` (l'unico bianco puro, per le linee della slot).
+
+---
+
 ## 🔵 FASE 5 — Il pulsante Aggiorna nell'app
 
 - [x] ~~Menu ad hamburger~~ → fatto con la fase 6.
