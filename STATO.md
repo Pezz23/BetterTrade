@@ -691,6 +691,14 @@ Conseguenza pratica per la pagina Partite: **questa settimana la finestra
       girano sul Mac di Mattia: un pulsante nell'app non può eseguirli. Servirà
       una **Supabase Edge Function**. Non serve più per gli account (vedi fase 9).
 
+**Nel frattempo, due strade che funzionano già (23/09):**
+1. **In chat**: basta chiedere, e l'aggiornamento parte da qui. Fatto il 22 e
+   il 23 settembre.
+2. **Automatico**: `btscout/aggiornamento.plist`, launchd martedì e venerdì
+   alle 18:30, log in `btscout/aggiornamento.log`. **Pronto ma non installato**
+   — servono due comandi e la decisione di Mattia. Se il Mac è spento all'ora
+   prevista, launchd recupera alla riaccensione.
+
 ---
 
 ## ✅ FASE 9 — Le credenziali dentro l'app — fatta il 22 settembre 2026
@@ -939,6 +947,23 @@ fedele. Stelline: **1 sola partita votata**, non c'è ancora niente da leggere.
 - [ ] Portarlo nell'app come pagina "Rendiconto" quando ci sarà più storia.
 - [ ] Quando `griglia` sarà collegata (fase 7), confrontare le proposte con
       **quello che il gruppo ha davvero giocato**: è un'altra domanda.
+
+---
+
+## ✅ FASE 11 — La pagina Storico — fatta il 23 settembre 2026
+
+Voce **Storico** nel menu ☰ (tutti, non solo admin). Mostra:
+- **L'archivio**: partite totali, ultima giocata, partite future e periodo,
+  ultimo scarico delle quote.
+- **Le prossime per campionato**, con il conto di centro/gialle/blu.
+- **Le nostre proposte**: prese su totali e resa contro il dichiarato, in
+  totale e per categoria.
+- **Le ultime chiuse**: dodici righe con ✓/✗, risultato e giocata.
+
+I conti usano la stessa `valuta()` della lista — **nessuna logica duplicata**.
+La calibrazione sulle 37.910 partite resta in `rendiconto.js`: troppa roba per
+il browser e non serve guardarla ogni giorno. Provato dall'API con un utente
+normale: l'aggancio `prossime_partite → partite` passa anche con RLS.
 
 ---
 
