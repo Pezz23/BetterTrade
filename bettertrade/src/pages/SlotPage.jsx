@@ -172,7 +172,10 @@ function SlotVisiva({tiles}) {
               <div style={{fontSize:11,fontWeight:700,color:ts.color,fontFamily:F.mono,marginBottom:2,opacity:0.65}}>{partita}</div>
               {/* L'esito prende il posto del pronostico sulla stessa riga: una
                   riga in più cambiava l'altezza della casella. */}
-              <div style={{fontSize:t?.result?18:14,fontWeight:700,color:ts.color,fontFamily:F.mono,lineHeight:1.2}}>
+              {/* Altezza fissa: il ✓ è più grande del pronostico e senza questo
+                  la casella cresceva quando arrivava l'esito. */}
+              <div style={{height:24,display:'flex',alignItems:'center',justifyContent:'center',
+                fontSize:t?.result?18:14,fontWeight:700,color:ts.color,fontFamily:F.mono,lineHeight:1}}>
                 {t?.result==='win'?'✓':t?.result==='loss'?'✗':(t?.pronostico||'-')}
               </div>
             </div>
