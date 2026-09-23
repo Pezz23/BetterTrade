@@ -944,6 +944,9 @@ punti di partite prese**, in cambio di giocate che dicono quello che pensano.
 - [x] **Soglie scese a 75 / 62 / 52** (erano 80/65/55). Sulle 189 future il
       secco dà 3 partite sopra l'80% e 11 sopra il 75%: con le vecchie soglie
       il centro sarebbe rimasto vuoto. Restano regolabili con ⚙ nella lista.
+      ⚠️ **Superate la sera stessa**: Mattia le ha ritarate a **75 / 72 / 65**
+      (vedi più avanti, "soglie e resa attesa"). Queste restano come storia
+      del ragionamento, non sono i valori in vigore.
 - [x] Verificato sui dati veri: 189 future → **11 centro, 23 gialle, 30 blu**,
       125 sotto soglia. Le uniche giocate proposte ora sono `1`, `2` e
       `# + over 1,5`.

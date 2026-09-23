@@ -19,9 +19,12 @@
 // Le stesse partite giocate a secco: 45%. Si accetta di prenderne meno,
 // giocando quello che si è davvero previsto.
 //
-// Conseguenza: le probabilità crollano (una doppia sta al 75%, il secco sotto)
-// e le soglie sono state abbassate di conseguenza. Sulle 189 partite future
-// del 23/09: 3 sopra l'80%, 11 sopra il 75%, 28 sopra il 65%, 58 sopra il 55%.
+// Conseguenza: senza le doppie le probabilità sono molto più basse, e le
+// soglie sono state ritarate a mano da Mattia in più giri (75/62/52 →
+// 80/74/68 → 78/72/65 → 75/72/65). Il criterio non è "fare una lista lunga"
+// ma **riempire da una a tre spin con le migliori**: con 75/72/65, sulle 189
+// partite future del 23/09, restano 6 centro, 5 gialle e 16 blu — 27, cioè
+// tre spin piene. Si regolano dall'app con la ⚙, questi sono solo i default.
 
 export const REGOLA_OVER = 1.25
 
