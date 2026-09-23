@@ -713,6 +713,41 @@ cornice) e `bianco` (l'unico bianco puro, per le linee della slot).
 
 ---
 
+## 🎯 23 settembre 2026, sera — soglie 80/74/68 e la resa attesa
+
+Mattia: *"alla fine devo riempire da 1 a max 3 spin con le migliori partite"*,
+e la sua stima di redditività: **74% per casella con quota minima 1,40**.
+
+### ⚠️ Quel 74% a 1,40 non esiste, ed è aritmetica
+Il 74% vale una quota equa di 1,35; col margine del book diventa ~1,28. Per
+trovare 1,40 bisogna scendere **sotto** il 71,4%. Misurato sull'archivio
+(37.910 partite dal 19/20): filtrando "attendibilità ≥ 70% **e** quota ≥ 1,40"
+restano **zero partite su 37.910**, e zero sulle 189 future.
+
+| attendibilità | quota media | quota più alta MAI vista | resa reale | ROI |
+|---|---|---|---|---|
+| 65-70% | 1,39 | 1,50 | 71,9% | +0,1% |
+| 70-75% | 1,31 | **1,37** | 74,8% | −2,3% |
+| 75-80% | 1,24 | **1,30** | 81,2% | +0,9% |
+| 80%+ | 1,18 | 1,21 | 91,5% | +7,5% (59 partite: rumore) |
+
+**Il mercato prezza al centesimo**: nessuna fascia ha un vantaggio vero. E la
+spin peggiora le cose, perché **le combinate moltiplicano il margine**: se ogni
+casella è a −2%, un tris è a −6%. La struttura amplifica la varianza, il
+vantaggio può venire solo dalla scelta delle caselle.
+
+### Fatto
+- [x] **Soglie 80 / 74 / 68** (`SOGLIE_DEFAULT`). Sulle 189 future:
+      1 centro, 5 gialle, 13 blu — 19 partite, abbastanza per due spin.
+- [x] **La resa attesa** accanto all'attendibilità, in lista e nella scheda:
+      `quota × probabilità`, 100% = pareggio. Per le combinate con l'over la
+      quota non esiste in nessuna fonte: si stima dividendo quella del segno
+      per `FATTORE_OVER`, ed è marcata con `~`.
+      Sulle future di oggi la resa sta fra **93% e 97%**: è il margine del
+      book, e va letta come confronto fra partite, non come promessa.
+
+---
+
 ## 🔵 FASE 5 — Il pulsante Aggiorna nell'app
 
 - [x] ~~Menu ad hamburger~~ → fatto con la fase 6.

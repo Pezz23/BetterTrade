@@ -81,13 +81,20 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
               <Etichetta style={{ fontSize: 9, marginTop: 3 }}>{p.quotaGiocata ? p.quotaFonte : 'la combinata si legge sul book'}</Etichetta>
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, flex: '1 1 200px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, flex: '1 1 250px' }}>
             {[['max', q(massima)], ['media', q(p.segno === '1' ? p.avg_ap_1 : p.avg_ap_2)], ['equo', q(p.equo)]].map(([l, v]) => (
               <div key={l} style={{ background: C.pozzo, border: `1px solid ${C.bordo}`, borderRadius: 8, padding: '7px 8px', textAlign: 'center' }}>
                 <Etichetta style={{ fontSize: 9, marginBottom: 3 }}>{l}</Etichetta>
                 <div style={{ fontSize: 14, fontWeight: 700, fontFamily: F.mono, color: C.testo }}>{v}</div>
               </div>
             ))}
+            {/* Quota × probabilità: quanto torna in media per euro giocato. */}
+            <div style={{ background: C.pozzo, border: `1px solid ${p.resa >= 1 ? alpha(C.verde, 0.35) : C.bordo}`, borderRadius: 8, padding: '7px 8px', textAlign: 'center' }}>
+              <Etichetta style={{ fontSize: 9, marginBottom: 3 }}>resa</Etichetta>
+              <div style={{ fontSize: 14, fontWeight: 700, fontFamily: F.mono, color: p.resa == null ? C.fantasma : p.resa >= 1 ? C.verde : C.grigio }}>
+                {p.resa == null ? '—' : `${(p.resa * 100).toFixed(0)}%`}
+              </div>
+            </div>
           </div>
         </div>
         {vsMassima !== null && (

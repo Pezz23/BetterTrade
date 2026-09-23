@@ -31,7 +31,7 @@ export const REGOLA_OVER = 1.25
 // Senza questa correzione l'attendibilità dichiarata era 81,1% e la resa
 // vera 76,2% — cinque punti di troppo, sempre sulle partite più importanti.
 export const FATTORE_OVER = 0.908
-export const SOGLIE_DEFAULT = { centro: 0.75, giallo: 0.62, blu: 0.52 }
+export const SOGLIE_DEFAULT = { centro: 0.80, giallo: 0.74, blu: 0.68 }
 
 /** Probabilità normalizzate da una terna di quote: toglie il margine. */
 export function probabilita(q1, qx, q2) {
@@ -77,7 +77,16 @@ export function valuta(r) {
   // misurato: non abbiamo le quote dell'over 1,5, ma abbiamo lo storico.
   const probGiocata = giocata.includes('over') ? prob * FATTORE_OVER : prob
 
-  return { ...r, p, segno, prob, quota, quotaFonte, q1, qx, q2, equo, scarto, giocata, quotaGiocata, nota, probGiocata }
+  // La resa attesa: quota × probabilità, cioè quanto torna in media per ogni
+  // euro giocato. 1,00 è il pareggio, sopra si guadagna, sotto si perde.
+  // Per la combinata con l'over la quota non esiste in nessuna fonte: si stima
+  // dividendo quella del segno per il fattore over, cioè assumendo che il book
+  // prezzi l'over 1,5 in modo equo. È una stima, e `quotaStimata` lo dice.
+  const quotaStimata = giocata.includes('over') && quota ? quota / FATTORE_OVER : null
+  const quotaResa = quotaGiocata ?? quotaStimata
+  const resa = quotaResa ? quotaResa * probGiocata : null
+
+  return { ...r, p, segno, prob, quota, quotaFonte, q1, qx, q2, equo, scarto, giocata, quotaGiocata, nota, probGiocata, quotaStimata, resa }
 }
 
 // Il nome leggibile del bookmaker di riferimento, dalla chiave di The Odds API.

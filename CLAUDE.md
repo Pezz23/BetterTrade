@@ -133,9 +133,15 @@ prendeva il 76%.
 Misurato sulle 127 proposte già giocate: le doppie prendevano il 64%, ma **25
 delle 57 vinte erano pareggi** (si vinceva grazie alla X, non al pronostico);
 le stesse partite a secco fanno il 45%. Si accetta di prenderne meno, giocando
-quello che si è davvero previsto. Le soglie sono scese di conseguenza a
-**75 / 62 / 52** (con le doppie erano 80/65/55): il secco ha probabilità molto
-più basse, e con le vecchie soglie il "centro" restava vuoto.
+quello che si è davvero previsto. Le soglie, scelte da Mattia il 23/09, sono
+**80 / 74 / 68** — servono a riempire da una a tre spin con le migliori, non a
+fare una lista lunga.
+
+**Accanto all'attendibilità c'è la resa**: `quota × probabilità`, quanto torna
+in media per ogni euro. 100% è il pareggio. ⚠️ **Sta sotto 100 quasi sempre**,
+ed è il margine del book: misurato sull'archivio, nessuna fascia di
+attendibilità ha ROI significativamente positivo. Serve a confrontare due
+partite fra loro, non a promettere guadagni.
 **La spin:** gialli (angoli) le più attendibili, blu (lati) sacrificabili, centro
 la perfetta — il centro sta in 3 schedine, i gialli in 3, i blu in 2.
 

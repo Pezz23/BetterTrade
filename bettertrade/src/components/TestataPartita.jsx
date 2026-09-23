@@ -65,6 +65,15 @@ export default function TestataPartita({ p, cat, compatta = false }) {
                 <Etichetta style={{ fontSize: 9, letterSpacing: '0.12em', marginBottom: 4 }}>attendibilità</Etichetta>
                 <div style={{ fontSize: compatta ? 21 : 26, fontWeight: 700, fontFamily: F.mono, color: c.colore, lineHeight: 1 }}>{pct(p.probGiocata)}</div>
                 <div style={{ marginTop: compatta ? 5 : 7 }}><Barra frazione={p.probGiocata} colore={c.colore} altezza={compatta ? 5 : 6} /></div>
+                {/* La resa attesa: quota × probabilità. Sopra 100 si guadagna. */}
+                {p.resa != null && (
+                  <div style={{ marginTop: compatta ? 6 : 8, fontFamily: F.mono }}>
+                    <Etichetta style={{ fontSize: 8, letterSpacing: '0.1em', marginBottom: 2 }}>resa</Etichetta>
+                    <div style={{ fontSize: compatta ? 13 : 15, fontWeight: 700, color: p.resa >= 1 ? C.verde : C.grigio }}>
+                      {(p.resa * 100).toFixed(0)}%{p.quotaStimata ? <span style={{ color: C.fioco, fontSize: 9 }}>~</span> : null}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             <div style={{ textAlign: 'center', minWidth: 0 }}>
