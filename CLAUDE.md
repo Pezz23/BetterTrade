@@ -134,7 +134,7 @@ Misurato sulle 127 proposte già giocate: le doppie prendevano il 64%, ma **25
 delle 57 vinte erano pareggi** (si vinceva grazie alla X, non al pronostico);
 le stesse partite a secco fanno il 45%. Si accetta di prenderne meno, giocando
 quello che si è davvero previsto. Le soglie, scelte da Mattia il 23/09, sono
-**78 / 72 / 65** — servono a riempire da una a tre spin con le migliori, non a
+**75 / 72 / 65** — servono a riempire da una a tre spin con le migliori, non a
 fare una lista lunga.
 
 **Accanto all'attendibilità c'è la resa**: `quota × probabilità`, quanto torna
