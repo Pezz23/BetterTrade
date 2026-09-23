@@ -229,20 +229,22 @@ dice se era fedele. Tutto in un comando: `scripts/aggiorna.js --esegui`.
 
 ---
 
-## Il modello dei dati, e perché va rifatto
+## Il modello dei dati delle spin
 
-Lo schema attuale non regge l'obiettivo finale (l'app propone partite e compila
-da sola le schedine). Tre problemi, in ordine di gravità:
+**Le spin 1, 2 e 3 sono agganciate alle partite vere** (23/09/2026): ogni
+casella porta `prossima_id`, scelto dal menu con ricerca sul calendario
+(`components/SceltaPartita.jsx`) o scritto dalla compilazione automatica
+(`lib/spin.js`). Resta tutto modificabile a mano: pronostico, quota, data,
+risultato. **La quarta spin si chiama "Fun" ed è libera**, con i due campi di
+testo di sempre — `SPIN_LIBERA = 3` in `SlotPage.jsx`.
 
-1. **Non esiste il concetto di partita.** In `griglia`, casa e ospite sono testo
-   libero digitato a mano: impossibile agganciarli all'archivio di BTScout.
-2. **Le 4 spin sono un blob JSON** dentro una riga: non si cerca, non si filtra,
-   non si collega.
-3. **La griglia è una riga sola condivisa** (`griglia` id=1): due admin che
-   editano insieme si sovrascrivono, e non c'è storico delle spin.
+Restano due limiti noti dello schema, da affrontare quando daranno fastidio:
 
-Il pezzo da riscrivere è `griglia` + `SlotPage`. Auth, RLS, tema e script si
-tengono — sono appena stati messi a posto e non c'entrano con il problema.
+1. **Le 4 spin sono un blob JSON** dentro una riga: non si cerca, non si filtra.
+2. **La griglia è una riga sola condivisa** (`griglia` id=1): due admin che
+   editano insieme si sovrascrivono, e non c'è storico delle spin passate.
+
+Auth, RLS, tema e script si tengono — non c'entrano con il problema.
 
 ---
 

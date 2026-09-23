@@ -967,23 +967,34 @@ normale: l'aggancio `prossime_partite → partite` passa anche con RLS.
 
 ---
 
-## 🔵 FASE 7 — Il modello dei dati delle spin
+## 🟢 FASE 7 — La griglia agganciata alle partite — 23 settembre 2026
 
-Qui si riscrive. Lo schema attuale non regge l'obiettivo, per tre motivi in
-ordine di gravità:
+Deciso da Mattia: **spin 1, 2 e 3 collegate al calendario; la quarta si chiama
+"Fun" e resta libera.** Le tre collegate devono restare modificabili a mano.
 
-1. **Non esiste il concetto di partita.** In `griglia`, casa e ospite sono testo
-   libero digitato a mano: non c'è niente da agganciare all'archivio.
-2. **Le 4 spin sono un blob JSON** dentro una riga: non si cerca, non si filtra,
-   non si collega.
-3. **La griglia è una riga sola condivisa** (`griglia` id=1): due admin che
-   editano insieme si sovrascrivono, e non esiste storico delle spin.
+### Fatto
+- [x] `components/SceltaPartita.jsx`: menu a tendina con **ricerca immediata**
+      su squadra e campionato. Ogni voce mostra campionato, giorno, squadre,
+      giocata e attendibilità. Scegliendo, la casella prende squadre, data,
+      giocata, quota e **`prossima_id`** — il filo con l'archivio.
+- [x] `SlotPage`: sulle spin 1-3 la partita è una casella sola (il menu);
+      sulla spin Fun restano i due campi di testo. `SPIN_LIBERA = 3`.
+      Pronostico, quota, data e risultato restano editabili su tutte.
+- [x] Le partite arrivano dallo stesso hook `usaProssime` di Partite e Spin
+      provvisorie: una lista sola.
+- [x] Spin provvisorie: la compilazione automatica riempie **solo le tre**.
 
-- [ ] **Nuovo schema**: una spin è una riga, ogni casella punta a una partita
-      reale, con pronostico e quota.
-- [ ] **Migrare le spin esistenti** o ripartire puliti (oggi c'è una riga sola).
-- [ ] **Riscrivere `SlotPage`** — **è lo stesso lavoro della nuova
-      visualizzazione delle spin**, non due cose separate.
+### Resta
+- [ ] **Le spin 1 e 2 in griglia sono vecchie**: compilate il 20/09 con le
+      regole di allora (1X e X2), su partite già giocate, e una cella ha un
+      nome storpiato ("dd - Santander"). Da rifare con "Compila spin" quando
+      Mattia vuole — non le ho toccate perché sono sue.
+- [ ] Le 4 spin restano un blob JSON in una riga sola condivisa: niente
+      storico delle spin passate, e due admin che editano insieme si
+      sovrascrivono. Da affrontare quando darà fastidio.
+- [ ] Con `prossima_id` in griglia si può finalmente confrontare **quello che
+      il gruppo ha giocato davvero** con quello che il criterio proponeva
+      (il rendiconto oggi misura solo le proposte).
 
 ---
 
