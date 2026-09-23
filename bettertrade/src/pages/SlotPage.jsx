@@ -154,13 +154,17 @@ function SlotVisiva({tiles}) {
   return (
     <div style={{marginTop:20,paddingTop:16,borderTop:`1px solid ${C.bordoRiga}`}}>
       <div style={{fontSize:9,color:C.spento,fontFamily:F.mono,letterSpacing:4,textTransform:'uppercase',marginBottom:12,textAlign:'center'}}>Slot</div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,maxWidth:280,margin:'0 auto'}}>
+      {/* Nove caselle attaccate: il bordo esterno è spesso, le righe interne
+          sono solo lo sfondo che passa fra le celle (gap di 1px). */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:1,maxWidth:300,margin:'0 auto',
+        background:C.bordoChiaro,border:`3px solid ${C.bordo}`,overflow:'hidden'}}>
         {SLOT_GRID.flat().map(partita=>{
           const ts=getTileStyle(partita),t=tiles.find(t=>t.id===partita)
           return (
-            <div key={partita} style={{background:ts.bg,border:`2px solid ${ts.border}`,borderRadius:10,padding:'10px 6px',textAlign:'center',boxShadow:ts.glow?`0 0 12px ${ts.glowColor},0 0 24px ${ts.glowColor}`:'none',transition:'all 0.3s ease'}}>
-              <div style={{fontSize:11,fontWeight:700,color:ts.color,fontFamily:F.mono,marginBottom:2}}>{partita}</div>
-              <div style={{fontSize:13,fontWeight:700,color:ts.color,fontFamily:F.mono}}>{t?.pronostico||'-'}</div>
+            <div key={partita} style={{background:ts.bg,padding:'14px 6px',textAlign:'center',
+              boxShadow:ts.glow?`inset 0 0 14px ${ts.glowColor}`:'none',transition:'background 0.3s ease'}}>
+              <div style={{fontSize:11,fontWeight:700,color:ts.color,fontFamily:F.mono,marginBottom:2,opacity:0.65}}>{partita}</div>
+              <div style={{fontSize:14,fontWeight:700,color:ts.color,fontFamily:F.mono}}>{t?.pronostico||'-'}</div>
               {hasResults&&<div style={{fontSize:10,marginTop:2}}>{t?.result==='win'?'✓':t?.result==='loss'?'✗':'·'}</div>}
             </div>
           )
