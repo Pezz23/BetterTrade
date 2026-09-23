@@ -148,7 +148,10 @@ function SlotVisiva({tiles}) {
     if (!t||!hasResults) return {bg:base.bg,border:base.border,color:base.color,glow:false}
     if (t.result==='win') return {bg:alpha(C.verde,0.20),border:alpha(C.verde,0.60),color:C.verde,glow:true,glowColor:alpha(C.verde,0.4)}
     if (t.result==='loss') return {bg:alpha(C.rosso,0.15),border:alpha(C.rosso,0.50),color:C.rosso,glow:false}
-    return {bg:alpha(C.grigioCupo,0.15),border:alpha(C.grigioCupo,0.30),color:C.fioco,glow:false}
+    // Ancora da giocare: resta del suo colore di posizione (giallo agli angoli,
+    // celeste ai lati, grigio al centro). Spegnerle tutte, col fondo opaco
+    // sotto, le faceva sembrare nere.
+    return {bg:base.bg,border:base.border,color:base.color,glow:false}
   }
   const winCombos=COMBOS.filter(c=>comboStatus(tiles,c.pos)==='win')
   return (
@@ -167,8 +170,11 @@ function SlotVisiva({tiles}) {
             <div key={partita} style={{background:`linear-gradient(${ts.bg},${ts.bg}), ${C.card}`,padding:'14px 6px',textAlign:'center',
               boxShadow:ts.glow?`inset 0 0 14px ${ts.glowColor}`:'none',transition:'background 0.3s ease'}}>
               <div style={{fontSize:11,fontWeight:700,color:ts.color,fontFamily:F.mono,marginBottom:2,opacity:0.65}}>{partita}</div>
-              <div style={{fontSize:14,fontWeight:700,color:ts.color,fontFamily:F.mono}}>{t?.pronostico||'-'}</div>
-              {hasResults&&<div style={{fontSize:10,marginTop:2}}>{t?.result==='win'?'✓':t?.result==='loss'?'✗':'·'}</div>}
+              {/* L'esito prende il posto del pronostico sulla stessa riga: una
+                  riga in più cambiava l'altezza della casella. */}
+              <div style={{fontSize:t?.result?18:14,fontWeight:700,color:ts.color,fontFamily:F.mono,lineHeight:1.2}}>
+                {t?.result==='win'?'✓':t?.result==='loss'?'✗':(t?.pronostico||'-')}
+              </div>
             </div>
           )
         })}
