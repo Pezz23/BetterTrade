@@ -4,6 +4,7 @@ import { Etichetta } from './ui'
 import { usaForma, striscia } from '../hooks/usaForma'
 import TestataPartita, { CATEGORIE, Scudetto, Stella, Barra, pct, giorno } from './TestataPartita'
 import { pronosticoDa } from '../lib/spin'
+import { sigla } from '../lib/campionati'
 
 // La scheda di una partita: tutto quello che sappiamo, in blocchi.
 // Pensata prima per il telefono — una colonna, numeri grandi, niente muri di
@@ -61,7 +62,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
             {onChiudi && (
               <button onClick={onChiudi} style={{ background: 'transparent', border: 'none', color: C.spento, fontSize: 18, cursor: 'pointer', padding: '0 4px 0 0', fontFamily: F.sans }}>‹</button>
             )}
-            <span style={{ fontSize: 11, fontWeight: 700, fontFamily: F.mono, padding: '3px 9px', borderRadius: 20, background: alpha(C.bluPieno, 0.12), color: C.blu }}>{p.div}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, fontFamily: F.mono, padding: '3px 9px', borderRadius: 20, background: alpha(C.bluPieno, 0.12), color: C.blu }}>{sigla(p.div)}</span>
             {cat !== 'no' && <span style={{ fontSize: 11, fontWeight: 700, fontFamily: F.mono, padding: '3px 9px', borderRadius: 20, background: alpha(c.colore, 0.15), color: c.colore, textTransform: 'uppercase' }}>{c.nome}</span>}
           </div>
           <Stella voti={voti} mio={mio} puoVotare={puoVotare} onVota={onVota} />
@@ -206,7 +207,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
                   <span style={{ color: s.gol_casa > s.gol_trasferta ? C.testo : C.spento, flex: 1, textAlign: 'right', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.casa}</span>
                   <b style={{ color: C.testo, flexShrink: 0 }}>{s.gol_casa}–{s.gol_trasferta}</b>
                   <span style={{ color: s.gol_trasferta > s.gol_casa ? C.testo : C.spento, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.trasferta}</span>
-                  {s.div !== p.div && <span style={{ color: C.fantasma, flexShrink: 0 }}>[{s.div}]</span>}
+                  {s.div !== p.div && <span style={{ color: C.fantasma, flexShrink: 0 }}>[{sigla(s.div)}]</span>}
                 </div>
               ))}
             </>}

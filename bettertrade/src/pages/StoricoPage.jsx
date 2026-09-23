@@ -4,6 +4,7 @@ import { C, F, alpha } from '../theme'
 import { Card, Etichetta } from '../components/ui'
 import { CATEGORIE, pct, giorno } from '../components/TestataPartita'
 import { valuta, categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
+import { sigla } from '../lib/campionati'
 
 // Lo stato dell'archivio e come stanno andando le proposte.
 //
@@ -106,7 +107,7 @@ export default function StoricoPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
           <Riquadro label="partite in archivio" valore={archivio?.totale?.toLocaleString('it-IT') ?? '—'} sub="tutte con quote e risultato" />
           <Riquadro label="ultima giocata" valore={archivio?.ultima ? giorno(archivio.ultima.data) : '—'}
-            sub={archivio?.ultima ? `${archivio.ultima.div} · stagione ${archivio.ultima.stagione}` : ''} />
+            sub={archivio?.ultima ? `${sigla(archivio.ultima.div)} · stagione ${archivio.ultima.stagione}` : ''} />
           <Riquadro label="partite future" valore={future.length} sub={periodo} colore={C.oro} />
           <Riquadro label="ultimo scarico quote" valore={ultimoScarico ? new Date(ultimoScarico).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }) : '—'}
             sub={ultimoScarico ? new Date(ultimoScarico).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : ''} />
@@ -118,7 +119,7 @@ export default function StoricoPage() {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {perCampionato.map(([div, n]) => (
               <span key={div} style={{ fontSize: 11, fontFamily: F.mono, padding: '4px 10px', borderRadius: 20, background: alpha(C.bluPieno, 0.1), color: C.blu }}>
-                {div} <b style={{ color: C.testo }}>{n}</b>
+                {sigla(div)} <b style={{ color: C.testo }}>{n}</b>
               </span>
             ))}
             {!perCampionato.length && <span style={{ fontSize: 12, color: C.fantasma, fontFamily: F.sans }}>nessuna partita futura in tabella</span>}
@@ -158,7 +159,7 @@ export default function StoricoPage() {
                 borderBottom: i < arr.length - 1 ? `1px solid ${C.bordoTenue}` : 'none' }}>
                 <span style={{ color: ok ? C.verde : C.rosso, fontSize: 14, width: 14 }}>{ok ? '✓' : '✗'}</span>
                 <span style={{ color: C.fioco, width: 62, flexShrink: 0 }}>{giorno(r.data)}</span>
-                <span style={{ color: CATEGORIE[cat].colore, width: 30, flexShrink: 0 }}>{r.div}</span>
+                <span style={{ color: CATEGORIE[cat].colore, width: 38, flexShrink: 0 }}>{sigla(r.div)}</span>
                 <span style={{ color: C.testo, fontFamily: F.sans, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {r.casa} – {r.trasferta}
                 </span>

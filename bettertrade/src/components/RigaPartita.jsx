@@ -2,6 +2,7 @@ import { C, F, alpha } from '../theme'
 import { Card } from './ui'
 import TestataPartita, { CATEGORIE, Stella, pct, giorno } from './TestataPartita'
 import { pronosticoDa } from '../lib/spin'
+import { sigla } from '../lib/campionati'
 
 // Una partita nella lista: la stessa testata della scheda, in versione
 // compatta, più la barra con la giocata. Al tocco si apre la scheda completa
@@ -18,7 +19,7 @@ export default function RigaPartita({ p, cat, voti = 0, mio = false, puoVotare =
           deve poter dare dalla lista, senza aprire la partita */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, fontFamily: F.mono, padding: '2px 8px', borderRadius: 20, background: alpha(C.bluPieno, 0.12), color: C.blu }}>{p.div}</span>
+          <span style={{ fontSize: 10, fontWeight: 700, fontFamily: F.mono, padding: '2px 8px', borderRadius: 20, background: alpha(C.bluPieno, 0.12), color: C.blu }}>{sigla(p.div)}</span>
           {cat !== 'no' && <span style={{ fontSize: 10, fontWeight: 700, fontFamily: F.mono, padding: '2px 8px', borderRadius: 20, background: alpha(c.colore, 0.15), color: c.colore, textTransform: 'uppercase' }}>{c.nome}</span>}
         </div>
         <Stella voti={voti} mio={mio} puoVotare={puoVotare} onVota={onVota} />

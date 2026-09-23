@@ -6,6 +6,7 @@ import { CATEGORIE, pct, giorno } from '../components/RigaPartita'
 import { categoria, SOGLIE_DEFAULT, lunediProssimo } from '../lib/attendibilita'
 import { candidate, componi, conStelline, compilaSpin, spinPiena, pronosticoDa, DISPOSIZIONE } from '../lib/spin'
 import { supabase } from '../supabase'
+import { sigla } from '../lib/campionati'
 
 // L'anteprima delle spin compilate da sole, dalla lista delle partite della
 // settimana. Per ogni spin due griglie: quella automatica (solo attendibilità)
@@ -43,7 +44,7 @@ function Cella({ pos, partita, votiDi, diversa }) {
           <div style={{ fontSize: 11, color: C.spento, whiteSpace: 'nowrap' }}>
             {partita.quotaGiocata ? `@${partita.quotaGiocata.toFixed(2)}` : 'sul book'} · <b style={{ color: colore }}>{pct(partita.probGiocata)}</b>
           </div>
-          <div style={{ fontSize: 10, color: C.fantasma, whiteSpace: 'nowrap' }}>{partita.div} · {giorno(partita.data)}</div>
+          <div style={{ fontSize: 10, color: C.fantasma, whiteSpace: 'nowrap' }}>{sigla(partita.div)} · {giorno(partita.data)}</div>
         </>
       ) : <div style={{ fontSize: 12, color: C.fantasma }}>—</div>}
     </div>
@@ -168,7 +169,7 @@ export default function SpinProvvisoriePage() {
               return (
                 <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '7px 0', borderTop: `1px solid ${C.bordoTenue}`, fontFamily: F.mono, fontSize: 13 }}>
                   <span style={{ color: C.oro, minWidth: 40 }}>{'★'.repeat(votiDi(p.id))}</span>
-                  <span style={{ color: C.spento, minWidth: 90, fontSize: 12 }}>{p.div} · {giorno(p.data)}</span>
+                  <span style={{ color: C.spento, minWidth: 90, fontSize: 12 }}>{sigla(p.div)} · {giorno(p.data)}</span>
                   <span style={{ color: C.testo, fontFamily: F.sans, fontWeight: 600, flex: 1, minWidth: 0 }}>{p.casa} – {p.trasferta}</span>
                   <b style={{ color: colore }}>{pronosticoDa(p.giocata)}</b>
                   <span style={{ color: C.spento, minWidth: 110, textAlign: 'right' }}>{p.quotaGiocata ? `@${p.quotaGiocata.toFixed(2)}` : 'sul book'} · <b style={{ color: colore }}>{pct(p.probGiocata)}</b></span>

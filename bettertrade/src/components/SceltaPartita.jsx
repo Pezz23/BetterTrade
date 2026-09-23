@@ -3,6 +3,7 @@ import { C, F, alpha } from '../theme'
 import { giorno, CATEGORIE } from './TestataPartita'
 import { categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
 import { pronosticoDa } from '../lib/spin'
+import { sigla } from '../lib/campionati'
 
 // Il menu a tendina con ricerca per agganciare una casella della griglia a una
 // partita vera del calendario. Scrivendo si filtra su squadra e campionato;
@@ -27,7 +28,7 @@ export default function SceltaPartita({ casa, ospite, collegata, partite, onSceg
   const trovate = useMemo(() => {
     const q = testo.trim().toLowerCase()
     const lista = q
-      ? partite.filter(p => `${p.casa} ${p.trasferta} ${p.div} ${p.campionato || ''}`.toLowerCase().includes(q))
+      ? partite.filter(p => `${p.casa} ${p.trasferta} ${p.div} ${sigla(p.div)} ${p.campionato || ''}`.toLowerCase().includes(q))
       : partite
     return lista.slice(0, 60)
   }, [partite, testo])
@@ -68,7 +69,7 @@ export default function SceltaPartita({ casa, ospite, collegata, partite, onSceg
                 background: 'transparent', border: 'none', borderBottom: `1px solid ${C.bordoTenue}`,
                 padding: '6px 6px', cursor: 'pointer', fontFamily: F.mono, fontSize: 11, color: C.testo,
               }}>
-                <span style={{ color: C.blu, width: 26, flexShrink: 0 }}>{p.div}</span>
+                <span style={{ color: C.blu, width: 34, flexShrink: 0 }}>{sigla(p.div)}</span>
                 <span style={{ color: C.fioco, width: 56, flexShrink: 0 }}>{giorno(p.data)}</span>
                 <span style={{ fontFamily: F.sans, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.casa} – {p.trasferta}</span>
                 <span style={{ color: col, width: 52, textAlign: 'right', flexShrink: 0 }}>{pronosticoDa(p.giocata)}</span>

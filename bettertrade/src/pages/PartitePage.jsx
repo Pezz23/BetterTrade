@@ -6,6 +6,7 @@ import { Card, Etichetta } from '../components/ui'
 import RigaPartita, { CATEGORIE, pct, giorno } from '../components/RigaPartita'
 import DettaglioPartita from '../components/DettaglioPartita'
 import { categoria, FINESTRE, SOGLIE_DEFAULT } from '../lib/attendibilita'
+import { etichetta } from '../lib/campionati'
 
 // La lista delle partite future, ordinata per attendibilità.
 // I calcoli stanno in lib/attendibilita.js, la riga in components/RigaPartita.jsx:
@@ -34,7 +35,7 @@ export default function PartitePage() {
   // Per il menu a tendina: "I1 – Serie A"
   const campionati = useMemo(() => {
     const m = new Map(); for (const r of righe) m.set(r.div, r.campionato)
-    return [...m.entries()].sort()
+    return [...m.entries()].sort((a, b) => etichetta(a[0], a[1]).localeCompare(etichetta(b[0], b[1])))
   }, [righe])
 
   const ultimoDownload = useMemo(() => righe.reduce((m, r) => (!m || r.scaricato_il > m ? r.scaricato_il : m), null), [righe])
@@ -121,7 +122,7 @@ export default function PartitePage() {
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
         <select value={campionato} onChange={e => setCampionato(e.target.value)} style={{ ...campo, width: 'auto', color: campionato ? C.testo : C.fioco }}>
           <option value="">Tutti i campionati</option>
-          {campionati.map(([d, nome]) => <option key={d} value={d}>{d} – {nome}</option>)}
+          {campionati.map(([d, nome]) => <option key={d} value={d}>{etichetta(d, nome)}</option>)}
         </select>
         <span style={{ fontSize: 10, color: C.spento, fontFamily: F.mono }}>quota</span>
         <input style={{ ...campo, borderColor: quotaMin && numero(quotaMin) === null ? C.rosso : C.bordo }} placeholder="min" inputMode="decimal" value={quotaMin} onChange={e => setQuotaMin(e.target.value)} />
