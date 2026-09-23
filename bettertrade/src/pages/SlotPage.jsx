@@ -14,9 +14,11 @@ const COMBOS = [
   { id:7, nome:'Quaterna 5-6-7-8', tipo:'quaterna',pos:[5,6,7,8]            },
   { id:8, nome:'Full 1→9',         tipo:'full',    pos:[1,2,3,4,5,6,7,8,9] },
 ]
-// Le giocate ammesse in una cella: i segni secchi, le doppie e le combinate
-// con l'over che le regole di gioco producono (vedi lib/attendibilita.js).
-export const PRONOSTICI = ['1','X','2','1X','X2','12','1+O1,5','2+O1,5','1+O2,5','2+O2,5']
+// Le giocate ammesse in una cella: quelle che le regole producono davvero
+// (vedi lib/attendibilita.js). Niente X e niente doppie: la X non è mai
+// l'esito più probabile (0,36% delle partite in archivio) e la doppia chance
+// è stata tolta il 23/09/2026.
+export const PRONOSTICI = ['1','2','1+O1,5','2+O1,5','1+O2,5','2+O2,5']
 const SPIN_LABELS = ['Spin 1','Spin 2','Spin 3','Spin 4']
 const TIPO_COLOR  = { tris:C.verde, quaterna:C.blu, full:C.oro }
 const TIPO_BG     = { tris:alpha(C.verde,0.10), quaterna:alpha(C.bluPieno,0.10), full:alpha(C.oro,0.10) }

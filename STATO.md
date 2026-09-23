@@ -873,9 +873,17 @@ punti di partite prese**, in cambio di giocate che dicono quello che pensano.
       125 sotto soglia. Le uniche giocate proposte ora sono `1`, `2` e
       `# + over 1,5`.
 
-⚠️ **La X resta esclusa.** Mattia ha scritto "1, x o 2": inteso come "i tre
-segni secchi invece delle combo", non come riapertura della X — che la sua
-regola di partenza vietava. **Da confermare.**
+### La X resta esclusa — confermato il 23/09, con i numeri
+Misurato su 37.917 partite con le quote di chiusura: il mercato sulla X è
+**calibrato benissimo** (dato al 27-30% → pareggia il 29,6%; al 21-24% →
+20,9%), ma **non arriva mai in alto**. La X è stata l'esito più probabile
+**135 volte su 37.917, lo 0,36%**, e il massimo mai visto è 33-36%. I pareggi
+sono il 26,3% delle partite ma non sono mai il più probabile dei tre.
+
+Quindi anche riaprendola non verrebbe mai scelta: servirebbe un criterio
+diverso ("la partita più equilibrata" invece di "l'esito più probabile"), e lì
+il mercato non ci dà vantaggio. Tolta anche dalla tendina della griglia
+(`PRONOSTICI` in SlotPage), che ora offre solo `1 · 2 · #+O1,5 · #+O2,5`.
 
 ---
 
