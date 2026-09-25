@@ -9,7 +9,7 @@
 // Uso:
 //   node --env-file=.env scripts/backup.js
 //
-// .env richiesto (nella cartella bettertrade/):
+// .env richiesto (nella cartella app/):
 //   VITE_SUPABASE_URL=https://xxxx.supabase.co
 //   SUPABASE_SERVICE_KEY=eyJ...
 

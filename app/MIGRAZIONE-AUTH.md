@@ -1,12 +1,12 @@
 # Mettere le password al sicuro — runbook
 
-Da eseguire **in quest'ordine**, dalla cartella `bettertrade/`.
+Da eseguire **in quest'ordine**, dalla cartella `app/`.
 Ogni passo va verificato prima di passare al successivo: l'ordine serve a non
 restare chiusi fuori dall'app.
 
 ## Prima di cominciare
 
-1. Aggiungi la chiave `service_role` a `bettertrade/.env` (il file esiste già,
+1. Aggiungi la chiave `service_role` a `app/.env` (il file esiste già,
    è gitignorato). La trovi in **Supabase → Settings → API → service_role**:
 
    ```

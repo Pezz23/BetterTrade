@@ -5,7 +5,7 @@ Due pezzi nello stesso repo, non ancora collegati:
 
 | | |
 |---|---|
-| `bettertrade/` | **L'app.** React + Vite + Supabase. Registra spin, giornate e bankroll di 6 persone. |
+| `app/` | **L'app.** React + Vite + Supabase. Registra spin, giornate e bankroll di 6 persone. |
 | `btscout/` | **Il motore.** Node, nessun frontend: modelli, backtest, import. Le 53.796 partite di 15 campionati stanno in Supabase con il resto. |
 
 ---
@@ -32,7 +32,7 @@ manca. Quando un lotto finisce, va spuntato lì.
   cinque passi insieme.
 - **Verifica prima di dichiarare fatto.** Ogni passo che tocca il database va
   verificato da terminale prima di passare al successivo, non dato per riuscito.
-- **Le migrazioni SQL** stanno in `bettertrade/sql/`, numerate, e si possono
+- **Le migrazioni SQL** stanno in `app/sql/`, numerate, e si possono
   applicare dalla connessione diretta (`btscout/lib/db.js` ha il ruolo
   postgres): `sql.unsafe(readFileSync(...))`. Provare la funzione o la colonna
   subito dopo, dall'API con un utente normale — la grant e le policy non si
@@ -337,7 +337,7 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   `2016-08-25T22:00:00.000Z` sono le 00:00 del **26** agosto ora italiana:
   tagliare i primi dieci caratteri sposta tutto indietro di un giorno. Si
   ricostruisce la data dai componenti locali — `giornoLocale()` in
-  `bettertrade/scripts/importa-partite.js`.
+  `app/scripts/importa-partite.js`.
 - **Niente deve cambiare altezza quando arriva un dato.** Nella slot il ✓/✗ è
   più grande del pronostico e allungava la casella; la riga delle combinazioni
   vinte compariva dal nulla e spingeva giù la pagina sotto le dita. Si risolve
@@ -356,7 +356,7 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
 ## Comandi
 
 ```bash
-cd bettertrade
+cd app
 npm run dev                                        # avvia l'app
 
 node --env-file=.env scripts/backup.js             # PRIMA di ogni modifica ai dati
@@ -373,7 +373,7 @@ node --env-file=.env scripts/crea-utente.js mario user 500 "Mario Rossi"   # ris
 node --env-file=.env scripts/reset-password.js Bermani                    # riserva: ora si fa dall'app
 node --env-file=.env scripts/prova-login.js Admin <password>
 
-cd bettertrade
+cd app
 node --env-file=.env scripts/importa-partite.js    # archivio → Supabase (prova a vuoto)
 node --env-file=.env scripts/verifica-partite.js   # confronto con la sorgente
 

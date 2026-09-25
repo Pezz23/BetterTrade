@@ -23,7 +23,7 @@ import('./App.jsx')
         </div>
         <div style={{ fontSize: 13, color: '#888', lineHeight: 1.7, marginBottom: 16 }}>
           Manca la configurazione di Supabase. In locale serve un file{' '}
-          <code style={{ color: '#c9a84c' }}>bettertrade/.env</code> con{' '}
+          <code style={{ color: '#c9a84c' }}>app/.env</code> con{' '}
           <code style={{ color: '#c9a84c' }}>VITE_SUPABASE_URL</code> e{' '}
           <code style={{ color: '#c9a84c' }}>VITE_SUPABASE_ANON_KEY</code>; se il sito
           è pubblicato, le stesse due variabili vanno impostate nel pannello del

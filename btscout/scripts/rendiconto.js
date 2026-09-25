@@ -23,7 +23,7 @@
 //       node --env-file=.env scripts/rendiconto.js --da=2223    (solo da quella stagione)
 
 import { sql, chiudi } from '../lib/db.js';
-import { valuta, categoria, SOGLIE_DEFAULT } from '../../bettertrade/src/lib/attendibilita.js';
+import { valuta, categoria, SOGLIE_DEFAULT } from '../../app/src/lib/attendibilita.js';
 
 const arg = n => (process.argv.find(a => a.startsWith(`--${n}=`)) || '').split('=')[1];
 const DA = arg('da') || '1920';

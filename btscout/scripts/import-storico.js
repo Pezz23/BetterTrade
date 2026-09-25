@@ -131,7 +131,7 @@ export function normalizzaSquadra(nome, div) {
 // a ogni import e la ricreava: comodo finché il database era di questi script
 // soli. Ora la tabella vive nel database dell'app, con le sue policy di lettura,
 // e cancellarla porterebbe via anche quelle. Lo schema è in
-// bettertrade/sql/05-partite.sql, e si cambia da lì.
+// app/sql/05-partite.sql, e si cambia da lì.
 
 // I CSV usano dd/mm/yy sulle stagioni vecchie e dd/mm/yyyy su quelle recenti.
 // Interpretare "17/08/24" come 1924 passerebbe inosservato fino al backtest.

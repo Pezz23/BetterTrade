@@ -12,7 +12,7 @@
 
 ## Dove siamo in una riga
 
-**L'app e l'archivio sono ora nello stesso database.** `bettertrade/` (React+Vite,
+**L'app e l'archivio sono ora nello stesso database.** `app/` (React+Vite,
 in produzione su Vercel) e le 53.796 partite di 15 campionati vivono entrambi in Supabase;
 `btscout/` resta il motore che le importa e le analizza. Sicurezza chiusa, numeri
 chiusi, archivio dentro. Sopra ci sono la pagina Partite (attendibilità, resa,
@@ -88,7 +88,9 @@ filtri va rifatta comunque.*
     Function. Meno urgente ora che ci sono chat e launchd.
 
 ## Lotto 7 — Pulizia
-16. **Annidamento `BetterTrade/bettertrade/`** — una cartella di troppo.
+16. ~~**Annidamento `BetterTrade/bettertrade/`**~~ — risolto il 25/09/2026:
+    la cartella dell'app si chiama **`app/`**. ⚠️ Su Vercel la *Root Directory*
+    va cambiata da `bettertrade` ad `app`, o il deploy si rompe.
 17. **README.md vuoto**; `btscout/CLAUDE.md` e `btscout/STATO.md` parlano
     ancora di BTScout come progetto a sé.
 18. **`btscout/api/` + `index.html`**: PWA di chat mai deployata, da cancellare
@@ -187,7 +189,7 @@ che non avevi. Il confronto onesto è `b365_*` contro `bfe_ap_*`.
 ### Fatto l'11 settembre 2026
 
 - [x] **Colonne rinominate**: `bfe_*` → `bfe_ch_*`, perché erano la chiusura e il
-      nome non lo diceva. Vedi `bettertrade/sql/07-exchange-apertura.sql`.
+      nome non lo diceva. Vedi `app/sql/07-exchange-apertura.sql`.
 - [x] **Aggiunte `bfe_ap_1/x/2` e `bfe_ap_over25/under25`** e caricate.
 - [x] **Reimportate le stagioni 24/25, 25/26, 26/27** (l'exchange non esiste
       prima della 24/25 — limite della fonte, non un errore).
@@ -391,7 +393,7 @@ corso scende sotto zero con IC stretto, il vantaggio è finito.
 
 ```bash
 # 1. le colonne (una volta sola, già fatto)
-#    bettertrade/sql/07-exchange-apertura.sql sulla dashboard Supabase
+#    app/sql/07-exchange-apertura.sql sulla dashboard Supabase
 
 # 2. i dati
 cd btscout
@@ -948,7 +950,7 @@ username di nuovo riusabile.
 
 **Da questa sessione le migrazioni SQL le applico io** dalla connessione
 diretta (`btscout/lib/db.js`, ruolo postgres), e le provo subito. I file in
-`bettertrade/sql/` restano la memoria di cosa c'è nel database.
+`app/sql/` restano la memoria di cosa c'è nel database.
 - [ ] **Da vedere su Vercel dopo il push.** Se la lista è vuota, non è un
       errore: l'aggiornamento del venerdì non è ancora passato.
 
@@ -1217,7 +1219,10 @@ spin compilate così sono già agganciate all'archivio quando si farà la fase 7
 
 ## 🧹 Debito tecnico
 
-- [ ] **Annidamento `BetterTrade/bettertrade/`** — una cartella di troppo.
+- [x] ~~**Annidamento `BetterTrade/bettertrade/`**~~ — risolto il 25/09/2026:
+      `bettertrade/` è diventata `app/`. Il repo si chiama BetterTrade, la
+      cartella dell'app no: niente più nomi ripetuti. ⚠️ Ha richiesto di
+      cambiare la *Root Directory* su Vercel.
 - [ ] **README.md vuoto** (contiene solo `# BetterTrade`).
 - [ ] **`btscout/CLAUDE.md` e `btscout/STATO.md`** parlano ancora di BTScout come
       progetto a sé. Da fondere quando l'archivio si sposta (fase 1).
@@ -1308,7 +1313,7 @@ erano l'impalcatura del vecchio login, che interrogava `users` dal browser.
 ## Struttura del repo
 
 ```
-bettertrade/          # L'APP — React + Vite + Supabase
+app/                  # L'APP — React + Vite + Supabase
   src/App.jsx         # Shell: header, tab bar, routing a stato
   src/theme.js        # Colori e font — unica definizione
   src/components/     # Card, Etichetta, StatCard, Btn, Input, Badge
@@ -1336,7 +1341,7 @@ btscout/              # L'ARCHIVIO — Node, nessun frontend collegato
 ### Comandi utili
 
 ```bash
-cd bettertrade
+cd app
 npm run dev                                        # avvia l'app
 
 node --env-file=.env scripts/backup.js             # PRIMA di ogni modifica ai dati
