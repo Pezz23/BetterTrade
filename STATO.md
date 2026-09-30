@@ -39,6 +39,19 @@ compilano la griglia da sole, la griglia **agganciata alle partite vere** e il
    `paddingBottom` pari a `--barra-bassa`, definita una volta in `index.css`.
 2. [x] **Il tasto di uscita al posto delle iniziali**, a sinistra del nome,
    in oro. Le iniziali non dicevano niente che il nome accanto non dicesse già.
+3. [x] **Il menu**, rifatto in tre passaggi con Mattia: prima pannello laterale
+   a tutta altezza, poi riportato **sotto la testata** — copriva la barra e si
+   perdeva l'animazione del tasto. Ora scende dall'alto sfumando (0,24s),
+   ha un'altezza massima che gli impedisce di finire tagliato, e **l'hamburger
+   si trasforma in ✕**: le tre barrette ruotano e quella di mezzo svanisce.
+   Pannello e sfondo restano montati (spostati e trasparenti) — se React li
+   smontasse, l'uscita non potrebbe animarsi. Transizioni in `index.css`, che
+   le spegne da sé per chi ha chiesto meno movimento nel sistema.
+
+⚠️ **Trappola trovata qui:** i `<button>` **non ereditano il colore del testo**.
+L'icona `◎` di Utenti usciva nera su nero, mentre ⚽🎰📚 si vedevano perché le
+emoji a colori ignorano il colore del testo. Ogni glifo dentro un pulsante
+vuole il suo `color`.
 
 ## Lotto 2 — Il voto della partita e i filtri della lista
 *Tocca `lib/attendibilita.js`, `PartitePage.jsx`, `RigaPartita.jsx`. Le tre

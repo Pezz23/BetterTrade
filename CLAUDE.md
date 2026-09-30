@@ -343,6 +343,10 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   vinte compariva dal nulla e spingeva giù la pagina sotto le dita. Si risolve
   riservando lo spazio (altezza fissa, `minHeight`), non sperando che il
   contenuto sia della misura giusta.
+- **I `<button>` non ereditano il colore del testo.** Un glifo dentro un
+  pulsante prende il colore predefinito del browser: l'icona `◎` di Utenti era
+  nera su nero, e le vicine si vedevano solo perché ⚽🎰📚 sono emoji a colori,
+  che il colore del testo non lo guardano. Dare sempre un `color` esplicito.
 - **Una tinta semitrasparente su uno sfondo chiaro si illumina.** Le caselle
   della slot usano `alpha(...)`: con la griglia bianca sotto diventavano
   biancastre, e il grigio "spento" sul fondo opaco sembrava nero. Serve un
