@@ -33,3 +33,27 @@ body {
 input, button, select, textarea { font-family: var(--sans); }
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+
+/* ── Il menu laterale ────────────────────────────────────────────────────────
+   Pannello e sfondo restano sempre montati: senza, l'uscita non si potrebbe
+   animare (React li toglierebbe prima che la transizione parta). I colori
+   stanno in theme.js, qui solo movimento. */
+.menu-sfondo   { transition: opacity .22s ease; }
+.menu-pannello { transition: transform .28s cubic-bezier(.32,.72,0,1); }
+
+/* Le tre barrette che diventano una ✕ */
+.icona-menu      { position: relative; width: 16px; height: 12px; display: block; }
+.icona-menu span { position: absolute; left: 0; width: 100%; height: 2px; border-radius: 2px;
+                   transition: transform .28s cubic-bezier(.32,.72,0,1), opacity .18s ease; }
+.icona-menu span:nth-child(1) { top: 0; }
+.icona-menu span:nth-child(2) { top: 5px; }
+.icona-menu span:nth-child(3) { top: 10px; }
+.icona-menu.aperta span:nth-child(1) { transform: translateY(5px) rotate(45deg); }
+.icona-menu.aperta span:nth-child(2) { opacity: 0; transform: scaleX(.4); }
+.icona-menu.aperta span:nth-child(3) { transform: translateY(-5px) rotate(-45deg); }
+
+/* Chi ha chiesto meno movimento nelle impostazioni del sistema non lo subisce */
+@media (prefers-reduced-motion: reduce) {
+  .menu-sfondo, .menu-pannello, .icona-menu span { transition: none; }
+}

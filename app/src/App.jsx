@@ -59,19 +59,23 @@ function TabBar({ active, onChange }) {
 
 // ── Header ────────────────────────────────────────────────────────────────────
 function Menu({ aperto, onChiudi, onVai, attivo, isAdmin }) {
-  if (!aperto) return null
   const voci = VOCI_MENU.filter(v => !v.soloAdmin || isAdmin)
   return (
     <>
       {/* lo sfondo chiude il menu al tocco */}
-      <div onClick={onChiudi} style={{ position:'fixed', inset:0, zIndex:60, background:alpha(C.fondo, 0.7) }} />
+      <div onClick={onChiudi} className="menu-sfondo" aria-hidden={!aperto} style={{
+        position:'fixed', inset:0, zIndex:60, background:alpha(C.fondo, 0.7),
+        opacity: aperto ? 1 : 0, pointerEvents: aperto ? 'auto' : 'none',
+      }} />
       {/* Il pannello prende tutta l'altezza dello schermo: prima era un
           riquadro sotto il tasto, e l'ultima voce finiva tagliata. */}
-      <div style={{
+      <div className="menu-pannello" style={{
         position:'fixed', top:0, right:0, bottom:0, zIndex:70,
         width:'min(320px, 86vw)', display:'flex', flexDirection:'column',
         background:C.pannello, borderLeft:`1px solid ${C.bordo}`,
         boxShadow:`-12px 0 32px ${alpha(C.fondo, 0.8)}`,
+        transform: aperto ? 'translateX(0)' : 'translateX(100%)',
+        visibility: aperto ? 'visible' : 'hidden',
       }}>
         <div style={{
           display:'flex', alignItems:'center', justifyContent:'space-between',
@@ -138,11 +142,16 @@ function Header({ currentUser, onLogout, onMenu, menuAperto }) {
             <div style={{ fontSize:9, color:rc, fontFamily:F.mono }}>{roleLabel[currentUser?.role]}</div>
           </div>
         </div>
-        <button onClick={onMenu} aria-label="Menu" style={{
+        <button onClick={onMenu} aria-label="Menu" aria-expanded={menuAperto} style={{
           background: menuAperto ? alpha(C.oro, 0.12) : 'transparent',
           border:`1px solid ${menuAperto ? alpha(C.oro, 0.4) : C.bordo}`, borderRadius:6,
-          color: menuAperto ? C.oro : C.testo, cursor:'pointer', fontSize:16, padding:'2px 9px', lineHeight:1.4,
-        }}>☰</button>
+          cursor:'pointer', padding:'8px 9px', display:'flex', alignItems:'center', justifyContent:'center',
+          transition:'background .2s ease, border-color .2s ease',
+        }}>
+          <span className={menuAperto ? 'icona-menu aperta' : 'icona-menu'}>
+            {[0,1,2].map(i => <span key={i} style={{ background: menuAperto ? C.oro : C.testo }} />)}
+          </span>
+        </button>
       </div>
     </div>
   )
