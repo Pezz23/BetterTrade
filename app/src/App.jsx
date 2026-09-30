@@ -95,7 +95,7 @@ function Menu({ aperto, onChiudi, onVai, attivo, isAdmin }) {
                 background: on ? alpha(C.oro, 0.1) : 'transparent',
                 borderLeft:`3px solid ${on ? C.oro : 'transparent'}`,
               }}>
-                <span style={{ fontSize:18, width:24, textAlign:'center' }}>{v.icon}</span>
+                <span style={{ fontSize:18, width:24, textAlign:'center', color: on ? C.oro : C.testo }}>{v.icon}</span>
                 <span style={{ minWidth:0 }}>
                   <div style={{ fontSize:14, fontWeight:600, color: on ? C.oro : C.testo, fontFamily:F.sans }}>{v.label}</div>
                   <div style={{ fontSize:10, color:C.spento, fontFamily:F.sans, lineHeight:1.4 }}>{v.desc}</div>
