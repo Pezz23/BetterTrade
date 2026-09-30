@@ -94,6 +94,36 @@ vuole il suo `color`.
    - [ ] **Da decidere guardandolo**: il Grado e la "resa 97%" nella testata
          dicono la stessa cosa in due modi. Forse va tolta una delle due.
 
+## 🔵 Lotto 3 — Quattro cose chieste il 30 settembre 2026
+
+6. **Tornando dalla scheda, la lista riparte da capo.** Aprendo una partita e
+   poi tornando indietro si perde il punto in cui si era: con 189 partite
+   significa riscorrere tutto. Va ricordata la posizione e ripristinata —
+   meglio ancora, tornare **con quella partita in vista**.
+   *Causa nota*: la scheda sostituisce la lista in `PartitePage`, quindi la
+   lista viene smontata e lo scorrimento azzerato.
+
+7. **Cliccare una casella V/N/P deve dire quale partita era.** Oggi il
+   risultato c'è solo nel `title` (si vede passando il mouse sopra), quindi
+   **su telefono non si vede affatto**. Serve al tocco: mostrare avversario,
+   data e risultato. Vale anche per la striscia over/under.
+   *Perché*: capire se quelle vittorie o sconfitte sono attendibili o venivano
+   da partite senza peso.
+
+8. **Verificare che le spin compilino le partite votate.** Mattia: *"le spin
+   con stelline ad oggi non le compila"*. Da riprodurre prima di toccare.
+   *Sospetto principale*: `candidate()` in `lib/spin.js` tiene solo le partite
+   **sopra soglia**, quindi una partita votata ma sotto soglia non entra mai
+   nella spin, per quante stelline abbia. Se è così, la domanda vera è: **una
+   stellina deve poter forzare l'ingresso di una partita sotto soglia?**
+
+9. **Una pagina nuova con le partite votate** (voce nel menu ☰).
+   ⚠️ **Da chiarire**: "partite con voto" = quelle che hanno ricevuto le
+   **stelline** degli admin, o quelle ordinate per **Grado**? Vedi la nota sui
+   nomi in CLAUDE.md.
+
+---
+
 ## 🔵 Lotto 2-bis — I filtri della lista, da rifare da zero
 *Rimandati il 30/09: "sono da rifare da 0, non si capisce nulla".*
 
