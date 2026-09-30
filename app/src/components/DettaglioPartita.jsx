@@ -34,8 +34,11 @@ const Blocco = ({ titolo, extra, children, style, sottolinea }) => (
 // sopra e su telefono mai.
 const Chip = ({ testo, colore, titolo, onClick, scelto }) => (
   <button type="button" onClick={onClick} title={titolo} style={{
-    width: 26, height: 26, borderRadius: 6, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: 12, fontWeight: 700, fontFamily: F.mono, padding: 0, cursor: 'pointer',
+    // elastiche: due strisce da cinque devono stare su una riga sola anche su
+    // uno schermo da 320px, dove 25px fisse andavano a capo
+    width: 'clamp(21px, 6.2vw, 25px)', height: 'clamp(21px, 6.2vw, 25px)',
+    borderRadius: 6, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: 12, fontWeight: 700, fontFamily: F.mono, padding: 0, cursor: 'pointer', flexShrink: 0,
     background: alpha(colore, scelto ? 0.35 : 0.15), color: colore,
     border: `1px solid ${alpha(colore, scelto ? 0.9 : 0.4)}`,
     boxShadow: scelto ? `0 0 0 2px ${alpha(colore, 0.25)}` : 'none',
@@ -126,19 +129,22 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
             const m = iScelto != null ? s[iScelto] : null
             return (
               <div key={sq}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 14, fontWeight: 700, textTransform: 'uppercase', fontFamily: F.sans, color: C.testo, flex: '1 1 110px', minWidth: 0 }}>{sq}</span>
+                {/* Il nome sopra, le due strisce sotto su una riga sola: sul
+                    telefono il nome e dieci caselle non ci stanno insieme, e
+                    l'over/under andava a capo. */}
+                <div style={{ padding: '6px 0 0' }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, textTransform: 'uppercase', fontFamily: F.sans, color: C.testo, marginBottom: 6, overflowWrap: 'anywhere' }}>{sq}</div>
                   {s.length === 0
                     ? <span style={{ fontSize: 11, color: C.fantasma, fontFamily: F.sans }}>nessuna partita giocata</span>
-                    : <>
-                      <span style={{ display: 'inline-flex', gap: 4 }}>
-                        {s.map((x, i) => <Chip key={i} testo={x.esito} colore={ESITO[x.esito]} titolo={x.titolo} onClick={() => apri(i)} scelto={iScelto === i} />)}
-                      </span>
-                      <span style={{ width: 1, alignSelf: 'stretch', minHeight: 26, background: C.bordoChiaro }} />
-                      <span style={{ display: 'inline-flex', gap: 4 }}>
-                        {s.map((x, i) => <Chip key={i} testo={x.over ? 'O' : 'U'} colore={x.over ? C.celeste : C.grigioFioco} titolo={`${x.titolo} · ${x.over ? 'over' : 'under'} 2,5`} onClick={() => apri(i)} scelto={iScelto === i} />)}
-                      </span>
-                    </>}
+                    : <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ display: 'inline-flex', gap: 3 }}>
+                          {s.map((x, i) => <Chip key={i} testo={x.esito} colore={ESITO[x.esito]} titolo={x.titolo} onClick={() => apri(i)} scelto={iScelto === i} />)}
+                        </span>
+                        <span style={{ width: 1, alignSelf: 'stretch', minHeight: 25, background: C.bordoChiaro, flexShrink: 0 }} />
+                        <span style={{ display: 'inline-flex', gap: 3 }}>
+                          {s.map((x, i) => <Chip key={i} testo={x.over ? 'O' : 'U'} colore={x.over ? C.celeste : C.grigioFioco} titolo={`${x.titolo} · ${x.over ? 'over' : 'under'} 2,5`} onClick={() => apri(i)} scelto={iScelto === i} />)}
+                        </span>
+                      </div>}
                 </div>
 
                 {/* La partita dietro la casella toccata: serve a capire se
