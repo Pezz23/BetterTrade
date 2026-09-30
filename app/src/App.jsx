@@ -64,28 +64,46 @@ function Menu({ aperto, onChiudi, onVai, attivo, isAdmin }) {
   return (
     <>
       {/* lo sfondo chiude il menu al tocco */}
-      <div onClick={onChiudi} style={{ position:'fixed', inset:0, zIndex:60, background:alpha(C.fondo, 0.6) }} />
+      <div onClick={onChiudi} style={{ position:'fixed', inset:0, zIndex:60, background:alpha(C.fondo, 0.7) }} />
+      {/* Il pannello prende tutta l'altezza dello schermo: prima era un
+          riquadro sotto il tasto, e l'ultima voce finiva tagliata. */}
       <div style={{
-        position:'fixed', top:52, right:12, zIndex:70, minWidth:240,
-        background:C.pannello, border:`1px solid ${C.bordo}`, borderRadius:12, padding:6,
-        boxShadow:`0 12px 32px ${alpha(C.fondo, 0.8)}`,
+        position:'fixed', top:0, right:0, bottom:0, zIndex:70,
+        width:'min(320px, 86vw)', display:'flex', flexDirection:'column',
+        background:C.pannello, borderLeft:`1px solid ${C.bordo}`,
+        boxShadow:`-12px 0 32px ${alpha(C.fondo, 0.8)}`,
       }}>
-        {voci.map(v => {
-          const on = v.id === attivo
-          return (
-            <button key={v.id} onClick={() => { onVai(v.id); onChiudi() }} style={{
-              display:'flex', alignItems:'center', gap:12, width:'100%', textAlign:'left',
-              padding:'10px 12px', borderRadius:8, cursor:'pointer', border:'none',
-              background: on ? alpha(C.oro, 0.1) : 'transparent',
-            }}>
-              <span style={{ fontSize:18, width:24, textAlign:'center' }}>{v.icon}</span>
-              <span>
-                <div style={{ fontSize:13, fontWeight:600, color: on ? C.oro : C.testo, fontFamily:F.sans }}>{v.label}</div>
-                <div style={{ fontSize:10, color:C.spento, fontFamily:F.sans }}>{v.desc}</div>
-              </span>
-            </button>
-          )
-        })}
+        <div style={{
+          display:'flex', alignItems:'center', justifyContent:'space-between',
+          padding:'14px 16px', borderBottom:`1px solid ${C.bordoRiga}`, flexShrink:0,
+        }}>
+          <span style={{ fontSize:10, color:C.spento, fontFamily:F.mono, letterSpacing:3, textTransform:'uppercase' }}>Menu</span>
+          <button onClick={onChiudi} aria-label="Chiudi" style={{
+            background:'transparent', border:`1px solid ${C.bordo}`, borderRadius:6,
+            color:C.spento, cursor:'pointer', fontSize:14, padding:'2px 9px', lineHeight:1.4, fontFamily:F.mono,
+          }}>✕</button>
+        </div>
+
+        {/* le voci scorrono se un giorno saranno tante; il pannello no */}
+        <div style={{ flex:1, overflowY:'auto', padding:8 }}>
+          {voci.map(v => {
+            const on = v.id === attivo
+            return (
+              <button key={v.id} onClick={() => { onVai(v.id); onChiudi() }} style={{
+                display:'flex', alignItems:'center', gap:12, width:'100%', textAlign:'left',
+                padding:'12px 12px', borderRadius:8, cursor:'pointer', border:'none', marginBottom:2,
+                background: on ? alpha(C.oro, 0.1) : 'transparent',
+                borderLeft:`3px solid ${on ? C.oro : 'transparent'}`,
+              }}>
+                <span style={{ fontSize:18, width:24, textAlign:'center' }}>{v.icon}</span>
+                <span style={{ minWidth:0 }}>
+                  <div style={{ fontSize:14, fontWeight:600, color: on ? C.oro : C.testo, fontFamily:F.sans }}>{v.label}</div>
+                  <div style={{ fontSize:10, color:C.spento, fontFamily:F.sans, lineHeight:1.4 }}>{v.desc}</div>
+                </span>
+              </button>
+            )
+          })}
+        </div>
       </div>
     </>
   )
