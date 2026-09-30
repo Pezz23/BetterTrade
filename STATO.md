@@ -26,9 +26,97 @@ compilano la griglia da sole, la griglia **agganciata alle partite vere** e il
 
 # 🗂 LA TO-DO LIST
 
-> Riscritta e rinumerata il 23 settembre 2026. Le voci sono raggruppate in
-> **lotti**: cose che toccano gli stessi file e conviene fare insieme.
-> Le fasi storiche restano più sotto, come racconto di come ci siamo arrivati.
+> Riscritta da zero il **1° ottobre 2026**: qui ci sono **solo le cose che
+> mancano**, numerate 1-21 e raggruppate in lotti per file toccati. Quello che
+> è stato fatto sta subito sotto, in "Fatto di recente" e nelle fasi storiche:
+> serve a capire *perché* una cosa è com'è, non cosa resta.
+
+## 🔵 Lotto A — Le stelline contano davvero
+*`lib/spin.js`, `SpinProvvisoriePage.jsx`, `App.jsx` + una pagina nuova.
+**Il primo**: qui c'è un difetto vero, non un fastidio — e le spin le compilate
+con le stelline.*
+
+1. **Una stellina forza la soglia.** `candidate()` tiene solo le partite sopra
+   soglia, quindi una partita votata ma sotto il 65% **non entra mai nella
+   spin**, per quante stelline abbia. Da riprodurre e correggere: se qualcuno
+   la vota entra comunque, e viene prima (i voti già comandano nell'ordine).
+2. **Verificare che "Compila spin" scriva davvero le votate** — segnalato da
+   Mattia il 30/09, mai riprodotto.
+3. **Pagina "Partite votate"** nel menu ☰. ⚠️ Chiarito: **"voto" = la
+   stellina**, il numero calcolato è il **Grado**. La logica esiste già nel
+   riquadro "LE VOTATE" delle Spin provvisorie: riusarla, non riscriverla.
+
+## 🔵 Lotto B — La lista delle partite
+*`PartitePage.jsx`, `RigaPartita.jsx`. Da fare insieme: la barra dei filtri va
+ridisegnata comunque, e il filtro nuovo ci deve stare dentro.*
+
+4. **Tornando dalla scheda, la lista riparte da capo.** Con 189 partite vuol
+   dire riscorrere tutto ogni volta. Ripristinare la posizione — meglio:
+   tornare **con quella partita in vista**. *Causa*: la scheda sostituisce la
+   lista, che viene smontata.
+5. **Ripensare la barra dei filtri**: oggi pillole e campi in fila, stretti e
+   disordinati sul telefono. Mattia: *"sono da rifare da 0, non si capisce
+   nulla"*. Da ridisegnare, non da ritoccare.
+6. **Filtro per Grado** (minimo, come quello sulla quota).
+7. **Decidere se Grado e resa convivono**: nella scheda il Grado (1-10) e la
+   "resa 91%" dicono la stessa cosa in due modi. Forse una delle due va tolta.
+
+## 🔵 Lotto C — Finire la scheda della partita
+*`DettaglioPartita.jsx`. Il restyling è a metà: la testata e la forma sono
+fatte, i blocchi in fondo no.*
+
+8. Rifinire **scontri diretti** e **consenso**.
+9. **Provare su telefono vero** a 375, 390 e 430px. Finora provato a occhio sul
+   browser, e infatti l'over/under andava a capo senza che ce ne accorgessimo.
+
+## 🔵 Lotto D — Storico
+*`StoricoPage.jsx`.*
+
+10. **Le ultime chiuse: 30 partite invece di 12**, con le prime 10 visibili e
+    le altre dentro un menu a scomparsa.
+
+## 🔵 Lotto E — Le spin
+*`SlotPage.jsx`, `SpinProvvisoriePage.jsx`, `lib/spin.js`, `rendiconto.js`.*
+
+11. **Rifare le spin 1 e 2 in griglia**: sono del 20/09, con le vecchie regole
+    (1X, X2), su partite già giocate, e una cella ha il nome storpiato
+    ("dd - Santander").
+12. **Escludere una partita dall'anteprima** con un clic, senza doverla
+    correggere dopo in Slot.
+13. **Confrontare le giocate vere con le proposte** nel rendiconto: ora si può,
+    perché ogni casella porta `prossima_id`.
+14. **Lo storico delle spin**: oggi le 4 spin sono un blob JSON in una riga
+    sola condivisa (`griglia` id=1). Niente spin passate, e due admin che
+    editano insieme si sovrascrivono.
+
+## 🔵 Lotto F — Dati e automazione
+15. **Installare l'aggiornamento automatico** (`btscout/aggiornamento.plist`,
+    launchd martedì e venerdì 18:30): pronto, servono due comandi.
+16. **Lanciare il rendiconto ogni settimana** dopo l'aggiornamento, e annotare
+    la riga.
+17. **Il pulsante "Aggiorna" nell'app**: serve una Supabase Edge Function.
+    Meno urgente ora che l'aggiornamento si fa in chat o da launchd.
+
+## 🔵 Lotto G — Pulizia
+18. **README.md vuoto**; `btscout/CLAUDE.md` e `btscout/STATO.md` parlano
+    ancora di BTScout come progetto a sé.
+19. **`btscout/api/` + `index.html`**: PWA di chat mai deployata, da cancellare
+    se non serve.
+20. **`calcSchedule` arrotonda a zero** (`Math.floor` in `AuthContext.jsx`):
+    con base bassa produce €0 su tutte le voci. Correggerlo cambia gli importi
+    giocati — è una decisione, non una pulizia.
+21. **Nessun ambiente di prova su Vercel**: ogni push va in produzione, ed è
+    già costato una schermata nera. ⚠️ E **i backtest usano ancora `ps_*`**
+    (Pinnacle), sparito dalla 26/27: perdono la stagione in corso in silenzio.
+
+## Da decidere, non da fare
+- **Le spin esistenti si migrano o si riparte puliti** (voce 14).
+- **Vietare i bankroll negativi** nel database (`check (bankroll >= 0)`) o
+  tenerli come segnale d'allarme.
+
+---
+
+# ✅ Fatto di recente
 
 ## ✅ Lotto 1 — Testata e navigazione — fatto il 30 settembre 2026
 
@@ -94,30 +182,6 @@ vuole il suo `color`.
    - [ ] **Da decidere guardandolo**: il Grado e la "resa 97%" nella testata
          dicono la stessa cosa in due modi. Forse va tolta una delle due.
 
-## 🔵 Lotto 3 — Le stelline contano davvero
-*Tocca `lib/spin.js`, `SpinProvvisoriePage.jsx`, `App.jsx` + una pagina nuova.
-Prima di tutti gli altri: qui c'è un difetto vero, non un fastidio.*
-
-6. **Una stellina forza la soglia** — deciso da Mattia il 30/09.
-   *Il difetto*: `candidate()` in `lib/spin.js` tiene solo le partite **sopra
-   soglia**, quindi una partita votata ma sotto il 65% non entra nella spin
-   per quante stelline abbia. Da riprodurre e correggere: **se una persona la
-   vota, entra comunque**, e nell'ordine viene prima (i voti già comandano).
-   Da verificare anche che "Compila spin" scriva davvero le votate.
-
-7. **Pagina "Partite votate"** nel menu ☰: l'elenco delle partite che hanno
-   ricevuto stelline. ⚠️ Chiarito il 30/09: **"voto" = la stellina**; il numero
-   calcolato è il **Grado**. Esiste già il riquadro "LE VOTATE" in fondo alle
-   Spin provvisorie: da lì si riusa la logica, senza duplicarla.
-
-## 🔵 Lotto 4 — Tornare indietro senza perdere il posto
-*Tocca `PartitePage.jsx`. Corto, e si sente ogni giorno.*
-
-8. **Tornando dalla scheda, la lista riparte da capo.** Con 189 partite vuol
-   dire riscorrere tutto ogni volta. Va ripristinata la posizione — meglio:
-   tornare **con quella partita in vista**.
-   *Causa*: la scheda sostituisce la lista, che viene smontata e riazzerata.
-
 ## ✅ Lotto 5 — Le ultime 5 partite, al tocco — fatto il 1° ottobre 2026
 
 9. [x] **Cliccando una casella V/N/P (o O/U) si apre la partita che c'è
@@ -136,70 +200,6 @@ Prima di tutti gli altri: qui c'è un difetto vero, non un fastidio.*
    `striscia()` è stata spostata da `hooks/usaForma.js` a **`lib/forma.js`**:
    è un calcolo puro e nell'hook non era provabile da terminale (l'hook importa
    React e Supabase). È la convenzione del progetto, vale la pena rispettarla.
-
-## 🔵 Lotto 6 — I filtri della lista, da rifare da zero
-*Rimandati il 30/09: "sono da rifare da 0, non si capisce nulla".*
-
-4. **Filtro per Grado** (minimo, come quello sulla quota).
-5. **Ripensare la barra dei filtri** della pagina Partite: oggi sono pillole e
-   campi in fila, stretti e disordinati su telefono. Non un ritocco: da
-   ridisegnare.
-
-## Lotto 7 — Storico
-*Tocca `StoricoPage.jsx`.*
-
-6. **Le ultime chiuse: 30 partite invece di 12**, con le prime 10 visibili e
-   le altre **dentro un menu a scomparsa**.
-
-## Lotto 8 — Finire la scheda e la lista
-*Il restyling è a metà: mancano i blocchi in fondo.*
-
-7. Rifinire **scontri diretti** e **consenso** nella scheda della partita.
-8. **Provare su telefono vero** (finora solo browser desktop): 375, 390, 430px.
-
-## Lotto 9 — Le spin, da qui in avanti
-*Ora che la griglia conosce le partite vere.*
-
-9. **Rifare le spin 1 e 2 in griglia**: sono del 20/09, con le vecchie regole
-   (1X, X2), su partite già giocate, e una cella ha il nome storpiato
-   ("dd - Santander").
-10. **Escludere una partita dall'anteprima** delle Spin provvisorie con un
-    clic, senza doverla correggere dopo in Slot.
-11. **Confrontare le giocate vere con le proposte** nel rendiconto: adesso è
-    possibile, perché ogni casella porta `prossima_id`.
-12. **Lo storico delle spin**: oggi le 4 spin sono un blob JSON in una riga
-    sola condivisa (`griglia` id=1). Niente spin passate, e due admin che
-    editano insieme si sovrascrivono.
-
-## Lotto 10 — Aggiornamento dei dati
-13. **Installare l'aggiornamento automatico** (`btscout/aggiornamento.plist`,
-    launchd martedì e venerdì 18:30) — pronto, servono due comandi.
-14. **Lanciare il rendiconto ogni settimana** dopo l'aggiornamento e annotare
-    la riga.
-15. **Il pulsante "Aggiorna" nell'app** (ex fase 5): serve una Supabase Edge
-    Function. Meno urgente ora che ci sono chat e launchd.
-
-## Lotto 11 — Pulizia
-16. ~~**Annidamento `BetterTrade/bettertrade/`**~~ — risolto il 25/09/2026:
-    la cartella dell'app si chiama **`app/`**. ⚠️ Su Vercel la *Root Directory*
-    va cambiata da `bettertrade` ad `app`, o il deploy si rompe.
-17. **README.md vuoto**; `btscout/CLAUDE.md` e `btscout/STATO.md` parlano
-    ancora di BTScout come progetto a sé.
-18. **`btscout/api/` + `index.html`**: PWA di chat mai deployata, da cancellare
-    se non serve.
-19. **`calcSchedule` arrotonda a zero** (`Math.floor` in `AuthContext.jsx`):
-    con base bassa produce €0 su tutte le voci. Correggerlo cambia gli importi
-    giocati — è una decisione, non una pulizia.
-20. **Nessun ambiente di prova su Vercel**: ogni push va in produzione, ed è
-    già costato una schermata nera.
-21. **I backtest usano ancora `ps_*`** (Pinnacle), che dalla stagione 26/27 non
-    esiste più: perdono la stagione in corso in silenzio.
-
-## Da decidere, non da fare
-- **Come si mappa il punteggio 1-10** (voce 3).
-- **Le spin esistenti si migrano o si riparte puliti** (voce 12).
-- **Vietare i bankroll negativi** a livello di database (`check (bankroll >= 0)`)
-  o tenerli come segnale d'allarme.
 
 ---
 
