@@ -143,7 +143,18 @@ quello che si è davvero previsto. Le soglie, scelte da Mattia il 23/09, sono
 fare una lista lunga.
 
 **Accanto all'attendibilità c'è la resa**: `quota × probabilità`, quanto torna
-in media per ogni euro. 100% è il pareggio. ⚠️ **Sta sotto 100 quasi sempre**,
+in media per ogni euro. 100% è il pareggio. **Il Grado** (`grado()` in
+`lib/attendibilita.js`) è la stessa resa in scala **1-10 con due decimali**,
+per il colpo d'occhio: sulle partite giocabili la resa sta schiacciata fra 0,90
+e 0,98, e stirarla rende leggibili differenze che in percentuale non si vedono.
+⚠️ Gli estremi (`GRADO_MIN`, `GRADO_MAX`) sono **fissi, misurati sull'archivio**:
+se si ricalcolassero sulla lista del momento, la stessa partita cambierebbe
+Grado ogni settimana. ⚠️ **Il Grado non entra nella selezione delle spin** —
+è solo un dato da guardare (deciso il 30/09/2026).
+
+⚠️ **I nomi, da non scambiare:** *attendibilità* = probabilità · *resa* =
+quota × probabilità · **Grado** = la resa da 1 a 10 · **voti** = le stelline
+degli admin (`voti_partite`), che restano voti in app e database. ⚠️ **Sta sotto 100 quasi sempre**,
 ed è il margine del book: misurato sull'archivio, nessuna fascia di
 attendibilità ha ROI significativamente positivo. Serve a confrontare due
 partite fra loro, non a promettere guadagni.

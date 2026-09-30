@@ -53,20 +53,43 @@ L'icona `◎` di Utenti usciva nera su nero, mentre ⚽🎰📚 si vedevano perc
 emoji a colori ignorano il colore del testo. Ogni glifo dentro un pulsante
 vuole il suo `color`.
 
-## Lotto 2 — Il voto della partita e i filtri della lista
-*Tocca `lib/attendibilita.js`, `PartitePage.jsx`, `RigaPartita.jsx`. Le tre
-voci si toccano fra loro: il filtro ha senso solo dopo il voto, e la barra dei
-filtri va rifatta comunque.*
+## ✅ Lotto 2 — Il Grado — fatto il 30 settembre 2026
 
-3. **Voto della partita da 1 a 10, con due decimali**, ricavato da
-   attendibilità × resa. ⚠️ **Attenzione al nome**: "voto" è già la stellina
-   degli admin (`voti_partite`). Servono due parole diverse — per esempio
-   **punteggio** per questo, **stelline** per quello delle persone.
-   Da decidere con Mattia: come si mappa il prodotto su 1-10 (la scala non è
-   ovvia: attendibilità 75% × resa 96% = 0,72 → che voto è?).
-4. **Filtro per punteggio** nella lista (minimo, come quello sulla quota).
-5. **Sistemare graficamente i filtri** della pagina Partite: oggi sono pillole
-   e campi messi in fila, stretti e disordinati su telefono.
+3. [x] **Il Grado, da 1 a 10 con due decimali**, nella barra della riga:
+   **giocata a sinistra, Grado al centro, quota a destra**.
+
+   **Le decisioni di Mattia, e perché contano:**
+   - **Il nome.** Si chiama **Grado**, non "voto": così le stelline restano
+     "voti" in app e database e **non serve nessuna migrazione**. Avevo
+     proposto di rinominare `voti_partite`; il nome nuovo ha reso inutile
+     il problema.
+   - **La formula.** Non `attendibilità × resa` ma **la resa da sola**.
+     Motivo: la resa *contiene già* l'attendibilità (resa = quota × prob), e
+     moltiplicarle di nuovo fa pesare la probabilità due volte, premiando la
+     sicurezza. Mattia vuole il contrario: *"per capire al volo se vale la
+     pena rischiare di più per un guadagno maggiore"*.
+   - **Non entra nella selezione delle spin.** È un dato da guardare.
+   - **La scala è stirata, non lineare.** Sulle 4.813 partite sopra soglia
+     dell'archivio la resa sta fra 0,905 (1° pc) e 0,987 (max), mediana 0,946:
+     moltiplicata per 10 darebbe voti tutti fra 9,0 e 9,8. Estremi fissi
+     **0,90 → 1** e **0,98 → 10** (`GRADO_MIN`/`GRADO_MAX`), misurati una
+     volta sola: ricalcolarli sulla lista corrente farebbe cambiare Grado alla
+     stessa partita ogni settimana.
+
+   Sulle 28 partite sopra soglia di oggi i Gradi vanno da **2,30 a 10,00**, e
+   l'ordinamento è quello giusto: Arsenal-Leeds (69%, quota 1,43) prende 10,
+   Rangers-Kilmarnock (74% ma quota 1,24) prende 3,14.
+
+   - [ ] **Da decidere guardandolo**: il Grado e la "resa 97%" nella testata
+         dicono la stessa cosa in due modi. Forse va tolta una delle due.
+
+## 🔵 Lotto 2-bis — I filtri della lista, da rifare da zero
+*Rimandati il 30/09: "sono da rifare da 0, non si capisce nulla".*
+
+4. **Filtro per Grado** (minimo, come quello sulla quota).
+5. **Ripensare la barra dei filtri** della pagina Partite: oggi sono pillole e
+   campi in fila, stretti e disordinati su telefono. Non un ritocco: da
+   ridisegnare.
 
 ## Lotto 3 — Storico
 *Tocca `StoricoPage.jsx`.*

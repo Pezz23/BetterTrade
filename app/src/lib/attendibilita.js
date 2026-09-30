@@ -89,12 +89,34 @@ export function valuta(r) {
   const quotaResa = quotaGiocata ?? quotaStimata
   const resa = quotaResa ? quotaResa * probGiocata : null
 
-  return { ...r, p, segno, prob, quota, quotaFonte, q1, qx, q2, equo, scarto, giocata, quotaGiocata, nota, probGiocata, quotaStimata, resa }
+  return { ...r, p, segno, prob, quota, quotaFonte, q1, qx, q2, equo, scarto, giocata, quotaGiocata, nota, probGiocata, quotaStimata, resa, grado: grado(resa) }
 }
 
 // Il nome leggibile del bookmaker di riferimento, dalla chiave di The Odds API.
 const NOMI_BOOK = { codere_it: 'Codere', pinnacle: 'Pinnacle', williamhill: 'William Hill', unibet_eu: 'Unibet', betfair_ex_eu: 'Betfair' }
 export const nomeBook = chiave => NOMI_BOOK[chiave] || chiave || '—'
+
+// ── Il Grado: la resa in scala da 1 a 10 ─────────────────────────────────────
+// Serve al colpo d'occhio, non alla selezione delle spin: dice quale partita
+// paga meglio rispetto al rischio, senza dover leggere una percentuale.
+//
+// Perché una scala e non la resa × 10: sulle partite giocabili la resa sta
+// schiacciata fra 0,90 e 0,98 (misurato sulle 4.813 sopra soglia
+// dell'archivio: 1° percentile 0,905, mediana 0,946, massimo 0,987). Moltiplicata
+// per 10 darebbe voti tutti fra 9,0 e 9,8, illeggibili. Stirata su 1-10, un
+// punto di Grado vale poco più di un centesimo di resa e le differenze si vedono.
+//
+// ⚠️ Gli estremi sono FISSI, misurati una volta sull'archivio. Se si
+// ricalcolassero sulla lista del momento, la stessa partita cambierebbe Grado
+// da una settimana all'altra e il numero non vorrebbe dire niente.
+export const GRADO_MIN = 0.90   // resa: sotto, Grado 1
+export const GRADO_MAX = 0.98   // resa: sopra, Grado 10 (raro: 4 partite su 4.813)
+
+export function grado(resa) {
+  if (resa == null) return null
+  const x = (resa - GRADO_MIN) / (GRADO_MAX - GRADO_MIN)
+  return Math.min(10, Math.max(1, 1 + x * 9))
+}
 
 /** centro | giallo | blu | no, dalla probabilità della giocata e dalle soglie. */
 export function categoria(probGiocata, soglie = SOGLIE_DEFAULT) {

@@ -27,18 +27,28 @@ export default function RigaPartita({ p, cat, voti = 0, mio = false, puoVotare =
 
       <TestataPartita p={p} cat={cat} compatta />
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, padding: '8px 10px',
+      {/* Tre campi: la giocata, il Grado, la quota. Il Grado sta in mezzo
+          perché è quello che si guarda scorrendo. */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 8, marginTop: 10, padding: '8px 10px',
         background: alpha(c.colore, 0.07), border: `1px solid ${alpha(c.colore, 0.28)}`, borderRadius: 8 }}>
         <div style={{ fontSize: 16, fontWeight: 800, fontFamily: F.mono, color: c.colore, whiteSpace: 'nowrap' }}>{pronosticoDa(p.giocata)}</div>
+
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 17, fontWeight: 700, fontFamily: F.mono, color: C.testo, lineHeight: 1 }}>
+            {p.grado != null ? p.grado.toFixed(2).replace('.', ',') : '—'}
+          </div>
+          <div style={{ fontSize: 8, fontFamily: F.mono, color: C.spento, letterSpacing: '0.1em', marginTop: 3 }}>GRADO</div>
+        </div>
+
         {/* Per la combinata con l'over non abbiamo la quota (nessuna fonte dà
             l'over 1,5): si mostra quella del segno secco, e si dice che l'over
             va letto sul book. */}
-        <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+        <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: 17, fontWeight: 700, fontFamily: F.mono, color: C.oro, lineHeight: 1 }}>
             {quota ? <><span style={{ fontSize: 11, color: C.spento, fontWeight: 400 }}>Q: </span>{quota.toFixed(2).replace('.', ',')}</> : '—'}
           </div>
           <div style={{ fontSize: 9, fontFamily: F.mono, color: C.spento, marginTop: 3 }}>
-            {p.quotaFonte}{!p.quotaGiocata && p.quota ? ` · ${p.segno} secco, l'over sul book` : ''}
+            {p.quotaFonte}{!p.quotaGiocata && p.quota ? ` · ${p.segno} secco` : ''}
           </div>
         </div>
       </div>
