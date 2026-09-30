@@ -30,13 +30,15 @@ compilano la griglia da sole, la griglia **agganciata alle partite vere** e il
 > **lotti**: cose che toccano gli stessi file e conviene fare insieme.
 > Le fasi storiche restano più sotto, come racconto di come ci siamo arrivati.
 
-## Lotto 1 — Testata e navigazione
-*Tocca `App.jsx` e basta: mezz'ora, e si vede subito.*
+## ✅ Lotto 1 — Testata e navigazione — fatto il 30 settembre 2026
 
-1. **Il menu ☰ deve aprire una pagina che arriva fino in fondo.** Oggi le
-   pagine aperte dal menu si fermano prima del bordo inferiore.
-2. **Il tasto di uscita al posto delle iniziali**, quindi a sinistra del nome
-   utente, **colorato di giallo**.
+1. [x] **Le pagine arrivano fino in fondo.** La tab bar è `position:fixed` e le
+   pagine ci scorrevano sotto: le ultime righe restavano nascoste. Ora la
+   scocca è un flex verticale, la pagina ha `flex:1` (così riempie lo schermo
+   qualunque sia l'altezza della testata, senza numeri magici) e un
+   `paddingBottom` pari a `--barra-bassa`, definita una volta in `index.css`.
+2. [x] **Il tasto di uscita al posto delle iniziali**, a sinistra del nome,
+   in oro. Le iniziali non dicevano niente che il nome accanto non dicesse già.
 
 ## Lotto 2 — Il voto della partita e i filtri della lista
 *Tocca `lib/attendibilita.js`, `PartitePage.jsx`, `RigaPartita.jsx`. Le tre

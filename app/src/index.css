@@ -1,3 +1,7 @@
+/* Quanto spazio occupa la tab bar fissa in basso: le pagine ci lasciano
+   sotto questo margine, o le ultime righe finiscono nascoste. */
+:root { --barra-bassa: calc(62px + env(safe-area-inset-bottom)); }
+
 /* Solo il minimo che sta fuori da React: body, scrollbar, reset.
    I colori dell'interfaccia stanno in src/theme.js — questi qui sotto sono la
    copia per il poco CSS che non passa da un componente. Se cambi un colore,

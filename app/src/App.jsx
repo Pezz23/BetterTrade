@@ -107,16 +107,19 @@ function Header({ currentUser, onLogout, onMenu, menuAperto }) {
         <span style={{ fontSize:14, fontWeight:700, color:C.testo, fontFamily:F.sans, letterSpacing:'-0.3px' }}>BetterTrade</span>
       </div>
       <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-          <div style={{ width:28, height:28, borderRadius:7, background:`${rc}18`, border:`1px solid ${rc}30`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:700, color:rc, fontFamily:F.mono }}>
-            {(currentUser?.display_name||currentUser?.username||'?').substring(0,2).toUpperCase()}
-          </div>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          {/* L'uscita sta dove prima c'erano le iniziali: è l'unico gesto che
+              si fa da qui, le iniziali non servivano a niente. */}
+          <button onClick={onLogout} title="Esci" style={{
+            width:30, height:30, borderRadius:8, background:alpha(C.oro, 0.12), border:`1px solid ${alpha(C.oro, 0.4)}`,
+            display:'flex', alignItems:'center', justifyContent:'center', color:C.oro, cursor:'pointer',
+            fontSize:14, fontFamily:F.mono, padding:0, lineHeight:1,
+          }}>⏻</button>
           <div>
             <div style={{ fontSize:11, fontWeight:600, color:C.testo, fontFamily:F.sans, lineHeight:1.2 }}>{currentUser?.display_name||currentUser?.username}</div>
             <div style={{ fontSize:9, color:rc, fontFamily:F.mono }}>{roleLabel[currentUser?.role]}</div>
           </div>
         </div>
-        <button onClick={onLogout} style={{ background:'transparent', border:`1px solid ${C.bordo}`, borderRadius:6, color:C.fioco, cursor:'pointer', fontSize:12, padding:'4px 8px', fontFamily:F.mono }}>⏻</button>
         <button onClick={onMenu} aria-label="Menu" style={{
           background: menuAperto ? alpha(C.oro, 0.12) : 'transparent',
           border:`1px solid ${menuAperto ? alpha(C.oro, 0.4) : C.bordo}`, borderRadius:6,
@@ -158,10 +161,16 @@ function AppShell() {
   }
 
   return (
-    <div style={{ minHeight:'100vh', background:C.fondo, color:C.testo }}>
+    <div style={{ minHeight:'100vh', background:C.fondo, color:C.testo, display:'flex', flexDirection:'column' }}>
       <Header currentUser={currentUser} onLogout={logout} onMenu={() => setMenu(m => !m)} menuAperto={menu} />
       <Menu aperto={menu} onChiudi={() => setMenu(false)} onVai={setTab} attivo={tab} isAdmin={isAdmin} />
-      <div style={{ maxWidth:720, margin:'0 auto' }}>
+      {/* `flex:1` fa arrivare la pagina fino in fondo qualunque sia l'altezza
+          della testata; il padding lascia lo spazio della tab bar, che è fissa
+          e senza di esso coprirebbe le ultime righe. */}
+      <div style={{
+        flex:1, width:'100%', maxWidth:720, margin:'0 auto',
+        paddingBottom:'var(--barra-bassa)',
+      }}>
         {renderPage()}
       </div>
       <TabBar active={tab} onChange={setTab} />
