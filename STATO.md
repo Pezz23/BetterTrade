@@ -118,14 +118,21 @@ Prima di tutti gli altri: qui c'è un difetto vero, non un fastidio.*
    tornare **con quella partita in vista**.
    *Causa*: la scheda sostituisce la lista, che viene smontata e riazzerata.
 
-## 🔵 Lotto 5 — Le ultime 5 partite, al tocco
-*Tocca `DettaglioPartita.jsx`.*
+## ✅ Lotto 5 — Le ultime 5 partite, al tocco — fatto il 1° ottobre 2026
 
-9. **Cliccando una casella V/N/P compare la partita e il risultato.** Oggi il
-   dato è solo nel `title`, cioè **si vede col mouse sopra e su telefono mai**.
-   Serve avversario, data e risultato; vale anche per la striscia over/under.
-   *Perché*: quattro V contro squadre di fondo classifica valgono meno di due
-   V contro le prime — senza questo non si può giudicare.
+9. [x] **Cliccando una casella V/N/P (o O/U) si apre la partita che c'è
+   dietro**: giorno, in casa o fuori, avversario, risultato **dalla parte della
+   squadra** e over/under. La casella toccata si accende, si richiude
+   ritoccandola. Il dato prima stava solo nel `title`: col mouse sopra, quindi
+   su telefono invisibile.
+
+   **Il conto che conta**: i gol vanno girati quando la squadra giocava fuori.
+   `Cagliari 0-1 Inter` deve leggersi `fuori · vs Cagliari · 1–0`. Verificato
+   sui dati veri su tutte e dieci le partite di Inter e Parma.
+
+   `striscia()` è stata spostata da `hooks/usaForma.js` a **`lib/forma.js`**:
+   è un calcolo puro e nell'hook non era provabile da terminale (l'hook importa
+   React e Supabase). È la convenzione del progetto, vale la pena rispettarla.
 
 ## 🔵 Lotto 6 — I filtri della lista, da rifare da zero
 *Rimandati il 30/09: "sono da rifare da 0, non si capisce nulla".*

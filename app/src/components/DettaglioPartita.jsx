@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { C, F, alpha } from '../theme'
 import { Etichetta } from './ui'
-import { usaForma, striscia } from '../hooks/usaForma'
+import { usaForma } from '../hooks/usaForma'
+import { striscia } from '../lib/forma'
 import TestataPartita, { CATEGORIE, Scudetto, Stella, Barra, pct, giorno } from './TestataPartita'
 import { pronosticoDa } from '../lib/spin'
 import { sigla } from '../lib/campionati'
@@ -29,16 +30,21 @@ const Blocco = ({ titolo, extra, children, style, sottolinea }) => (
   </div>
 )
 
-const Chip = ({ testo, colore, titolo }) => (
-  <span title={titolo} style={{
+// Cliccabile: il risultato stava solo nel `title`, cioè si vedeva col mouse
+// sopra e su telefono mai.
+const Chip = ({ testo, colore, titolo, onClick, scelto }) => (
+  <button type="button" onClick={onClick} title={titolo} style={{
     width: 26, height: 26, borderRadius: 6, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: 12, fontWeight: 700, fontFamily: F.mono,
-    background: alpha(colore, 0.15), color: colore, border: `1px solid ${alpha(colore, 0.4)}`,
-  }}>{testo}</span>
+    fontSize: 12, fontWeight: 700, fontFamily: F.mono, padding: 0, cursor: 'pointer',
+    background: alpha(colore, scelto ? 0.35 : 0.15), color: colore,
+    border: `1px solid ${alpha(colore, scelto ? 0.9 : 0.4)}`,
+    boxShadow: scelto ? `0 0 0 2px ${alpha(colore, 0.25)}` : 'none',
+  }}>{testo}</button>
 )
 
 export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVotare = false, onVota, onChiudi }) {
   const [dettagli, setDettagli] = useState(false)
+  const [scelta, setScelta] = useState(null)   // "<squadra>|<indice>" della casella toccata
   const { forma, errore } = usaForma(p.div, p.casa, p.trasferta)
   const c = CATEGORIE[cat]
   const squadre = [p.casa, p.trasferta]
@@ -114,21 +120,46 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
         {/* ── 3. La forma ───────────────────────────────────────────── */}
         <Blocco titolo="📈 Forma" extra="ultime 5" sottolinea>
           {squadre.map(sq => {
-            const s = striscia(forma.ultimi5[sq])
+            const s = striscia(forma.ultimi5[sq], sq)
+            const apri = i => setScelta(v => v === `${sq}|${i}` ? null : `${sq}|${i}`)
+            const iScelto = scelta?.startsWith(`${sq}|`) ? Number(scelta.split('|')[1]) : null
+            const m = iScelto != null ? s[iScelto] : null
             return (
-              <div key={sq} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 14, fontWeight: 700, textTransform: 'uppercase', fontFamily: F.sans, color: C.testo, flex: '1 1 110px', minWidth: 0 }}>{sq}</span>
-                {s.length === 0
-                  ? <span style={{ fontSize: 11, color: C.fantasma, fontFamily: F.sans }}>nessuna partita giocata</span>
-                  : <>
-                    <span style={{ display: 'inline-flex', gap: 4 }}>
-                      {s.map((m, i) => <Chip key={i} testo={m.esito} colore={ESITO[m.esito]} titolo={m.titolo} />)}
+              <div key={sq}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, textTransform: 'uppercase', fontFamily: F.sans, color: C.testo, flex: '1 1 110px', minWidth: 0 }}>{sq}</span>
+                  {s.length === 0
+                    ? <span style={{ fontSize: 11, color: C.fantasma, fontFamily: F.sans }}>nessuna partita giocata</span>
+                    : <>
+                      <span style={{ display: 'inline-flex', gap: 4 }}>
+                        {s.map((x, i) => <Chip key={i} testo={x.esito} colore={ESITO[x.esito]} titolo={x.titolo} onClick={() => apri(i)} scelto={iScelto === i} />)}
+                      </span>
+                      <span style={{ width: 1, alignSelf: 'stretch', minHeight: 26, background: C.bordoChiaro }} />
+                      <span style={{ display: 'inline-flex', gap: 4 }}>
+                        {s.map((x, i) => <Chip key={i} testo={x.over ? 'O' : 'U'} colore={x.over ? C.celeste : C.grigioFioco} titolo={`${x.titolo} · ${x.over ? 'over' : 'under'} 2,5`} onClick={() => apri(i)} scelto={iScelto === i} />)}
+                      </span>
+                    </>}
+                </div>
+
+                {/* La partita dietro la casella toccata: serve a capire se
+                    quelle V e quelle P valgono qualcosa o venivano da incontri
+                    senza peso. */}
+                {m && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
+                    margin: '2px 0 8px', padding: '8px 10px', borderRadius: 8,
+                    background: alpha(ESITO[m.esito], 0.08), border: `1px solid ${alpha(ESITO[m.esito], 0.3)}`,
+                    fontFamily: F.mono, fontSize: 12,
+                  }}>
+                    <span style={{ color: C.spento }}>{m.giorno}</span>
+                    <span style={{ color: C.fioco, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{m.inCasa ? 'in casa' : 'fuori'}</span>
+                    <span style={{ color: C.testo, fontFamily: F.sans, fontWeight: 600 }}>{m.avversario}</span>
+                    <b style={{ color: ESITO[m.esito], fontSize: 15 }}>{m.gf}–{m.gs}</b>
+                    <span style={{ marginLeft: 'auto', color: m.over ? C.celeste : C.grigioFioco, fontSize: 11 }}>
+                      {m.over ? 'over' : 'under'} 2,5
                     </span>
-                    <span style={{ width: 1, alignSelf: 'stretch', minHeight: 26, background: C.bordoChiaro }} />
-                    <span style={{ display: 'inline-flex', gap: 4 }}>
-                      {s.map((m, i) => <Chip key={i} testo={m.over ? 'O' : 'U'} colore={m.over ? C.celeste : C.grigioFioco} titolo={`${m.titolo} · ${m.over ? 'over' : 'under'} 2,5`} />)}
-                    </span>
-                  </>}
+                  </div>
+                )}
               </div>
             )
           })}

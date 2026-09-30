@@ -19,13 +19,3 @@ export function usaForma(div, casa, trasferta) {
 
   return { forma, errore }
 }
-
-// Ultimi 5 di una squadra, dalla più vecchia alla più recente come si legge
-// una striscia, con l'over/under 2,5 della stessa partita.
-export function striscia(lista = []) {
-  return [...lista].reverse().map(m => ({
-    ...m,
-    over: m.gol_casa + m.gol_trasferta > 2.5,
-    titolo: `${String(m.data).slice(8, 10)}/${String(m.data).slice(5, 7)} · ${m.casa} ${m.gol_casa}–${m.gol_trasferta} ${m.trasferta}`,
-  }))
-}
