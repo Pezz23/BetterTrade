@@ -64,32 +64,28 @@ function Menu({ aperto, onChiudi, onVai, attivo, isAdmin }) {
     <>
       {/* lo sfondo chiude il menu al tocco */}
       <div onClick={onChiudi} className="menu-sfondo" aria-hidden={!aperto} style={{
-        position:'fixed', inset:0, zIndex:60, background:alpha(C.fondo, 0.7),
+        position:'fixed', top:'var(--barra-alta)', left:0, right:0, bottom:0, zIndex:60,
+        background:alpha(C.fondo, 0.7),
         opacity: aperto ? 1 : 0, pointerEvents: aperto ? 'auto' : 'none',
       }} />
       {/* Il pannello prende tutta l'altezza dello schermo: prima era un
           riquadro sotto il tasto, e l'ultima voce finiva tagliata. */}
       <div className="menu-pannello" style={{
-        position:'fixed', top:0, right:0, bottom:0, zIndex:70,
-        width:'min(320px, 86vw)', display:'flex', flexDirection:'column',
-        background:C.pannello, borderLeft:`1px solid ${C.bordo}`,
-        boxShadow:`-12px 0 32px ${alpha(C.fondo, 0.8)}`,
-        transform: aperto ? 'translateX(0)' : 'translateX(100%)',
+        position:'fixed', top:'var(--barra-alta)', right:12, zIndex:70,
+        width:'min(320px, calc(100vw - 24px))', display:'flex', flexDirection:'column',
+        /* mai più alto dello spazio che resta sotto la testata: così l'ultima
+           voce non può finire tagliata */
+        maxHeight:'calc(100vh - var(--barra-alta) - 16px)',
+        background:C.pannello, border:`1px solid ${C.bordo}`, borderRadius:'0 0 12px 12px',
+        boxShadow:`0 16px 32px ${alpha(C.fondo, 0.85)}`,
+        transformOrigin:'top right',
+        transform: aperto ? 'translateY(0)' : 'translateY(-10px)',
+        opacity: aperto ? 1 : 0,
         visibility: aperto ? 'visible' : 'hidden',
+        pointerEvents: aperto ? 'auto' : 'none',
       }}>
-        <div style={{
-          display:'flex', alignItems:'center', justifyContent:'space-between',
-          padding:'14px 16px', borderBottom:`1px solid ${C.bordoRiga}`, flexShrink:0,
-        }}>
-          <span style={{ fontSize:10, color:C.spento, fontFamily:F.mono, letterSpacing:3, textTransform:'uppercase' }}>Menu</span>
-          <button onClick={onChiudi} aria-label="Chiudi" style={{
-            background:'transparent', border:`1px solid ${C.bordo}`, borderRadius:6,
-            color:C.spento, cursor:'pointer', fontSize:14, padding:'2px 9px', lineHeight:1.4, fontFamily:F.mono,
-          }}>✕</button>
-        </div>
-
         {/* le voci scorrono se un giorno saranno tante; il pannello no */}
-        <div style={{ flex:1, overflowY:'auto', padding:8 }}>
+        <div style={{ overflowY:'auto', padding:8 }}>
           {voci.map(v => {
             const on = v.id === attivo
             return (

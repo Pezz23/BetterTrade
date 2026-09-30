@@ -1,6 +1,10 @@
 /* Quanto spazio occupa la tab bar fissa in basso: le pagine ci lasciano
    sotto questo margine, o le ultime righe finiscono nascoste. */
-:root { --barra-bassa: calc(62px + env(safe-area-inset-bottom)); }
+:root {
+  --barra-bassa: calc(62px + env(safe-area-inset-bottom));
+  /* Altezza della testata: il menu si apre sotto, senza coprirla. */
+  --barra-alta: 51px;
+}
 
 /* Solo il minimo che sta fuori da React: body, scrollbar, reset.
    I colori dell'interfaccia stanno in src/theme.js — questi qui sotto sono la
@@ -40,7 +44,7 @@ input, button, select, textarea { font-family: var(--sans); }
    animare (React li toglierebbe prima che la transizione parta). I colori
    stanno in theme.js, qui solo movimento. */
 .menu-sfondo   { transition: opacity .22s ease; }
-.menu-pannello { transition: transform .28s cubic-bezier(.32,.72,0,1); }
+.menu-pannello { transition: transform .24s cubic-bezier(.32,.72,0,1), opacity .18s ease; }
 
 /* Le tre barrette che diventano una ✕ */
 .icona-menu      { position: relative; width: 16px; height: 12px; display: block; }
