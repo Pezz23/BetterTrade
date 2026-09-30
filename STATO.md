@@ -94,37 +94,40 @@ vuole il suo `color`.
    - [ ] **Da decidere guardandolo**: il Grado e la "resa 97%" nella testata
          dicono la stessa cosa in due modi. Forse va tolta una delle due.
 
-## 🔵 Lotto 3 — Quattro cose chieste il 30 settembre 2026
+## 🔵 Lotto 3 — Le stelline contano davvero
+*Tocca `lib/spin.js`, `SpinProvvisoriePage.jsx`, `App.jsx` + una pagina nuova.
+Prima di tutti gli altri: qui c'è un difetto vero, non un fastidio.*
 
-6. **Tornando dalla scheda, la lista riparte da capo.** Aprendo una partita e
-   poi tornando indietro si perde il punto in cui si era: con 189 partite
-   significa riscorrere tutto. Va ricordata la posizione e ripristinata —
-   meglio ancora, tornare **con quella partita in vista**.
-   *Causa nota*: la scheda sostituisce la lista in `PartitePage`, quindi la
-   lista viene smontata e lo scorrimento azzerato.
+6. **Una stellina forza la soglia** — deciso da Mattia il 30/09.
+   *Il difetto*: `candidate()` in `lib/spin.js` tiene solo le partite **sopra
+   soglia**, quindi una partita votata ma sotto il 65% non entra nella spin
+   per quante stelline abbia. Da riprodurre e correggere: **se una persona la
+   vota, entra comunque**, e nell'ordine viene prima (i voti già comandano).
+   Da verificare anche che "Compila spin" scriva davvero le votate.
 
-7. **Cliccare una casella V/N/P deve dire quale partita era.** Oggi il
-   risultato c'è solo nel `title` (si vede passando il mouse sopra), quindi
-   **su telefono non si vede affatto**. Serve al tocco: mostrare avversario,
-   data e risultato. Vale anche per la striscia over/under.
-   *Perché*: capire se quelle vittorie o sconfitte sono attendibili o venivano
-   da partite senza peso.
+7. **Pagina "Partite votate"** nel menu ☰: l'elenco delle partite che hanno
+   ricevuto stelline. ⚠️ Chiarito il 30/09: **"voto" = la stellina**; il numero
+   calcolato è il **Grado**. Esiste già il riquadro "LE VOTATE" in fondo alle
+   Spin provvisorie: da lì si riusa la logica, senza duplicarla.
 
-8. **Verificare che le spin compilino le partite votate.** Mattia: *"le spin
-   con stelline ad oggi non le compila"*. Da riprodurre prima di toccare.
-   *Sospetto principale*: `candidate()` in `lib/spin.js` tiene solo le partite
-   **sopra soglia**, quindi una partita votata ma sotto soglia non entra mai
-   nella spin, per quante stelline abbia. Se è così, la domanda vera è: **una
-   stellina deve poter forzare l'ingresso di una partita sotto soglia?**
+## 🔵 Lotto 4 — Tornare indietro senza perdere il posto
+*Tocca `PartitePage.jsx`. Corto, e si sente ogni giorno.*
 
-9. **Una pagina nuova con le partite votate** (voce nel menu ☰).
-   ⚠️ **Da chiarire**: "partite con voto" = quelle che hanno ricevuto le
-   **stelline** degli admin, o quelle ordinate per **Grado**? Vedi la nota sui
-   nomi in CLAUDE.md.
+8. **Tornando dalla scheda, la lista riparte da capo.** Con 189 partite vuol
+   dire riscorrere tutto ogni volta. Va ripristinata la posizione — meglio:
+   tornare **con quella partita in vista**.
+   *Causa*: la scheda sostituisce la lista, che viene smontata e riazzerata.
 
----
+## 🔵 Lotto 5 — Le ultime 5 partite, al tocco
+*Tocca `DettaglioPartita.jsx`.*
 
-## 🔵 Lotto 2-bis — I filtri della lista, da rifare da zero
+9. **Cliccando una casella V/N/P compare la partita e il risultato.** Oggi il
+   dato è solo nel `title`, cioè **si vede col mouse sopra e su telefono mai**.
+   Serve avversario, data e risultato; vale anche per la striscia over/under.
+   *Perché*: quattro V contro squadre di fondo classifica valgono meno di due
+   V contro le prime — senza questo non si può giudicare.
+
+## 🔵 Lotto 6 — I filtri della lista, da rifare da zero
 *Rimandati il 30/09: "sono da rifare da 0, non si capisce nulla".*
 
 4. **Filtro per Grado** (minimo, come quello sulla quota).
@@ -132,19 +135,19 @@ vuole il suo `color`.
    campi in fila, stretti e disordinati su telefono. Non un ritocco: da
    ridisegnare.
 
-## Lotto 3 — Storico
+## Lotto 7 — Storico
 *Tocca `StoricoPage.jsx`.*
 
 6. **Le ultime chiuse: 30 partite invece di 12**, con le prime 10 visibili e
    le altre **dentro un menu a scomparsa**.
 
-## Lotto 4 — Finire la scheda e la lista
+## Lotto 8 — Finire la scheda e la lista
 *Il restyling è a metà: mancano i blocchi in fondo.*
 
 7. Rifinire **scontri diretti** e **consenso** nella scheda della partita.
 8. **Provare su telefono vero** (finora solo browser desktop): 375, 390, 430px.
 
-## Lotto 5 — Le spin, da qui in avanti
+## Lotto 9 — Le spin, da qui in avanti
 *Ora che la griglia conosce le partite vere.*
 
 9. **Rifare le spin 1 e 2 in griglia**: sono del 20/09, con le vecchie regole
@@ -158,7 +161,7 @@ vuole il suo `color`.
     sola condivisa (`griglia` id=1). Niente spin passate, e due admin che
     editano insieme si sovrascrivono.
 
-## Lotto 6 — Aggiornamento dei dati
+## Lotto 10 — Aggiornamento dei dati
 13. **Installare l'aggiornamento automatico** (`btscout/aggiornamento.plist`,
     launchd martedì e venerdì 18:30) — pronto, servono due comandi.
 14. **Lanciare il rendiconto ogni settimana** dopo l'aggiornamento e annotare
@@ -166,7 +169,7 @@ vuole il suo `color`.
 15. **Il pulsante "Aggiorna" nell'app** (ex fase 5): serve una Supabase Edge
     Function. Meno urgente ora che ci sono chat e launchd.
 
-## Lotto 7 — Pulizia
+## Lotto 11 — Pulizia
 16. ~~**Annidamento `BetterTrade/bettertrade/`**~~ — risolto il 25/09/2026:
     la cartella dell'app si chiama **`app/`**. ⚠️ Su Vercel la *Root Directory*
     va cambiata da `bettertrade` ad `app`, o il deploy si rompe.
