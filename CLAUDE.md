@@ -144,9 +144,12 @@ fare una lista lunga.
 
 **Accanto all'attendibilità c'è la resa**: `quota × probabilità`, quanto torna
 in media per ogni euro. 100% è il pareggio. **Il Grado** (`grado()` in
-`lib/attendibilita.js`) è la stessa resa in scala **1-10 con due decimali**,
-per il colpo d'occhio: sulle partite giocabili la resa sta schiacciata fra 0,90
-e 0,98, e stirarla rende leggibili differenze che in percentuale non si vedono.
+`lib/attendibilita.js`) riassume in **1-10 con due decimali** quanto conviene
+una partita: **70% la resa, 30% il livello della quota** (`PESO_QUOTA`).
+⚠️ La quota pesa a parte **di proposito**: resa = quota × probabilità, quindi
+"1,18 all'82%" e "1,48 al 65%" danno la stessa resa — ma con 100 € rendono 18
+contro 48. Senza quel 30% il Grado sarebbe cieco al guadagno (correlazione con
+la quota: 0,10).
 ⚠️ Gli estremi (`GRADO_MIN`, `GRADO_MAX`) sono **fissi, misurati sull'archivio**:
 se si ricalcolassero sulla lista del momento, la stessa partita cambierebbe
 Grado ogni settimana. ⚠️ **Il Grado non entra nella selezione delle spin** —

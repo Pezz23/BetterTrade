@@ -76,9 +76,20 @@ vuole il suo `color`.
      volta sola: ricalcolarli sulla lista corrente farebbe cambiare Grado alla
      stessa partita ogni settimana.
 
-   Sulle 28 partite sopra soglia di oggi i Gradi vanno da **2,30 a 10,00**, e
-   l'ordinamento è quello giusto: Arsenal-Leeds (69%, quota 1,43) prende 10,
-   Rangers-Kilmarnock (74% ma quota 1,24) prende 3,14.
+   - **Poi la quota è entrata nel conto** (30/09, dopo il primo giro):
+     *"il Grado deve includere anche il valore della quota"*. Aveva ragione e
+     i dati lo dicevano: la correlazione fra Grado e quota era **0,10**, cioè
+     quasi zero. Il motivo è che resa = quota × probabilità e le due si
+     compensano: Barcelona-Getafe (Q 1,18, att 82%) e Lille-Le Havre (Q 1,48,
+     att 65%) avevano **la stessa resa 97%** e quindi lo stesso Grado, ma con
+     100 € rendono 18 contro 48.
+     Ora **Grado = 70% resa + 30% livello della quota** (`PESO_QUOTA = 0.30`,
+     quota stirata fra `QUOTA_MIN` 1,15 e `QUOTA_MAX` 1,55 — nell'archivio le
+     giocabili stanno fra 1,19 e 1,45). Il peso si cambia in una riga.
+
+   Sulle 28 di oggi: in testa **Arsenal-Leeds 9,19** (Q 1,43, att 69%),
+   poi Strasbourg-PSG 8,54 (Q 1,46) e Lille-Le Havre 8,43 (Q 1,48);
+   Man City-Ipswich scende a 7,11 perché a 1,26 rende poco per euro.
 
    - [ ] **Da decidere guardandolo**: il Grado e la "resa 97%" nella testata
          dicono la stessa cosa in due modi. Forse va tolta una delle due.

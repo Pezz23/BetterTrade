@@ -89,7 +89,7 @@ export function valuta(r) {
   const quotaResa = quotaGiocata ?? quotaStimata
   const resa = quotaResa ? quotaResa * probGiocata : null
 
-  return { ...r, p, segno, prob, quota, quotaFonte, q1, qx, q2, equo, scarto, giocata, quotaGiocata, nota, probGiocata, quotaStimata, resa, grado: grado(resa) }
+  return { ...r, p, segno, prob, quota, quotaFonte, q1, qx, q2, equo, scarto, giocata, quotaGiocata, nota, probGiocata, quotaStimata, resa, grado: grado(resa, quotaResa) }
 }
 
 // Il nome leggibile del bookmaker di riferimento, dalla chiave di The Odds API.
@@ -112,10 +112,24 @@ export const nomeBook = chiave => NOMI_BOOK[chiave] || chiave || '—'
 export const GRADO_MIN = 0.90   // resa: sotto, Grado 1
 export const GRADO_MAX = 0.98   // resa: sopra, Grado 10 (raro: 4 partite su 4.813)
 
-export function grado(resa) {
+// ⚠️ La resa da sola è cieca al livello della quota, e non per sbaglio: resa =
+// quota × probabilità, quindi "1,18 al 82%" e "1,48 al 65%" danno lo stesso
+// numero. Con 100 € la prima rende 18, la seconda 48. Per distinguerle il
+// Grado guarda anche **quanto paga**, con un peso (deciso il 30/09/2026).
+//
+// Quote sulle partite sopra soglia nell'archivio (4.813): 1° pc 1,19, mediana
+// 1,33, 99° pc 1,45 — gli estremi della scala stanno appena fuori.
+export const QUOTA_MIN = 1.15
+export const QUOTA_MAX = 1.55
+export const PESO_QUOTA = 0.30  // 0 = solo resa · 1 = solo quota
+
+const inScala = (x, min, max) => Math.min(10, Math.max(1, 1 + 9 * (x - min) / (max - min)))
+
+export function grado(resa, quota) {
   if (resa == null) return null
-  const x = (resa - GRADO_MIN) / (GRADO_MAX - GRADO_MIN)
-  return Math.min(10, Math.max(1, 1 + x * 9))
+  const daResa = inScala(resa, GRADO_MIN, GRADO_MAX)
+  if (!quota) return daResa
+  return (1 - PESO_QUOTA) * daResa + PESO_QUOTA * inScala(quota, QUOTA_MIN, QUOTA_MAX)
 }
 
 /** centro | giallo | blu | no, dalla probabilità della giocata e dalle soglie. */
