@@ -126,9 +126,12 @@ Prima di tutti gli altri: qui c'è un difetto vero, non un fastidio.*
    ritoccandola. Il dato prima stava solo nel `title`: col mouse sopra, quindi
    su telefono invisibile.
 
-   **Il conto che conta**: i gol vanno girati quando la squadra giocava fuori.
-   `Cagliari 0-1 Inter` deve leggersi `fuori · vs Cagliari · 1–0`. Verificato
-   sui dati veri su tutte e dieci le partite di Inter e Parma.
+   **La riga mostra la partita nell'ordine vero** — `Cagliari 0–1 Inter`, non
+   `fuori vs Cagliari 1–0`: è come la si ricorda. La squadra che si sta
+   guardando è in chiaro e in grassetto, l'altra spenta. (Primo giro fatto
+   girando i gol dalla parte della squadra: Mattia non era convinto, e aveva
+   ragione — obbligava a ricostruire a mente chi avesse segnato cosa.)
+   Verificato sui dati veri su Inter e Parma, casi in trasferta compresi.
 
    `striscia()` è stata spostata da `hooks/usaForma.js` a **`lib/forma.js`**:
    è un calcolo puro e nell'hook non era provabile da terminale (l'hook importa

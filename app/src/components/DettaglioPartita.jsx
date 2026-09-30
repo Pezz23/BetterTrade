@@ -151,10 +151,12 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
                     background: alpha(ESITO[m.esito], 0.08), border: `1px solid ${alpha(ESITO[m.esito], 0.3)}`,
                     fontFamily: F.mono, fontSize: 12,
                   }}>
+                    {/* Nell'ordine vero della partita — "Cagliari 0–1 Inter",
+                        non "fuori vs Cagliari 1–0": è come la si ricorda. */}
                     <span style={{ color: C.spento }}>{m.giorno}</span>
-                    <span style={{ color: C.fioco, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{m.inCasa ? 'in casa' : 'fuori'}</span>
-                    <span style={{ color: C.testo, fontFamily: F.sans, fontWeight: 600 }}>{m.avversario}</span>
-                    <b style={{ color: ESITO[m.esito], fontSize: 15 }}>{m.gf}–{m.gs}</b>
+                    <span style={{ color: m.inCasa ? C.testo : C.spento, fontFamily: F.sans, fontWeight: m.inCasa ? 700 : 500 }}>{m.casa}</span>
+                    <b style={{ color: ESITO[m.esito], fontSize: 15 }}>{m.gol_casa}–{m.gol_trasferta}</b>
+                    <span style={{ color: m.inCasa ? C.spento : C.testo, fontFamily: F.sans, fontWeight: m.inCasa ? 500 : 700 }}>{m.trasferta}</span>
                     <span style={{ marginLeft: 'auto', color: m.over ? C.celeste : C.grigioFioco, fontSize: 11 }}>
                       {m.over ? 'over' : 'under'} 2,5
                     </span>
