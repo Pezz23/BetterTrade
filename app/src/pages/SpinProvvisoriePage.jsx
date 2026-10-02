@@ -24,8 +24,10 @@ function Cella({ pos, partita, votiDi, diversa }) {
   const voti = partita ? votiDi(partita.id) : 0
   return (
     <div style={{
-      background: alpha(colore, partita ? 0.10 : 0.03), border: `2px solid ${diversa ? C.oro : alpha(colore, partita ? 0.4 : 0.15)}`,
-      boxShadow: diversa ? `0 0 10px ${alpha(C.oro, 0.35)}` : 'none',
+      // Il violetto per le celle sostituite: oro, verde e celeste sono già le
+      // tre categorie, e l'arancione si confonderebbe con l'oro degli angoli.
+      background: alpha(colore, partita ? 0.10 : 0.03), border: `2px solid ${diversa ? C.viola : alpha(colore, partita ? 0.4 : 0.15)}`,
+      boxShadow: diversa ? `0 0 10px ${alpha(C.viola, 0.45)}` : 'none',
       borderRadius: 10, padding: '8px 6px', height: 124, textAlign: 'center', fontFamily: F.mono,
       display: 'flex', flexDirection: 'column', justifyContent: 'space-between', overflow: 'hidden',
     }}>
@@ -180,7 +182,7 @@ export default function SpinProvvisoriePage() {
             <Griglia titolo="Automatica" colore={C.spento} celle={auto} votiDi={votiDi} indice={i} piena={piene[i]} onFatto={leggiGriglia}
               spiegazione={<>Le più attendibili in ordine: la prima al <b style={{ color: C.menta }}>centro</b>, le 4 dopo agli <b style={{ color: C.oroChiaro }}>angoli</b>, le ultime 4 ai <b style={{ color: C.celeste }}>lati</b>.</>} />
             <Griglia titolo="Con le stelline" colore={C.oro} celle={votate[i]} riferimento={auto} votiDi={votiDi} indice={i} piena={piene[i]} onFatto={leggiGriglia}
-              spiegazione={<>Stesso schema, ma <b style={{ color: C.oro }}>prima le votate</b> — più stelline, più in alto — e a parità per attendibilità. Una partita votata entra <b style={{ color: C.testo }}>anche se sotto soglia o oltre la finestra</b>.</>} />
+              spiegazione={<>Stesso schema, ma <b style={{ color: C.oro }}>prima le votate</b> — più stelline, più in alto — e a parità per attendibilità. Una partita votata entra <b style={{ color: C.testo }}>anche se sotto soglia o oltre la finestra</b>. Le caselle <b style={{ color: C.viola }}>in violetto</b> sono quelle che cambiano rispetto all'automatica.</>} />
           </div>
         </Card>
       ))}
