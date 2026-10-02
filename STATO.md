@@ -43,6 +43,11 @@ compilano la griglia da sole, la griglia **agganciata alle partite vere** e il
    le spin chieste, e tre pillole con i conteggi permettono di cambiarla.
    Verificato: con i voti veri le candidate passano da **1 a 9**, e le nove
    votate riempiono una spin con la più votata (★2) al centro.
+3bis. [x] **La griglia con le stelline contiene SOLO le votate** (2/10): niente
+   riempitivi, le caselle restano vuote se i voti non bastano. Deve dire cosa
+   avete scelto voi, non cosa ci metterebbe il criterio. Le celle diverse
+   dall'automatica si accendono in **violetto** — oro, verde e celeste sono già
+   i colori delle tre categorie, e l'arancione si confondeva con l'oro.
 3. [x] **Pagina "Partite votate"** (menu ☰, ⭐). Riusa `RigaPartita`,
    `DettaglioPartita` e l'hook `usaProssime`: contiene solo filtro e ordine —
    le più votate prima, poi per attendibilità, lo stesso ordine con cui entrano

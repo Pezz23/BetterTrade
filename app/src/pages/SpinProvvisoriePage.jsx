@@ -122,7 +122,11 @@ export default function SpinProvvisoriePage() {
   const fin = finestra ?? finestraUtile(righe, quante, { votiDi })
   const ordinate = useMemo(() => candidate(righe, { finestra: fin, votiDi }), [righe, fin, votiDi])
   const automatiche = useMemo(() => componi(ordinate, quante), [ordinate, quante])
-  const votate = useMemo(() => componi(conStelline(ordinate, votiDi), quante), [ordinate, quante, votiDi])
+  // Solo le partite votate, niente riempitivi: se i voti non bastano le
+  // caselle restano vuote (deciso il 2/10/2026). La griglia con le stelline
+  // deve dire cosa avete scelto VOI, non cosa ci metterebbe il criterio.
+  const soloVotate = useMemo(() => conStelline(ordinate.filter(r => votiDi(r.id) > 0), votiDi), [ordinate, votiDi])
+  const votate = useMemo(() => componi(soloVotate, quante), [soloVotate, quante])
   const nVotate = ordinate.filter(p => votiDi(p.id) > 0).length
   // Tutte le partite con almeno una stellina, anche sotto soglia o oltre la
   // settimana: chi ha votato deve vedere dov'è finito il suo voto.
@@ -140,8 +144,8 @@ export default function SpinProvvisoriePage() {
       <div style={{ fontSize: 20, fontWeight: 700, color: C.testo, fontFamily: F.sans, marginBottom: 4 }}>Anteprima delle spin</div>
       <div style={{ fontSize: 12, color: C.spento, fontFamily: F.sans, marginBottom: 14, lineHeight: 1.6 }}>
         {caricamento ? 'Caricamento…' : <>
-          {ordinate.length} partite candidate, {nVotate} con stelline — che entrano comunque,
-          anche sotto soglia o oltre la finestra.
+          {ordinate.length} partite candidate · <b style={{ color: nVotate ? C.oro : C.ambra }}>{nVotate} votate</b>,
+          che riempiono {Math.min(nVotate, quante * 9)} delle {quante * 9} caselle con le stelline.
           {ordinate.length < servono && <span style={{ color: C.ambra }}> Per {quante} spin ne servono {servono}: le ultime restano a metà.</span>}
         </>}
       </div>
@@ -182,7 +186,7 @@ export default function SpinProvvisoriePage() {
             <Griglia titolo="Automatica" colore={C.spento} celle={auto} votiDi={votiDi} indice={i} piena={piene[i]} onFatto={leggiGriglia}
               spiegazione={<>Le più attendibili in ordine: la prima al <b style={{ color: C.menta }}>centro</b>, le 4 dopo agli <b style={{ color: C.oroChiaro }}>angoli</b>, le ultime 4 ai <b style={{ color: C.celeste }}>lati</b>.</>} />
             <Griglia titolo="Con le stelline" colore={C.oro} celle={votate[i]} riferimento={auto} votiDi={votiDi} indice={i} piena={piene[i]} onFatto={leggiGriglia}
-              spiegazione={<>Stesso schema, ma <b style={{ color: C.oro }}>prima le votate</b> — più stelline, più in alto — e a parità per attendibilità. Una partita votata entra <b style={{ color: C.testo }}>anche se sotto soglia o oltre la finestra</b>. Le caselle <b style={{ color: C.viola }}>in violetto</b> sono quelle che cambiano rispetto all'automatica.</>} />
+              spiegazione={<><b style={{ color: C.oro }}>Solo le partite votate</b>, nessun riempitivo: se i voti non bastano le caselle restano vuote. Ordine per stelline, a parità per attendibilità; una votata entra <b style={{ color: C.testo }}>anche se sotto soglia o oltre la finestra</b>. In <b style={{ color: C.viola }}>violetto</b> le caselle diverse dall'automatica.</>} />
           </div>
         </Card>
       ))}
