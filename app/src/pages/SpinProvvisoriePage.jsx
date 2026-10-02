@@ -3,8 +3,9 @@ import { usaProssime } from '../hooks/usaProssime'
 import { C, F, alpha } from '../theme'
 import { Card, Etichetta, Btn } from '../components/ui'
 import { CATEGORIE, pct, giorno } from '../components/RigaPartita'
-import { categoria, SOGLIE_DEFAULT, lunediProssimo } from '../lib/attendibilita'
-import { candidate, componi, conStelline, compilaSpin, spinPiena, pronosticoDa, DISPOSIZIONE } from '../lib/spin'
+import { categoria, SOGLIE_DEFAULT, lunediProssimo, FINESTRE } from '../lib/attendibilita'
+import { candidate, componi, conStelline, finestraUtile, spinPiena, pronosticoDa, DISPOSIZIONE } from '../lib/spin'
+import { compilaSpin } from '../lib/griglia'
 import { supabase } from '../supabase'
 import { sigla } from '../lib/campionati'
 
@@ -108,7 +109,12 @@ export default function SpinProvvisoriePage() {
   }
   useEffect(() => { leggiGriglia() }, [])
 
-  const ordinate = useMemo(() => candidate(righe), [righe])
+  // La finestra: con il calendario vero la settimana corrente può essere
+  // quasi vuota (il 02/10 c'era UNA candidata, perché si giocava dal 9), e la
+  // pagina sembrava rotta. Si parte dalla più stretta che basta, e si cambia.
+  const [finestra, setFinestra] = useState(null)
+  const fin = finestra ?? finestraUtile(righe, quante, { votiDi })
+  const ordinate = useMemo(() => candidate(righe, { finestra: fin, votiDi }), [righe, fin, votiDi])
   const automatiche = useMemo(() => componi(ordinate, quante), [ordinate, quante])
   const votate = useMemo(() => componi(conStelline(ordinate, votiDi), quante), [ordinate, quante, votiDi])
   const nVotate = ordinate.filter(p => votiDi(p.id) > 0).length
@@ -128,9 +134,25 @@ export default function SpinProvvisoriePage() {
       <div style={{ fontSize: 20, fontWeight: 700, color: C.testo, fontFamily: F.sans, marginBottom: 4 }}>Anteprima delle spin</div>
       <div style={{ fontSize: 12, color: C.spento, fontFamily: F.sans, marginBottom: 14, lineHeight: 1.6 }}>
         {caricamento ? 'Caricamento…' : <>
-          {ordinate.length} partite sopra soglia fino a lunedì, {nVotate} con stelline.
+          {ordinate.length} partite candidate, {nVotate} con stelline — che entrano comunque,
+          anche sotto soglia o oltre la finestra.
           {ordinate.length < servono && <span style={{ color: C.ambra }}> Per {quante} spin ne servono {servono}: le ultime restano a metà.</span>}
         </>}
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 12, color: C.spento, fontFamily: F.sans }}>Fino a</span>
+        {FINESTRE.map(f => {
+          const n = candidate(righe, { finestra: f.id, votiDi }).length
+          const on = fin === f.id
+          return (
+            <button key={f.id} onClick={() => setFinestra(f.id)} style={{
+              padding: '6px 12px', borderRadius: 20, cursor: 'pointer', fontFamily: F.mono, fontSize: 11, fontWeight: 600,
+              background: on ? alpha(C.oro, 0.15) : 'transparent',
+              border: `1px solid ${on ? alpha(C.oro, 0.5) : C.bordo}`, color: on ? C.oro : C.fioco,
+            }}>{f.label} <span style={{ color: on ? C.testo : C.spento }}>{n}</span></button>
+          )
+        })}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
