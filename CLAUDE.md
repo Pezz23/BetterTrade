@@ -364,6 +364,11 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   vinte compariva dal nulla e spingeva giù la pagina sotto le dita. Si risolve
   riservando lo spazio (altezza fissa, `minHeight`), non sperando che il
   contenuto sia della misura giusta.
+- **Un'etichetta dentro una colonna elastica viene tagliata per prima.** In
+  `ScegliCasella` la scritta "già in spin 2" divideva lo spazio col nome delle
+  squadre e spariva. Le segnalazioni vogliono una **colonna a larghezza fissa**
+  e una legenda visibile: il `title` che appare col mouse sopra **su telefono
+  non esiste**, quindi non è mai l'unico posto dove mettere un'informazione.
 - **I `<button>` non ereditano il colore del testo.** Un glifo dentro un
   pulsante prende il colore predefinito del browser: l'icona `◎` di Utenti era
   nera su nero, e le vicine si vedevano solo perché ⚽🎰📚 sono emoji a colori,

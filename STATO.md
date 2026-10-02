@@ -48,6 +48,25 @@ compilano la griglia da sole, la griglia **agganciata alle partite vere** e il
    avete scelto voi, non cosa ci metterebbe il criterio. Le celle diverse
    dall'automatica si accendono in **violetto** — oro, verde e celeste sono già
    i colori delle tre categorie, e l'arancione si confondeva con l'oro.
+3ter. [x] **Si sceglie a mano cosa va in ogni casella** (2/10). Tocchi una
+   casella della griglia con le stelline e si apre `ScegliCasella`: filtri
+   **★ votate · centro · gialle · blu · tutte** con i conteggi, ricerca per
+   squadra o campionato (anche per sigla nuova, "ITA1"), e "svuota la casella".
+   Si apre **già sul filtro giusto per la posizione** (9 = centro, 1-4 angoli,
+   5-8 lati). Le scelte **vivono nella pagina**, non nel database: finché non
+   si preme "Compila spin" è anteprima, e **↺ riparti dalle votate** rimette
+   l'ordine automatico.
+   - È una **finestra al centro**, non una tendina ancorata come in griglia:
+     le caselle sono quadratini da 100px e sul telefono la tendina usciva fuori.
+   - **I doppioni**: stessa spin → barrata e non scegliibile; altra spin →
+     scegliibile ma con la targhetta **`S2`** (violetto) e il segno **`↔2`**
+     ambra nella casella, così l'errore si vede senza aprire niente.
+     ⚠️ Due colori diversi di proposito: il violetto dice già "diversa
+     dall'automatica", l'ambra dice "sta anche altrove".
+   - ⚠️ **Le etichette lunghe dentro una colonna elastica vengono tagliate**:
+     "già in spin 2" spariva perché divideva lo spazio col nome delle squadre.
+     Ogni segnalazione vuole una **colonna a larghezza fissa**, più una legenda
+     — su telefono il suggerimento del mouse non esiste.
 3. [x] **Pagina "Partite votate"** (menu ☰, ⭐). Riusa `RigaPartita`,
    `DettaglioPartita` e l'hook `usaProssime`: contiene solo filtro e ordine —
    le più votate prima, poi per attendibilità, lo stesso ordine con cui entrano
