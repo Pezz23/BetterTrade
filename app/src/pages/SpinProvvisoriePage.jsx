@@ -78,14 +78,18 @@ function Compila({ indice, celle, piena, onFatto }) {
   )
 }
 
-function Griglia({ titolo, colore, celle, riferimento, votiDi, indice, piena, onFatto }) {
-  const diverse = riferimento ? celle.filter(c => c.partita?.id !== riferimento.find(r => r.pos === c.pos)?.partita?.id).length : 0
+function Griglia({ titolo, colore, celle, riferimento, votiDi, indice, piena, onFatto, spiegazione }) {
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-        <Etichetta colore={colore} style={{ fontSize: 12 }}>{titolo}</Etichetta>
-        {riferimento && <span style={{ fontSize: 11, fontFamily: F.mono, color: diverse ? C.oro : C.fantasma }}>{diverse ? `${diverse} celle diverse` : 'uguale all\'automatica'}</span>}
-      </div>
+      <Etichetta colore={colore} style={{ fontSize: 12, marginBottom: spiegazione ? 3 : 6 }}>{titolo}</Etichetta>
+      {/* Come ci finiscono dentro le partite: va detto qui, è il momento in
+          cui lo si guarda. Prima c'era il conto delle celle diverse, che non
+          spiegava niente. */}
+      {spiegazione && (
+        <div style={{ fontSize: 10.5, color: C.spento, fontFamily: F.sans, lineHeight: 1.5, marginBottom: 7 }}>
+          {spiegazione}
+        </div>
+      )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
         {DISPOSIZIONE.flat().map(pos => {
           const c = celle.find(c => c.pos === pos)
@@ -173,8 +177,10 @@ export default function SpinProvvisoriePage() {
         <Card key={i} style={{ padding: '14px' }}>
           <div style={{ fontSize: 30, fontWeight: 800, color: C.oro, fontFamily: F.sans, letterSpacing: 2, marginBottom: 12 }}>SPIN {i + 1}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <Griglia titolo="Automatica · per attendibilità" colore={C.spento} celle={auto} votiDi={votiDi} indice={i} piena={piene[i]} onFatto={leggiGriglia} />
-            <Griglia titolo="Con le stelline · le votate prima" colore={C.oro} celle={votate[i]} riferimento={auto} votiDi={votiDi} indice={i} piena={piene[i]} onFatto={leggiGriglia} />
+            <Griglia titolo="Automatica" colore={C.spento} celle={auto} votiDi={votiDi} indice={i} piena={piene[i]} onFatto={leggiGriglia}
+              spiegazione={<>Le più attendibili in ordine: la prima al <b style={{ color: C.menta }}>centro</b>, le 4 dopo agli <b style={{ color: C.oroChiaro }}>angoli</b>, le ultime 4 ai <b style={{ color: C.celeste }}>lati</b>.</>} />
+            <Griglia titolo="Con le stelline" colore={C.oro} celle={votate[i]} riferimento={auto} votiDi={votiDi} indice={i} piena={piene[i]} onFatto={leggiGriglia}
+              spiegazione={<>Stesso schema, ma <b style={{ color: C.oro }}>prima le votate</b> — più stelline, più in alto — e a parità per attendibilità. Una partita votata entra <b style={{ color: C.testo }}>anche se sotto soglia o oltre la finestra</b>.</>} />
           </div>
         </Card>
       ))}
