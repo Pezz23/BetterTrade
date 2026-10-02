@@ -19,7 +19,7 @@ import { sigla } from '../lib/campionati'
 // riempie solo le tre agganciate al calendario.
 const SPIN = [1, 2, 3]
 
-function Cella({ pos, partita, votiDi, diversa, onClic }) {
+function Cella({ pos, partita, votiDi, diversa, onClic, inAltre }) {
   const cat = partita ? categoria(partita.probGiocata, SOGLIE_DEFAULT) : 'no'
   const colore = CATEGORIE[cat].colore
   const voti = partita ? votiDi(partita.id) : 0
@@ -35,7 +35,11 @@ function Cella({ pos, partita, votiDi, diversa, onClic }) {
     }} onClick={onClic}>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: C.spento, lineHeight: 1 }}>
         <span>{pos}</span>
-        {voti > 0 && <span style={{ color: C.oro }}>{'★'.repeat(voti)}</span>}
+        <span style={{ display: 'flex', gap: 4 }}>
+          {/* ambra, non violetto: il violetto dice già "diversa dall'automatica" */}
+          {inAltre?.length > 0 && <span title={`anche nella spin ${inAltre.join(', ')}`} style={{ color: C.ambra }}>↔{inAltre.join('')}</span>}
+          {voti > 0 && <span style={{ color: C.oro }}>{'★'.repeat(voti)}</span>}
+        </span>
       </div>
       {partita ? (
         <>
@@ -82,7 +86,7 @@ function Compila({ indice, celle, piena, onFatto }) {
   )
 }
 
-function Griglia({ titolo, colore, celle, riferimento, votiDi, indice, piena, onFatto, spiegazione, onClicCasella, onRipristina }) {
+function Griglia({ titolo, colore, celle, riferimento, votiDi, indice, piena, onFatto, spiegazione, onClicCasella, onRipristina, altrove }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
@@ -109,6 +113,7 @@ function Griglia({ titolo, colore, celle, riferimento, votiDi, indice, piena, on
           const c = celle.find(c => c.pos === pos)
           const rif = riferimento?.find(r => r.pos === pos)
           return <Cella key={pos} pos={pos} partita={c.partita} votiDi={votiDi} diversa={!!riferimento && c.partita?.id !== rif?.partita?.id}
+            inAltre={c.partita ? altrove?.[c.partita.id] : null}
             onClic={onClicCasella ? () => onClicCasella(pos) : undefined} />
         })}
       </div>
@@ -145,6 +150,17 @@ export default function SpinProvvisoriePage() {
   // possono provare combinazioni senza sporcare niente.
   const [aMano, setAMano] = useState({})
   const [casella, setCasella] = useState(null)   // { spin, pos } aperta
+
+  // Dove sta già una partita, nelle ALTRE spin: non la blocca (si può ripetere
+  // volendo), ma deve essere evidente prima di sceglierla.
+  const altrove = spinCorrente => {
+    const m = {}
+    votate.forEach((spin, si) => {
+      if (si === spinCorrente) return
+      spin.forEach(c => { if (c.partita) (m[c.partita.id] ??= []).push(si + 1) })
+    })
+    return m
+  }
 
   const votate = useMemo(() => componi(soloVotate, quante).map((spin, si) =>
     spin.map(c => (`${si}|${c.pos}` in aMano ? { ...c, partita: aMano[`${si}|${c.pos}`] } : c))
@@ -209,6 +225,7 @@ export default function SpinProvvisoriePage() {
               spiegazione={<>Le più attendibili in ordine: la prima al <b style={{ color: C.menta }}>centro</b>, le 4 dopo agli <b style={{ color: C.oroChiaro }}>angoli</b>, le ultime 4 ai <b style={{ color: C.celeste }}>lati</b>.</>} />
             <Griglia titolo="Con le stelline" colore={C.oro} celle={votate[i]} riferimento={auto} votiDi={votiDi} indice={i} piena={piene[i]} onFatto={leggiGriglia}
               onClicCasella={pos => setCasella({ spin: i, pos })}
+              altrove={altrove(i)}
               onRipristina={Object.keys(aMano).some(k => k.startsWith(`${i}|`))
                 ? () => setAMano(v => Object.fromEntries(Object.entries(v).filter(([k]) => !k.startsWith(`${i}|`))))
                 : undefined}
@@ -224,6 +241,7 @@ export default function SpinProvvisoriePage() {
           partite={ordinate}
           votiDi={votiDi}
           usate={votate[casella.spin].filter(c => c.pos !== casella.pos && c.partita).map(c => c.partita.id)}
+          altrove={altrove(casella.spin)}
           onScegli={p => { setAMano(v => ({ ...v, [`${casella.spin}|${casella.pos}`]: p })); setCasella(null) }}
           onSvuota={() => { setAMano(v => ({ ...v, [`${casella.spin}|${casella.pos}`]: null })); setCasella(null) }}
           onChiudi={() => setCasella(null)}

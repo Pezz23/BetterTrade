@@ -18,7 +18,7 @@ import { sigla } from '../lib/campionati'
 const RUOLO = { centro: 'il centro', giallo: 'un angolo', blu: 'un lato' }
 export const ruoloDi = pos => (pos === 9 ? 'centro' : pos <= 4 ? 'giallo' : 'blu')
 
-export default function ScegliCasella({ pos, partite, votiDi, usate = [], onScegli, onSvuota, onChiudi }) {
+export default function ScegliCasella({ pos, partite, votiDi, usate = [], altrove = {}, onScegli, onSvuota, onChiudi }) {
   const [filtro, setFiltro] = useState(() => (partite.some(p => votiDi(p.id) > 0) ? 'votate' : ruoloDi(pos)))
   const [testo, setTesto] = useState('')
 
@@ -84,8 +84,10 @@ export default function ScegliCasella({ pos, partite, votiDi, usate = [], onSceg
             const cat = categoria(p.probGiocata, SOGLIE_DEFAULT)
             const col = CATEGORIE[cat].colore
             const voti = votiDi(p.id)
-            // Già in un'altra casella di questa spin: si vede, ma non si sceglie.
+            // In questa stessa spin: si vede ma non si sceglie, sarebbe un doppione.
             const presa = usate.includes(p.id)
+            // In un'altra spin: si può usare lo stesso, ma lo deve sapere.
+            const inAltre = altrove[p.id] || []
             return (
               <button key={p.id} disabled={presa} onClick={() => onScegli(p)} style={{
                 display: 'flex', alignItems: 'center', gap: 7, width: '100%', textAlign: 'left',
@@ -96,7 +98,14 @@ export default function ScegliCasella({ pos, partite, votiDi, usate = [], onSceg
                 <span style={{ color: C.oro, width: 22, flexShrink: 0 }}>{voti ? '★' + voti : ''}</span>
                 <span style={{ color: C.blu, width: 34, flexShrink: 0 }}>{sigla(p.div)}</span>
                 <span style={{ color: C.fioco, width: 52, flexShrink: 0 }}>{giorno(p.data)}</span>
-                <span style={{ fontFamily: F.sans, color: C.testo, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.casa} – {p.trasferta}</span>
+                <span style={{ fontFamily: F.sans, color: C.testo, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {p.casa} – {p.trasferta}
+                  {!presa && inAltre.length > 0 && (
+                    <span style={{ color: C.viola, fontFamily: F.mono, fontSize: 9.5, marginLeft: 6 }}>
+                      già in spin {inAltre.join(', ')}
+                    </span>
+                  )}
+                </span>
                 <span style={{ color: col, width: 50, textAlign: 'right', flexShrink: 0 }}>{pronosticoDa(p.giocata)}</span>
                 <span style={{ color: col, width: 32, textAlign: 'right', flexShrink: 0 }}>{(p.probGiocata * 100).toFixed(0)}%</span>
               </button>
