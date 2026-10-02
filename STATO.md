@@ -77,20 +77,27 @@ griglia è passata in **`lib/griglia.js`**. Senza, il caso non si poteva
 riprodurre da terminale (spin.js importava Supabase). È la convenzione del
 progetto, e stavolta è servita a trovare la causa vera.
 
-## 🔵 Lotto B — La lista delle partite
-*`PartitePage.jsx`, `RigaPartita.jsx`. Da fare insieme: la barra dei filtri va
-ridisegnata comunque, e il filtro nuovo ci deve stare dentro.*
+## ✅ Lotto B — La lista delle partite — fatto il 2 ottobre 2026
 
-4. **Tornando dalla scheda, la lista riparte da capo.** Con 189 partite vuol
-   dire riscorrere tutto ogni volta. Ripristinare la posizione — meglio:
-   tornare **con quella partita in vista**. *Causa*: la scheda sostituisce la
-   lista, che viene smontata.
-5. **Ripensare la barra dei filtri**: oggi pillole e campi in fila, stretti e
-   disordinati sul telefono. Mattia: *"sono da rifare da 0, non si capisce
-   nulla"*. Da ridisegnare, non da ritoccare.
-6. **Filtro per Grado** (minimo, come quello sulla quota).
-7. **Decidere se Grado e resa convivono**: nella scheda il Grado (1-10) e la
-   "resa 91%" dicono la stessa cosa in due modi. Forse una delle due va tolta.
+4. [x] **La lista torna dov'era.** `posizione` (useRef) salva `window.scrollY`
+   all'apertura della scheda, un `useLayoutEffect` lo rimette quando si torna.
+   Serve perché la scheda **sostituisce** la lista, che viene smontata.
+5. [x] **Barra dei filtri rifatta da zero.** Prima erano sei controlli in fila
+   che sul telefono andavano a capo a caso. Ora: **un tasto `⚙ filtri`** col
+   numero di quelli accesi, le **targhette dei filtri attivi** (si tolgono
+   toccandole), `azzera tutto`, e a destra il conto `visibili/totali`.
+   Il resto sta in un **pannello che si apre solo se serve**, con i campi
+   raggruppati (campionato · quota min/max · grado minimo · categorie) e le
+   soglie in fondo.
+6. [x] **Filtro per Grado**, con le scorciatoie `6+ 7+ 8+`.
+7. [x] **Deciso: il Grado sostituisce la resa a schermo.** Dicevano la stessa
+   cosa in due modi. Via la resa dalla testata (lista e scheda); nella scheda
+   il riquadro `RESA` è diventato `GRADO`; la resa in percentuale, col decimale,
+   resta nei **dettagli completi**, dove si va per il numero esatto.
+
+**Trovato strada facendo:** la nota "Come leggere" in fondo alla lista diceva
+ancora *"sopra 1,90 si passa alla doppia chance"* — regola tolta il 23/09.
+Corretta, e aggiunta una riga su cos'è il Grado.
 
 ## 🔵 Lotto C — Finire la scheda della partita
 *`DettaglioPartita.jsx`. Il restyling è a metà: la testata e la forma sono

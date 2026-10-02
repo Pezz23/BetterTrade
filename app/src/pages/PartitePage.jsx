@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useLayoutEffect } from 'react'
 import { usaProssime } from '../hooks/usaProssime'
 import { useAuth } from '../context/AuthContext'
 import { C, F, alpha } from '../theme'
@@ -6,7 +6,7 @@ import { Card, Etichetta } from '../components/ui'
 import RigaPartita, { CATEGORIE, pct, giorno } from '../components/RigaPartita'
 import DettaglioPartita from '../components/DettaglioPartita'
 import { categoria, FINESTRE, SOGLIE_DEFAULT } from '../lib/attendibilita'
-import { etichetta } from '../lib/campionati'
+import { etichetta, sigla } from '../lib/campionati'
 
 // La lista delle partite future, ordinata per attendibilità.
 // I calcoli stanno in lib/attendibilita.js, la riga in components/RigaPartita.jsx:
@@ -29,8 +29,16 @@ export default function PartitePage() {
   const [quotaMin, setQuotaMin] = useState('')
   const [quotaMax, setQuotaMax] = useState('')
   const [soloSopraSoglia, setSoloSopraSoglia] = useState(false)
-  const [mostraSoglie, setMostraSoglie] = useState(false)
+  const [gradoMin, setGradoMin] = useState('')
+  const [pannello, setPannello] = useState(false)   // i filtri, chiusi di default
   const [apertaId, setApertaId] = useState(null)    // la partita aperta a tutto schermo
+
+  // Dove si era arrivati nella lista. La scheda sostituisce la lista, che
+  // viene smontata: senza questo si tornava sempre in cima, e con 189 partite
+  // voleva dire riscorrere tutto ogni volta.
+  const posizione = useRef(0)
+  useLayoutEffect(() => { if (!apertaId) window.scrollTo(0, posizione.current) }, [apertaId])
+  const apri = id => { posizione.current = window.scrollY; setApertaId(id) }
 
   // Per il menu a tendina: "I1 – Serie A"
   const campionati = useMemo(() => {
@@ -55,14 +63,15 @@ export default function PartitePage() {
   const quotaMostrata = r => r.quotaGiocata ?? r.quota ?? null
 
   const visibili = useMemo(() => {
-    const qMin = numero(quotaMin), qMax = numero(quotaMax)
+    const qMin = numero(quotaMin), qMax = numero(quotaMax), gMin = numero(gradoMin)
     return inFinestra
       .filter(r => campionato ? r.div === campionato : true)
       .filter(r => qMin === null ? true : quotaMostrata(r) !== null && quotaMostrata(r) >= qMin)
       .filter(r => qMax === null ? true : quotaMostrata(r) !== null && quotaMostrata(r) <= qMax)
       .filter(r => soloSopraSoglia ? categoria(r.probGiocata, soglie) !== 'no' : true)
+      .filter(r => gMin === null ? true : r.grado !== null && r.grado >= gMin)
       .sort((a, b) => b.probGiocata - a.probGiocata)
-  }, [inFinestra, campionato, quotaMin, quotaMax, soloSopraSoglia, soglie])
+  }, [inFinestra, campionato, quotaMin, quotaMax, soloSopraSoglia, soglie, gradoMin])
 
   const conteggi = useMemo(() => {
     const c = { centro: 0, giallo: 0, blu: 0 }
@@ -71,6 +80,16 @@ export default function PartitePage() {
   }, [inFinestra, soglie])
 
   const ultimaData = inFinestra.reduce((m, r) => (r.data > m ? r.data : m), '')
+
+  // I filtri accesi, per mostrarli e poterli togliere uno a uno.
+  const attivi = [
+    campionato && { id: 'camp', label: sigla(campionato), colore: C.blu, togli: () => setCampionato('') },
+    quotaMin && { id: 'qmin', label: `quota ≥ ${quotaMin}`, togli: () => setQuotaMin('') },
+    quotaMax && { id: 'qmax', label: `quota ≤ ${quotaMax}`, togli: () => setQuotaMax('') },
+    gradoMin && { id: 'grado', label: `grado ≥ ${gradoMin}`, colore: C.menta, togli: () => setGradoMin('') },
+    soloSopraSoglia && { id: 'soglia', label: 'sopra soglia', togli: () => setSoloSopraSoglia(false) },
+  ].filter(Boolean)
+  const azzera = () => { setCampionato(''); setQuotaMin(''); setQuotaMax(''); setGradoMin(''); setSoloSopraSoglia(false) }
 
   // La scheda di una partita prende tutta la pagina: sul telefono è l'unico
   // modo di leggerla, e la lista resta dov'era quando si torna indietro.
@@ -118,32 +137,79 @@ export default function PartitePage() {
         </div>
       )}
 
-      {/* Filtri */}
+      {/* ── I filtri ──────────────────────────────────────────────────────
+          Una riga sola: il tasto, e le targhette di quelli accesi (si tolgono
+          toccandole). Tutto il resto sta nel pannello, che si apre solo se
+          serve — prima erano sei controlli in fila, illeggibili sul telefono. */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
-        <select value={campionato} onChange={e => setCampionato(e.target.value)} style={{ ...campo, width: 'auto', color: campionato ? C.testo : C.fioco }}>
-          <option value="">Tutti i campionati</option>
-          {campionati.map(([d, nome]) => <option key={d} value={d}>{etichetta(d, nome)}</option>)}
-        </select>
-        <span style={{ fontSize: 10, color: C.spento, fontFamily: F.mono }}>quota</span>
-        <input style={{ ...campo, borderColor: quotaMin && numero(quotaMin) === null ? C.rosso : C.bordo }} placeholder="min" inputMode="decimal" value={quotaMin} onChange={e => setQuotaMin(e.target.value)} />
-        <input style={{ ...campo, borderColor: quotaMax && numero(quotaMax) === null ? C.rosso : C.bordo }} placeholder="max" inputMode="decimal" value={quotaMax} onChange={e => setQuotaMax(e.target.value)} />
-        {(quotaMin || quotaMax) && <button onClick={() => { setQuotaMin(''); setQuotaMax('') }} style={{ ...pillola(false), padding: '6px 9px' }}>✕</button>}
-        <button onClick={() => setSoloSopraSoglia(v => !v)} style={pillola(soloSopraSoglia)}>{soloSopraSoglia ? 'solo sopra soglia' : 'tutte'}</button>
-        <button onClick={() => setMostraSoglie(v => !v)} style={{ ...pillola(false), marginLeft: 'auto' }}>⚙ soglie</button>
+        <button onClick={() => setPannello(v => !v)} style={pillola(pannello || attivi.length > 0)}>
+          ⚙ filtri{attivi.length > 0 ? ` · ${attivi.length}` : ''}
+        </button>
+        {attivi.map(f => (
+          <button key={f.id} onClick={f.togli} title="togli questo filtro" style={{ ...pillola(true, f.colore || C.oro), fontWeight: 500 }}>
+            {f.label} <span style={{ color: C.fantasma }}>✕</span>
+          </button>
+        ))}
+        {attivi.length > 1 && (
+          <button onClick={azzera} style={{ ...pillola(false), color: C.spento }}>azzera tutto</button>
+        )}
+        <span style={{ marginLeft: 'auto', fontSize: 11, fontFamily: F.mono, color: C.spento }}>
+          {visibili.length}/{inFinestra.length}
+        </span>
       </div>
 
-      {mostraSoglie && (
-        <Card style={{ marginBottom: 12 }}>
-          <Etichetta style={{ marginBottom: 8 }}>Soglie di probabilità — le aggiustate voi guardando le partite vere</Etichetta>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-            {['centro', 'giallo', 'blu'].map(k => (
-              <label key={k} style={{ fontSize: 11, fontFamily: F.mono, color: CATEGORIE[k].colore }}>
-                {CATEGORIE[k].nome} ≥ {pct(soglie[k])}
-                <input type="range" min="40" max="95" step="1" value={Math.round(soglie[k] * 100)}
-                  onChange={e => setSoglie(s => ({ ...s, [k]: Number(e.target.value) / 100 }))}
-                  style={{ width: '100%', accentColor: CATEGORIE[k].colore }} />
-              </label>
-            ))}
+      {pannello && (
+        <Card style={{ marginBottom: 12, padding: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+            <label>
+              <Etichetta style={{ marginBottom: 5 }}>campionato</Etichetta>
+              <select value={campionato} onChange={e => setCampionato(e.target.value)} style={{ ...campo, width: '100%', color: campionato ? C.testo : C.fioco }}>
+                <option value="">tutti</option>
+                {campionati.map(([d, nome]) => <option key={d} value={d}>{etichetta(d, nome)}</option>)}
+              </select>
+            </label>
+
+            <div>
+              <Etichetta style={{ marginBottom: 5 }}>quota</Etichetta>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <input style={{ ...campo, width: '50%', borderColor: quotaMin && numero(quotaMin) === null ? C.rosso : C.bordo }}
+                  placeholder="min" inputMode="decimal" value={quotaMin} onChange={e => setQuotaMin(e.target.value)} />
+                <input style={{ ...campo, width: '50%', borderColor: quotaMax && numero(quotaMax) === null ? C.rosso : C.bordo }}
+                  placeholder="max" inputMode="decimal" value={quotaMax} onChange={e => setQuotaMax(e.target.value)} />
+              </div>
+            </div>
+
+            <div>
+              <Etichetta style={{ marginBottom: 5 }}>grado minimo</Etichetta>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <input style={{ ...campo, width: 64, borderColor: gradoMin && numero(gradoMin) === null ? C.rosso : C.bordo }}
+                  placeholder="1-10" inputMode="decimal" value={gradoMin} onChange={e => setGradoMin(e.target.value)} />
+                {[6, 7, 8].map(g => (
+                  <button key={g} onClick={() => setGradoMin(String(g))} style={{ ...pillola(numero(gradoMin) === g), padding: '5px 9px' }}>{g}+</button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <Etichetta style={{ marginBottom: 5 }}>categorie</Etichetta>
+              <button onClick={() => setSoloSopraSoglia(v => !v)} style={{ ...pillola(soloSopraSoglia), width: '100%' }}>
+                {soloSopraSoglia ? 'solo sopra soglia' : 'anche sotto soglia'}
+              </button>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C.bordoChiaro}` }}>
+            <Etichetta style={{ marginBottom: 8 }}>soglie di probabilità — le aggiustate voi guardando le partite vere</Etichetta>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10 }}>
+              {['centro', 'giallo', 'blu'].map(k => (
+                <label key={k} style={{ fontSize: 11, fontFamily: F.mono, color: CATEGORIE[k].colore }}>
+                  {CATEGORIE[k].nome} ≥ {pct(soglie[k])}
+                  <input type="range" min="40" max="95" step="1" value={Math.round(soglie[k] * 100)}
+                    onChange={e => setSoglie(s => ({ ...s, [k]: Number(e.target.value) / 100 }))}
+                    style={{ width: '100%', accentColor: CATEGORIE[k].colore }} />
+                </label>
+              ))}
+            </div>
           </div>
         </Card>
       )}
@@ -163,7 +229,7 @@ export default function PartitePage() {
         {visibili.map(p => (
           <RigaPartita key={p.id} p={p} cat={categoria(p.probGiocata, soglie)}
             voti={votiDi(p.id)} mio={mioVoto(p.id)} puoVotare={isAdmin} onVota={() => vota(p.id)}
-            onApri={() => setApertaId(p.id)} />
+            onApri={() => apri(p.id)} />
         ))}
       </div>
 
@@ -171,7 +237,8 @@ export default function PartitePage() {
         <div style={{ marginTop: 20, fontSize: 11, color: C.fantasma, fontFamily: F.sans, lineHeight: 1.7 }}>
           <b style={{ color: C.fioco }}>Come leggere.</b> L'attendibilità è la probabilità che la giocata vinca, secondo il consenso
           del mercato (media di ~40 book, tolto il margine). Sui favoriti il mercato è calibrato: un 75% vince tre volte su quattro.
-          La X secca non viene mai proposta. Sotto 1,25 si aggiunge l'over 1,5; sopra 1,90 si passa alla doppia chance.
+          La X secca non viene mai proposta, e nemmeno la doppia chance. Sotto 1,25 si aggiunge l'over 1,5.
+          Il <b style={{ color: C.fioco }}>Grado</b> da 1 a 10 dice quanto conviene: 70% la resa (quota × probabilità), 30% quanto paga la quota.
           La quota è di <b style={{ color: C.fioco }}>Codere</b> quando c'è; altrimenti Bet365, altrimenti la massima sul mercato — sotto ogni quota c'è scritto quale.
           Gli orari sono quelli del Regno Unito.
         </div>

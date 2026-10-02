@@ -97,11 +97,13 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
                 <div style={{ fontSize: 14, fontWeight: 700, fontFamily: F.mono, color: C.testo }}>{v}</div>
               </div>
             ))}
-            {/* Quota × probabilità: quanto torna in media per euro giocato. */}
-            <div style={{ background: C.pozzo, border: `1px solid ${p.resa >= 1 ? alpha(C.verde, 0.35) : C.bordo}`, borderRadius: 8, padding: '7px 8px', textAlign: 'center' }}>
-              <Etichetta style={{ fontSize: 9, marginBottom: 3 }}>resa</Etichetta>
-              <div style={{ fontSize: 14, fontWeight: 700, fontFamily: F.mono, color: p.resa == null ? C.fantasma : p.resa >= 1 ? C.verde : C.grigio }}>
-                {p.resa == null ? '—' : `${(p.resa * 100).toFixed(0)}%`}
+            {/* Il Grado: 70% la resa, 30% quanto paga la quota. La resa in
+                percentuale sta nei dettagli completi — qui serve il numero da
+                confrontare a colpo d'occhio, non la misura esatta. */}
+            <div style={{ background: C.pozzo, border: `1px solid ${alpha(C.oro, 0.35)}`, borderRadius: 8, padding: '7px 8px', textAlign: 'center' }}>
+              <Etichetta style={{ fontSize: 9, marginBottom: 3 }}>grado</Etichetta>
+              <div style={{ fontSize: 14, fontWeight: 700, fontFamily: F.mono, color: p.grado == null ? C.fantasma : C.oro }}>
+                {p.grado == null ? '—' : p.grado.toFixed(2).replace('.', ',')}
               </div>
             </div>
           </div>
@@ -299,6 +301,10 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
                 <span style={{ color: C.testo }}>{q(p.b365_over25)} / {q(p.b365_under25)}</span>
               </div>
             )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontFamily: F.mono, fontSize: 11, borderBottom: `1px solid ${C.bordoTenue}` }}>
+              <span style={{ color: C.spento }}>resa · quota × probabilità</span>
+              <span style={{ color: p.resa == null ? C.fantasma : C.grigio }}>{p.resa == null ? '—' : `${(p.resa * 100).toFixed(1)}%`}</span>
+            </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontFamily: F.mono, fontSize: 11, borderBottom: `1px solid ${C.bordoTenue}` }}>
               <span style={{ color: C.spento }}>margine del book sulla giocata</span>
               {/* Negativo su tutte le partite: è la ricarica del bookmaker, non un difetto della giocata. */}
