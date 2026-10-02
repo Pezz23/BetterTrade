@@ -3,10 +3,12 @@
 > To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 23 settembre 2026
-**Prossimo passo:** il **lotto 1** della to-do qui sotto (testata e navigazione)
-**Da decidere prima del lotto 2:** come si chiama il punteggio 1-10 (il nome
-"voto" è già preso dalle stelline) e come si mappa la scala.
+**Ultimo aggiornamento:** 2 ottobre 2026
+**Fatti il 2 ottobre:** lotto A (le stelline contano, scelta a mano delle
+caselle, pagina Partite votate) e lotto B (scorrimento, filtri rifatti, filtro
+Grado, il Grado al posto della resa).
+**Prossimo passo:** **lotto C** — finire la scheda (scontri diretti e consenso)
+e provarla su un telefono vero.
 
 ---
 

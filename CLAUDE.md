@@ -142,8 +142,10 @@ quello che si è davvero previsto. Le soglie, scelte da Mattia il 23/09, sono
 **75 / 72 / 65** — servono a riempire da una a tre spin con le migliori, non a
 fare una lista lunga.
 
-**Accanto all'attendibilità c'è la resa**: `quota × probabilità`, quanto torna
-in media per ogni euro. 100% è il pareggio. **Il Grado** (`grado()` in
+**La resa** è `quota × probabilità`: quanto torna in media per ogni euro, 100%
+è il pareggio. ⚠️ **A schermo non si mostra più** (deciso il 2/10/2026): diceva
+la stessa cosa del Grado in un altro modo, e due numeri per la stessa cosa
+confondono. Resta nei **dettagli completi** della scheda, col decimale. **Il Grado** (`grado()` in
 `lib/attendibilita.js`) riassume in **1-10 con due decimali** quanto conviene
 una partita: **70% la resa, 30% il livello della quota** (`PESO_QUOTA`).
 ⚠️ La quota pesa a parte **di proposito**: resa = quota × probabilità, quindi
@@ -298,13 +300,21 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   vera del difetto delle spin (2/10/2026).
   La riga della lista è `components/RigaPartita.jsx`, la scheda intera
   `components/DettaglioPartita.jsx`, e **la testata (squadre, attendibilità,
-  resa, data) è la stessa per tutt'e due**: `components/TestataPartita.jsx`,
-  in versione compatta o grande. Cambiarla lì cambia entrambe — è voluto.
+  data) è la stessa per tutt'e due**: `components/TestataPartita.jsx`, in
+  versione compatta o grande. Cambiarla lì cambia entrambe — è voluto.
+  La scelta a mano di una casella della spin è `components/ScegliCasella.jsx`
+  (finestra al centro, filtri votate/categorie); quella della griglia Slot è
+  `components/SceltaPartita.jsx` (tendina ancorata alla riga).
   Le sigle dei campionati a schermo (ITA1, ENG1…) stanno in `lib/campionati.js`
   e **non toccano il database**: `div` resta quella di football-data.
 - **Le librerie in `src/lib/` importano con l'estensione** (`'./attendibilita.js'`):
   Vite non se ne accorge e Node le può eseguire da terminale per provarle sui
   dati veri, senza browser.
+- **I filtri della lista** (`PartitePage`) stanno dietro un tasto `⚙ filtri`,
+  con le **targhette di quelli accesi** fuori (si tolgono toccandole) e il
+  conto `visibili/totali`. Rifatti così il 2/10/2026 perché in fila non si
+  capivano: una pagina con più di tre filtri li mette in un pannello, non in
+  riga.
 - **Pezzi ricorrenti** in `src/components/ui.jsx`: `Card`, `Etichetta`,
   `StatCard`, `Btn`, `Input`, `Badge`. Prima di riscrivere una card a mano,
   guarda se c'è già.
@@ -364,6 +374,10 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   vinte compariva dal nulla e spingeva giù la pagina sotto le dita. Si risolve
   riservando lo spazio (altezza fissa, `minHeight`), non sperando che il
   contenuto sia della misura giusta.
+- **Aprire la scheda smonta la lista, e lo scorrimento si azzera.** In
+  `PartitePage` la scheda *sostituisce* la lista: senza salvare `window.scrollY`
+  (useRef) e rimetterlo in `useLayoutEffect`, si torna sempre in cima. Vale per
+  ogni pagina che scambia un elenco con un dettaglio.
 - **Un'etichetta dentro una colonna elastica viene tagliata per prima.** In
   `ScegliCasella` la scritta "già in spin 2" divideva lo spazio col nome delle
   squadre e spariva. Le segnalazioni vogliono una **colonna a larghezza fissa**
