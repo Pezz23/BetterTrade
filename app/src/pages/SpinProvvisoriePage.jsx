@@ -4,6 +4,7 @@ import { C, F, alpha } from '../theme'
 import { Card, Etichetta, Btn } from '../components/ui'
 import { CATEGORIE, pct, giorno } from '../components/RigaPartita'
 import { categoria, SOGLIE_DEFAULT, lunediProssimo, FINESTRE } from '../lib/attendibilita'
+import ScegliCasella from '../components/ScegliCasella'
 import { candidate, componi, conStelline, finestraUtile, spinPiena, pronosticoDa, DISPOSIZIONE } from '../lib/spin'
 import { compilaSpin } from '../lib/griglia'
 import { supabase } from '../supabase'
@@ -18,7 +19,7 @@ import { sigla } from '../lib/campionati'
 // riempie solo le tre agganciate al calendario.
 const SPIN = [1, 2, 3]
 
-function Cella({ pos, partita, votiDi, diversa }) {
+function Cella({ pos, partita, votiDi, diversa, onClic }) {
   const cat = partita ? categoria(partita.probGiocata, SOGLIE_DEFAULT) : 'no'
   const colore = CATEGORIE[cat].colore
   const voti = partita ? votiDi(partita.id) : 0
@@ -30,7 +31,8 @@ function Cella({ pos, partita, votiDi, diversa }) {
       boxShadow: diversa ? `0 0 10px ${alpha(C.viola, 0.45)}` : 'none',
       borderRadius: 10, padding: '8px 6px', height: 124, textAlign: 'center', fontFamily: F.mono,
       display: 'flex', flexDirection: 'column', justifyContent: 'space-between', overflow: 'hidden',
-    }}>
+      cursor: onClic ? 'pointer' : 'default',
+    }} onClick={onClic}>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: C.spento, lineHeight: 1 }}>
         <span>{pos}</span>
         {voti > 0 && <span style={{ color: C.oro }}>{'★'.repeat(voti)}</span>}
@@ -80,10 +82,20 @@ function Compila({ indice, celle, piena, onFatto }) {
   )
 }
 
-function Griglia({ titolo, colore, celle, riferimento, votiDi, indice, piena, onFatto, spiegazione }) {
+function Griglia({ titolo, colore, celle, riferimento, votiDi, indice, piena, onFatto, spiegazione, onClicCasella, onRipristina }) {
   return (
     <div>
-      <Etichetta colore={colore} style={{ fontSize: 12, marginBottom: spiegazione ? 3 : 6 }}>{titolo}</Etichetta>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+        <Etichetta colore={colore} style={{ fontSize: 12, marginBottom: spiegazione ? 3 : 6 }}>{titolo}</Etichetta>
+        {/* Compare solo se hai toccato qualcosa: rimette l'ordine automatico
+            delle votate, senza passare dal database. */}
+        {onRipristina && (
+          <button onClick={onRipristina} style={{
+            background: 'transparent', border: `1px solid ${C.bordo}`, borderRadius: 20, color: C.spento,
+            fontSize: 10, fontFamily: F.mono, padding: '3px 9px', cursor: 'pointer', flexShrink: 0,
+          }}>↺ riparti dalle votate</button>
+        )}
+      </div>
       {/* Come ci finiscono dentro le partite: va detto qui, è il momento in
           cui lo si guarda. Prima c'era il conto delle celle diverse, che non
           spiegava niente. */}
@@ -96,7 +108,8 @@ function Griglia({ titolo, colore, celle, riferimento, votiDi, indice, piena, on
         {DISPOSIZIONE.flat().map(pos => {
           const c = celle.find(c => c.pos === pos)
           const rif = riferimento?.find(r => r.pos === pos)
-          return <Cella key={pos} pos={pos} partita={c.partita} votiDi={votiDi} diversa={!!riferimento && c.partita?.id !== rif?.partita?.id} />
+          return <Cella key={pos} pos={pos} partita={c.partita} votiDi={votiDi} diversa={!!riferimento && c.partita?.id !== rif?.partita?.id}
+            onClic={onClicCasella ? () => onClicCasella(pos) : undefined} />
         })}
       </div>
       <Compila indice={indice} celle={celle} piena={piena} onFatto={onFatto} />
@@ -126,7 +139,16 @@ export default function SpinProvvisoriePage() {
   // caselle restano vuote (deciso il 2/10/2026). La griglia con le stelline
   // deve dire cosa avete scelto VOI, non cosa ci metterebbe il criterio.
   const soloVotate = useMemo(() => conStelline(ordinate.filter(r => votiDi(r.id) > 0), votiDi), [ordinate, votiDi])
-  const votate = useMemo(() => componi(soloVotate, quante), [soloVotate, quante])
+
+  // Le scelte fatte a mano: { "spin|posizione": partita | null }. Vivono qui,
+  // non nel database — finché non si preme "Compila spin" è un'anteprima, e si
+  // possono provare combinazioni senza sporcare niente.
+  const [aMano, setAMano] = useState({})
+  const [casella, setCasella] = useState(null)   // { spin, pos } aperta
+
+  const votate = useMemo(() => componi(soloVotate, quante).map((spin, si) =>
+    spin.map(c => (`${si}|${c.pos}` in aMano ? { ...c, partita: aMano[`${si}|${c.pos}`] } : c))
+  ), [soloVotate, quante, aMano])
   const nVotate = ordinate.filter(p => votiDi(p.id) > 0).length
   // Tutte le partite con almeno una stellina, anche sotto soglia o oltre la
   // settimana: chi ha votato deve vedere dov'è finito il suo voto.
@@ -186,11 +208,27 @@ export default function SpinProvvisoriePage() {
             <Griglia titolo="Automatica" colore={C.spento} celle={auto} votiDi={votiDi} indice={i} piena={piene[i]} onFatto={leggiGriglia}
               spiegazione={<>Le più attendibili in ordine: la prima al <b style={{ color: C.menta }}>centro</b>, le 4 dopo agli <b style={{ color: C.oroChiaro }}>angoli</b>, le ultime 4 ai <b style={{ color: C.celeste }}>lati</b>.</>} />
             <Griglia titolo="Con le stelline" colore={C.oro} celle={votate[i]} riferimento={auto} votiDi={votiDi} indice={i} piena={piene[i]} onFatto={leggiGriglia}
+              onClicCasella={pos => setCasella({ spin: i, pos })}
+              onRipristina={Object.keys(aMano).some(k => k.startsWith(`${i}|`))
+                ? () => setAMano(v => Object.fromEntries(Object.entries(v).filter(([k]) => !k.startsWith(`${i}|`))))
+                : undefined}
               spiegazione={<><b style={{ color: C.oro }}>Solo le partite votate</b>, nessun riempitivo: se i voti non bastano le caselle restano vuote. Ordine per stelline, a parità per attendibilità; una votata entra <b style={{ color: C.testo }}>anche se sotto soglia o oltre la finestra</b>. In <b style={{ color: C.viola }}>violetto</b> le caselle diverse dall'automatica.</>} />
           </div>
         </Card>
       ))}
       </div>
+
+      {casella && (
+        <ScegliCasella
+          pos={casella.pos}
+          partite={ordinate}
+          votiDi={votiDi}
+          usate={votate[casella.spin].filter(c => c.pos !== casella.pos && c.partita).map(c => c.partita.id)}
+          onScegli={p => { setAMano(v => ({ ...v, [`${casella.spin}|${casella.pos}`]: p })); setCasella(null) }}
+          onSvuota={() => { setAMano(v => ({ ...v, [`${casella.spin}|${casella.pos}`]: null })); setCasella(null) }}
+          onChiudi={() => setCasella(null)}
+        />
+      )}
 
       {!caricamento && (
         <Card style={{ marginTop: 16, padding: 14 }}>
