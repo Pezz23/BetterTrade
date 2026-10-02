@@ -31,20 +31,27 @@ compilano la griglia da sole, la griglia **agganciata alle partite vere** e il
 > è stato fatto sta subito sotto, in "Fatto di recente" e nelle fasi storiche:
 > serve a capire *perché* una cosa è com'è, non cosa resta.
 
-## 🔵 Lotto A — Le stelline contano davvero
-*`lib/spin.js`, `SpinProvvisoriePage.jsx`, `App.jsx` + una pagina nuova.
-**Il primo**: qui c'è un difetto vero, non un fastidio — e le spin le compilate
-con le stelline.*
+## ✅ Lotto A — Le stelline contano davvero — fatto il 2 ottobre 2026
 
-1. **Una stellina forza la soglia.** `candidate()` tiene solo le partite sopra
-   soglia, quindi una partita votata ma sotto il 65% **non entra mai nella
-   spin**, per quante stelline abbia. Da riprodurre e correggere: se qualcuno
-   la vota entra comunque, e viene prima (i voti già comandano nell'ordine).
-2. **Verificare che "Compila spin" scriva davvero le votate** — segnalato da
-   Mattia il 30/09, mai riprodotto.
-3. **Pagina "Partite votate"** nel menu ☰. ⚠️ Chiarito: **"voto" = la
-   stellina**, il numero calcolato è il **Grado**. La logica esiste già nel
-   riquadro "LE VOTATE" delle Spin provvisorie: riusarla, non riscriverla.
+1. [x] **Una stellina forza l'ingresso.** `candidate()` accetta `votiDi`: una
+   partita votata entra comunque, sotto soglia **e fuori dalla finestra**.
+2. [x] **Riprodotto il difetto, e la causa non era quella che sospettavo.**
+   Non la soglia — **la finestra**. Le Spin provvisorie usavano "fino a lunedì"
+   fissa: il 02/10 trovavano **una sola candidata**, perché le partite votate
+   erano del 9-17 ottobre. Tutte le votate erano sopra soglia.
+   Ora `finestraUtile()` parte dalla finestra più stretta che basta a riempire
+   le spin chieste, e tre pillole con i conteggi permettono di cambiarla.
+   Verificato: con i voti veri le candidate passano da **1 a 9**, e le nove
+   votate riempiono una spin con la più votata (★2) al centro.
+3. [x] **Pagina "Partite votate"** (menu ☰, ⭐). Riusa `RigaPartita`,
+   `DettaglioPartita` e l'hook `usaProssime`: contiene solo filtro e ordine —
+   le più votate prima, poi per attendibilità, lo stesso ordine con cui entrano
+   nelle spin.
+
+**Fatto strada facendo:** `lib/spin.js` è tornato puro, la scrittura della
+griglia è passata in **`lib/griglia.js`**. Senza, il caso non si poteva
+riprodurre da terminale (spin.js importava Supabase). È la convenzione del
+progetto, e stavolta è servita a trovare la causa vera.
 
 ## 🔵 Lotto B — La lista delle partite
 *`PartitePage.jsx`, `RigaPartita.jsx`. Da fare insieme: la barra dei filtri va

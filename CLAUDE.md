@@ -155,6 +155,10 @@ se si ricalcolassero sulla lista del momento, la stessa partita cambierebbe
 Grado ogni settimana. ⚠️ **Il Grado non entra nella selezione delle spin** —
 è solo un dato da guardare (deciso il 30/09/2026).
 
+⚠️ **Una stellina scavalca il criterio**: una partita votata entra nella spin
+anche se sta sotto soglia o fuori dalla finestra (`candidate()` in `lib/spin.js`
+accetta `votiDi`). È un gesto deliberato di una persona, e vale più del calcolo.
+
 ⚠️ **I nomi, da non scambiare:** *attendibilità* = probabilità · *resa* =
 quota × probabilità · **Grado** = la resa da 1 a 10 · **voti** = le stelline
 degli admin (`voti_partite`), che restano voti in app e database. ⚠️ **Sta sotto 100 quasi sempre**,
@@ -289,6 +293,9 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   (candidate, ordine con le stelline, celle della griglia, scrittura). Le
   pagine (`PartitePage`, `SpinProvvisoriePage`) leggono partite e voti dallo
   stesso hook `hooks/usaProssime.js`: **non duplicare la logica nelle pagine.**
+  **La scrittura della griglia sta in `lib/griglia.js`**, non in `spin.js`:
+  quello resta puro e provabile da terminale — è così che si è trovata la causa
+  vera del difetto delle spin (2/10/2026).
   La riga della lista è `components/RigaPartita.jsx`, la scheda intera
   `components/DettaglioPartita.jsx`, e **la testata (squadre, attendibilità,
   resa, data) è la stessa per tutt'e due**: `components/TestataPartita.jsx`,
