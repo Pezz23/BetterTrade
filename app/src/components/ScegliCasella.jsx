@@ -74,6 +74,12 @@ export default function ScegliCasella({ pos, partite, votiDi, usate = [], altrov
               )
             })}
           </div>
+          {Object.keys(altrove).length > 0 && (
+            <div style={{ fontSize: 10, color: C.spento, fontFamily: F.sans, marginBottom: 7 }}>
+              <span style={{ color: C.viola, fontFamily: F.mono, fontWeight: 700 }}>S2</span> = già in quella spin ·
+              le barrate sono già in questa
+            </div>
+          )}
           <input autoFocus value={testo} onChange={e => setTesto(e.target.value)} placeholder="cerca squadra o campionato…"
             style={{ width: '100%', background: C.pozzo, border: `1px solid ${C.bordo}`, borderRadius: 6, padding: '7px 9px', color: C.testo, fontSize: 12, fontFamily: F.sans, outline: 'none' }} />
         </div>
@@ -97,13 +103,18 @@ export default function ScegliCasella({ pos, partite, votiDi, usate = [], altrov
               }}>
                 <span style={{ color: C.oro, width: 22, flexShrink: 0 }}>{voti ? '★' + voti : ''}</span>
                 <span style={{ color: C.blu, width: 34, flexShrink: 0 }}>{sigla(p.div)}</span>
-                <span style={{ color: C.fioco, width: 52, flexShrink: 0 }}>{giorno(p.data)}</span>
+                <span style={{ color: C.fioco, width: 56, flexShrink: 0, whiteSpace: 'nowrap' }}>{giorno(p.data)}</span>
                 <span style={{ fontFamily: F.sans, color: C.testo, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {p.casa} – {p.trasferta}
+                </span>
+                {/* Targhetta a larghezza fissa: dentro la colonna del nome la
+                    scritta veniva tagliata per prima. "S2" = già nella spin 2. */}
+                <span style={{ width: 30, flexShrink: 0, textAlign: 'center' }}>
                   {!presa && inAltre.length > 0 && (
-                    <span style={{ color: C.viola, fontFamily: F.mono, fontSize: 9.5, marginLeft: 6 }}>
-                      già in spin {inAltre.join(', ')}
-                    </span>
+                    <span title={`già nella spin ${inAltre.join(', ')}`} style={{
+                      display: 'inline-block', padding: '1px 5px', borderRadius: 4, fontSize: 9.5, fontWeight: 700,
+                      background: alpha(C.viola, 0.18), border: `1px solid ${alpha(C.viola, 0.45)}`, color: C.viola,
+                    }}>S{inAltre.join(',')}</span>
                   )}
                 </span>
                 <span style={{ color: col, width: 50, textAlign: 'right', flexShrink: 0 }}>{pronosticoDa(p.giocata)}</span>
