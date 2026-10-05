@@ -101,6 +101,20 @@ progetto, e stavolta è servita a trovare la causa vera.
 ancora *"sopra 1,90 si passa alla doppia chance"* — regola tolta il 23/09.
 Corretta, e aggiunta una riga su cos'è il Grado.
 
+## ✅ Fuori lotto — l'ingrandimento automatico su iOS — 5 ottobre 2026
+
+Aprendo la scelta della partita in "Spin provvisorie", il telefono si
+ingrandiva sul campo di ricerca e non si vedeva più la scheda. Causa: su iOS
+un campo con testo **sotto i 16px** fa zoomare Safari quando riceve il fuoco,
+e i due campi avevano `autoFocus` + testo 12px.
+
+- [x] `index.css`: `input, select, textarea` a **16px** sotto
+      `@media (pointer: coarse)` — vale per tutta l'app, non solo qui.
+- [x] L'`autoFocus` si dà solo col mouse (`tocco` in `lib/schermo.js`): sul
+      telefono la finestra si apre intera, la tastiera arriva se la chiami.
+- [x] Verificato che il `<meta viewport>` non blocchi il pizzico: ingrandire a
+      mano resta possibile, ed è giusto così.
+
 ## 🔵 Lotto C — Finire la scheda della partita
 *`DettaglioPartita.jsx`. Il restyling è a metà: la testata e la forma sono
 fatte, i blocchi in fondo no.*

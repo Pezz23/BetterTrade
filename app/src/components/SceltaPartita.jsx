@@ -4,6 +4,7 @@ import { giorno, CATEGORIE } from './TestataPartita'
 import { categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
 import { pronosticoDa } from '../lib/spin'
 import { sigla } from '../lib/campionati'
+import { tocco } from '../lib/schermo'
 
 // Il menu a tendina con ricerca per agganciare una casella della griglia a una
 // partita vera del calendario. Scrivendo si filtra su squadra e campionato;
@@ -52,7 +53,7 @@ export default function SceltaPartita({ casa, ospite, collegata, partite, onSceg
           background: C.pannello, border: `1px solid ${C.bordo}`, borderRadius: 8, boxShadow: `0 12px 28px ${alpha(C.fondo, 0.8)}`,
           maxHeight: 320, overflowY: 'auto', padding: 6,
         }}>
-          <input autoFocus value={testo} onChange={e => setTesto(e.target.value)} placeholder="cerca squadra o campionato…"
+          <input autoFocus={!tocco} value={testo} onChange={e => setTesto(e.target.value)} placeholder="cerca squadra o campionato…"
             style={{ width: '100%', background: C.pozzo, border: `1px solid ${C.bordo}`, borderRadius: 6, padding: '7px 9px', color: C.testo, fontSize: 12, fontFamily: F.sans, outline: 'none', marginBottom: 6 }} />
           {(casa || ospite) && (
             <button onClick={() => { onLibera(); setAperto(false) }} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 'none', color: C.rosso, fontSize: 11, fontFamily: F.sans, padding: '5px 6px', cursor: 'pointer' }}>

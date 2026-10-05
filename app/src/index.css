@@ -61,3 +61,13 @@ input, button, select, textarea { font-family: var(--sans); }
 @media (prefers-reduced-motion: reduce) {
   .menu-sfondo, .menu-pannello, .icona-menu span { transition: none; }
 }
+
+
+/* ── Niente ingrandimento automatico sui campi ───────────────────────────────
+   Su iOS, quando un campo con testo sotto i 16px riceve il fuoco, Safari
+   ingrandisce la pagina e non la rimette più a posto: ci si ritrova zoomati
+   sulla tastiera. Sotto il dito i campi vanno a 16px — il pizzico per
+   ingrandire a mano resta libero, quello non si tocca mai. */
+@media (pointer: coarse) {
+  input, select, textarea { font-size: 16px !important; }
+}

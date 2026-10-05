@@ -4,6 +4,7 @@ import { giorno, CATEGORIE } from './TestataPartita'
 import { categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
 import { pronosticoDa } from '../lib/spin'
 import { sigla } from '../lib/campionati'
+import { tocco } from '../lib/schermo'
 
 // Scegliere a mano cosa va in una casella della spin.
 //
@@ -80,7 +81,7 @@ export default function ScegliCasella({ pos, partite, votiDi, usate = [], altrov
               le barrate sono già in questa
             </div>
           )}
-          <input autoFocus value={testo} onChange={e => setTesto(e.target.value)} placeholder="cerca squadra o campionato…"
+          <input autoFocus={!tocco} value={testo} onChange={e => setTesto(e.target.value)} placeholder="cerca squadra o campionato…"
             style={{ width: '100%', background: C.pozzo, border: `1px solid ${C.bordo}`, borderRadius: 6, padding: '7px 9px', color: C.testo, fontSize: 12, fontFamily: F.sans, outline: 'none' }} />
         </div>
 

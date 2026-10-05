@@ -374,6 +374,13 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   vinte compariva dal nulla e spingeva giù la pagina sotto le dita. Si risolve
   riservando lo spazio (altezza fissa, `minHeight`), non sperando che il
   contenuto sia della misura giusta.
+- **Su iOS un campo con testo sotto i 16px fa ingrandire la pagina da solo.**
+  Al fuoco Safari zooma e non torna indietro: ci si ritrova sulla tastiera
+  senza aver visto il contenuto. Due regole, entrambe applicate: `index.css`
+  porta `input, select, textarea` a **16px sotto `@media (pointer: coarse)`**,
+  e l'`autoFocus` si dà solo col mouse (`tocco` in `lib/schermo.js`).
+  ⚠️ Il `<meta viewport>` **non** deve mai avere `maximum-scale` o
+  `user-scalable=no`: il pizzico per ingrandire a mano resta libero.
 - **Aprire la scheda smonta la lista, e lo scorrimento si azzera.** In
   `PartitePage` la scheda *sostituisce* la lista: senza salvare `window.scrollY`
   (useRef) e rimetterlo in `useLayoutEffect`, si torna sempre in cima. Vale per
