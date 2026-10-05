@@ -234,46 +234,82 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
         </Blocco>
 
         {/* ── 5. Gli scontri diretti ────────────────────────────────── */}
-        <Blocco titolo="Scontri diretti" extra={forma.scontri.length ? `ultimi ${forma.scontri.length}` : null}>
+        <Blocco titolo="⚔️ Scontri diretti" extra={forma.scontri.length ? `ultimi ${forma.scontri.length}` : null} sottolinea>
           {forma.scontri.length === 0
             ? <div style={{ fontSize: 12, color: C.fantasma, fontFamily: F.sans }}>nessun precedente in archivio (dal 2016)</div>
-            : <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '0 2px 9px', borderBottom: `1px solid ${C.bordoTenue}`, fontFamily: F.mono, fontSize: 12 }}>
-                {(() => {
-                  const vinte = s => forma.scontri.filter(x => (x.casa === s && x.gol_casa > x.gol_trasferta) || (x.trasferta === s && x.gol_trasferta > x.gol_casa)).length
-                  const pari = forma.scontri.filter(x => x.gol_casa === x.gol_trasferta).length
-                  return [[p.casa, vinte(p.casa), C.verde], ['pareggi', pari, C.giallo], [p.trasferta, vinte(p.trasferta), C.rosso]].map(([l, n, col]) => (
-                    <span key={l} style={{ color: C.spento, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {l} <b style={{ color: n ? col : C.fioco, fontSize: 14 }}>{n}</b>
-                    </span>
-                  ))
-                })()}
-              </div>
-              {forma.scontri.map((s, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 2px', fontFamily: F.mono, fontSize: 12, borderBottom: i < forma.scontri.length - 1 ? `1px solid ${C.bordoTenue}` : 'none' }}>
-                  <span style={{ color: C.fioco, flexShrink: 0 }}>{String(s.data).slice(8, 10)}/{String(s.data).slice(5, 7)}/{String(s.data).slice(2, 4)}</span>
-                  <span style={{ color: s.gol_casa > s.gol_trasferta ? C.testo : C.spento, flex: 1, textAlign: 'right', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.casa}</span>
-                  <b style={{ color: C.testo, flexShrink: 0 }}>{s.gol_casa}–{s.gol_trasferta}</b>
-                  <span style={{ color: s.gol_trasferta > s.gol_casa ? C.testo : C.spento, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.trasferta}</span>
-                  {s.div !== p.div && <span style={{ color: C.fantasma, flexShrink: 0 }}>[{sigla(s.div)}]</span>}
+            : (() => {
+              // Chi ha vinto, dal punto di vista delle due squadre di domani.
+              const esitoPer = (s, squadra) =>
+                s.gol_casa === s.gol_trasferta ? 'N'
+                  : (s.casa === squadra) === (s.gol_casa > s.gol_trasferta) ? 'V' : 'P'
+              const conta = sq => forma.scontri.filter(s => esitoPer(s, sq) === 'V').length
+              const pari = forma.scontri.filter(s => s.gol_casa === s.gol_trasferta).length
+              const vCasa = conta(p.casa), vTrasferta = conta(p.trasferta)
+              const tot = forma.scontri.length
+
+              return <>
+                {/* La sintesi è una barra, non tre nomi accorciati: i nomi
+                    lunghi venivano tagliati e il confronto spariva. */}
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ display: 'flex', height: 8, borderRadius: 8, overflow: 'hidden', background: C.quasiNero }}>
+                    {[[vCasa, C.verde], [pari, C.giallo], [vTrasferta, C.rosso]].map(([n, col], i) =>
+                      n > 0 && <div key={i} style={{ width: `${100 * n / tot}%`, background: col }} />)}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontFamily: F.mono, fontSize: 12 }}>
+                    <span style={{ color: C.verde, fontWeight: 700 }}>{vCasa} <span style={{ color: C.spento, fontWeight: 400, fontSize: 11 }}>{p.casa}</span></span>
+                    <span style={{ color: pari ? C.giallo : C.fioco }}>{pari} <span style={{ color: C.spento, fontSize: 11 }}>pari</span></span>
+                    <span style={{ color: C.rosso, fontWeight: 700 }}><span style={{ color: C.spento, fontWeight: 400, fontSize: 11 }}>{p.trasferta}</span> {vTrasferta}</span>
+                  </div>
                 </div>
-              ))}
-            </>}
+
+                {forma.scontri.map((s, i) => {
+                  const e = esitoPer(s, p.casa)   // sempre dal lato della squadra di casa di domani
+                  return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 2px', fontFamily: F.mono, fontSize: 12, borderBottom: i < forma.scontri.length - 1 ? `1px solid ${C.bordoTenue}` : 'none' }}>
+                      {/* Chi ha vinto fra le due di domani, senza doverlo dedurre dal punteggio */}
+                      <span style={{
+                        width: 18, height: 18, borderRadius: 4, flexShrink: 0, fontSize: 10, fontWeight: 700,
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        background: alpha(ESITO[e], 0.15), color: ESITO[e], border: `1px solid ${alpha(ESITO[e], 0.4)}`,
+                      }}>{e}</span>
+                      <span style={{ color: C.fioco, flexShrink: 0 }}>{String(s.data).slice(8, 10)}/{String(s.data).slice(5, 7)}/{String(s.data).slice(2, 4)}</span>
+                      <span style={{ color: s.gol_casa > s.gol_trasferta ? C.testo : C.spento, flex: 1, textAlign: 'right', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.casa}</span>
+                      <b style={{ color: C.testo, flexShrink: 0 }}>{s.gol_casa}–{s.gol_trasferta}</b>
+                      <span style={{ color: s.gol_trasferta > s.gol_casa ? C.testo : C.spento, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.trasferta}</span>
+                      {s.div !== p.div && <span style={{ color: C.fantasma, flexShrink: 0, fontSize: 10 }}>{sigla(s.div)}</span>}
+                    </div>
+                  )
+                })}
+              </>
+            })()}
         </Blocco>
       </>}
 
       {/* ── 6. Il consenso ──────────────────────────────────────────── */}
-      <Blocco titolo="Consenso di mercato" extra={`${p.quotaFonte || '—'}`}>
-        {[['1', p.p.p1, p.casa], ['X', p.p.px, 'pareggio'], ['2', p.p.p2, p.trasferta]].map(([segno, prob, chi]) => (
-          <div key={segno} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '5px 0' }}>
-            <span style={{ width: 16, fontSize: 13, fontWeight: 700, fontFamily: F.mono, color: segno === p.segno ? C.oro : C.spento }}>{segno}</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 10, color: C.fioco, fontFamily: F.sans, marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{chi}</div>
-              <Barra frazione={prob} colore={segno === p.segno ? C.verde : C.grigioCupo} />
+      <Blocco titolo="📊 Consenso di mercato" extra={p.quotaFonte ? `quote ${p.quotaFonte}` : null} sottolinea>
+        {[['1', p.p.p1, p.casa, p.q1], ['X', p.p.px, 'pareggio', p.qx], ['2', p.p.p2, p.trasferta, p.q2]].map(([segno, prob, chi, quota]) => {
+          const suo = segno === p.segno
+          return (
+            <div key={segno} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0' }}>
+              <span style={{ width: 16, fontSize: 14, fontWeight: 700, fontFamily: F.mono, color: suo ? C.oro : C.spento }}>{segno}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, gap: 8 }}>
+                  <span style={{ fontSize: 11, color: suo ? C.testo : C.fioco, fontFamily: F.sans, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{chi}</span>
+                  {/* La quota accanto alla probabilità: "il mercato dice 75%" e
+                      "te la pagano 1,30" sono due metà della stessa frase. */}
+                  <span style={{ fontSize: 11, fontFamily: F.mono, color: quota ? (suo ? C.oro : C.spento) : C.fantasma, flexShrink: 0 }}>
+                    {quota ? `@${Number(quota).toFixed(2).replace('.', ',')}` : '—'}
+                  </span>
+                </div>
+                <Barra frazione={prob} colore={suo ? C.verde : C.grigioCupo} />
+              </div>
+              <span style={{ width: 42, textAlign: 'right', fontSize: 14, fontWeight: 700, fontFamily: F.mono, color: suo ? C.testo : C.spento }}>{pct(prob)}</span>
             </div>
-            <span style={{ width: 42, textAlign: 'right', fontSize: 13, fontWeight: 700, fontFamily: F.mono, color: segno === p.segno ? C.testo : C.spento }}>{pct(prob)}</span>
-          </div>
-        ))}
+          )
+        })}
+        <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${C.bordoTenue}`, fontSize: 10, color: C.fantasma, fontFamily: F.sans, lineHeight: 1.5 }}>
+          Le percentuali vengono dalla media di ~40 bookmaker, tolto il margine. La X non si gioca mai.
+        </div>
       </Blocco>
 
       {/* ── 7. I dettagli tecnici ───────────────────────────────────── */}

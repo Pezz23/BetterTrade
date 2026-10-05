@@ -115,13 +115,29 @@ e i due campi avevano `autoFocus` + testo 12px.
 - [x] Verificato che il `<meta viewport>` non blocchi il pizzico: ingrandire a
       mano resta possibile, ed è giusto così.
 
-## 🔵 Lotto C — Finire la scheda della partita
-*`DettaglioPartita.jsx`. Il restyling è a metà: la testata e la forma sono
-fatte, i blocchi in fondo no.*
+## 🟢 Lotto C — Finire la scheda della partita
 
-8. Rifinire **scontri diretti** e **consenso**.
-9. **Provare su telefono vero** a 375, 390 e 430px. Finora provato a occhio sul
-   browser, e infatti l'over/under andava a capo senza che ce ne accorgessimo.
+8. [x] **Scontri diretti e consenso rifiniti** (5/10/2026).
+   - Titoli coerenti con gli altri blocchi: **⚔️ Scontri diretti** e
+     **📊 Consenso di mercato**, con la linea sotto.
+   - La sintesi degli scontri è **una barra** verde/gialla/rossa con i conti
+     ai lati, non più tre nomi accorciati coi puntini — venivano tagliati e il
+     confronto spariva (stessa trappola della targhetta "già in spin 2").
+   - Ogni precedente ha **una casella V/N/P** letta dal lato della squadra di
+     casa di domani: prima bisognava dedurre dal punteggio chi avesse vinto fra
+     le due che interessano.
+   - Nel consenso, **la quota accanto a ogni percentuale** (`q1/qx/q2`, dati
+     che già avevamo): "il mercato dice 75%" e "te la pagano 1,30" sono due
+     metà della stessa frase. Più una riga che dice da dove vengono le
+     percentuali e che la X non si gioca mai.
+   - **Gli scontri restano "in qualunque campionato"** (confermato da Mattia):
+     ora che le coppe sono escluse significa solo "quando una delle due stava
+     in serie inferiore", e la sigla accanto dice quanto pesarlo.
+9. [ ] **Provare su telefono vero** a 375, 390 e 430px. ⚠️ **Questa la può fare
+   solo Mattia**: l'over/under che andava a capo è sfuggito proprio perché era
+   stato guardato solo sul browser. Calcolato: nella riga degli scontri ai due
+   nomi restano 83px a 375, 90 a 390, 110 a 430 — i nomi lunghi si accorciano
+   coi puntini, il resto resta sempre leggibile.
 
 ## 🔵 Lotto D — Storico
 *`StoricoPage.jsx`.*
