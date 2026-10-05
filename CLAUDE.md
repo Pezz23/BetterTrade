@@ -287,8 +287,8 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   colore lì, riportalo in `theme.js` e viceversa.
 - **Navigazione**: 4 tasti in basso (Dashboard, Slot, Reporting, Bilancio) per
   l'uso quotidiano; il menu ☰ in alto a destra per il resto (`VOCI_MENU` in
-  `App.jsx`): **Partite, Spin provvisorie, Storico, Utenti**. Una pagina nuova
-  va nel menu, non come quinto tasto.
+  `App.jsx`): **Partite, Spin provvisorie, Partite votate, Storico, Utenti**.
+  Una pagina nuova va nel menu, non come quinto tasto in basso.
 - **L'attendibilità è in `src/lib/attendibilita.js`**, solo calcoli: probabilità
   dal consenso (`avg_ap_*`, non l'exchange), regole di gioco, categorie, finestra
   della settimana. **La composizione delle spin è in `src/lib/spin.js`**
@@ -305,6 +305,8 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   La scelta a mano di una casella della spin è `components/ScegliCasella.jsx`
   (finestra al centro, filtri votate/categorie); quella della griglia Slot è
   `components/SceltaPartita.jsx` (tendina ancorata alla riga).
+  **Lista e scheda sono finite** (lotti A-D, 2-5 ottobre 2026): niente è
+  rimasto con l'aspetto vecchio.
   Le sigle dei campionati a schermo (ITA1, ENG1…) stanno in `lib/campionati.js`
   e **non toccano il database**: `div` resta quella di football-data.
 - **Le librerie in `src/lib/` importano con l'estensione** (`'./attendibilita.js'`):
@@ -364,6 +366,13 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   football-data o Supabase è quasi sempre quello, non il codice. Il Mac usa
   1.1.1.1 e 8.8.8.8; `importa-prossime.js` prova entrambi i nomi del sito con
   quattro tentativi.
+  **Prima di dare la colpa alla rete di casa, prova un altro sito**
+  (`curl https://example.com` e l'endpoint Supabase): il 5/10/2026 quelli
+  rispondevano e football-data no, quindi era il **loro** server. In quel caso
+  non serve insistere: **le quote hanno un altro fornitore** e si scaricano lo
+  stesso con `importa-prossime-odds.js --esegui`, mentre i risultati si
+  recuperano al primo aggiornamento che riesce — `riconcilia-prossime.js`
+  guarda indietro e non perde niente.
 - **Le date dell'archivio erano istanti UTC.** Nel dump di Neon
   `2016-08-25T22:00:00.000Z` sono le 00:00 del **26** agosto ora italiana:
   tagliare i primi dieci caratteri sposta tutto indietro di un giorno. Si

@@ -7,11 +7,17 @@
 **Fatti il 2 ottobre:** lotto A (le stelline contano, scelta a mano delle
 caselle, pagina Partite votate) e lotto B (scorrimento, filtri rifatti, filtro
 Grado, il Grado al posto della resa).
-**Fatti il 5 ottobre:** lotto C (scheda finita), l'ingrandimento automatico su
-iOS, e la valutazione delle coppe (scartate: manca la fonte dei risultati).
+**Fatti il 5 ottobre:** lotto C (scheda finita), lotto D (storico a 30),
+l'ingrandimento automatico su iOS, le coppe valutate e scartate, quote
+aggiornate.
 **Prossimo passo:** **lotto E** (le spin) o **F** (aggiornamento automatico).
-⚠️ Il weekend è il 9-12 ottobre: prima di compilare, un aggiornamento — le
-quote in tabella sono del 2.
+
+⚠️ **In sospeso dal 5/10 sera:** i risultati della Segunda del 2-5 ottobre
+**non sono entrati** — football-data non rispondeva (il suo DNS, non la nostra
+rete: example.com e Supabase rispondevano). 11 partite SP2 restano da
+riconciliare, Castellon-Ceuta compresa, che era votata. **Si recuperano da
+sole al primo `aggiorna.js --esegui` che riesce**: la riconciliazione guarda
+indietro, non si perde niente.
 
 ---
 
@@ -183,6 +189,30 @@ e i due campi avevano `autoFocus` + testo 12px.
 21. **Nessun ambiente di prova su Vercel**: ogni push va in produzione, ed è
     già costato una schermata nera. ⚠️ E **i backtest usano ancora `ps_*`**
     (Pinnacle), sparito dalla 26/27: perdono la stagione in corso in silenzio.
+
+## 📅 Aggiornamento del 5 ottobre 2026 — solo le quote
+
+`aggiorna.js` si è fermato al passo 1: **football-data irraggiungibile**
+(ENOTFOUND su tutti i tentativi, mentre example.com e Supabase rispondevano —
+quindi il loro server, non la rete di Mattia). Lanciato a mano il solo passo
+delle quote, che ha un altro fornitore:
+
+- `importa-prossime-odds.js --esegui` → **189 partite**, 9-19 ottobre,
+  **33 bookmaker di media** (erano 28), 159 con exchange, Codere su 122.
+- **30 crediti usati, 470 rimasti** (il mese è ripartito).
+- Sopra soglia: **7 centro, 5 gialle, 16 blu** su 190 future. **19 voti** in
+  archivio.
+- Le migliori per Grado nel weekend: Maritimo-Porto **8,11** (71%, Q 1,36),
+  Rennes-Auxerre 7,19, Real Madrid-Villarreal 7,06.
+
+⚠️ **Restano fuori i risultati** della Segunda del 2-5/10 (11 partite): nelle
+altre serie si giocavano le nazionali, quindi è l'unico campionato nostro che
+ha giocato. Archivio fermo al 28 settembre, 873 partite in stagione.
+
+**Quando il server torna:** `cd btscout && node --env-file=.env scripts/aggiorna.js --esegui`
+— i passi 1 e 2 chiudono quelle 11 e le portano nel rendiconto.
+
+---
 
 ## ❌ Le coppe: valutate e scartate — 5 ottobre 2026
 
