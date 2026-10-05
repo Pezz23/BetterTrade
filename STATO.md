@@ -7,8 +7,11 @@
 **Fatti il 2 ottobre:** lotto A (le stelline contano, scelta a mano delle
 caselle, pagina Partite votate) e lotto B (scorrimento, filtri rifatti, filtro
 Grado, il Grado al posto della resa).
-**Prossimo passo:** **lotto C** — finire la scheda (scontri diretti e consenso)
-e provarla su un telefono vero.
+**Fatti il 5 ottobre:** lotto C (scheda finita), l'ingrandimento automatico su
+iOS, e la valutazione delle coppe (scartate: manca la fonte dei risultati).
+**Prossimo passo:** **lotto D** (storico a 30 partite) o **E** (le spin).
+⚠️ Il weekend è il 9-12 ottobre: prima di compilare, un aggiornamento — le
+quote in tabella sono del 2.
 
 ---
 
@@ -115,7 +118,7 @@ e i due campi avevano `autoFocus` + testo 12px.
 - [x] Verificato che il `<meta viewport>` non blocchi il pizzico: ingrandire a
       mano resta possibile, ed è giusto così.
 
-## 🟢 Lotto C — Finire la scheda della partita
+## ✅ Lotto C — Finire la scheda della partita — fatto il 5 ottobre 2026
 
 8. [x] **Scontri diretti e consenso rifiniti** (5/10/2026).
    - Titoli coerenti con gli altri blocchi: **⚔️ Scontri diretti** e
@@ -133,11 +136,11 @@ e i due campi avevano `autoFocus` + testo 12px.
    - **Gli scontri restano "in qualunque campionato"** (confermato da Mattia):
      ora che le coppe sono escluse significa solo "quando una delle due stava
      in serie inferiore", e la sigla accanto dice quanto pesarlo.
-9. [ ] **Provare su telefono vero** a 375, 390 e 430px. ⚠️ **Questa la può fare
-   solo Mattia**: l'over/under che andava a capo è sfuggito proprio perché era
-   stato guardato solo sul browser. Calcolato: nella riga degli scontri ai due
-   nomi restano 83px a 375, 90 a 390, 110 a 430 — i nomi lunghi si accorciano
-   coi puntini, il resto resta sempre leggibile.
+9. [x] **Provato da Mattia il 5/10: nessun problema segnalato.** Calcolato
+   prima: nella riga degli scontri ai due nomi restano 83px a 375, 90 a 390,
+   110 a 430 — i nomi lunghi si accorciano coi puntini, il resto resta
+   leggibile. ⚠️ Questa prova la può fare **solo lui**: l'over/under che andava
+   a capo era sfuggito proprio perché guardato solo sul browser.
 
 ## 🔵 Lotto D — Storico
 *`StoricoPage.jsx`.*
