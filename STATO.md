@@ -163,6 +163,35 @@ fatte, i blocchi in fondo no.*
     già costato una schermata nera. ⚠️ E **i backtest usano ancora `ps_*`**
     (Pinnacle), sparito dalla 26/27: perdono la stagione in corso in silenzio.
 
+## ❌ Le coppe: valutate e scartate — 5 ottobre 2026
+
+Mattia: *"dalle API possiamo aggiungere le partite di coppa?"* — misurato e
+deciso di no.
+
+**Cosa offre The Odds API** (elenco competizioni, gratis): Champions, Europa
+League, Conference, FA Cup, EFL Cup, DFB-Pokal, Libertadores, Sudamericana,
+Nations League. ⚠️ **La Coppa Italia non c'è**, e nemmeno Copa del Rey, Coupe
+de France, Taça de Portugal, KNVB Beker: delle coppe nazionali ci sono solo
+Inghilterra e Germania.
+
+**Perché no, anche per quelle disponibili:**
+- **football-data non pubblica le coppe**: niente risultati → **niente
+  riconciliazione**, quindi il rendiconto resterebbe cieco proprio su quelle
+  partite. È l'unico modo che abbiamo di sapere se il criterio funziona.
+- **Niente forma né classifica**: `forma_partita` lavora per `div`, e una
+  Inter-Bayern avrebbe `div = CL`. Adattabile, ma per le squadre fuori dai
+  nostri 15 campionati resterebbe comunque vuota.
+- **I nomi**: provato l'aggancio, Champions 47% ed Europa League 31%
+  riconosciute. Molte si sistemerebbero a mano (`Inter Milan`, `AC Milan`,
+  `Atlético Madrid`), altre no (Slavia Praha, Sabah FK, Lech Poznań).
+- **La FA Cup in questo periodo è inutile**: turni preliminari con squadre
+  dilettantistiche, **zero** riconosciute.
+
+Se un giorno si volesse rifare, serve prima **una fonte di risultati per le
+coppe** — senza quella si aggiungono partite che non sapremo mai valutare.
+
+---
+
 ## Da decidere, non da fare
 - **Le spin esistenti si migrano o si riparte puliti** (voce 14).
 - **Vietare i bankroll negativi** nel database (`check (bankroll >= 0)`) o
