@@ -41,19 +41,25 @@ const vinta = (giocata, r) => {
   return giocata.includes('over') ? r.gol_casa + r.gol_trasferta > 1.5 : true
 }
 
+// Quante se ne vedono subito e quante al massimo dopo il tocco.
+const VISIBILI = 10
+const MASSIME = 30
+const OLTRE = MASSIME - VISIBILI
+
 export default function StoricoPage() {
   const [archivio, setArchivio] = useState(null)
   const [giocate, setGiocate] = useState([])
   const [future, setFuture] = useState([])
   const [errore, setErrore] = useState(null)
   const [caricamento, setCaricamento] = useState(true)
+  const [tutte, setTutte] = useState(false)   // le ultime chiuse: 10 o 30
 
   useEffect(() => {
     async function carica() {
       const oggi = new Date().toISOString().slice(0, 10)
       // Il conteggio dell'archivio: solo numeri, niente righe.
       const totale = await supabase.from('partite').select('*', { count: 'exact', head: true })
-      const ultime = await supabase.from('partite').select('div, stagione, data').order('data', { ascending: false }).limit(1)
+      const ultimaGiocata = await supabase.from('partite').select('div, stagione, data').order('data', { ascending: false }).limit(1)
       // Le proposte già giocate, con il risultato agganciato dalla chiave esterna.
       const { data: fatte, error } = await supabase
         .from('prossime_partite')
@@ -63,7 +69,7 @@ export default function StoricoPage() {
         .select('id, div, campionato, data, ora, casa, trasferta, scaricato_il, fonte, book, book_1, book_x, book_2, b365_1, b365_x, b365_2, b365_over25, avg_ap_1, avg_ap_x, avg_ap_2, max_ap_1, max_ap_x, max_ap_2')
         .gte('data', oggi)
       if (error) setErrore(error.message)
-      setArchivio({ totale: totale.count, ultima: ultime.data?.[0] })
+      setArchivio({ totale: totale.count, ultima: ultimaGiocata.data?.[0] })
       setGiocate((fatte || []).map(r => ({ ...r, ...r.partite })).map(valuta).filter(r => r.prob !== null))
       setFuture((prossime || []).map(valuta).filter(r => r.prob !== null))
       setCaricamento(false)
@@ -77,7 +83,8 @@ export default function StoricoPage() {
     const atteso = lista.length ? lista.reduce((s, r) => s + r.probGiocata, 0) / lista.length : 0
     return { prese, tot: lista.length, reale: lista.length ? prese / lista.length : 0, atteso }
   }
-  const tutte = conto(sopra)
+  const complessivo = conto(sopra)
+  const ultime = useMemo(() => [...sopra].sort((a, b) => (a.data < b.data ? 1 : -1)), [sopra])
 
   const perCampionato = useMemo(() => {
     const m = new Map()
@@ -132,10 +139,10 @@ export default function StoricoPage() {
           ? <Card><div style={{ fontSize: 12, color: C.fantasma, fontFamily: F.sans }}>Nessuna proposta ancora giocata.</div></Card>
           : <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
-              <Riquadro label="prese" valore={`${tutte.prese}/${tutte.tot}`} sub={`dichiarato ${pct(tutte.atteso)}`}
-                colore={tutte.reale >= tutte.atteso ? C.verde : C.ambra} />
-              <Riquadro label="resa" valore={pct(tutte.reale)} colore={tutte.reale >= tutte.atteso ? C.verde : C.ambra}
-                sub={tutte.reale >= tutte.atteso ? 'meglio del dichiarato' : 'sotto il dichiarato'} />
+              <Riquadro label="prese" valore={`${complessivo.prese}/${complessivo.tot}`} sub={`dichiarato ${pct(complessivo.atteso)}`}
+                colore={complessivo.reale >= complessivo.atteso ? C.verde : C.ambra} />
+              <Riquadro label="resa" valore={pct(complessivo.reale)} colore={complessivo.reale >= complessivo.atteso ? C.verde : C.ambra}
+                sub={complessivo.reale >= complessivo.atteso ? 'meglio del dichiarato' : 'sotto il dichiarato'} />
               {['centro', 'giallo', 'blu'].map(cat => {
                 const c = conto(sopra.filter(r => categoria(r.probGiocata, SOGLIE_DEFAULT) === cat))
                 return <Riquadro key={cat} label={cat} valore={c.tot ? `${c.prese}/${c.tot}` : '—'}
@@ -149,9 +156,9 @@ export default function StoricoPage() {
           </>}
       </Sezione>
 
-      <Sezione titolo="📋 Le ultime chiuse" extra="le più recenti">
+      <Sezione titolo="📋 Le ultime chiuse" extra={`${Math.min(ultime.length, VISIBILI + (tutte ? OLTRE : 0))} di ${sopra.length}`}>
         <Card style={{ padding: '6px 12px' }}>
-          {[...sopra].sort((a, b) => (a.data < b.data ? 1 : -1)).slice(0, 12).map((r, i, arr) => {
+          {ultime.slice(0, tutte ? MASSIME : VISIBILI).map((r, i, arr) => {
             const ok = vinta(r.giocata, r)
             const cat = categoria(r.probGiocata, SOGLIE_DEFAULT)
             return (
@@ -169,6 +176,20 @@ export default function StoricoPage() {
               </div>
             )
           })}
+
+          {/* Le prime dieci sempre, il resto a richiesta: trenta righe aperte
+              allungano la pagina di uno schermo e mezzo. */}
+          {ultime.length > VISIBILI && (
+            <button onClick={() => setTutte(v => !v)} style={{
+              width: '100%', marginTop: 4, padding: '9px 0', background: 'transparent',
+              border: 'none', borderTop: `1px solid ${C.bordoChiaro}`,
+              color: C.spento, fontFamily: F.mono, fontSize: 11, letterSpacing: '0.08em', cursor: 'pointer',
+            }}>
+              {tutte
+                ? '⌃ mostra solo le ultime ' + VISIBILI
+                : `⌄ altre ${Math.min(ultime.length, MASSIME) - VISIBILI} · in tutto ${Math.min(ultime.length, MASSIME)}`}
+            </button>
+          )}
         </Card>
       </Sezione>
     </div>

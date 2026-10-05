@@ -9,7 +9,7 @@ caselle, pagina Partite votate) e lotto B (scorrimento, filtri rifatti, filtro
 Grado, il Grado al posto della resa).
 **Fatti il 5 ottobre:** lotto C (scheda finita), l'ingrandimento automatico su
 iOS, e la valutazione delle coppe (scartate: manca la fonte dei risultati).
-**Prossimo passo:** **lotto D** (storico a 30 partite) o **E** (le spin).
+**Prossimo passo:** **lotto E** (le spin) o **F** (aggiornamento automatico).
 ⚠️ Il weekend è il 9-12 ottobre: prima di compilare, un aggiornamento — le
 quote in tabella sono del 2.
 
@@ -142,11 +142,13 @@ e i due campi avevano `autoFocus` + testo 12px.
    leggibile. ⚠️ Questa prova la può fare **solo lui**: l'over/under che andava
    a capo era sfuggito proprio perché guardato solo sul browser.
 
-## 🔵 Lotto D — Storico
-*`StoricoPage.jsx`.*
+## ✅ Lotto D — Storico — fatto il 5 ottobre 2026
 
-10. **Le ultime chiuse: 30 partite invece di 12**, con le prime 10 visibili e
-    le altre dentro un menu a scomparsa.
+10. [x] **Le ultime chiuse: 10 subito, 30 col tocco.** In fondo alla lista un
+    tasto `⌄ altre 20 · in tutto 30`, che si richiude. In testa alla sezione il
+    conto `10 di 166`, così si sa quante ce ne sono in tutto.
+    Trenta righe sempre aperte allungavano la pagina di uno schermo e mezzo.
+    Costanti `VISIBILI` e `MASSIME` in cima al file.
 
 ## 🔵 Lotto E — Le spin
 *`SlotPage.jsx`, `SpinProvvisoriePage.jsx`, `lib/spin.js`, `rendiconto.js`.*
