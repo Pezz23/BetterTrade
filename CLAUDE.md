@@ -400,10 +400,13 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   tenerlo in `useState` ridisegnava tutta la scheda a ogni frame del
   trascinamento. E la direzione del gesto si decide **una volta sola**, al primo
   movimento utile: se parte in verticale è uno scorrimento, e deve restare tale.
-- **Aprire la scheda smonta la lista, e lo scorrimento si azzera.** In
-  `PartitePage` la scheda *sostituisce* la lista: senza salvare `window.scrollY`
-  (useRef) e rimetterlo in `useLayoutEffect`, si torna sempre in cima. Vale per
-  ogni pagina che scambia un elenco con un dettaglio.
+- **Un dettaglio che *sostituisce* l'elenco smonta l'elenco**: lo scorrimento
+  si azzera, e sotto non c'è niente da scoprire quando lo si trascina via.
+  La scheda della partita è perciò un **foglio sopra** la lista
+  (`components/SchedaScorrevole.jsx`, `position: fixed`): la lista resta
+  montata e tiene da sola il suo punto, e il gesto indietro scopre quello che
+  c'è sotto. **Prima c'era un rattoppo** (salvare e rimettere `window.scrollY`):
+  tolto, perché la struttura giusta l'ha reso inutile.
 - **Un'etichetta dentro una colonna elastica viene tagliata per prima.** In
   `ScegliCasella` la scritta "già in spin 2" divideva lo spazio col nome delle
   squadre e spariva. Le segnalazioni vogliono una **colonna a larghezza fissa**

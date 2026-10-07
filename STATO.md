@@ -60,7 +60,22 @@ compilano la griglia da sole, la griglia **agganciata alle partite vere** e il
    - Due dita non contano: è il pizzico per ingrandire.
    - Sotto la scheda, **solo su telefono**, una riga lo dice: altrimenti il
      gesto resta nascosto.
-   - [ ] **Da provare col pollice**: sul browser non si può.
+
+1b. [x] **Rifatto subito dopo, alla maniera di Safari** (7/10, sera). Primo
+   tentativo: la scheda si spostava di 160px e poi scattava via — Mattia:
+   *"sembra che si blocca la schermata e appare la lista"*. Aveva ragione, e il
+   limite era strutturale: **la scheda sostituiva la lista**, quindi sotto non
+   c'era niente da scoprire.
+   - Ora la scheda è un **foglio sopra la lista** (`components/SchedaScorrevole.jsx`):
+     entra scivolando da destra, segue il dito **per tutta la larghezza** ed
+     **esce di scena** prima di smontarsi (260 ms). Chiudere a metà corsa era
+     esattamente l'effetto "si blocca".
+   - Basta **un quarto di schermo** per lasciarla andare, non 80px fissi.
+   - Mentre è aperta, **la lista sotto non scorre** (`body overflow hidden`).
+   - ⚠️ **Il salvataggio dello scorrimento è stato tolto**: la lista non viene
+     più smontata, quindi tiene da sola il punto in cui si era. Il rattoppo del
+     lotto B (useRef + useLayoutEffect) non serviva più — una struttura giusta
+     ha reso inutile un rimedio.
 
 ## 🔵 Lotto I — La lista: classifica e scelta automatica
 *`RigaPartita.jsx`, `TestataPartita.jsx`, `lib/spin.js`, `SpinProvvisoriePage.jsx`.*

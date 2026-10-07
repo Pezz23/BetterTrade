@@ -1,13 +1,13 @@
-import { useState, useMemo, useRef, useLayoutEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { usaProssime } from '../hooks/usaProssime'
 import { useAuth } from '../context/AuthContext'
 import { C, F, alpha } from '../theme'
 import { Card, Etichetta } from '../components/ui'
 import RigaPartita, { CATEGORIE, pct, giorno } from '../components/RigaPartita'
+import SchedaScorrevole from '../components/SchedaScorrevole'
 import DettaglioPartita from '../components/DettaglioPartita'
 import { categoria, FINESTRE, SOGLIE_DEFAULT } from '../lib/attendibilita'
 import { etichetta, sigla } from '../lib/campionati'
-import { usaIndietro } from '../hooks/usaIndietro'
 
 // La lista delle partite future, ordinata per attendibilità.
 // I calcoli stanno in lib/attendibilita.js, la riga in components/RigaPartita.jsx:
@@ -34,12 +34,9 @@ export default function PartitePage() {
   const [pannello, setPannello] = useState(false)   // i filtri, chiusi di default
   const [apertaId, setApertaId] = useState(null)    // la partita aperta a tutto schermo
 
-  // Dove si era arrivati nella lista. La scheda sostituisce la lista, che
-  // viene smontata: senza questo si tornava sempre in cima, e con 189 partite
-  // voleva dire riscorrere tutto ogni volta.
-  const posizione = useRef(0)
-  useLayoutEffect(() => { if (!apertaId) window.scrollTo(0, posizione.current) }, [apertaId])
-  const apri = id => { posizione.current = window.scrollY; setApertaId(id) }
+  // Lo scorrimento non si salva più: da quando la scheda è un foglio sopra la
+  // lista (SchedaScorrevole), la lista non viene smontata e il punto resta suo.
+  const apri = id => setApertaId(id)
 
   // Per il menu a tendina: "I1 – Serie A"
   const campionati = useMemo(() => {
@@ -95,16 +92,7 @@ export default function PartitePage() {
   // La scheda di una partita prende tutta la pagina: sul telefono è l'unico
   // modo di leggerla, e la lista resta dov'era quando si torna indietro.
   const aperta = righe.find(r => r.id === apertaId)
-  // Il gesto va messo anche quando la scheda è chiusa: gli hook non si possono
-  // chiamare dentro un `if`.
-  const indietro = usaIndietro(() => setApertaId(null))
-  if (aperta) return (
-    <div {...indietro} style={{ padding: 12, maxWidth: 560, margin: '0 auto' }}>
-      <DettaglioPartita p={aperta} cat={categoria(aperta.probGiocata, soglie)}
-        voti={votiDi(aperta.id)} mio={mioVoto(aperta.id)} puoVotare={isAdmin}
-        onVota={() => vota(aperta.id)} onChiudi={() => setApertaId(null)} />
-    </div>
-  )
+
 
   return (
     <div style={{ padding: '16px' }}>
@@ -246,6 +234,14 @@ export default function PartitePage() {
           La quota è di <b style={{ color: C.fioco }}>Codere</b> quando c'è; altrimenti Bet365, altrimenti la massima sul mercato — sotto ogni quota c'è scritto quale.
           Gli orari sono quelli del Regno Unito.
         </div>
+      )}
+
+      {aperta && (
+        <SchedaScorrevole onChiudi={() => setApertaId(null)}>
+          <DettaglioPartita p={aperta} cat={categoria(aperta.probGiocata, soglie)}
+            voti={votiDi(aperta.id)} mio={mioVoto(aperta.id)} puoVotare={isAdmin}
+            onVota={() => vota(aperta.id)} onChiudi={() => setApertaId(null)} />
+        </SchedaScorrevole>
       )}
     </div>
   )

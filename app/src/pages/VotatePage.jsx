@@ -4,9 +4,9 @@ import { useAuth } from '../context/AuthContext'
 import { C, F, alpha } from '../theme'
 import { Card, Etichetta } from '../components/ui'
 import RigaPartita, { CATEGORIE } from '../components/RigaPartita'
+import SchedaScorrevole from '../components/SchedaScorrevole'
 import DettaglioPartita from '../components/DettaglioPartita'
 import { categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
-import { usaIndietro } from '../hooks/usaIndietro'
 
 // Le partite che qualcuno ha votato con la stellina, tutte in un posto.
 //
@@ -28,16 +28,7 @@ export default function VotatePage() {
     [righe, votiDi])
 
   const aperta = righe.find(r => r.id === apertaId)
-  // Il gesto va messo anche quando la scheda è chiusa: gli hook non si possono
-  // chiamare dentro un `if`.
-  const indietro = usaIndietro(() => setApertaId(null))
-  if (aperta) return (
-    <div {...indietro} style={{ padding: 12, maxWidth: 560, margin: '0 auto' }}>
-      <DettaglioPartita p={aperta} cat={categoria(aperta.probGiocata, SOGLIE_DEFAULT)}
-        voti={votiDi(aperta.id)} mio={mioVoto(aperta.id)} puoVotare={isAdmin}
-        onVota={() => vota(aperta.id)} onChiudi={() => setApertaId(null)} />
-    </div>
-  )
+
 
   const conteggi = votate.reduce((c, r) => { const k = categoria(r.probGiocata, SOGLIE_DEFAULT); if (k !== 'no') c[k]++; else c.fuori++; return c },
     { centro: 0, giallo: 0, blu: 0, fuori: 0 })
@@ -74,6 +65,14 @@ export default function VotatePage() {
             onApri={() => setApertaId(p.id)} />
         ))}
       </div>
+
+      {aperta && (
+        <SchedaScorrevole onChiudi={() => setApertaId(null)}>
+          <DettaglioPartita p={aperta} cat={categoria(aperta.probGiocata, SOGLIE_DEFAULT)}
+            voti={votiDi(aperta.id)} mio={mioVoto(aperta.id)} puoVotare={isAdmin}
+            onVota={() => vota(aperta.id)} onChiudi={() => setApertaId(null)} />
+        </SchedaScorrevole>
+      )}
     </div>
   )
 }

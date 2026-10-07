@@ -71,3 +71,11 @@ input, button, select, textarea { font-family: var(--sans); }
 @media (pointer: coarse) {
   input, select, textarea { font-size: 16px !important; }
 }
+
+
+/* Il foglio della partita entra da destra. L'uscita la guida il dito
+   (hooks/usaIndietro.js), quindi qui c'è solo l'ingresso. */
+@keyframes scheda-entra-da-destra { from { transform: translateX(100%); } to { transform: translateX(0); } }
+.scheda-entra { animation: scheda-entra-da-destra .26s cubic-bezier(.32,.72,0,1); }
+
+@media (prefers-reduced-motion: reduce) { .scheda-entra { animation: none; } }
