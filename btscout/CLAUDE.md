@@ -1,19 +1,20 @@
-# BTScout — analista calcistico
+# BTScout — il motore di BetterTrade
 
-Agente che cerca **value bet** sui principali campionati europei, mercati 1X2 e
-Over/Under 2.5 gol. Sorella di JARVIS (`../jarvis-pwa/`), ma **agente separato con
-regole sue**: Mattia ha scelto esplicitamente di non sporcare il prompt di JARVIS
-con il calcio. In prospettiva i due si parleranno — JARVIS coordinatore, BTScout
-specialista — ma non ancora.
+Node, nessuna interfaccia: importa l'archivio, misura il criterio, prova le
+strategie. **Non è più un progetto a sé** (lo era fino a settembre 2026): sta
+dentro BetterTrade e scrive nello stesso database Supabase dell'app.
 
----
+- **Le regole del progetto e la to-do stanno nella radice**: [../CLAUDE.md](../CLAUDE.md)
+  e [../STATO.md](../STATO.md). Si leggono da lì, non da qui.
+- **Questo file contiene solo le regole del motore**, che valgono ancora tutte:
+  come si trattano le quote, cosa non deve fare un LLM, le trappole della misura.
+- `STATO.md` qui accanto è **l'archivio storico** delle fasi 1-6 (i modelli
+  Dixon-Coles, le strategie S1-S6): serve a non rifare esperimenti già falliti.
 
-## ⚠️ PRIMA DI QUALSIASI COSA: LEGGI STATO.md
-
-**All'inizio di ogni sessione, leggi sempre [STATO.md](STATO.md).** Contiene
-roadmap, to-do e il punto esatto in cui siamo. **Alla fine, aggiornalo.** Se una
-task cambia stato e il file non lo riflette, la sessione dopo riparte da
-informazioni sbagliate. Aggiornare STATO.md fa parte del lavoro.
+⚠️ **Gli script `backtest.js` e `s1`-`s6` sono fermi alla vecchia fase** e sono
+marcati come tali in testa al file. Quattro di loro usano le colonne `ps_*`
+(Pinnacle), **vuote dalla stagione 26/27**: girano lo stesso e perdono la
+stagione in corso senza dirlo. Da sistemare prima di rifare backtest.
 
 ---
 

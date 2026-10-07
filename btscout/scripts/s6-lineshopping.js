@@ -1,3 +1,15 @@
+// ⚠️ SCRIPT DELLA VECCHIA FASE — NON AGGIORNATO (marcato il 7/10/2026)
+//
+// Resta qui perché un domani i backtest potrebbero servire (Mattia, 7/10), ma
+// prima di fidarsi dei numeri va sistemato: il progetto nel frattempo ha preso
+// un'altra strada — l'attendibilità dal consenso di mercato, vedi la CLAUDE.md
+// nella radice — e questi script misurano altro.
+//
+// ⚠️⚠️ USA LE COLONNE `ps_*` (Pinnacle), CHE DALLA STAGIONE 26/27 SONO VUOTE.
+// football-data ha smesso di pubblicarle: lo script gira lo stesso e **perde la
+// stagione in corso in silenzio**. Prima di rilanciarlo, passare a `bfe_*`
+// (Betfair Exchange, dalla 24/25) o a `avg_*`.
+
 // S6 — Line shopping contro la chiusura di Pinnacle.
 //
 // L'unico "modello" con basi documentate per piccoli guadagni costanti — e non

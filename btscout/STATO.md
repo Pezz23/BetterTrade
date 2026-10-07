@@ -1,4 +1,17 @@
-# STATO — BTScout
+# STATO — BTScout, archivio storico
+
+> ⚠️ **Questo file è storia, non una to-do.** Racconta le fasi 1-6 del vecchio
+> progetto BTScout (modelli Dixon-Coles, strategie S1-S6), chiuse a luglio 2026.
+> Serve a **non rifare esperimenti già falliti** — e in particolare a ricordare
+> che S1-S5 erano tutte perdenti e che S6 (line shopping) è l'unica che aveva
+> dato un ROI positivo, con riserve.
+>
+> **Il punto in cui siamo oggi, e la to-do, stanno in [../STATO.md](../STATO.md).**
+> Da settembre 2026 BTScout è il motore di BetterTrade e condivide il suo
+> database: il criterio del progetto non è più il valore dei modelli ma
+> l'attendibilità dal consenso di mercato (vedi [../CLAUDE.md](../CLAUDE.md)).
+
+---
 
 > Fonte di verità sul punto in cui siamo. Da leggere all'inizio di ogni sessione e
 > aggiornare ogni volta che una task cambia stato.
@@ -6,7 +19,7 @@
 **Ultimo aggiornamento:** 17 luglio 2026
 **Fase corrente:** 6 chiusa (S1-S5 tutte perdenti) + **S6 line shopping: primo
 ROI positivo del progetto (+1,6/+2,6%), ma con riserve serie — vedi sezione S6.**
-**Deploy:** non ancora creato su Vercel
+**Deploy:** mai fatto — la PWA di chat (`api/` + `index.html`) è stata cancellata il 7/10/2026.
 
 ---
 

@@ -1,3 +1,15 @@
+// ⚠️ SCRIPT DELLA VECCHIA FASE — NON AGGIORNATO (marcato il 7/10/2026)
+//
+// Resta qui perché un domani i backtest potrebbero servire (Mattia, 7/10), ma
+// prima di fidarsi dei numeri va sistemato: il progetto nel frattempo ha preso
+// un'altra strada — l'attendibilità dal consenso di mercato, vedi la CLAUDE.md
+// nella radice — e questi script misurano altro.
+//
+// ⚠️⚠️ USA LE COLONNE `ps_*` (Pinnacle), CHE DALLA STAGIONE 26/27 SONO VUOTE.
+// football-data ha smesso di pubblicarle: lo script gira lo stesso e **perde la
+// stagione in corso in silenzio**. Prima di rilanciarlo, passare a `bfe_*`
+// (Betfair Exchange, dalla 24/25) o a `avg_*`.
+
 // S5 — BetterTrade: matrice 3×3, 8 schedine accumulator, staking 20%/spin.
 //
 // Selezione (una spin a settimana, tutti i campionati insieme): l'esito 1X2 più

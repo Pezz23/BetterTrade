@@ -180,70 +180,38 @@ e i due campi avevano `autoFocus` + testo 12px.
 17. **Il pulsante "Aggiorna" nell'app**: serve una Supabase Edge Function.
     Meno urgente ora che l'aggiornamento si fa in chat o da launchd.
 
-## 🔵 Lotto G — Pulizia
-18. **README.md vuoto**; `btscout/CLAUDE.md` e `btscout/STATO.md` parlano
-    ancora di BTScout come progetto a sé.
-19. **`btscout/api/` + `index.html`**: PWA di chat mai deployata, da cancellare
-    se non serve.
-20. **`calcSchedule` arrotonda a zero** (`Math.floor` in `AuthContext.jsx`):
-    con base bassa produce €0 su tutte le voci. Correggerlo cambia gli importi
-    giocati — è una decisione, non una pulizia.
-21. **Nessun ambiente di prova su Vercel**: ogni push va in produzione, ed è
-    già costato una schermata nera. ⚠️ E **i backtest usano ancora `ps_*`**
-    (Pinnacle), sparito dalla 26/27: perdono la stagione in corso in silenzio.
+## 🟢 Lotto G — Pulizia — fatta il 7 ottobre 2026
 
-## 📅 Aggiornamento del 5 ottobre 2026 — solo le quote
-
-`aggiorna.js` si è fermato al passo 1: **football-data irraggiungibile**
-(ENOTFOUND su tutti i tentativi, mentre example.com e Supabase rispondevano —
-quindi il loro server, non la rete di Mattia). Lanciato a mano il solo passo
-delle quote, che ha un altro fornitore:
-
-- `importa-prossime-odds.js --esegui` → **189 partite**, 9-19 ottobre,
-  **33 bookmaker di media** (erano 28), 159 con exchange, Codere su 122.
-- **30 crediti usati, 470 rimasti** (il mese è ripartito).
-- Sopra soglia: **7 centro, 5 gialle, 16 blu** su 190 future. **19 voti** in
-  archivio.
-- Le migliori per Grado nel weekend: Maritimo-Porto **8,11** (71%, Q 1,36),
-  Rennes-Auxerre 7,19, Real Madrid-Villarreal 7,06.
-
-⚠️ **Restano fuori i risultati** della Segunda del 2-5/10 (11 partite): nelle
-altre serie si giocavano le nazionali, quindi è l'unico campionato nostro che
-ha giocato. Archivio fermo al 28 settembre, 873 partite in stagione.
-
-**Quando il server torna:** `cd btscout && node --env-file=.env scripts/aggiorna.js --esegui`
-— i passi 1 e 2 chiudono quelle 11 e le portano nel rendiconto.
-
----
-
-## ❌ Le coppe: valutate e scartate — 5 ottobre 2026
-
-Mattia: *"dalle API possiamo aggiungere le partite di coppa?"* — misurato e
-deciso di no.
-
-**Cosa offre The Odds API** (elenco competizioni, gratis): Champions, Europa
-League, Conference, FA Cup, EFL Cup, DFB-Pokal, Libertadores, Sudamericana,
-Nations League. ⚠️ **La Coppa Italia non c'è**, e nemmeno Copa del Rey, Coupe
-de France, Taça de Portugal, KNVB Beker: delle coppe nazionali ci sono solo
-Inghilterra e Germania.
-
-**Perché no, anche per quelle disponibili:**
-- **football-data non pubblica le coppe**: niente risultati → **niente
-  riconciliazione**, quindi il rendiconto resterebbe cieco proprio su quelle
-  partite. È l'unico modo che abbiamo di sapere se il criterio funziona.
-- **Niente forma né classifica**: `forma_partita` lavora per `div`, e una
-  Inter-Bayern avrebbe `div = CL`. Adattabile, ma per le squadre fuori dai
-  nostri 15 campionati resterebbe comunque vuota.
-- **I nomi**: provato l'aggancio, Champions 47% ed Europa League 31%
-  riconosciute. Molte si sistemerebbero a mano (`Inter Milan`, `AC Milan`,
-  `Atlético Madrid`), altre no (Slavia Praha, Sabah FK, Lech Poznań).
-- **La FA Cup in questo periodo è inutile**: turni preliminari con squadre
-  dilettantistiche, **zero** riconosciute.
-
-Se un giorno si volesse rifare, serve prima **una fonte di risultati per le
-coppe** — senza quella si aggiungono partite che non sapremo mai valutare.
-
----
+18. [x] **README.md** scritto: cos'è il progetto, le due cartelle, come si
+    parte, il comando che si usa davvero, e il rimando a CLAUDE.md/STATO.md.
+    Era vuoto (una riga).
+18b. [x] **I documenti di btscout aggiornati.** `btscout/CLAUDE.md` non dice più
+    "sorella di JARVIS, progetto a sé": dice che è il motore di BetterTrade, che
+    le regole stanno nella radice, e tiene solo le regole del motore — che
+    valgono tutte ("la matematica calcola, Claude giudica", il margine, le
+    trappole della misura). `btscout/STATO.md` è diventato **archivio storico**
+    con un cappello che lo dice: serve a non rifare gli esperimenti S1-S6 già
+    falliti, non a sapere dove siamo.
+19. [x] **PWA di chat cancellata** (`btscout/api/`, `index.html`, `vercel.json`
+    vuoto): mai andata online — lo diceva il loro stesso STATO, *"Deploy: non
+    ancora creato su Vercel"*. Resta nella storia di git se servisse.
+20. [x] **`calcSchedule`: misurato, e NON va corretto.** Avevo scritto che "con
+    base bassa produce €0 su tutte le voci": falso con i numeri veri. Sui saldi
+    del 7/10 si gioca il **96-97%** della base (Bermani: base 198,91 → 193
+    giocati), si perde il 3-4% per arrotondamento. Gli zeri arrivano solo sotto
+    i 33 € di base (sparisce la full), sotto i 10 (la quaterna), sotto i 6,50
+    (il tris). Cambiarlo **sposta gli importi che il gruppo gioca davvero**:
+    è una decisione, non una pulizia. Scritto nel commento del codice.
+21. [x] **Backtest marcati, non toccati.** Mattia (7/10): *"non mi interessano i
+    backtest, ma un domani potrebbero servirmi"*. `backtest.js` e `s1`-`s6`
+    hanno ora un avviso in testa: sono della vecchia fase, e i quattro che usano
+    `ps_*` (backtest, s2, s5, s6) **perdono la stagione in corso in silenzio**
+    perché Pinnacle non esiste più dalla 26/27. Da passare a `bfe_*` o `avg_*`
+    prima di rifidarsi dei numeri.
+21b. [ ] **Ambiente di prova su Vercel** — resta aperto, ed è una decisione di
+    Mattia: ogni push su un ramo diverso da `main` genererebbe un'anteprima, ma
+    cambia il modo di lavorare (push sul ramo → guardi → unisci). Oggi ogni
+    push va dritto in produzione, ed è già costato una schermata nera.
 
 ## Da decidere, non da fare
 - **Le spin esistenti si migrano o si riparte puliti** (voce 14).

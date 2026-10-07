@@ -164,7 +164,15 @@ export function AuthProvider({ children }) {
     return (getTotalBankroll() * (pct / 100)) / numSlot
   }
 
-  // Calcola puntate da una base
+  // Le puntate che toccano a ciascuna schedina, da una base.
+  //
+  // ⚠️ I `Math.floor` perdono qualcosa per arrotondamento: misurato il
+  // 7/10/2026 sui saldi veri, si gioca il **96-97%** della base (Bermani: base
+  // 198,91 → 193 giocati). Non è un difetto da correggere al volo: cambiare gli
+  // arrotondamenti **sposta gli importi che il gruppo gioca davvero**, quindi è
+  // una decisione, non una pulizia.
+  // L'unico caso che fa danno è una base piccola: sotto i 33 € sparisce la
+  // full, sotto i 10 la quaterna, sotto i 6,50 anche il tris.
   function calcSchedule(base) {
     const tris     = Math.floor(base * 0.77 / 5)
     const quaterna = Math.floor(base * 0.20 / 2)

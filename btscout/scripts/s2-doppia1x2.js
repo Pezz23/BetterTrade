@@ -1,3 +1,15 @@
+// ⚠️ SCRIPT DELLA VECCHIA FASE — NON AGGIORNATO (marcato il 7/10/2026)
+//
+// Resta qui perché un domani i backtest potrebbero servire (Mattia, 7/10), ma
+// prima di fidarsi dei numeri va sistemato: il progetto nel frattempo ha preso
+// un'altra strada — l'attendibilità dal consenso di mercato, vedi la CLAUDE.md
+// nella radice — e questi script misurano altro.
+//
+// ⚠️⚠️ USA LE COLONNE `ps_*` (Pinnacle), CHE DALLA STAGIONE 26/27 SONO VUOTE.
+// football-data ha smesso di pubblicarle: lo script gira lo stesso e **perde la
+// stagione in corso in silenzio**. Prima di rilanciarlo, passare a `bfe_*`
+// (Betfair Exchange, dalla 24/25) o a `avg_*`.
+
 // S2 — doppia 1X2 sulle 2 partite a confidenza più alta della settimana.
 //
 // Ogni settimana (bucket di 7 giorni) prende, fra tutti i campionati, le 2

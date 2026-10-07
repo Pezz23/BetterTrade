@@ -344,6 +344,11 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   normale registrava il movimento e il saldo restava fermo. Dopo ogni modifica
   alle policy, lancia `scripts/prova-permessi.js` — controlla cosa ogni ruolo
   può e non può fare, e sarebbe bastato la prima volta.
+- **Gli importi delle schedine perdono il 3-4% per arrotondamento, ed è noto.**
+  `calcSchedule` in `AuthContext.jsx` usa `Math.floor`: misurato il 7/10/2026
+  sui saldi veri si gioca il 96-97% della base. **Non correggerlo di slancio**:
+  cambia gli importi che il gruppo gioca davvero, quindi è una decisione di
+  Mattia. Sotto i 33 € di base sparisce la full, sotto i 10 la quaterna.
 - **Pinnacle non esiste più.** football-data ha smesso di pubblicarlo: le
   colonne `PSC*` ci sono fino alla stagione 25/26 (e lì già coprono meno della
   metà delle partite), spariscono dalla 26/27. Il riferimento "affilato" ora è
@@ -449,6 +454,11 @@ node --env-file=.env scripts/importa-prossime-odds.js --campionati=E0,I1 --esegu
 node scripts/backtest.js                           # gira offline, dalla cache
 ```
 
-`btscout/CLAUDE.md` contiene le regole del motore — in particolare **"la
+`btscout/CLAUDE.md` contiene **solo** le regole del motore (le regole del
+progetto sono qui), e `btscout/STATO.md` è l'**archivio storico** delle fasi
+S1-S6: serve a non rifare esperimenti già falliti, non a sapere dove siamo.
+⚠️ `backtest.js` e `s1`-`s6` sono della vecchia fase e **marcati in testa al
+file**: quattro usano `ps_*` e perdono la stagione in corso in silenzio.
+Vale la regola del motore — in particolare **"la
 matematica calcola, Claude giudica"**: un LLM non produce probabilità calibrate,
 e non deve stimarle. Vale anche qui quando i due pezzi si collegheranno.

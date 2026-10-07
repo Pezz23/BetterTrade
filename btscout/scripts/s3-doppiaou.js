@@ -1,3 +1,10 @@
+// ⚠️ SCRIPT DELLA VECCHIA FASE — NON AGGIORNATO (marcato il 7/10/2026)
+//
+// Resta qui perché un domani i backtest potrebbero servire (Mattia, 7/10), ma
+// prima di fidarsi dei numeri va sistemato: il progetto nel frattempo ha preso
+// un'altra strada — l'attendibilità dal consenso di mercato, vedi la CLAUDE.md
+// nella radice — e questi script misurano altro.
+
 // S3 — doppia Over/Under sulle 2 partite a confidenza più alta della settimana.
 //
 // Ogni settimana (bucket di 7 giorni) prende, fra tutti i campionati, le 2
