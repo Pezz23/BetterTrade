@@ -13,7 +13,7 @@ import { usaIndietro } from '../hooks/usaIndietro'
 // dito (hooks/usaIndietro.js).
 
 export default function SchedaScorrevole({ onChiudi, children }) {
-  const indietro = usaIndietro(onChiudi)
+  const riferimento = usaIndietro(onChiudi)
 
   // Mentre il foglio è aperto la lista sotto non deve scorrere.
   useEffect(() => {
@@ -23,12 +23,15 @@ export default function SchedaScorrevole({ onChiudi, children }) {
   }, [])
 
   return (
-    <div {...indietro} className="scheda-entra" style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 40,
+    <div ref={riferimento} className="scheda-entra" style={{
+      // Parte SOTTO la barra dell'app: a `top: 0` finiva sotto l'intestazione
+      // e la stellina non si riusciva nemmeno a toccare.
+      position: 'fixed', top: 'var(--barra-alta)', left: 0, right: 0, bottom: 0, zIndex: 40,
       background: C.fondo,
       boxShadow: `-8px 0 24px ${alpha(C.fondo, 0.9)}`,
       overflowY: 'auto', WebkitOverflowScrolling: 'touch',
       overscrollBehavior: 'contain',
+      touchAction: 'pan-y',   // in verticale scorre, in orizzontale decide il gesto
       paddingBottom: 'var(--barra-bassa)',
     }}>
       <div style={{ padding: 12, maxWidth: 560, margin: '0 auto' }}>

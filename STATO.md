@@ -77,6 +77,17 @@ compilano la griglia da sole, la griglia **agganciata alle partite vere** e il
      lotto B (useRef + useLayoutEffect) non serviva più — una struttura giusta
      ha reso inutile un rimedio.
 
+1c. [x] **Due correzioni dopo la prova** (7/10, sera tardi).
+   - **Il foglio partiva da `top: 0`** e finiva sotto la barra dell'app: la
+     stellina non si riusciva a toccare. Ora parte da `var(--barra-alta)`, la
+     stessa misura che usa il menu.
+   - ⚠️ **Il trascinamento sembrava "un foglio libero", non un binario**, perché
+     la pagina continuava a scorrere in verticale mentre il foglio andava di
+     lato. Causa: **React registra `onTouchMove` come passivo**, e in un
+     ascoltatore passivo `preventDefault()` non fa niente. Gli eventi ora si
+     agganciano a mano (`addEventListener(..., { passive: false })`), e appena
+     il gesto è orizzontale si mette `touch-action: none` sul foglio.
+
 ## 🔵 Lotto I — La lista: classifica e scelta automatica
 *`RigaPartita.jsx`, `TestataPartita.jsx`, `lib/spin.js`, `SpinProvvisoriePage.jsx`.*
 

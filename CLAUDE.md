@@ -395,6 +395,12 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   e l'`autoFocus` si dà solo col mouse (`tocco` in `lib/schermo.js`).
   ⚠️ Il `<meta viewport>` **non** deve mai avere `maximum-scale` o
   `user-scalable=no`: il pizzico per ingrandire a mano resta libero.
+- **`onTouchMove` di React è passivo: `preventDefault()` lì dentro non fa
+  niente.** Il foglio della partita andava di lato mentre la pagina continuava
+  a scorrere in verticale — sembrava "un foglio libero". Un gesto che deve
+  impedire lo scorrimento va agganciato a mano in un `useEffect`:
+  `addEventListener('touchmove', f, { passive: false })`, più
+  `touch-action: none` sull'elemento appena la direzione è decisa.
 - **Un gesto che segue il dito non passa dallo stato di React.** In
   `hooks/usaIndietro.js` lo spostamento si scrive sul nodo (`style.transform`):
   tenerlo in `useState` ridisegnava tutta la scheda a ogni frame del

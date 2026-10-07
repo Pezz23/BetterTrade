@@ -1,69 +1,83 @@
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 
 // Tornare indietro trascinando da sinistra verso destra, come un dettaglio di
-// Safari: il foglio segue il dito e **esce di scena**, scoprendo la lista che
-// sta sotto. Prima si spostava di 160px e poi scattava: sembrava bloccarsi.
+// Safari: il foglio segue il dito e **esce di scena**, scoprendo la lista sotto.
 //
-// Tre accortezze, o diventa un fastidio:
-//  · **la direzione si decide una volta sola**, al primo movimento oltre i
-//    10px. Se parti in verticale stai scorrendo, e il gesto non si attiva più
-//    nemmeno se la mano devia di lato.
-//  · **si lascia completare l'uscita** prima di smontare la scheda: chiudere a
-//    metà corsa è esattamente l'effetto "si blocca e compare la lista".
-//  · **lo spostamento si scrive sul nodo, non nello stato di React**: a ogni
-//    millimetro si ridisegnerebbe tutta la scheda, che è pesante.
+// ⚠️ Gli eventi si agganciano **a mano**, non con `onTouchMove` di React:
+// React li registra come "passivi", e in un ascoltatore passivo
+// `preventDefault()` non fa niente. Risultato: il browser continuava a scorrere
+// in verticale mentre il foglio andava di lato — sembrava un foglio libero
+// invece che su un binario.
+//
+// Le altre accortezze, o diventa un fastidio:
+//  · **la direzione si decide una volta sola**, al primo movimento oltre i 10px:
+//    se parti in verticale stai scorrendo, e il gesto non si attiva più.
+//  · appena il gesto è orizzontale si blocca lo scorrimento (`touch-action`),
+//    così il movimento è su un asse solo.
+//  · **si lascia completare l'uscita** prima di smontare: chiudere a metà corsa
+//    è l'effetto "si blocca e compare la lista".
 
-const USCITA = 260   // ms: quanto dura lo scivolamento finale
+const USCITA = 260   // ms dello scivolamento finale
 
 export function usaIndietro(onIndietro, { soglia = 0.25 } = {}) {
   const elemento = useRef(null)
-  const inizio = useRef(null)
-  const chiuso = useRef(false)
+  const chiusura = useRef(onIndietro)
+  chiusura.current = onIndietro
 
-  const muovi = (x, durata) => {
+  useEffect(() => {
     const n = elemento.current
     if (!n) return
-    n.style.transition = durata ? `transform ${durata}ms cubic-bezier(.32,.72,0,1)` : 'none'
-    n.style.transform = x ? `translateX(${x}px)` : ''
-  }
+    let inizio = null, chiuso = false
 
-  const esci = () => {
-    if (chiuso.current) return
-    chiuso.current = true
-    const larghezza = elemento.current?.offsetWidth || window.innerWidth
-    muovi(larghezza + 40, USCITA)      // fuori dallo schermo, poi si smonta
-    setTimeout(onIndietro, USCITA - 20)
-  }
+    const muovi = (x, durata) => {
+      n.style.transition = durata ? `transform ${durata}ms cubic-bezier(.32,.72,0,1)` : 'none'
+      n.style.transform = x ? `translateX(${x}px)` : ''
+    }
 
-  return {
-    ref: elemento,
-    onTouchStart: e => {
-      if (e.touches.length !== 1 || chiuso.current) return
-      inizio.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, orizzontale: null, dx: 0 }
-    },
-    onTouchMove: e => {
-      const i = inizio.current
-      if (!i) return
-      const dx = e.touches[0].clientX - i.x
-      const dy = e.touches[0].clientY - i.y
-      if (i.orizzontale === null) {
+    const start = e => {
+      if (e.touches.length !== 1 || chiuso) return
+      inizio = { x: e.touches[0].clientX, y: e.touches[0].clientY, orizzontale: null, dx: 0 }
+    }
+
+    const move = e => {
+      if (!inizio) return
+      const dx = e.touches[0].clientX - inizio.x
+      const dy = e.touches[0].clientY - inizio.y
+      if (inizio.orizzontale === null) {
         if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return
-        i.orizzontale = dx > 0 && Math.abs(dx) > Math.abs(dy) * 1.5
+        inizio.orizzontale = dx > 0 && Math.abs(dx) > Math.abs(dy) * 1.5
+        // Da qui in poi è un binario: niente scorrimento verticale.
+        if (inizio.orizzontale) n.style.touchAction = 'none'
       }
-      if (!i.orizzontale) return
-      e.preventDefault?.()          // il browser non deve scorrere di lato
-      i.dx = Math.max(0, dx)
-      muovi(i.dx, 0)
-    },
-    onTouchEnd: () => {
-      const i = inizio.current
-      inizio.current = null
+      if (!inizio.orizzontale) return
+      e.preventDefault()
+      inizio.dx = Math.max(0, dx)
+      muovi(inizio.dx, 0)
+    }
+
+    const fine = () => {
+      const i = inizio
+      inizio = null
+      n.style.touchAction = ''
       if (!i?.orizzontale) return
-      const larghezza = elemento.current?.offsetWidth || window.innerWidth
-      // Basta un quarto di schermo, oppure uno scatto veloce del polso.
-      if (i.dx >= larghezza * soglia) esci()
-      else muovi(0, 200)
-    },
-    onTouchCancel: () => { inizio.current = null; muovi(0, 200) },
-  }
+      if (i.dx >= n.offsetWidth * soglia) {
+        chiuso = true
+        muovi(n.offsetWidth + 40, USCITA)
+        setTimeout(() => chiusura.current(), USCITA - 20)
+      } else muovi(0, 200)
+    }
+
+    n.addEventListener('touchstart', start, { passive: true })
+    n.addEventListener('touchmove', move, { passive: false })   // serve preventDefault
+    n.addEventListener('touchend', fine)
+    n.addEventListener('touchcancel', fine)
+    return () => {
+      n.removeEventListener('touchstart', start)
+      n.removeEventListener('touchmove', move)
+      n.removeEventListener('touchend', fine)
+      n.removeEventListener('touchcancel', fine)
+    }
+  }, [soglia])
+
+  return elemento
 }
