@@ -10,7 +10,8 @@ Grado, il Grado al posto della resa).
 **Fatti il 5 ottobre:** lotto C (scheda finita), lotto D (storico a 30),
 l'ingrandimento automatico su iOS, le coppe valutate e scartate, quote
 aggiornate.
-**Prossimo passo:** **lotto E** (le spin) o **F** (aggiornamento automatico).
+**Prossimo passo:** **lotto H** — tornare indietro col dito (chiesto il 7/10,
+ha la precedenza).
 
 **Recuperato il 7 ottobre**: Mattia ha cambiato wi-fi e football-data è tornato
 raggiungibile. `aggiorna.js --esegui` ha chiuso le 11 partite SP2 del 2-5/10
@@ -39,10 +40,94 @@ compilano la griglia da sole, la griglia **agganciata alle partite vere** e il
 
 # 🗂 LA TO-DO LIST
 
-> Riscritta da zero il **1° ottobre 2026**: qui ci sono **solo le cose che
-> mancano**, numerate 1-21 e raggruppate in lotti per file toccati. Quello che
-> è stato fatto sta subito sotto, in "Fatto di recente" e nelle fasi storiche:
-> serve a capire *perché* una cosa è com'è, non cosa resta.
+> Riscritta il **7 ottobre 2026**: solo quello che manca, numerato 1-13 e diviso
+> in lotti per file toccati. Quello che è stato fatto sta sotto, in "Fatto di
+> recente": serve a capire *perché* una cosa è com'è, non cosa resta.
+
+## 🔵 Lotto H — Il gesto di tornare indietro
+*`PartitePage.jsx` + un hook nuovo. **Primo, chiesto da Mattia il 7/10.***
+
+1. **Scorrere col dito da sinistra a destra per tornare alla lista.** Oggi dalla
+   scheda si torna solo col `‹` in alto a sinistra, che sul telefono è lontano
+   dal pollice. Il gesto è quello che tutti si aspettano da un dettaglio aperto.
+   *Attenzione*: non deve scattare mentre si scorre in verticale, né mentre si
+   trascina dentro un elenco che scorre di suo.
+
+## 🔵 Lotto I — La lista: classifica e scelta automatica
+*`RigaPartita.jsx`, `TestataPartita.jsx`, `lib/spin.js`, `SpinProvvisoriePage.jsx`.*
+
+2. **La posizione in classifica accanto al nome, nella lista.** Scorrendo, oltre
+   al nome in grande, vedere dove sta la squadra. ⚠️ **Il dato non c'è**:
+   `forma_partita` la calcola, ma è una chiamata per partita e la lista ne ha
+   200. Serve **una query sola che porti le classifiche dei campionati
+   coinvolti**, probabilmente una funzione SQL nuova.
+3. **Quota minima per la compilazione automatica.** Scegliere la quota sotto la
+   quale una partita non entra nelle spin. Oggi il filtro quota esiste solo
+   nella lista e non tocca la composizione (`candidate()` in `lib/spin.js`).
+
+## 🔵 Lotto L — Un'attendibilità messa a mano
+*`lib/attendibilita.js` + database + interfaccia.*
+
+4. **Indice di attendibilità manuale**, accanto a quello calcolato. Da decidere
+   insieme prima di toccare il codice:
+   - **chi lo mette** (solo admin? uno per persona come le stelline?),
+   - **che forma ha** (1-10 come il Grado? una percentuale?),
+   - **cosa ne fa la selezione**: sostituisce l'attendibilità, la corregge, o
+     resta un dato a fianco come il Grado?
+   ⚠️ Serve una colonna o una tabella nuova: le stelline (`voti_partite`) sono
+   un sì/no per persona, questo è un numero.
+
+## 🔵 Lotto E — Le spin
+*`SlotPage.jsx`, `SpinProvvisoriePage.jsx`, `lib/spin.js`, `rendiconto.js`.*
+
+5. **Rifare le spin 1 e 2 in griglia**: sono del 20/09, con le vecchie regole
+   (1X, X2), su partite già giocate, e una cella ha il nome storpiato
+   ("dd - Santander"). È un clic, e toglie di mezzo dati che confondono.
+6. **Escludere una partita dall'anteprima** con un clic, senza correggerla dopo
+   in Slot.
+7. **Confrontare le giocate vere con le proposte** nel rendiconto: ora si può,
+   ogni casella porta `prossima_id`. È la domanda di fine settembre — *il
+   giudizio delle persone aggiunge qualcosa al mercato?* — e con 19 voti
+   comincia a essere rispondibile.
+8. **Lo storico delle spin**: oggi le 4 spin sono un blob JSON in una riga sola
+   condivisa (`griglia` id=1). Niente spin passate, e due admin che editano
+   insieme si sovrascrivono.
+
+## 🔵 Lotto F — Dati e automazione
+9. **Installare l'aggiornamento automatico** (`btscout/aggiornamento.plist`,
+   launchd martedì e venerdì 18:30): pronto, servono due comandi. Negli ultimi
+   dieci giorni l'aggiornamento è stato chiesto tre volte e due sono fallite
+   per la rete.
+10. **Lanciare il rendiconto ogni settimana** dopo l'aggiornamento, e annotare
+    la riga.
+11. **Il pulsante "Aggiorna" nell'app**: serve una Supabase Edge Function. Meno
+    urgente ora che l'aggiornamento si fa in chat o da launchd.
+
+## 🔵 Lotto M — Quando si riprenderanno i backtest
+12. **`backtest.js` e `s1`-`s6` sono fermi alla vecchia fase** e marcati in testa
+    al file. I quattro che usano `ps_*` (backtest, s2, s5, s6) **perdono la
+    stagione in corso in silenzio**, perché Pinnacle non esiste più dalla 26/27:
+    da passare a `bfe_*` o `avg_*` **prima** di rifidarsi dei numeri.
+13. **Simulare il criterio sullo storico** prima di cambiarlo ancora: ogni
+    modifica alle regole (soglie, over, Grado) si può provare sulle 37.910
+    partite con il consenso di apertura, invece che a sensazione.
+
+## Da decidere, non da fare
+- **Le spin esistenti si migrano o si riparte puliti** (voce 8).
+- **Vietare i bankroll negativi** nel database (`check (bankroll >= 0)`) o
+  tenerli come segnale d'allarme.
+- **Gli arrotondamenti di `calcSchedule`**: si perde il 3-4% della base. Toccarli
+  sposta gli importi giocati davvero — decide Mattia, non è una pulizia.
+- ~~**Ambiente di prova su Vercel**~~ — **scartato il 7/10**: `npm run dev` più
+  `npm run build` prendono quasi tutto, e il preview costerebbe tre passaggi in
+  più a ogni modifica. Copre solo le differenze di ambiente (la schermata nera
+  di settembre), che ora non si ripetono perché le chiavi hanno un valore di
+  riserva nel codice. **L'abitudine che lo sostituisce: dopo ogni push, aprire
+  il sito e controllare che carichi.**
+
+---
+
+# ✅ Fatto di recente
 
 ## ✅ Lotto A — Le stelline contano davvero — fatto il 2 ottobre 2026
 
@@ -158,28 +243,6 @@ e i due campi avevano `autoFocus` + testo 12px.
     Trenta righe sempre aperte allungavano la pagina di uno schermo e mezzo.
     Costanti `VISIBILI` e `MASSIME` in cima al file.
 
-## 🔵 Lotto E — Le spin
-*`SlotPage.jsx`, `SpinProvvisoriePage.jsx`, `lib/spin.js`, `rendiconto.js`.*
-
-11. **Rifare le spin 1 e 2 in griglia**: sono del 20/09, con le vecchie regole
-    (1X, X2), su partite già giocate, e una cella ha il nome storpiato
-    ("dd - Santander").
-12. **Escludere una partita dall'anteprima** con un clic, senza doverla
-    correggere dopo in Slot.
-13. **Confrontare le giocate vere con le proposte** nel rendiconto: ora si può,
-    perché ogni casella porta `prossima_id`.
-14. **Lo storico delle spin**: oggi le 4 spin sono un blob JSON in una riga
-    sola condivisa (`griglia` id=1). Niente spin passate, e due admin che
-    editano insieme si sovrascrivono.
-
-## 🔵 Lotto F — Dati e automazione
-15. **Installare l'aggiornamento automatico** (`btscout/aggiornamento.plist`,
-    launchd martedì e venerdì 18:30): pronto, servono due comandi.
-16. **Lanciare il rendiconto ogni settimana** dopo l'aggiornamento, e annotare
-    la riga.
-17. **Il pulsante "Aggiorna" nell'app**: serve una Supabase Edge Function.
-    Meno urgente ora che l'aggiornamento si fa in chat o da launchd.
-
 ## 🟢 Lotto G — Pulizia — fatta il 7 ottobre 2026
 
 18. [x] **README.md** scritto: cos'è il progetto, le due cartelle, come si
@@ -213,14 +276,7 @@ e i due campi avevano `autoFocus` + testo 12px.
     cambia il modo di lavorare (push sul ramo → guardi → unisci). Oggi ogni
     push va dritto in produzione, ed è già costato una schermata nera.
 
-## Da decidere, non da fare
-- **Le spin esistenti si migrano o si riparte puliti** (voce 14).
-- **Vietare i bankroll negativi** nel database (`check (bankroll >= 0)`) o
-  tenerli come segnale d'allarme.
-
 ---
-
-# ✅ Fatto di recente
 
 ## ✅ Lotto 1 — Testata e navigazione — fatto il 30 settembre 2026
 
