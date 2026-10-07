@@ -3,7 +3,7 @@
 > To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 2 ottobre 2026
+**Ultimo aggiornamento:** 7 ottobre 2026
 **Fatti il 2 ottobre:** lotto A (le stelline contano, scelta a mano delle
 caselle, pagina Partite votate) e lotto B (scorrimento, filtri rifatti, filtro
 Grado, il Grado al posto della resa).
@@ -12,12 +12,14 @@ l'ingrandimento automatico su iOS, le coppe valutate e scartate, quote
 aggiornate.
 **Prossimo passo:** **lotto E** (le spin) o **F** (aggiornamento automatico).
 
-⚠️ **In sospeso dal 5/10 sera:** i risultati della Segunda del 2-5 ottobre
-**non sono entrati** — football-data non rispondeva (il suo DNS, non la nostra
-rete: example.com e Supabase rispondevano). 11 partite SP2 restano da
-riconciliare, Castellon-Ceuta compresa, che era votata. **Si recuperano da
-sole al primo `aggiorna.js --esegui` che riesce**: la riconciliazione guarda
-indietro, non si perde niente.
+**Recuperato il 7 ottobre**: Mattia ha cambiato wi-fi e football-data è tornato
+raggiungibile. `aggiorna.js --esegui` ha chiuso le 11 partite SP2 del 2-5/10
+(**tutte con quote fedeli**) e rinfrescato le quote: archivio a **884 partite**,
+ultima giocata il 5/10, **206 future** fino al 19, 32 book di media, 440 crediti.
+Resta aperta una sola futura: **Levante-Ath Bilbao del 16/09, rinviata e mai
+giocata** — quella non si chiuderà mai, ed è giusto così.
+Sopra soglia: **9 centro, 5 gialle, 21 blu**; dei 19 voti, **12 su partite
+ancora da giocare**.
 
 ---
 
