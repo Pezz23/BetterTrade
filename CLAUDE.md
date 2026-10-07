@@ -395,6 +395,11 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   e l'`autoFocus` si dà solo col mouse (`tocco` in `lib/schermo.js`).
   ⚠️ Il `<meta viewport>` **non** deve mai avere `maximum-scale` o
   `user-scalable=no`: il pizzico per ingrandire a mano resta libero.
+- **Un gesto che segue il dito non passa dallo stato di React.** In
+  `hooks/usaIndietro.js` lo spostamento si scrive sul nodo (`style.transform`):
+  tenerlo in `useState` ridisegnava tutta la scheda a ogni frame del
+  trascinamento. E la direzione del gesto si decide **una volta sola**, al primo
+  movimento utile: se parte in verticale è uno scorrimento, e deve restare tale.
 - **Aprire la scheda smonta la lista, e lo scorrimento si azzera.** In
   `PartitePage` la scheda *sostituisce* la lista: senza salvare `window.scrollY`
   (useRef) e rimetterlo in `useLayoutEffect`, si torna sempre in cima. Vale per

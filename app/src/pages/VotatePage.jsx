@@ -6,6 +6,7 @@ import { Card, Etichetta } from '../components/ui'
 import RigaPartita, { CATEGORIE } from '../components/RigaPartita'
 import DettaglioPartita from '../components/DettaglioPartita'
 import { categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
+import { usaIndietro } from '../hooks/usaIndietro'
 
 // Le partite che qualcuno ha votato con la stellina, tutte in un posto.
 //
@@ -27,8 +28,11 @@ export default function VotatePage() {
     [righe, votiDi])
 
   const aperta = righe.find(r => r.id === apertaId)
+  // Il gesto va messo anche quando la scheda è chiusa: gli hook non si possono
+  // chiamare dentro un `if`.
+  const indietro = usaIndietro(() => setApertaId(null))
   if (aperta) return (
-    <div style={{ padding: 12, maxWidth: 560, margin: '0 auto' }}>
+    <div {...indietro} style={{ padding: 12, maxWidth: 560, margin: '0 auto' }}>
       <DettaglioPartita p={aperta} cat={categoria(aperta.probGiocata, SOGLIE_DEFAULT)}
         voti={votiDi(aperta.id)} mio={mioVoto(aperta.id)} puoVotare={isAdmin}
         onVota={() => vota(aperta.id)} onChiudi={() => setApertaId(null)} />

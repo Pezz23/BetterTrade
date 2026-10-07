@@ -10,8 +10,8 @@ Grado, il Grado al posto della resa).
 **Fatti il 5 ottobre:** lotto C (scheda finita), lotto D (storico a 30),
 l'ingrandimento automatico su iOS, le coppe valutate e scartate, quote
 aggiornate.
-**Prossimo passo:** **lotto H** — tornare indietro col dito (chiesto il 7/10,
-ha la precedenza).
+**Prossimo passo:** **lotto I** — la posizione in classifica nella lista (serve
+una funzione SQL nuova) e la quota minima per la compilazione automatica.
 
 **Recuperato il 7 ottobre**: Mattia ha cambiato wi-fi e football-data è tornato
 raggiungibile. `aggiorna.js --esegui` ha chiuso le 11 partite SP2 del 2-5/10
@@ -44,14 +44,23 @@ compilano la griglia da sole, la griglia **agganciata alle partite vere** e il
 > in lotti per file toccati. Quello che è stato fatto sta sotto, in "Fatto di
 > recente": serve a capire *perché* una cosa è com'è, non cosa resta.
 
-## 🔵 Lotto H — Il gesto di tornare indietro
-*`PartitePage.jsx` + un hook nuovo. **Primo, chiesto da Mattia il 7/10.***
+## 🟢 Lotto H — Il gesto di tornare indietro — fatto il 7 ottobre 2026
 
-1. **Scorrere col dito da sinistra a destra per tornare alla lista.** Oggi dalla
-   scheda si torna solo col `‹` in alto a sinistra, che sul telefono è lontano
-   dal pollice. Il gesto è quello che tutti si aspettano da un dettaglio aperto.
-   *Attenzione*: non deve scattare mentre si scorre in verticale, né mentre si
-   trascina dentro un elenco che scorre di suo.
+1. [x] **Si torna alla lista trascinando da sinistra a destra.**
+   `hooks/usaIndietro.js`, usato da **Partite e Partite votate** (aprono la
+   scheda allo stesso modo, quindi stesso gesto).
+   - **La direzione si decide una volta sola**, al primo movimento oltre i
+     10px: se parti in verticale stai scorrendo la pagina e il gesto non si
+     attiva più, nemmeno se la mano devia di lato. Serve `|dx| > 1,5·|dy|`.
+   - **La scheda segue il dito** fino a 160px e torna al suo posto se lasci
+     prima degli 80 di soglia: senza, non si capisce che sta succedendo.
+   - ⚠️ **Lo spostamento si scrive sull'elemento, non nello stato di React**:
+     aggiornare lo stato a ogni millimetro ridisegnava tutta la scheda (forma,
+     classifica, scontri) a ogni frame.
+   - Due dita non contano: è il pizzico per ingrandire.
+   - Sotto la scheda, **solo su telefono**, una riga lo dice: altrimenti il
+     gesto resta nascosto.
+   - [ ] **Da provare col pollice**: sul browser non si può.
 
 ## 🔵 Lotto I — La lista: classifica e scelta automatica
 *`RigaPartita.jsx`, `TestataPartita.jsx`, `lib/spin.js`, `SpinProvvisoriePage.jsx`.*

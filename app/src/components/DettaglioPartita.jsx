@@ -6,6 +6,7 @@ import { striscia } from '../lib/forma'
 import TestataPartita, { CATEGORIE, Scudetto, Stella, Barra, pct, giorno } from './TestataPartita'
 import { pronosticoDa } from '../lib/spin'
 import { sigla } from '../lib/campionati'
+import { tocco } from '../lib/schermo'
 
 // La scheda di una partita: tutto quello che sappiamo, in blocchi.
 // Pensata prima per il telefono — una colonna, numeri grandi, niente muri di
@@ -311,6 +312,14 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
           Le percentuali vengono dalla media di ~40 bookmaker, tolto il margine. La X non si gioca mai.
         </div>
       </Blocco>
+
+      {/* Sul telefono si torna indietro anche trascinando: va detto, o il
+          gesto resta nascosto. */}
+      {tocco && onChiudi && (
+        <div style={{ textAlign: 'center', fontSize: 10, color: C.fantasma, fontFamily: F.sans, marginTop: 2 }}>
+          ‹ trascina da sinistra a destra per tornare alla lista
+        </div>
+      )}
 
       {/* ── 7. I dettagli tecnici ───────────────────────────────────── */}
       <div>

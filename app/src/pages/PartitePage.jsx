@@ -7,6 +7,7 @@ import RigaPartita, { CATEGORIE, pct, giorno } from '../components/RigaPartita'
 import DettaglioPartita from '../components/DettaglioPartita'
 import { categoria, FINESTRE, SOGLIE_DEFAULT } from '../lib/attendibilita'
 import { etichetta, sigla } from '../lib/campionati'
+import { usaIndietro } from '../hooks/usaIndietro'
 
 // La lista delle partite future, ordinata per attendibilità.
 // I calcoli stanno in lib/attendibilita.js, la riga in components/RigaPartita.jsx:
@@ -94,8 +95,11 @@ export default function PartitePage() {
   // La scheda di una partita prende tutta la pagina: sul telefono è l'unico
   // modo di leggerla, e la lista resta dov'era quando si torna indietro.
   const aperta = righe.find(r => r.id === apertaId)
+  // Il gesto va messo anche quando la scheda è chiusa: gli hook non si possono
+  // chiamare dentro un `if`.
+  const indietro = usaIndietro(() => setApertaId(null))
   if (aperta) return (
-    <div style={{ padding: 12, maxWidth: 560, margin: '0 auto' }}>
+    <div {...indietro} style={{ padding: 12, maxWidth: 560, margin: '0 auto' }}>
       <DettaglioPartita p={aperta} cat={categoria(aperta.probGiocata, soglie)}
         voti={votiDi(aperta.id)} mio={mioVoto(aperta.id)} puoVotare={isAdmin}
         onVota={() => vota(aperta.id)} onChiudi={() => setApertaId(null)} />
