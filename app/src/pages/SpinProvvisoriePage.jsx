@@ -182,10 +182,9 @@ export default function SpinProvvisoriePage() {
     spin.map(c => (`${si}|${c.pos}` in aMano ? { ...c, partita: aMano[`${si}|${c.pos}`] } : c))
   ), [soloVotate, quante, aMano])
   const nVotate = ordinate.filter(p => votiDi(p.id) > 0).length
-  // Tutte le partite con almeno una stellina, anche sotto soglia o oltre la
-  // settimana: chi ha votato deve vedere dov'è finito il suo voto.
+  // Tutte le partite con almeno una stellina, anche sotto soglia o oltre il
+  // limite: chi ha votato deve vedere dov'è finito il suo voto.
   const votateTutte = useMemo(() => righe.filter(p => votiDi(p.id) > 0).sort((a, b) => votiDi(b.id) - votiDi(a.id) || b.probGiocata - a.probGiocata), [righe, votiDi])
-  const lunedi = lunediProssimo(0)
   const doveSta = id => {
     for (let s = 0; s < votate.length; s++) { const c = votate[s].find(c => c.partita?.id === id); if (c) return { spin: s + 1, pos: c.pos } }
     return null

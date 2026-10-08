@@ -417,6 +417,13 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   tagliare i primi dieci caratteri sposta tutto indietro di un giorno. Si
   ricostruisce la data dai componenti locali — `giornoLocale()` in
   `app/scripts/importa-partite.js`.
+- **`vite build` passa anche con un nome che non esiste.** Togliendo la finestra
+  dalle Spin provvisorie è rimasta una riga `const lunedi = lunediProssimo(0)`
+  con l'import già cancellato: per esbuild è legittimo, la pagina lanciava
+  `ReferenceError` al primo render e Mattia ha visto **schermata nera**.
+  **Il build non è una verifica**: quando si toglie un nome da un `import`, si
+  cerca quel nome in tutto `src/` (`grep -rn`), e la pagina si apre davvero.
+  Non c'è un linter nel progetto — questa è la rete di sicurezza che manca.
 - **Niente deve cambiare altezza quando arriva un dato.** Nella slot il ✓/✗ è
   più grande del pronostico e allungava la casella; la riga delle combinazioni
   vinte compariva dal nulla e spingeva giù la pagina sotto le dita. Si risolve

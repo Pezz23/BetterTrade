@@ -198,6 +198,11 @@ ricalcola il proprio bankroll, e non può creare utenti.
      allarma).
    - **Verificato** con `scripts/prova-spin.js`: la spin 1 è passata da
      "otto partite del 10-11 più due del 17" a **un weekend solo**.
+   - ⚠️ **Schermata nera subito dopo**: era rimasta una riga
+     `const lunedi = lunediProssimo(0)` con l'import già tolto. `vite build`
+     passava, la pagina lanciava `ReferenceError` al render. Corretta
+     (1.01.01). Il build non basta: togliendo un nome da un `import` va
+     cercato in tutto `src/`.
 6. **Escludere una partita dall'anteprima** con un clic, senza correggerla dopo
    in Slot.
 7. **Confrontare le giocate vere con le proposte** nel rendiconto: ora si può,
