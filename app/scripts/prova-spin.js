@@ -9,8 +9,8 @@
 // griglia è un dato condiviso da sei persone, e si guarda prima di scriverlo.
 
 import { admin } from './_admin.js';
-import { valuta, grado, categoria, SOGLIE_DEFAULT } from '../src/lib/attendibilita.js';
-import { candidate, finestraUtile, componi, conStelline, cellaDa } from '../src/lib/spin.js';
+import { valuta, grado, categoria, SOGLIE_DEFAULT, martediChiusura } from '../src/lib/attendibilita.js';
+import { candidate, componi, conStelline, cellaDa, votateOltreIlLimite } from '../src/lib/spin.js';
 
 const quante = Number((process.argv.find(a => a.startsWith('--spin=')) || '--spin=2').split('=')[1]);
 
@@ -24,10 +24,16 @@ const { data: voti } = await admin.from('voti_partite').select('prossima_id');
 const votiDi = id => (voti || []).filter(v => v.prossima_id === id).length;
 
 const righe = (righeGrezze || []).map(valuta).filter(r => r.prob !== null);
-const finestra = finestraUtile(righe, quante, { votiDi });
-const ordinate = conStelline(candidate(righe, { finestra, votiDi }), votiDi);
+const limite = martediChiusura();
+const ordinate = conStelline(candidate(righe, { votiDi }), votiDi);
 
-console.log(`${righe.length} future valutate · ${(voti || []).length} voti · finestra "${finestra}" · ${ordinate.length} candidate`);
+console.log(`${righe.length} future valutate · ${(voti || []).length} voti · limite ${limite} (martedì) · ${ordinate.length} candidate`);
+
+const oltre = votateOltreIlLimite(righe, votiDi);
+if (oltre.length) {
+  console.log(`\n⛔ ${oltre.length} votate restano fuori, giocano dopo il ${limite}:`);
+  oltre.forEach(p => console.log(`   ${p.data}  ${p.casa} - ${p.trasferta}  ${'*'.repeat(votiDi(p.id))}`));
+}
 
 const ruolo = pos => (pos === 9 ? 'centro' : pos <= 4 ? 'giallo' : 'blu   ');
 for (const [i, celle] of componi(ordinate, quante).entries()) {

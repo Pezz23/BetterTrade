@@ -3,10 +3,10 @@ import { usaProssime } from '../hooks/usaProssime'
 import { C, F, alpha } from '../theme'
 import { Card, Etichetta, Btn } from '../components/ui'
 import { CATEGORIE, pct, giorno } from '../components/RigaPartita'
-import { categoria, SOGLIE_DEFAULT, lunediProssimo, FINESTRE } from '../lib/attendibilita'
+import { categoria, SOGLIE_DEFAULT, martediChiusura } from '../lib/attendibilita'
 import ScegliCasella from '../components/ScegliCasella'
 import CompilaPerQuota from '../components/CompilaPerQuota'
-import { candidate, componi, conStelline, finestraUtile, spinPiena, pronosticoDa, DISPOSIZIONE } from '../lib/spin'
+import { candidate, componi, conStelline, votateOltreIlLimite, spinPiena, pronosticoDa, DISPOSIZIONE } from '../lib/spin'
 import { compilaSpin } from '../lib/griglia'
 import { supabase } from '../supabase'
 import { sigla } from '../lib/campionati'
@@ -142,12 +142,18 @@ export default function SpinProvvisoriePage() {
   }
   useEffect(() => { leggiGriglia() }, [])
 
-  // La finestra: con il calendario vero la settimana corrente può essere
-  // quasi vuota (il 02/10 c'era UNA candidata, perché si giocava dal 9), e la
-  // pagina sembrava rotta. Si parte dalla più stretta che basta, e si cambia.
-  const [finestra, setFinestra] = useState(null)
-  const fin = finestra ?? finestraUtile(righe, quante, { votiDi })
-  const ordinate = useMemo(() => candidate(righe, { finestra: fin, votiDi }), [righe, fin, votiDi])
+  // ⚠️ Niente scelta della finestra: il limite è il martedì che chiude il
+  // weekend ed è un blocco (8/10/2026). Prima si poteva allargare a "tutte" e
+  // la spin finiva per mescolare due weekend. Se le candidate non bastano, le
+  // caselle restano vuote e la pagina lo dice: allargare non è più un rimedio.
+  const limite = martediChiusura()
+  // Solo giorno/mese: `giorno()` ci mette davanti il giorno della settimana, e
+  // accanto alla parola "martedì" diventerebbe "martedì mar 13/10".
+  const gm = d => `${d.slice(8, 10)}/${d.slice(5, 7)}`
+  const ordinate = useMemo(() => candidate(righe, { votiDi }), [righe, votiDi])
+  // Le votate che giocano dopo il martedì: il loro voto non produce niente,
+  // e tacerlo farebbe sembrare la stellina ignorata.
+  const oltre = useMemo(() => votateOltreIlLimite(righe, votiDi), [righe, votiDi])
   const automatiche = useMemo(() => componi(ordinate, quante), [ordinate, quante])
   // Solo le partite votate, niente riempitivi: se i voti non bastano le
   // caselle restano vuote (deciso il 2/10/2026). La griglia con le stelline
@@ -198,19 +204,19 @@ export default function SpinProvvisoriePage() {
         </>}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 12, color: C.spento, fontFamily: F.sans }}>Fino a</span>
-        {FINESTRE.map(f => {
-          const n = candidate(righe, { finestra: f.id, votiDi }).length
-          const on = fin === f.id
-          return (
-            <button key={f.id} onClick={() => setFinestra(f.id)} style={{
-              padding: '6px 12px', borderRadius: 20, cursor: 'pointer', fontFamily: F.mono, fontSize: 11, fontWeight: 600,
-              background: on ? alpha(C.oro, 0.15) : 'transparent',
-              border: `1px solid ${on ? alpha(C.oro, 0.5) : C.bordo}`, color: on ? C.oro : C.fioco,
-            }}>{f.label} <span style={{ color: on ? C.testo : C.spento }}>{n}</span></button>
-          )
-        })}
+      {/* Il limite, sempre in vista: è la regola che decide chi entra, e prima
+          era una scelta che si poteva allargare per sbaglio. */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, padding: '9px 12px',
+        background: `linear-gradient(${alpha(C.oro, 0.07)},${alpha(C.oro, 0.07)}), ${C.card}`,
+        border: `1px solid ${alpha(C.oro, 0.3)}`, borderRadius: 8, flexWrap: 'wrap',
+      }}>
+        <span style={{ fontSize: 16, lineHeight: 1 }}>🔒</span>
+        <span style={{ fontSize: 12, color: C.testo, fontFamily: F.sans, lineHeight: 1.5 }}>
+          Solo le partite di questo weekend, <b style={{ color: C.oro }}>fino a martedì {gm(limite)}</b>.
+          Oltre non entra niente, <b style={{ color: C.testo }}>nemmeno se votato</b>: una spin che mescola
+          due weekend tiene le schedine aperte nove giorni.
+        </span>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
@@ -222,6 +228,28 @@ export default function SpinProvvisoriePage() {
           }}>{n}</button>
         ))}
       </div>
+
+      {!caricamento && oltre.length > 0 && (
+        <Card colore={C.rosso} style={{ marginBottom: 16, padding: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <span style={{ fontSize: 16, lineHeight: 1 }}>⛔</span>
+            <b style={{ fontSize: 13, color: C.rosso, fontFamily: F.sans }}>
+              {oltre.length === 1 ? 'Una partita votata resta fuori' : `${oltre.length} partite votate restano fuori`}
+            </b>
+          </div>
+          <div style={{ fontSize: 12, color: C.fioco, fontFamily: F.sans, marginBottom: 8, lineHeight: 1.5 }}>
+            Giocano dopo martedì {gm(limite)}: il voto non le fa entrare in questa spin.
+            Torneranno candidate da sole nel weekend giusto.
+          </div>
+          {oltre.map(p => (
+            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', fontFamily: F.mono, fontSize: 12, borderTop: `1px solid ${C.bordoTenue}` }}>
+              <span style={{ color: C.oro, flexShrink: 0 }}>{'★'.repeat(votiDi(p.id))}</span>
+              <span style={{ color: C.testo, fontFamily: F.sans, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.casa} – {p.trasferta}</span>
+              <b style={{ color: C.rosso, flexShrink: 0 }}>{giorno(p.data)}</b>
+            </div>
+          ))}
+        </Card>
+      )}
 
       {errore && <Card colore={C.rosso}><div style={{ color: C.rosso, fontSize: 13, fontFamily: F.sans }}>⚠️ {errore}</div></Card>}
 
@@ -240,7 +268,7 @@ export default function SpinProvvisoriePage() {
               onRipristina={Object.keys(aMano).some(k => k.startsWith(`${i}|`))
                 ? () => setAMano(v => Object.fromEntries(Object.entries(v).filter(([k]) => !k.startsWith(`${i}|`))))
                 : undefined}
-              spiegazione={<><b style={{ color: C.oro }}>Solo le partite votate</b>, nessun riempitivo: se i voti non bastano le caselle restano vuote. Ordine per stelline, a parità per attendibilità; una votata entra <b style={{ color: C.testo }}>anche se sotto soglia o oltre la finestra</b>. In <b style={{ color: C.viola }}>violetto</b> le caselle diverse dall'automatica.</>} />
+              spiegazione={<><b style={{ color: C.oro }}>Solo le partite votate</b>, nessun riempitivo: se i voti non bastano le caselle restano vuote. Ordine per stelline, a parità per attendibilità; una votata entra <b style={{ color: C.testo }}>anche se sotto soglia</b>, ma <b style={{ color: C.rosso }}>mai oltre martedì</b>. In <b style={{ color: C.viola }}>violetto</b> le caselle diverse dall'automatica.</>} />
           </div>
         </Card>
       ))}
@@ -264,7 +292,9 @@ export default function SpinProvvisoriePage() {
         const usate = votate.flat().filter(c => c.partita).map(c => c.partita.id)
         return (
           <CompilaPerQuota
-            partite={righe}
+            /* Pescava da tutte le future: il limite non lo vedeva, e si
+               riempiva una casella con una partita di tre settimane dopo. */
+            partite={righe.filter(r => r.data <= limite)}
             daRiempire={vuote.length}
             usate={usate}
             onChiudi={() => setPerQuota(null)}
@@ -301,8 +331,8 @@ export default function SpinProvvisoriePage() {
                     <span style={{ flexShrink: 0 }}>{sigla(p.div)} · {giorno(p.data)}</span>
                     <span style={{ flexShrink: 0 }}>{p.quotaGiocata ? `@${p.quotaGiocata.toFixed(2)}` : 'sul book'}</span>
                     <b style={{ color: colore, flexShrink: 0 }}>{pct(p.probGiocata)}</b>
-                    <span style={{ marginLeft: 'auto', textAlign: 'right', color: dove ? C.verde : C.fantasma, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {dove ? `spin ${dove.spin} · pos ${dove.pos}` : p.data > lunedi ? 'oltre lunedì' : cat === 'no' ? 'sotto soglia' : 'non entra'}
+                    <span style={{ marginLeft: 'auto', textAlign: 'right', color: dove ? C.verde : p.data > limite ? C.rosso : C.fantasma, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {dove ? `spin ${dove.spin} · pos ${dove.pos}` : p.data > limite ? '⛔ oltre martedì' : cat === 'no' ? 'sotto soglia' : 'non entra'}
                     </span>
                   </div>
                 </div>

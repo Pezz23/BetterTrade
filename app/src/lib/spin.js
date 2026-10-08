@@ -1,4 +1,4 @@
-import { categoria, SOGLIE_DEFAULT, FINESTRE } from './attendibilita.js'
+import { categoria, SOGLIE_DEFAULT, martediChiusura } from './attendibilita.js'
 
 // La composizione automatica delle spin. Solo calcoli: la usa la pagina
 // "Spin provvisorie" e il tasto che compila la griglia.
@@ -13,29 +13,34 @@ export const ORDINE_POSIZIONI = [9, 1, 2, 3, 4, 5, 6, 7, 8]
 // Com'è disposta la slot a schermo, riga per riga.
 export const DISPOSIZIONE = [[1, 5, 2], [6, 9, 7], [3, 8, 4]]
 
-/** Le partite della settimana di gioco sopra soglia, nell'ordine di attendibilità. */
-export function candidate(righe, { soglie = SOGLIE_DEFAULT, finestra = 'settimana', votiDi } = {}) {
-  const fine = FINESTRE.find(f => f.id === finestra).fine()
-  // Una stellina è un gesto deliberato: la partita entra comunque, anche se
-  // sta sotto soglia o fuori dalla finestra. Deciso il 30/09/2026 — prima una
-  // partita votata poteva non comparire affatto, e il voto non serviva a niente.
+/**
+ * Le partite che possono entrare in una spin, nell'ordine di attendibilità.
+ *
+ * ⚠️ **Il limite di data è un blocco, non un filtro**: oltre il martedì che
+ * chiude il weekend non entra niente, **nemmeno una partita votata**. Una
+ * stellina scavalca la soglia — è un giudizio su quella partita — ma non il
+ * calendario, che è un vincolo sulla spin intera: mescolare due weekend
+ * significa tenere otto schedine aperte nove giorni (8/10/2026).
+ */
+export function candidate(righe, { soglie = SOGLIE_DEFAULT, votiDi, oggi } = {}) {
+  const limite = martediChiusura(oggi)
   const votata = r => !!votiDi && votiDi(r.id) > 0
   return righe
-    .filter(r => votata(r) || (r.data <= fine && categoria(r.probGiocata, soglie) !== 'no'))
+    .filter(r => r.data <= limite)
+    .filter(r => votata(r) || categoria(r.probGiocata, soglie) !== 'no')
     .sort((a, b) => b.probGiocata - a.probGiocata)
 }
 
 /**
- * La finestra più stretta che basta a riempire `quante` spin: con il
- * calendario vero la settimana corrente può essere vuota (02/10/2026: una sola
- * candidata, perché si giocava dal 9), e la pagina sembrava rotta.
+ * Le votate che il limite lascia fuori: giocano dopo il martedì, quindi il
+ * voto di qualcuno non produce niente. Va detto a schermo, o la stellina
+ * sembra ignorata.
  */
-export function finestraUtile(righe, quante = 1, opzioni = {}) {
-  const servono = quante * 9
-  for (const f of FINESTRE) {
-    if (candidate(righe, { ...opzioni, finestra: f.id }).length >= servono) return f.id
-  }
-  return FINESTRE[FINESTRE.length - 1].id
+export function votateOltreIlLimite(righe, votiDi, oggi) {
+  const limite = martediChiusura(oggi)
+  return righe
+    .filter(r => votiDi(r.id) > 0 && r.data > limite)
+    .sort((a, b) => a.data.localeCompare(b.data))
 }
 
 /**

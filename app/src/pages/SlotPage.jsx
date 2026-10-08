@@ -51,6 +51,25 @@ function isOggi(dataStr) {
   const oggi=new Date()
   return parseInt(m[1])===oggi.getDate()&&parseInt(m[2])===(oggi.getMonth()+1)
 }
+// ⚠️ Le caselle di una spin devono essere dello stesso weekend. Qui la data è
+// testo "gg/mm" senza anno, quindi non si può confrontare col martedì di
+// chiusura come fa `lib/spin.js`: si guarda l'**ampiezza**, che l'anno non
+// serve. Oltre 4 giorni fra la prima e l'ultima, due weekend sono dentro.
+// Non è un blocco — in griglia si deve poter correggere a mano — è un avviso
+// (8/10/2026: una spin proposta copriva dal 10 al 17 ottobre).
+const AMPIEZZA_MAX = 4
+function ampiezzaSpin(tiles) {
+  const g = tiles.map(t => (t.data || '').trim().match(/^(\d{1,2})[\/.](\d{1,2})/))
+    .filter(Boolean).map(m => Date.UTC(2001, parseInt(m[2]) - 1, parseInt(m[1])) / 86400000)
+  if (g.length < 2) return null
+  const min = Math.min(...g), max = Math.max(...g)
+  // Dicembre-gennaio: la distanza "corta" è quella che passa per capodanno.
+  const giorni = Math.min(max - min, 365 - (max - min))
+  return giorni > AMPIEZZA_MAX
+    ? { giorni, da: tiles.find(t => t.data)?.data, prima: min, ultima: max }
+    : null
+}
+
 function comboStatus(tiles,pos) {
   const rel=tiles.filter(t=>pos.includes(t.id))
   if (rel.some(t=>t.result==='loss')) return 'loss'
@@ -79,6 +98,15 @@ function TabellaGriglia({tiles,isAdmin,onUpdate,onCambia,onReset,syncing,libera,
   return (
     <div>
       {syncing&&<div style={{fontSize:10,color:C.spento,fontFamily:F.mono,marginBottom:8,textAlign:'right'}}>⟳ Sincronizzazione…</div>}
+      {(()=>{const a=ampiezzaSpin(tiles);return a&&(
+        <div style={{background:`linear-gradient(${alpha(C.rosso,0.10)},${alpha(C.rosso,0.10)}), ${C.card}`,border:`1px solid ${alpha(C.rosso,0.45)}`,borderRadius:8,padding:'9px 12px',marginBottom:12,display:'flex',alignItems:'center',gap:8}}>
+          <span style={{fontSize:16,lineHeight:1}}>⚠️</span>
+          <span style={{fontSize:12,color:C.testo,fontFamily:F.sans,lineHeight:1.5}}>
+            <b style={{color:C.rosso}}>Questa spin mescola due weekend</b>: fra la prima partita e l'ultima
+            passano <b style={{color:C.rosso}}>{a.giorni} giorni</b>. Le schedine restano aperte fino all'ultima.
+          </span>
+        </div>
+      )})()}
       {!isAdmin&&<div style={{background:alpha(C.bluPieno,0.08),border:`1px solid ${alpha(C.bluPieno,0.2)}`,borderRadius:8,padding:'9px 12px',fontSize:12,color:C.blu,fontFamily:F.sans,marginBottom:12}}>Modalità lettura</div>}
       <div style={{display:'grid',gridTemplateColumns:COLS,gap:4,padding:'0 2px',marginBottom:4}}>
         {(libera?['Pron.','Casa','','Ospite','Quota','Data','Ris.']:['Pron.','Partita','Quota','Data','Ris.']).map((h,i)=>(

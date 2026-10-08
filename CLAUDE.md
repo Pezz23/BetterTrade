@@ -157,9 +157,26 @@ se si ricalcolassero sulla lista del momento, la stessa partita cambierebbe
 Grado ogni settimana. ⚠️ **Il Grado non entra nella selezione delle spin** —
 è solo un dato da guardare (deciso il 30/09/2026).
 
-⚠️ **Una stellina scavalca il criterio**: una partita votata entra nella spin
-anche se sta sotto soglia o fuori dalla finestra (`candidate()` in `lib/spin.js`
-accetta `votiDi`). È un gesto deliberato di una persona, e vale più del calcolo.
+⚠️ **Una stellina scavalca la soglia, non il calendario.** Una partita votata
+entra nella spin anche se sta sotto soglia (`candidate()` in `lib/spin.js`
+accetta `votiDi`): è un gesto deliberato di una persona, e vale più del calcolo.
+⚠️ Ma **oltre il martedì che chiude il weekend non entra niente, nemmeno una
+votata** — `martediChiusura()` in `lib/attendibilita.js`, deciso l'8/10/2026.
+È un **blocco**, e la differenza è questa: la soglia è un giudizio su *quella*
+partita, che una persona può ribaltare; la data è un vincolo sulla *spin intera*,
+e nessun giudizio su una casella lo può sciogliere. Una spin che mescola due
+weekend tiene otto schedine aperte nove giorni, e il risultato arriva una
+settimana dopo aver giocato il resto. Le votate tagliate dal limite **si
+mostrano in rosso** nelle Spin provvisorie: un voto che non produce niente, in
+silenzio, sembra un difetto. Da mercoledì il limite è il martedì dopo; il
+martedì chiude sé stesso. ⚠️ Perciò nelle Spin provvisorie **non c'è più la
+scelta della finestra** (`finestraUtile` è stata tolta): si poteva allargare a
+"tutte" ed era esattamente così che i due weekend finivano nella stessa spin.
+Se le candidate non bastano, le caselle restano vuote e la pagina lo dice —
+allargare non è più un rimedio. **In griglia (Slot) invece è un avviso, non un
+blocco**: là la data è testo `gg/mm` senza anno, quindi si guarda l'**ampiezza**
+(oltre 4 giorni fra la prima e l'ultima casella) e si deve poter correggere a
+mano.
 
 ⚠️ **I nomi, da non scambiare:** *attendibilità* = probabilità · *resa* =
 quota × probabilità · **Grado** = la resa da 1 a 10 · **voti** = le stelline

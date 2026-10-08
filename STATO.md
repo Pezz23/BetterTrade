@@ -164,17 +164,40 @@ ricalcola il proprio bankroll, e non può creare utenti.
    prove del lotto I), quindi i dati del 20/09 con `1X` e `X2` e la cella
    storpiata **non ci sono più**. Resta da riempirle, ed è un clic da "Spin
    provvisorie". `scripts/prova-spin.js` mostra prima cosa scriverebbe.
-   **Due cose da decidere prima** (misurate l'8/10, 24 voti tutti deliberati —
-   Marco 14, Admin 9, Nico 1):
-   - **La spin 1 mescola le date**: 09-11/10 con due partite del **17/10**
-     (Man City-Ipswich e Bayern-Leipzig, votate da Marco). Le stelline
-     scavalcano la finestra per disegno, ma una schedina così resta aperta
-     nove giorni.
-   - **La spin 2 scende sotto soglia**: West Ham-QPR al **61,9%** e Cercle
-     Brugge-Anderlecht al **47%** (quota 2,05) entrano perché votate da Admin,
-     e stanno davanti a PSV-Heerenveen al 76,2% che non ha stelline. È la
-     regola voluta, ma è la prima volta che si vede l'effetto su una spin
-     intera.
+   (24 voti, tutti deliberati — Marco 14, Admin 9, Nico 1.)
+   ✅ **Il problema delle date è chiuso l'8/10 con un blocco** (voce 5b).
+   - ⚠️ **Resta da decidere la spin 2**, che scende sotto soglia: West Ham-QPR
+     al **61,9%** e Cercle Brugge-Anderlecht al **47%** (quota 2,05) entrano
+     perché votate da Admin, e stanno davanti a PSV-Heerenveen al 76,2% che non
+     ha stelline. È la regola voluta — la stellina scavalca la soglia — ma è la
+     prima volta che si vede l'effetto su una spin intera. Mattia valuta dopo
+     questo weekend, quando quelle votate avranno risposto.
+
+5b. [x] **Il blocco del weekend** — fatto l'8 ottobre 2026. Mattia: *"il
+   problema delle settimane mi fa molta paura"*.
+   - `martediChiusura()` in `lib/attendibilita.js`: in una spin entrano **solo**
+     le partite fino al **martedì che chiude il weekend**, compreso. Da
+     mercoledì il limite è il martedì dopo; il martedì chiude sé stesso.
+   - ⚠️ **È un blocco in `candidate()`**, quindi vale per tutte le strade:
+     anteprima, "compila spin", "compila per quota" (quella pescava da **tutte**
+     le future e il limite non lo vedeva affatto) e la scelta a mano di una
+     casella. **Nemmeno una stellina lo scavalca**: la soglia è un giudizio su
+     quella partita, la data è un vincolo sulla spin intera.
+   - **Via la scelta della finestra** dalle Spin provvisorie (e `finestraUtile`
+     con lei): si poteva allargare a "tutte", ed era proprio da lì che i due
+     weekend entravano nella stessa spin. Al suo posto una riga fissa con il
+     lucchetto che dice il limite.
+   - **Le votate tagliate si vedono**, in un riquadro rosso con nomi e date: un
+     voto che non produce niente, in silenzio, sembra un difetto. Oggi sono
+     Man City-Ipswich e Bayern-Leipzig del 17/10. In "LE VOTATE" la targhetta
+     dice `⛔ oltre martedì`, in rosso.
+   - **In griglia (Slot) è un avviso, non un blocco**: là la data è testo
+     `gg/mm` senza anno, quindi si misura l'**ampiezza** fra la prima e
+     l'ultima casella (oltre **4 giorni** → banner rosso) e si deve poter
+     correggere a mano. Provato anche il salto di capodanno (30/12 → 02/01 non
+     allarma).
+   - **Verificato** con `scripts/prova-spin.js`: la spin 1 è passata da
+     "otto partite del 10-11 più due del 17" a **un weekend solo**.
 6. **Escludere una partita dall'anteprima** con un clic, senza correggerla dopo
    in Slot.
 7. **Confrontare le giocate vere con le proposte** nel rendiconto: ora si può,

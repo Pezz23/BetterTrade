@@ -152,6 +152,24 @@ export function lunediProssimo(settimaneAvanti = 0, oggi = new Date()) {
   return d.toISOString().slice(0, 10)
 }
 
+// ── Il limite delle spin: il martedì che chiude il weekend ────────────────────
+// ⚠️ In una spin entrano SOLO le partite del weekend in corso, **fino al
+// martedì compreso**. È un blocco, non un filtro: nemmeno una stellina lo
+// scavalca.
+//
+// Deciso l'8/10/2026, dopo aver visto l'anteprima proporre una spin con otto
+// partite del 10-11 ottobre e due del 17 (entrate perché votate): le otto
+// schedine di quella spin sarebbero rimaste aperte nove giorni, e il risultato
+// sarebbe arrivato una settimana dopo aver giocato il resto.
+//
+// Il martedì stesso chiude il ciclo — da mercoledì si guarda al martedì
+// successivo — come il lunedì chiude la settimana in `lunediProssimo`.
+export function martediChiusura(oggi = new Date()) {
+  const d = new Date(oggi); d.setHours(12, 0, 0, 0)
+  d.setDate(d.getDate() + ((2 - d.getDay() + 7) % 7))   // 2 = martedì
+  return d.toISOString().slice(0, 10)
+}
+
 export const FINESTRE = [
   { id: 'settimana', label: 'Fino a lunedì',     fine: () => lunediProssimo(0) },
   { id: 'due',       label: 'Anche la prossima', fine: () => lunediProssimo(1) },
