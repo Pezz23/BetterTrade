@@ -307,6 +307,10 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   `components/SceltaPartita.jsx` (tendina ancorata alla riga).
   **Lista e scheda sono finite** (lotti A-D, 2-5 ottobre 2026): niente è
   rimasto con l'aspetto vecchio.
+  **Le classifiche** arrivano tutte insieme da `classifiche()` (sql/18) via
+  `hooks/usaClassifiche.js`, che le chiede **una volta per sessione**: nel tondo
+  accanto a ogni squadra c'è la sua posizione, colorata **a terzi** del
+  campionato (`fasciaDi`) — non a soglie fisse, perché si va da 12 squadre a 24.
   Le sigle dei campionati a schermo (ITA1, ENG1…) stanno in `lib/campionati.js`
   e **non toccano il database**: `div` resta quella di football-data.
 - **Le librerie in `src/lib/` importano con l'estensione** (`'./attendibilita.js'`):
@@ -339,6 +343,13 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
 - **`bankroll_iniziale` può contenere un saldo residuo.** È successo con MNM:
   106,11 al posto di 3000, con 85 giornate e 25k di volume. Se un bankroll è
   negativo o assurdo, guarda prima lì.
+- **`grant execute ... to authenticated` NON restringe niente.** Postgres
+  concede l'esecuzione a PUBLIC e **Supabase la concede ad `anon`** su tutto ciò
+  che nasce nello schema `public`: una funzione nuova è chiamabile da chiunque
+  anche senza login. Per chiuderla servono **tre righe**, non una:
+  `revoke all ... from public`, `revoke all ... from anon`, poi il grant.
+  Fatto per tutte le funzioni in `sql/19-permessi-funzioni.sql` (8/10/2026);
+  vale per ogni funzione che si aggiungerà.
 - **RLS blocca in silenzio, non con un errore.** Una `update` che nessuna policy
   permette modifica zero righe e non solleva nulla. È già successo: un utente
   normale registrava il movimento e il saldo restava fermo. Dopo ogni modifica

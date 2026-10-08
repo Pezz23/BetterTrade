@@ -1,5 +1,6 @@
 import { C, F, alpha } from '../theme'
 import { Etichetta } from './ui'
+import { usaClassifiche, postoDi, fasciaDi } from '../hooks/usaClassifiche'
 
 // La testata di una partita: squadra sinistra — attendibilità — squadra destra,
 // con data e ora sotto. La usano sia la riga della lista (compatta) sia la
@@ -15,17 +16,29 @@ export const CATEGORIE = {
 export const pct = v => (v * 100).toFixed(0) + '%'
 export const giorno = d => new Date(d + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit' })
 
-// I loghi dei club non li abbiamo (nel database le squadre sono solo nomi).
-// Al loro posto le iniziali su un tondo: costa zero e non finge.
-export function Scudetto({ nome, colore, dim = 44 }) {
+// Nel tondo va la **posizione in classifica**, colorata: verde il primo terzo,
+// giallo il secondo, rosso l'ultimo (vedi `fasciaDi` in hooks/usaClassifiche).
+// Se la posizione non la sappiamo — nome nuovo, campionato senza partite
+// giocate — restano le iniziali, che almeno dicono di chi si parla.
+const COLORE_FASCIA = { alta: C.verde, media: C.giallo, bassa: C.rosso }
+
+export function Scudetto({ nome, colore, dim = 44, posto }) {
+  const fascia = fasciaDi(posto)
+  const tinta = COLORE_FASCIA[fascia] || colore
   const iniziali = nome.split(/[\s-]+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase()
   return (
-    <div style={{
-      width: dim, height: dim, borderRadius: '50%', flexShrink: 0,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: alpha(colore, 0.12), border: `1px solid ${alpha(colore, 0.35)}`,
-      color: colore, fontFamily: F.mono, fontWeight: 700, fontSize: Math.round(dim * 0.32),
-    }}>{iniziali}</div>
+    <div title={posto ? `${posto.posizione}° su ${posto.squadre} · ${posto.punti} punti in ${posto.giocate}` : nome}
+      style={{
+        width: dim, height: dim, borderRadius: '50%', flexShrink: 0,
+        display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 1,
+        background: alpha(tinta, 0.12), border: `1px solid ${alpha(tinta, 0.4)}`,
+        color: tinta, fontFamily: F.mono, fontWeight: 700,
+      }}>
+      {posto ? <>
+        <span style={{ fontSize: Math.round(dim * 0.42), lineHeight: `${dim}px` }}>{posto.posizione}</span>
+        <span style={{ fontSize: Math.round(dim * 0.2), opacity: 0.7 }}>°</span>
+      </> : <span style={{ fontSize: Math.round(dim * 0.3), lineHeight: `${dim}px` }}>{iniziali}</span>}
+    </div>
   )
 }
 
@@ -53,6 +66,7 @@ export function Stella({ voti, mio, puoVotare, onVota }) {
 
 export default function TestataPartita({ p, cat, compatta = false }) {
   const c = CATEGORIE[cat]
+  const classifiche = usaClassifiche()
   const dim = compatta ? 34 : 52
   return (
     <>
@@ -69,7 +83,8 @@ export default function TestataPartita({ p, cat, compatta = false }) {
             )}
             <div style={{ textAlign: 'center', minWidth: 0 }}>
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: compatta ? 6 : 8 }}>
-                <Scudetto nome={sq} colore={p.segno === segno ? c.colore : C.grigioFioco} dim={dim} />
+                <Scudetto nome={sq} colore={p.segno === segno ? c.colore : C.grigioFioco} dim={dim}
+                  posto={postoDi(classifiche, p.div, sq)} />
               </div>
               <div style={{
                 fontSize: compatta ? 'clamp(13px, 4vw, 16px)' : 'clamp(15px, 5.2vw, 22px)',

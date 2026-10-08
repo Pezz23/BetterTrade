@@ -88,17 +88,47 @@ compilano la griglia da sole, la griglia **agganciata alle partite vere** e il
      agganciano a mano (`addEventListener(..., { passive: false })`), e appena
      il gesto è orizzontale si mette `touch-action: none` sul foglio.
 
-## 🔵 Lotto I — La lista: classifica e scelta automatica
-*`RigaPartita.jsx`, `TestataPartita.jsx`, `lib/spin.js`, `SpinProvvisoriePage.jsx`.*
+## ✅ Lotto I — Classifica nella lista e compila per quota — fatto l'8 ottobre 2026
 
-2. **La posizione in classifica accanto al nome, nella lista.** Scorrendo, oltre
-   al nome in grande, vedere dove sta la squadra. ⚠️ **Il dato non c'è**:
-   `forma_partita` la calcola, ma è una chiamata per partita e la lista ne ha
-   200. Serve **una query sola che porti le classifiche dei campionati
-   coinvolti**, probabilmente una funzione SQL nuova.
-3. **Quota minima per la compilazione automatica.** Scegliere la quota sotto la
-   quale una partita non entra nelle spin. Oggi il filtro quota esiste solo
-   nella lista e non tocca la composizione (`candidate()` in `lib/spin.js`).
+2. [x] **Nel tondo c'è la posizione in classifica**, al posto delle iniziali, e
+   si colora da sola. Le iniziali restano solo quando la posizione non la
+   sappiamo (nome nuovo, campionato senza partite giocate).
+   - ⚠️ **A terzi, non con le soglie fisse 7 e 12.** I campionati vanno da **12
+     squadre (Scozia) a 24 (Championship)**: con le soglie fisse in Scozia
+     nessuno sarebbe mai rosso e l'ultima risulterebbe gialla, in Championship
+     metà campionato sarebbe rosso. Su 20 squadre i terzi danno **1-7, 8-13,
+     14-20** — gli stessi numeri che aveva in mente Mattia, ma che reggono
+     ovunque. `fasciaDi()` in `hooks/usaClassifiche.js`.
+   - **`sql/18-classifiche.sql`**: una funzione che porta **tutte** le
+     classifiche in una chiamata (17,5 KB, 131 ms). `forma_partita` le calcola
+     già ma una partita per volta, e la lista ne ha 200.
+     Prende l'**ultima stagione di ogni campionato**, non una fissa: non
+     cominciano e non finiscono tutti insieme.
+   - L'hook tiene il risultato **una volta per sessione**: lista, scheda e spin
+     chiedono la stessa cosa.
+3. [x] **"Compila per quota" sulla griglia con le stelline.** Chiedi la quota
+   minima e riempie **solo le caselle vuote** con le più attendibili fra quelle
+   che pagano almeno tanto — le votate e le scelte a mano non si toccano.
+   - **Il conto si vede prima di toccare la griglia**: quante caselle riempie e
+     da che attendibilità a che attendibilità. Alzando la quota si scende di
+     attendibilità, ed è il senso della cosa (Mattia: *"mi assumo i rischi"*),
+     ma va visto mentre si sceglie. Con i dati dell'8/10: a **1,40** si parte
+     dal 67%, a **1,70** dal 58%.
+   - Scorciatoie 1,30 · 1,40 · 1,50 · 1,70, e l'elenco di cosa entrerebbe.
+
+### ⚠️ Scoperta sui permessi, l'8 ottobre
+Creando `classifiche()` è saltato fuori che **`grant ... to authenticated` non
+restringe niente**: Postgres concede l'esecuzione a PUBLIC e **Supabase la
+concede ad `anon`** su tutto ciò che nasce in `public`. Otto funzioni erano
+chiamabili senza login.
+
+**Nessuna era sfruttabile** — provate dall'API senza credenziali: le tre degli
+account rispondono *"Solo il superadmin…"*, `ricalcola_bankroll` rifiuta,
+`forma_partita` torna vuota perché RLS blocca la lettura. Ma una funzione
+`security definer` **non deve essere nemmeno chiamabile** da chi non si è
+identificato. `sql/19-permessi-funzioni.sql` revoca PUBLIC **e `anon`** su
+tutte e otto. Riprovato dopo: un utente normale legge classifiche e forma,
+ricalcola il proprio bankroll, e non può creare utenti.
 
 ## 🔵 Lotto L — Un'attendibilità messa a mano
 *`lib/attendibilita.js` + database + interfaccia.*

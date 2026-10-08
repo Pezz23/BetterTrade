@@ -5,6 +5,7 @@ import { Card, Etichetta, Btn } from '../components/ui'
 import { CATEGORIE, pct, giorno } from '../components/RigaPartita'
 import { categoria, SOGLIE_DEFAULT, lunediProssimo, FINESTRE } from '../lib/attendibilita'
 import ScegliCasella from '../components/ScegliCasella'
+import CompilaPerQuota from '../components/CompilaPerQuota'
 import { candidate, componi, conStelline, finestraUtile, spinPiena, pronosticoDa, DISPOSIZIONE } from '../lib/spin'
 import { compilaSpin } from '../lib/griglia'
 import { supabase } from '../supabase'
@@ -86,19 +87,27 @@ function Compila({ indice, celle, piena, onFatto }) {
   )
 }
 
-function Griglia({ titolo, colore, celle, riferimento, votiDi, indice, piena, onFatto, spiegazione, onClicCasella, onRipristina, altrove }) {
+function Griglia({ titolo, colore, celle, riferimento, votiDi, indice, piena, onFatto, spiegazione, onClicCasella, onRipristina, onPerQuota, altrove }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
         <Etichetta colore={colore} style={{ fontSize: 12, marginBottom: spiegazione ? 3 : 6 }}>{titolo}</Etichetta>
         {/* Compare solo se hai toccato qualcosa: rimette l'ordine automatico
             delle votate, senza passare dal database. */}
-        {onRipristina && (
-          <button onClick={onRipristina} style={{
-            background: 'transparent', border: `1px solid ${C.bordo}`, borderRadius: 20, color: C.spento,
-            fontSize: 10, fontFamily: F.mono, padding: '3px 9px', cursor: 'pointer', flexShrink: 0,
-          }}>↺ riparti dalle votate</button>
-        )}
+        <span style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+          {onPerQuota && (
+            <button onClick={onPerQuota} style={{
+              background: alpha(C.oro, 0.1), border: `1px solid ${alpha(C.oro, 0.35)}`, borderRadius: 20, color: C.oro,
+              fontSize: 10, fontFamily: F.mono, padding: '3px 9px', cursor: 'pointer',
+            }}>compila per quota</button>
+          )}
+          {onRipristina && (
+            <button onClick={onRipristina} style={{
+              background: 'transparent', border: `1px solid ${C.bordo}`, borderRadius: 20, color: C.spento,
+              fontSize: 10, fontFamily: F.mono, padding: '3px 9px', cursor: 'pointer',
+            }}>↺ riparti dalle votate</button>
+          )}
+        </span>
       </div>
       {/* Come ci finiscono dentro le partite: va detto qui, è il momento in
           cui lo si guarda. Prima c'era il conto delle celle diverse, che non
@@ -150,6 +159,7 @@ export default function SpinProvvisoriePage() {
   // possono provare combinazioni senza sporcare niente.
   const [aMano, setAMano] = useState({})
   const [casella, setCasella] = useState(null)   // { spin, pos } aperta
+  const [perQuota, setPerQuota] = useState(null) // la spin per cui si compila a quota
 
   // Dove sta già una partita, nelle ALTRE spin: non la blocca (si può ripetere
   // volendo), ma deve essere evidente prima di sceglierla.
@@ -226,6 +236,7 @@ export default function SpinProvvisoriePage() {
             <Griglia titolo="Con le stelline" colore={C.oro} celle={votate[i]} riferimento={auto} votiDi={votiDi} indice={i} piena={piene[i]} onFatto={leggiGriglia}
               onClicCasella={pos => setCasella({ spin: i, pos })}
               altrove={altrove(i)}
+              onPerQuota={() => setPerQuota(i)}
               onRipristina={Object.keys(aMano).some(k => k.startsWith(`${i}|`))
                 ? () => setAMano(v => Object.fromEntries(Object.entries(v).filter(([k]) => !k.startsWith(`${i}|`))))
                 : undefined}
@@ -247,6 +258,27 @@ export default function SpinProvvisoriePage() {
           onChiudi={() => setCasella(null)}
         />
       )}
+
+      {perQuota !== null && (() => {
+        const vuote = votate[perQuota].filter(c => !c.partita)
+        const usate = votate.flat().filter(c => c.partita).map(c => c.partita.id)
+        return (
+          <CompilaPerQuota
+            partite={righe}
+            daRiempire={vuote.length}
+            usate={usate}
+            onChiudi={() => setPerQuota(null)}
+            onCompila={scelte => {
+              // Solo le caselle vuote, nell'ordine delle posizioni: le scelte
+              // già fatte a mano e le votate non si toccano.
+              const nuove = {}
+              vuote.forEach((c, i) => { if (scelte[i]) nuove[`${perQuota}|${c.pos}`] = scelte[i] })
+              setAMano(v => ({ ...v, ...nuove }))
+              setPerQuota(null)
+            }}
+          />
+        )
+      })()}
 
       {!caricamento && (
         <Card style={{ marginTop: 16, padding: 14 }}>
