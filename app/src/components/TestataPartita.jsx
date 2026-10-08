@@ -30,14 +30,17 @@ export function Scudetto({ nome, colore, dim = 44, posto }) {
     <div title={posto ? `${posto.posizione}° su ${posto.squadre} · ${posto.punti} punti in ${posto.giocate}` : nome}
       style={{
         width: dim, height: dim, borderRadius: '50%', flexShrink: 0,
-        display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 1,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: alpha(tinta, 0.12), border: `1px solid ${alpha(tinta, 0.4)}`,
         color: tinta, fontFamily: F.mono, fontWeight: 700,
       }}>
-      {posto ? <>
-        <span style={{ fontSize: Math.round(dim * 0.42), lineHeight: `${dim}px` }}>{posto.posizione}</span>
-        <span style={{ fontSize: Math.round(dim * 0.2), opacity: 0.7 }}>°</span>
-      </> : <span style={{ fontSize: Math.round(dim * 0.3), lineHeight: `${dim}px` }}>{iniziali}</span>}
+      {/* `verticalAlign: super` e non un flex con `baseline`: in un flex il
+          cerchietto finiva a metà altezza invece che in alto, come nei gradi. */}
+      {posto ? (
+        <span style={{ fontSize: Math.round(dim * 0.42), lineHeight: 1 }}>
+          {posto.posizione}<span style={{ fontSize: '0.5em', verticalAlign: 'super' }}>°</span>
+        </span>
+      ) : <span style={{ fontSize: Math.round(dim * 0.3), lineHeight: 1 }}>{iniziali}</span>}
     </div>
   )
 }

@@ -289,13 +289,22 @@ export default function SpinProvvisoriePage() {
               const cat = categoria(p.probGiocata, SOGLIE_DEFAULT), colore = CATEGORIE[cat].colore
               const dove = doveSta(p.id)
               return (
-                <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '7px 0', borderTop: `1px solid ${C.bordoTenue}`, fontFamily: F.mono, fontSize: 13 }}>
-                  <span style={{ color: C.oro, minWidth: 40 }}>{'★'.repeat(votiDi(p.id))}</span>
-                  <span style={{ color: C.spento, minWidth: 90, fontSize: 12 }}>{sigla(p.div)} · {giorno(p.data)}</span>
-                  <span style={{ color: C.testo, fontFamily: F.sans, fontWeight: 600, flex: 1, minWidth: 0 }}>{p.casa} – {p.trasferta}</span>
-                  <b style={{ color: colore }}>{pronosticoDa(p.giocata)}</b>
-                  <span style={{ color: C.spento, minWidth: 110, textAlign: 'right' }}>{p.quotaGiocata ? `@${p.quotaGiocata.toFixed(2)}` : 'sul book'} · <b style={{ color: colore }}>{pct(p.probGiocata)}</b></span>
-                  <span style={{ color: dove ? C.verde : C.fantasma, minWidth: 90, textAlign: 'right', fontSize: 12 }}>{dove ? `spin ${dove.spin} · pos ${dove.pos}` : p.data > lunedi ? 'oltre lunedì' : cat === 'no' ? 'sotto soglia' : 'non entra'}</span>
+                /* Due righe: in una sola, fra stelline, data, nome, giocata,
+                   quota e "spin 1 · pos 9", l'ultima usciva dallo schermo. */
+                <div key={p.id} style={{ padding: '8px 0', borderTop: `1px solid ${C.bordoTenue}`, fontFamily: F.mono, fontSize: 13 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ color: C.oro, flexShrink: 0 }}>{'★'.repeat(votiDi(p.id))}</span>
+                    <span style={{ color: C.testo, fontFamily: F.sans, fontWeight: 600, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.casa} – {p.trasferta}</span>
+                    <b style={{ color: colore, flexShrink: 0 }}>{pronosticoDa(p.giocata)}</b>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3, fontSize: 11, color: C.spento }}>
+                    <span style={{ flexShrink: 0 }}>{sigla(p.div)} · {giorno(p.data)}</span>
+                    <span style={{ flexShrink: 0 }}>{p.quotaGiocata ? `@${p.quotaGiocata.toFixed(2)}` : 'sul book'}</span>
+                    <b style={{ color: colore, flexShrink: 0 }}>{pct(p.probGiocata)}</b>
+                    <span style={{ marginLeft: 'auto', textAlign: 'right', color: dove ? C.verde : C.fantasma, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {dove ? `spin ${dove.spin} · pos ${dove.pos}` : p.data > lunedi ? 'oltre lunedì' : cat === 'no' ? 'sotto soglia' : 'non entra'}
+                    </span>
+                  </div>
                 </div>
               )
             })}
