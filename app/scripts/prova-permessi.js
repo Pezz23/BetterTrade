@@ -69,7 +69,7 @@ const { data: altri } = await N.s.from('users').select('id').neq('id', N.me.id).
 if (altri?.length) {
   const { data: updAltri } = await N.s.from('users').update({ bankroll: 1 }).eq('id', altri[0].id).select();
   esito(false, !!(updAltri && updAltri.length), 'modifica il saldo di un altro utente');
-  const { data: rpcAltri, error: eRpcA } = await N.s.rpc('ricalcola_bankroll', { p_user_id: altri[0].id });
+  const { error: eRpcA } = await N.s.rpc('ricalcola_bankroll', { p_user_id: altri[0].id });
   esito(false, !eRpcA, 'ricalcola il bankroll di un altro utente');
 }
 
@@ -91,7 +91,7 @@ if (uA && pA) {
   const A = await entra(uA, pA);
   console.log(`\nADMIN — ${A.me.username} (${A.me.role})`);
   const { data: gg } = await A.s.from('giornate').select('id').limit(1);
-  const { data: updG } = await A.s.from('giornate').update({ tot_saldo: gg[0] ? undefined : 0 }).eq('id', -1).select();
+  await A.s.from('giornate').update({ tot_saldo: gg[0] ? undefined : 0 }).eq('id', -1).select();
   esito(true, true, 'legge le giornate di tutti');
   const { error: eGriglia } = await A.s.from('griglia').update({ updated_at: new Date().toISOString() }).eq('id', 1);
   esito(true, !eGriglia, 'scrive la griglia');

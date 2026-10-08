@@ -69,7 +69,7 @@ export const pronosticoDa = giocata => giocata.replace(/ \+ over /, '+O')
 /** Una cella della griglia (il formato di griglia.spins) da una partita valutata. */
 export function cellaDa(pos, p) {
   if (!p) return { id: pos, casa: '', ospite: '', pronostico: '', quota: '', data: '', result: '' }
-  const [aaaa, mm, gg] = p.data.slice(0, 10).split('-')
+  const [, mm, gg] = p.data.slice(0, 10).split('-')   // l'anno non si mostra in griglia
   return {
     id: pos, casa: p.casa, ospite: p.trasferta, pronostico: pronosticoDa(p.giocata),
     // La combinata con l'over non ha quota da nessuna fonte: si lascia vuota,

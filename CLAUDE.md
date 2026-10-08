@@ -341,6 +341,18 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
 - **Pezzi ricorrenti** in `src/components/ui.jsx`: `Card`, `Etichetta`,
   `StatCard`, `Btn`, `Input`, `Badge`. Prima di riscrivere una card a mano,
   guarda se c'è già.
+- **`npm run lint` prima di dire che è fatto.** ESLint sta in `eslint.config.js`
+  (configurazione piatta) e serve a **una** cosa: i nomi che non esistono
+  (`no-undef`) e quelli rimasti inutilizzati — cioè la coda che resta quando si
+  toglie un import. Deve restare a **0 errori**: un linter che ne stampa
+  ventisette ogni volta si impara a ignorarlo. Gli 8 **avvisi** su
+  `exhaustive-deps` sono voluti e restano avvisi.
+  ⚠️ `rules-of-hooks` è **spenta in `src/hooks/`**: i nostri hook si chiamano
+  `usa*` — italiano, come tutto il resto — e la regola riconosce un hook solo
+  dal prefisso `use`, senza poter essere istruita. Bocciava tutti e quattro i
+  file. Nelle pagine e nei componenti resta accesa.
+  ⚠️ `eslint-plugin-react` **non è installato**: la 7.37 non supporta ESLint 10
+  e non va forzata con `--legacy-peer-deps`.
 - **Il contatore dello sviluppo** sta in `src/versione.js` e si vede nella barra
   in alto, accanto al nome. **Si alza a mano a ogni commit che cambia l'app**:
   terza cifra per una rifinitura, seconda per un lotto o una funzione nuova,
@@ -423,7 +435,8 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   `ReferenceError` al primo render e Mattia ha visto **schermata nera**.
   **Il build non è una verifica**: quando si toglie un nome da un `import`, si
   cerca quel nome in tutto `src/` (`grep -rn`), e la pagina si apre davvero.
-  Non c'è un linter nel progetto — questa è la rete di sicurezza che manca.
+  ✅ Ora c'è la rete: **`npm run lint`** lo prende in un secondo (`no-undef`,
+  uscita 1) sullo stesso file su cui `vite build` passa — provato l'8/10/2026.
 - **Niente deve cambiare altezza quando arriva un dato.** Nella slot il ✓/✗ è
   più grande del pronostico e allungava la casella; la riga delle combinazioni
   vinte compariva dal nulla e spingeva giù la pagina sotto le dita. Si risolve
@@ -482,6 +495,7 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
 ```bash
 cd app
 npm run dev                                        # avvia l'app
+npm run lint                                       # nomi inesistenti e import morti: deve dare 0 errori
 
 node --env-file=.env scripts/backup.js             # PRIMA di ogni modifica ai dati
 node --env-file=.env scripts/saldi.js              # riepilogo saldi

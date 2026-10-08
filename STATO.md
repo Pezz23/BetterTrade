@@ -14,8 +14,14 @@ aggiornate.
 di chat cancellata), lotto H (si torna indietro trascinando, alla Safari),
 lotto I (la posizione in classifica nel tondo, "compila per quota") e la
 **stretta sui permessi delle funzioni** (sql/19).
+**Fatti l'8 ottobre, dopo:** il **contatore dello sviluppo** in barra
+(`src/versione.js`, ora **1.01.02**), il **blocco del weekend** nelle spin
+(voce 5b, provato da Mattia: *"ok funziona"*) e **`npm run lint`**, che è la
+rete sotto la schermata nera di quel pomeriggio.
 **Prossimo passo:** **lotto L** (un'attendibilità messa a mano: tre decisioni da
-prendere prima di scrivere codice) oppure **E** (le spin) o **F** (automazione).
+prendere prima di scrivere codice) oppure il resto di **E** (le spin) o **F**
+(automazione). In sospeso fino a dopo questo weekend: **la spin 2**, che per via
+dei voti scende al 61,9% e al 47% (voce 5).
 
 **Recuperato il 7 ottobre**: Mattia ha cambiato wi-fi e football-data è tornato
 raggiungibile. `aggiorna.js --esegui` ha chiuso le 11 partite SP2 del 2-5/10
@@ -201,8 +207,38 @@ ricalcola il proprio bankroll, e non può creare utenti.
    - ⚠️ **Schermata nera subito dopo**: era rimasta una riga
      `const lunedi = lunediProssimo(0)` con l'import già tolto. `vite build`
      passava, la pagina lanciava `ReferenceError` al render. Corretta
-     (1.01.01). Il build non basta: togliendo un nome da un `import` va
-     cercato in tutto `src/`.
+     (1.01.01), e da lì è nato `npm run lint`. **Provato da Mattia: funziona.**
+
+## ✅ Fuori lotto — il contatore e il linter — 8 ottobre 2026
+
+**Il contatore dello sviluppo** (`src/versione.js`) si vede in barra accanto al
+nome, piccolo e mono. Serve perché l'app si aggiorna da sola su Vercel: senza un
+numero a schermo non si sa se si guarda il lavoro di oggi o la cache di ieri.
+Si legge maggiore.minore.ritocco e **si alza a mano a ogni commit** che cambia
+l'app: terza cifra una rifinitura, seconda un lotto o una funzione, prima un
+cambio d'impianto. Non è la `version` di `package.json`, che resta a npm.
+
+**`npm run lint`** — chiesto da Mattia dopo la schermata nera. ESLint 10,
+configurazione piatta in `eslint.config.js`, quattro pacchetti di sviluppo.
+- **Prende quello che il build non vede.** Provato su un file finto con
+  `lunediProssimo` non importata: ESLint esce con 1 e dice
+  `'lunediProssimo' is not defined`; `vite build` sullo stesso file passa.
+- **Deve restare a 0 errori**, altrimenti non lo si guarda più. All'accensione
+  erano **27 errori e 8 avvisi**; ora **0 errori e 8 avvisi**.
+- **Cosa ha trovato di vero** (tutto sistemato): `delta` e `myStorTot` in
+  `BilancioPage` erano calcoli che non finivano da nessuna parte, `getMyBase` e
+  `getTotalBase` prese dal contesto e mai usate in `ReportingPage`, `Scudetto` e
+  `giorno` importate e non usate in `DettaglioPartita`, `alpha` in `VotatePage`,
+  `aaaa` in `cellaDa`, due risultati scartati in `prova-permessi.js` e tre
+  protezioni inutili nelle regex di `SlotPage`.
+- ⚠️ **`rules-of-hooks` è spenta in `src/hooks/`**: i nostri hook si chiamano
+  `usa*` e la regola riconosce un hook solo dal prefisso `use`, senza poter
+  essere istruita — bocciava tutti e quattro i file. Si perde il controllo
+  "niente hook dentro un `if`" in quella cartella; nelle pagine resta.
+- ⚠️ **`eslint-plugin-react` non è installato**: la 7.37 non supporta ESLint 10.
+  Non è stato forzato. Conseguenza: niente `jsx-uses-vars`, quindi se un giorno
+  un componente usato **solo** nel JSX venisse segnalato come inutilizzato, la
+  causa è questa — non va cancellato.
 6. **Escludere una partita dall'anteprima** con un clic, senza correggerla dopo
    in Slot.
 7. **Confrontare le giocate vere con le proposte** nel rendiconto: ora si può,

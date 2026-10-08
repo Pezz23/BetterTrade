@@ -88,7 +88,6 @@ export default function BilancioPage() {
     if (!movForm.importo||parseFloat(movForm.importo)<=0) return
     setSavingMov(true)
     const importo=parseFloat(movForm.importo)
-    const delta=movForm.tipo==='deposito'?importo:-importo
     // Salva movimento
     const {data:newMov}=await supabase.from('movimenti').insert([{
       user_id:currentUser.id,
@@ -117,7 +116,6 @@ export default function BilancioPage() {
 
   const myBankroll = currentUser?.bankroll||0
   const myInizio   = currentUser?.bankroll_iniziale||myBankroll
-  const myStorTot  = storico.reduce((s,g)=>s+(g.tot_saldo||0),0)
   const myLive     = myBankroll
   const myDiff     = fmtPct(myLive,myInizio)
   const myDiffCol  = myLive>=myInizio?C.verde:C.rosso

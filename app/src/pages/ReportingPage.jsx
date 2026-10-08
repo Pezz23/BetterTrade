@@ -61,7 +61,7 @@ function calcUserSched(user, pct, numSlot, calcSchedule) {
 }
 
 export default function ReportingPage() {
-  const {currentUser,users,fetchUsers,isSuperAdmin,isAdmin,pct,numSlot,getMyBase,getTotalBase,calcSchedule} = useAuth()
+  const {currentUser,users,fetchUsers,isSuperAdmin,isAdmin,pct,numSlot,calcSchedule} = useAuth()
   const [giornate,setGiornate] = useState([])
   const [saving,setSaving]     = useState(false)
   const [savingAll,setSavingAll] = useState(false)

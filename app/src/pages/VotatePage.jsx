@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { usaProssime } from '../hooks/usaProssime'
 import { useAuth } from '../context/AuthContext'
-import { C, F, alpha } from '../theme'
+import { C, F } from '../theme'
 import { Card, Etichetta } from '../components/ui'
 import RigaPartita, { CATEGORIE } from '../components/RigaPartita'
 import SchedaScorrevole from '../components/SchedaScorrevole'

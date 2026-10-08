@@ -46,7 +46,7 @@ function emptyTiles() {
 function emptySpins() { return [0,1,2,3].map(()=>emptyTiles()) }
 function isOggi(dataStr) {
   if (!dataStr) return false
-  const m=dataStr.trim().match(/^(\d{1,2})[\/\.](\d{2})/)
+  const m=dataStr.trim().match(/^(\d{1,2})[/.](\d{2})/)
   if (!m) return false
   const oggi=new Date()
   return parseInt(m[1])===oggi.getDate()&&parseInt(m[2])===(oggi.getMonth()+1)
@@ -59,7 +59,7 @@ function isOggi(dataStr) {
 // (8/10/2026: una spin proposta copriva dal 10 al 17 ottobre).
 const AMPIEZZA_MAX = 4
 function ampiezzaSpin(tiles) {
-  const g = tiles.map(t => (t.data || '').trim().match(/^(\d{1,2})[\/.](\d{1,2})/))
+  const g = tiles.map(t => (t.data || '').trim().match(/^(\d{1,2})[/.](\d{1,2})/))
     .filter(Boolean).map(m => Date.UTC(2001, parseInt(m[2]) - 1, parseInt(m[1])) / 86400000)
   if (g.length < 2) return null
   const min = Math.min(...g), max = Math.max(...g)
