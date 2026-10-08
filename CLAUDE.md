@@ -324,6 +324,12 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
 - **Pezzi ricorrenti** in `src/components/ui.jsx`: `Card`, `Etichetta`,
   `StatCard`, `Btn`, `Input`, `Badge`. Prima di riscrivere una card a mano,
   guarda se c'è già.
+- **Il contatore dello sviluppo** sta in `src/versione.js` e si vede nella barra
+  in alto, accanto al nome. **Si alza a mano a ogni commit che cambia l'app**:
+  terza cifra per una rifinitura, seconda per un lotto o una funzione nuova,
+  prima per un cambio d'impianto. Serve perché l'app si aggiorna da sola su
+  Vercel: senza un numero a schermo non si sa se si guarda il lavoro di oggi o
+  la cache di ieri. ⚠️ Non è la `version` di `package.json`, che resta a npm.
 - **Script generali, non usa-e-getta.** `confronta-utenti.js` e
   `allinea-utenti.js` prendono due nomi qualsiasi. Se serve una cosa una volta
   sola, probabilmente servirà di nuovo.

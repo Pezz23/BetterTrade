@@ -159,9 +159,22 @@ ricalcola il proprio bankroll, e non può creare utenti.
 ## 🔵 Lotto E — Le spin
 *`SlotPage.jsx`, `SpinProvvisoriePage.jsx`, `lib/spin.js`, `rendiconto.js`.*
 
-5. **Rifare le spin 1 e 2 in griglia**: sono del 20/09, con le vecchie regole
-   (1X, X2), su partite già giocate, e una cella ha il nome storpiato
-   ("dd - Santander"). È un clic, e toglie di mezzo dati che confondono.
+5. **Riempire le spin 1 e 2 in griglia.** ⚠️ **Metà fatta da sola**: l'8/10 la
+   griglia è risultata **completamente vuota** (`updated_at` 7/10 16:45, le
+   prove del lotto I), quindi i dati del 20/09 con `1X` e `X2` e la cella
+   storpiata **non ci sono più**. Resta da riempirle, ed è un clic da "Spin
+   provvisorie". `scripts/prova-spin.js` mostra prima cosa scriverebbe.
+   **Due cose da decidere prima** (misurate l'8/10, 24 voti tutti deliberati —
+   Marco 14, Admin 9, Nico 1):
+   - **La spin 1 mescola le date**: 09-11/10 con due partite del **17/10**
+     (Man City-Ipswich e Bayern-Leipzig, votate da Marco). Le stelline
+     scavalcano la finestra per disegno, ma una schedina così resta aperta
+     nove giorni.
+   - **La spin 2 scende sotto soglia**: West Ham-QPR al **61,9%** e Cercle
+     Brugge-Anderlecht al **47%** (quota 2,05) entrano perché votate da Admin,
+     e stanno davanti a PSV-Heerenveen al 76,2% che non ha stelline. È la
+     regola voluta, ma è la prima volta che si vede l'effetto su una spin
+     intera.
 6. **Escludere una partita dall'anteprima** con un clic, senza correggerla dopo
    in Slot.
 7. **Confrontare le giocate vere con le proposte** nel rendiconto: ora si può,

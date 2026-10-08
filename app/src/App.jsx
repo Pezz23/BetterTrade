@@ -11,6 +11,7 @@ import ReportingPage from './pages/ReportingPage'
 import BilancioPage from './pages/BilancioPage'
 import PartitePage from './pages/PartitePage'
 import { C, F, alpha } from './theme'
+import { VERSIONE } from './versione'
 
 // ── Tab bar bottom ────────────────────────────────────────────────────────────
 const TABS_BASE = [
@@ -125,6 +126,12 @@ function Header({ currentUser, onLogout, onMenu, menuAperto }) {
           <rect x="16" y="16" width="10" height="10" rx="2" fill={C.oro} opacity=".9"/>
         </svg>
         <span style={{ fontSize:14, fontWeight:700, color:C.testo, fontFamily:F.sans, letterSpacing:'-0.3px' }}>BetterTrade</span>
+        {/* Il contatore dello sviluppo: dice quale versione si ha davanti.
+            Sta attaccato al nome perché è un dato del programma, non dell'utente. */}
+        <span style={{
+          fontSize:9, color:C.spento, fontFamily:F.mono, letterSpacing:'0.5px',
+          border:`1px solid ${C.bordo}`, borderRadius:4, padding:'2px 4px', lineHeight:1,
+        }}>{VERSIONE}</span>
       </div>
       <div style={{ display:'flex', alignItems:'center', gap:10 }}>
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
