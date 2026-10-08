@@ -3,15 +3,19 @@
 > To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 7 ottobre 2026
+**Ultimo aggiornamento:** 8 ottobre 2026
 **Fatti il 2 ottobre:** lotto A (le stelline contano, scelta a mano delle
 caselle, pagina Partite votate) e lotto B (scorrimento, filtri rifatti, filtro
 Grado, il Grado al posto della resa).
 **Fatti il 5 ottobre:** lotto C (scheda finita), lotto D (storico a 30),
 l'ingrandimento automatico su iOS, le coppe valutate e scartate, quote
 aggiornate.
-**Prossimo passo:** **lotto I** — la posizione in classifica nella lista (serve
-una funzione SQL nuova) e la quota minima per la compilazione automatica.
+**Fatti il 7-8 ottobre:** lotto G (pulizia: README, documenti di btscout, PWA
+di chat cancellata), lotto H (si torna indietro trascinando, alla Safari),
+lotto I (la posizione in classifica nel tondo, "compila per quota") e la
+**stretta sui permessi delle funzioni** (sql/19).
+**Prossimo passo:** **lotto L** (un'attendibilità messa a mano: tre decisioni da
+prendere prima di scrivere codice) oppure **E** (le spin) o **F** (automazione).
 
 **Recuperato il 7 ottobre**: Mattia ha cambiato wi-fi e football-data è tornato
 raggiungibile. `aggiorna.js --esegui` ha chiuso le 11 partite SP2 del 2-5/10
@@ -115,6 +119,16 @@ compilano la griglia da sole, la griglia **agganciata alle partite vere** e il
      ma va visto mentre si sceglie. Con i dati dell'8/10: a **1,40** si parte
      dal 67%, a **1,70** dal 58%.
    - Scorciatoie 1,30 · 1,40 · 1,50 · 1,70, e l'elenco di cosa entrerebbe.
+
+3b. [x] **Due rifiniture dopo la prova** (8/10).
+   - Il **`°` stava a metà altezza**: dentro un flex allineato alla base quel
+     carattere non fa l'esponente. Ora è `vertical-align: super` in un testo
+     normale.
+   - Nella lista **LE VOTATE** la scritta "spin 1 · pos 9" **usciva dallo
+     schermo**: sei elementi a larghezza fissa su una riga sola non stanno su un
+     telefono. Divisa in **due righe** — stelline, squadre e giocata sopra;
+     campionato, data, quota, attendibilità e destinazione sotto. Alla scritta
+     finale restano 151px su uno schermo da 375.
 
 ### ⚠️ Scoperta sui permessi, l'8 ottobre
 Creando `classifiche()` è saltato fuori che **`grant ... to authenticated` non

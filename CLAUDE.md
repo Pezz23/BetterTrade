@@ -424,6 +424,10 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   montata e tiene da sola il suo punto, e il gesto indietro scopre quello che
   c'è sotto. **Prima c'era un rattoppo** (salvare e rimettere `window.scrollY`):
   tolto, perché la struttura giusta l'ha reso inutile.
+- **Sei elementi a larghezza fissa su una riga non stanno su un telefono.**
+  Nella lista "LE VOTATE" l'ultima scritta usciva dallo schermo. Quando una
+  riga ha più di tre o quattro informazioni, **si divide in due righe** invece
+  di stringere: sopra ciò che identifica (squadre), sotto i dettagli.
 - **Un'etichetta dentro una colonna elastica viene tagliata per prima.** In
   `ScegliCasella` la scritta "già in spin 2" divideva lo spazio col nome delle
   squadre e spariva. Le segnalazioni vogliono una **colonna a larghezza fissa**
