@@ -290,6 +290,27 @@ ricalcola il proprio bankroll, e non può creare utenti.
      migliaia di pari merito — `.range()` su un ordine non deterministico perde
      righe. Aggiunto `.order('id')`. Di nuovo **149/149**.
 
+4c-quater. [x] **I tasti per ordinare la lista** — 9 ottobre 2026 (**1.04.00**).
+   Attendibilità · Grado · VPM, **sempre visibili** e funzionanti con i filtri
+   attivi, come chiesto.
+   - I tasti stanno **attaccati alla lista**, fuori dal pannello ⚙: un filtro si
+     mette una volta, l'ordine si cambia continuamente per guardare la stessa
+     lista da tre lati. L'ordinamento avviene **dentro lo stesso `useMemo` dei
+     filtri**, subito dopo di loro: così vale sempre su quello che è rimasto, e
+     non c'è un secondo elenco da tenere allineato.
+   - ⚠️ **I confronti stanno in `lib/ordine.js`**, non nella pagina. Motivo
+     concreto: un ordinamento dentro un componente **non si prova**, e i suoi
+     difetti non si vedono — un confronto che restituisce `NaN` non lancia
+     niente, lascia solo la lista in un ordine qualunque.
+   - `scripts/prova-ordine.js` li esegue sui dati veri **e su righe finte**:
+     oggi le 149 partite hanno tutte Grado e VPM, quindi la protezione sui
+     valori mancanti non sarebbe stata provata da niente. Con le righe finte:
+     tutti e tre decrescenti ✓, mancanti in fondo ✓, ordine stabile ✓.
+   - ⚠️ Due dettagli che sembrano stile e non lo sono: il valore assente va **in
+     fondo** (`null` in una sottrazione dà `NaN`), e ogni criterio ha **due
+     criteri di riserva** (attendibilità, poi data) — senza, due partite con lo
+     stesso Grado si scambiano di posto a ogni ridisegno e la lista balla.
+
 4d. [ ] **L3 — la scheda.** I tre strati nell'ordine dell'iter (classifica →
    forma → ruolo) con i parametri aperti, e le bandierine accanto al blocco
    "Scontri diretti" che esiste già.

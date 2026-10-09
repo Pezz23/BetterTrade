@@ -10,6 +10,7 @@ import DettaglioPartita from '../components/DettaglioPartita'
 import { categoria, FINESTRE, SOGLIE_DEFAULT } from '../lib/attendibilita'
 import { etichetta, sigla } from '../lib/campionati'
 import { valutaPartita, VPM_NETTO } from '../lib/vpm'
+import { ORDINI, ORDINE_DEFAULT, confronto } from '../lib/ordine'
 
 // La lista delle partite future, ordinata per attendibilità.
 // I calcoli stanno in lib/attendibilita.js, la riga in components/RigaPartita.jsx:
@@ -35,6 +36,7 @@ export default function PartitePage() {
   const [soloSopraSoglia, setSoloSopraSoglia] = useState(false)
   const [gradoMin, setGradoMin] = useState('')
   const [soloVpmContro, setSoloVpmContro] = useState(false)
+  const [ordine, setOrdine] = useState(ORDINE_DEFAULT)
   const [pannello, setPannello] = useState(false)   // i filtri, chiusi di default
   const [apertaId, setApertaId] = useState(null)    // la partita aperta a tutto schermo
 
@@ -87,8 +89,11 @@ export default function PartitePage() {
       // Un campo indeciso (sotto VPM_NETTO) non è un disaccordo.
       .filter(r => { if (!soloVpmContro) return true
         const v = vpmDi.get(r.id); return v?.accordo === false && v.punti >= VPM_NETTO })
-      .sort((a, b) => b.probGiocata - a.probGiocata)
-  }, [inFinestra, campionato, quotaMin, quotaMax, soloSopraSoglia, soglie, gradoMin, soloVpmContro, vpmDi])
+      // L'ordine si applica **dopo** i filtri, nello stesso passaggio: così
+      // funziona sempre su quello che è rimasto, senza un secondo elenco da
+      // tenere allineato. Il confronto sta in lib/ordine.js.
+      .sort(confronto(ordine, vpmDi))
+  }, [inFinestra, campionato, quotaMin, quotaMax, soloSopraSoglia, soglie, gradoMin, soloVpmContro, vpmDi, ordine])
 
   const conteggi = useMemo(() => {
     const c = { centro: 0, giallo: 0, blu: 0 }
@@ -244,6 +249,20 @@ export default function PartitePage() {
       {!caricamento && righe.length > 0 && visibili.length === 0 && (
         <Card><div style={{ fontSize: 13, color: C.spento, fontFamily: F.sans }}>Nessuna partita con questi filtri.</div></Card>
       )}
+
+      {/* ── L'ordine ──────────────────────────────────────────────────────
+          Sempre visibile, **non** dentro il pannello dei filtri: un filtro si
+          mette una volta, l'ordine si cambia continuamente per guardare la
+          stessa lista da tre lati. Sta attaccato alla lista, non in cima alla
+          pagina, perché è di lei che parla. */}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
+        <span style={{ fontSize: 11, color: C.spento, fontFamily: F.mono }}>ordina per</span>
+        {ORDINI.map(o => (
+          <button key={o.id} onClick={() => setOrdine(o.id)} style={pillola(ordine === o.id, o.colore)}>
+            {ordine === o.id ? '↓ ' : ''}{o.label}
+          </button>
+        ))}
+      </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {visibili.map(p => (

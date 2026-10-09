@@ -415,6 +415,19 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
 - **Le librerie in `src/lib/` importano con l'estensione** (`'./attendibilita.js'`):
   Vite non se ne accorge e Node le può eseguire da terminale per provarle sui
   dati veri, senza browser.
+- **L'ordine della lista sta in `src/lib/ordine.js`**, non nella pagina: i tre
+  criteri (attendibilità, Grado, VPM) con i confronti, e `scripts/prova-ordine.js`
+  li esegue sui dati veri **e su righe finte** con i valori mancanti. Un
+  ordinamento dentro un componente non si prova, e i suoi difetti non si vedono:
+  un confronto che torna `NaN` non lancia niente, lascia solo la lista in un
+  ordine qualunque. ⚠️ Il valore assente va **in fondo** (`fondo()`), e ogni
+  criterio ha **due criteri di riserva** — attendibilità, poi data — altrimenti
+  due partite a pari merito si scambiano di posto a ogni ridisegno.
+  ⚠️ I tasti dell'ordine sono **sempre visibili**, attaccati alla lista e fuori
+  dal pannello dei filtri: un filtro si mette una volta, l'ordine si cambia
+  continuamente per guardare la stessa lista da tre lati. L'ordinamento avviene
+  **dentro lo stesso `useMemo` dei filtri**, dopo di loro, così vale sempre su
+  quello che è rimasto visibile.
 - **I filtri della lista** (`PartitePage`) stanno dietro un tasto `⚙ filtri`,
   con le **targhette di quelli accesi** fuori (si tolgono toccandole) e il
   conto `visibili/totali`. Rifatti così il 2/10/2026 perché in fila non si
@@ -622,6 +635,7 @@ node --env-file=.env scripts/audit-archivio.js     # controllo completo (dopo og
 node --env-file=.env scripts/aggiorna.js --esegui                   # LA ROUTINE: martedì e venerdì dopo le 18
 #   = import-storico --stagioni=2627 → riconcilia-prossime → importa-prossime
 node --env-file=.env scripts/prova-vpm.js           # VPM sul weekend: dove campo e mercato litigano
+node --env-file=.env scripts/prova-ordine.js        # i tre ordini della lista, casi limite compresi
 node --env-file=.env scripts/rendiconto.js          # IL RENDICONTO: calibrazione + resa delle proposte
 node --env-file=.env scripts/misura-valore.js --riferimento=media   # il criterio, a fine stagione
 node --env-file=.env scripts/import-storico.js --campionati=P1,N1   # solo alcuni campionati
