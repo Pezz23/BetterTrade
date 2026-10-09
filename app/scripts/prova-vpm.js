@@ -15,7 +15,7 @@
 
 import { admin } from './_admin.js';
 import { valuta, martediChiusura } from '../src/lib/attendibilita.js';
-import { somme, forza, parametri, forzaDi, vpm, bandiere, PARTITE_FINESTRA, VPM_CONTRARIO, VPM_CONFERMA } from '../src/lib/vpm.js';
+import { somme, forza, parametri, vpm, bandiere, valutaPartita, PARTITE_FINESTRA, VPM_CONTRARIO, VPM_CONFERMA } from '../src/lib/vpm.js';
 
 const arg = n => process.argv.find(a => a.startsWith(`--${n}`));
 const soloSquadra = arg('squadra')?.split('=')[1];
@@ -107,12 +107,10 @@ for (const p of (prossime || [])) {
     fCasa, fFuori,
     v: vpm(miaForza, suaForza),
     bandiere: bandiere(contiDi(p.casa, p.trasferta), p.casa, p.trasferta),
-    // la stessa cosa, ma calcolata dai dati del database
-    vSql: vpm(
-      forzaDi(dati.squadre[p.div]?.[r.segno === '1' ? p.casa : p.trasferta], r.segno === '1' ? 'casa' : 'fuori'),
-      forzaDi(dati.squadre[p.div]?.[r.segno === '1' ? p.trasferta : p.casa], r.segno === '1' ? 'fuori' : 'casa'),
-    ),
-    bandiereSql: bandiere(dati.scontri[p.id], p.casa, p.trasferta),
+    // La stessa cosa dai dati del database, **passando per la funzione che usa
+    // l'app** (`valutaPartita`): così il confronto verifica il codice vero e
+    // non una sua copia scritta qui.
+    ...(() => { const v = valutaPartita(dati, r); return { vSql: v.vpm, bandiereSql: v.bandiere } })(),
   });
 }
 

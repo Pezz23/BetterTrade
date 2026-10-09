@@ -2,6 +2,7 @@ import { C, F, alpha } from '../theme'
 import { Card } from './ui'
 import TestataPartita, { CATEGORIE, Stella, pct, giorno } from './TestataPartita'
 import { pronosticoDa } from '../lib/spin'
+import { verso } from '../lib/vpm'
 import { sigla } from '../lib/campionati'
 
 // Una partita nella lista: la stessa testata della scheda, in versione
@@ -10,9 +11,15 @@ import { sigla } from '../lib/campionati'
 
 export { CATEGORIE, pct, giorno }
 
-export default function RigaPartita({ p, cat, voti = 0, mio = false, puoVotare = false, onVota, onApri }) {
+// Il colore di VPM dice da sé se il campo è d'accordo con la giocata: rosso
+// contro, verde conferma, grigio non si pronuncia. La barra si deve leggere
+// senza leggere i numeri.
+const COLORE_VPM = { contro: C.rosso, conferma: C.verde, neutro: C.fioco }
+
+export default function RigaPartita({ p, cat, vpm = null, voti = 0, mio = false, puoVotare = false, onVota, onApri }) {
   const c = CATEGORIE[cat]
   const quota = p.quotaGiocata ?? p.quota
+  const vsVpm = verso(vpm)
   return (
     <Card style={{ padding: '10px 12px', borderColor: cat !== 'no' ? alpha(c.colore, 0.35) : undefined, cursor: 'pointer' }} onClick={onApri}>
       {/* la riga dei contrassegni: campionato, categoria, e il voto — che si
@@ -27,9 +34,10 @@ export default function RigaPartita({ p, cat, voti = 0, mio = false, puoVotare =
 
       <TestataPartita p={p} cat={cat} compatta />
 
-      {/* Tre campi: la giocata, il Grado, la quota. Il Grado sta in mezzo
-          perché è quello che si guarda scorrendo. */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 8, marginTop: 10, padding: '8px 10px',
+      {/* Quattro campi: la giocata, il Grado, VPM, la quota. I due numeri
+          stanno in mezzo perché sono quelli che si guardano scorrendo, e
+          vicini perché il confronto fra loro è il motivo per cui ci sono. */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto 1fr', alignItems: 'center', gap: 8, marginTop: 10, padding: '8px 10px',
         background: alpha(c.colore, 0.07), border: `1px solid ${alpha(c.colore, 0.28)}`, borderRadius: 8 }}>
         <div style={{ fontSize: 16, fontWeight: 800, fontFamily: F.mono, color: c.colore, whiteSpace: 'nowrap' }}>{pronosticoDa(p.giocata)}</div>
 
@@ -40,6 +48,16 @@ export default function RigaPartita({ p, cat, voti = 0, mio = false, puoVotare =
           <div style={{ fontSize: 8, fontFamily: F.mono, color: C.spento, letterSpacing: '0.1em', marginTop: 3 }}>GRADO</div>
         </div>
 
+        {/* VPM: quanto il campo conferma la giocata. Lo spazio è riservato
+            anche quando il dato non c'è — niente deve cambiare altezza o
+            larghezza quando arriva un numero. */}
+        <div style={{ textAlign: 'center', minWidth: 34 }}>
+          <div style={{ fontSize: 17, fontWeight: 700, fontFamily: F.mono, color: COLORE_VPM[vsVpm] || C.fantasma, lineHeight: 1 }}>
+            {vpm != null ? vpm.toFixed(2).replace('.', ',') : '—'}
+          </div>
+          <div style={{ fontSize: 8, fontFamily: F.mono, color: vsVpm === 'neutro' || !vsVpm ? C.spento : COLORE_VPM[vsVpm], letterSpacing: '0.1em', marginTop: 3 }}>VPM</div>
+        </div>
+
         {/* Per la combinata con l'over non abbiamo la quota (nessuna fonte dà
             l'over 1,5): si mostra quella del segno secco, e si dice che l'over
             va letto sul book. */}
@@ -47,7 +65,10 @@ export default function RigaPartita({ p, cat, voti = 0, mio = false, puoVotare =
           <div style={{ fontSize: 17, fontWeight: 700, fontFamily: F.mono, color: C.oro, lineHeight: 1 }}>
             {quota ? <><span style={{ fontSize: 11, color: C.spento, fontWeight: 400 }}>Q: </span>{quota.toFixed(2).replace('.', ',')}</> : '—'}
           </div>
-          <div style={{ fontSize: 9, fontFamily: F.mono, color: C.spento, marginTop: 3 }}>
+          {/* ⚠️ Una riga sola: con la quarta colonna lo spazio è meno, e questa
+              scritta andando a capo allungherebbe la card di una riga — solo
+              alcune, quindi la lista diventerebbe irregolare. */}
+          <div style={{ fontSize: 9, fontFamily: F.mono, color: C.spento, marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {p.quotaFonte}{!p.quotaGiocata && p.quota ? ` · ${p.segno} secco` : ''}
           </div>
         </div>

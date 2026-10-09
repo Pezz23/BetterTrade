@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { usaProssime } from '../hooks/usaProssime'
+import { usaVpm } from '../hooks/usaVpm'
 import { useAuth } from '../context/AuthContext'
 import { C, F } from '../theme'
 import { Card, Etichetta } from '../components/ui'
@@ -7,6 +8,7 @@ import RigaPartita, { CATEGORIE } from '../components/RigaPartita'
 import SchedaScorrevole from '../components/SchedaScorrevole'
 import DettaglioPartita from '../components/DettaglioPartita'
 import { categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
+import { valutaPartita } from '../lib/vpm'
 
 // Le partite che qualcuno ha votato con la stellina, tutte in un posto.
 //
@@ -19,6 +21,7 @@ import { categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
 export default function VotatePage() {
   const { isAdmin } = useAuth()
   const { righe, vota, votiDi, mioVoto, caricamento, errore } = usaProssime()
+  const datiVpm = usaVpm()
   const [apertaId, setApertaId] = useState(null)
 
   // Prima le più votate, poi per attendibilità: lo stesso ordine con cui
@@ -61,6 +64,9 @@ export default function VotatePage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {votate.map(p => (
           <RigaPartita key={p.id} p={p} cat={categoria(p.probGiocata, SOGLIE_DEFAULT)}
+            /* lo stesso numero della pagina Partite: due liste con VPM diversi
+               sulla stessa partita sarebbero un difetto */
+            vpm={datiVpm ? valutaPartita(datiVpm, p)?.vpm ?? null : null}
             voti={votiDi(p.id)} mio={mioVoto(p.id)} puoVotare={isAdmin} onVota={() => vota(p.id)}
             onApri={() => setApertaId(p.id)} />
         ))}

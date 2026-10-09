@@ -18,8 +18,8 @@ lotto I (la posizione in classifica nel tondo, "compila per quota") e la
 (`src/versione.js`, ora **1.01.02**), il **blocco del weekend** nelle spin
 (voce 5b, provato da Mattia: *"ok funziona"*) e **`npm run lint`**, che è la
 rete sotto la schermata nera di quel pomeriggio.
-**Prossimo passo:** **lotto L — VPM**, voce 4c (L2): il numero nella barra
-della lista. I dati (L1) sono fatti e verificati. In sospeso fino a dopo questo weekend: **la spin 2**, che per via
+**Prossimo passo:** **lotto L — VPM**, voce 4d (L3): i tre strati aperti nella
+scheda della partita, con le bandierine del testa a testa. L1 e L2 sono fatti. In sospeso fino a dopo questo weekend: **la spin 2**, che per via
 dei voti scende al 61,9% e al 47% (voce 5).
 
 **Recuperato il 7 ottobre**: Mattia ha cambiato wi-fi e football-data è tornato
@@ -209,13 +209,29 @@ ricalcola il proprio bankroll, e non può creare utenti.
    - **Permessi verificati con la chiave anon**: `permission denied for
      function vpm_dati`. I tre `revoke`/`grant` di sql/19 sono nel file.
 
-4c. [ ] **L2 — il numero in lista.** `hooks/usaVpm.js` (una volta per sessione,
-   come `usaClassifiche`), il collante già pronto in `lib/vpm.js` (`forzaDi`,
-   `bandiere`), e la barra della riga: *giocata · Grado · VPM · quota*.
-   ⚠️ Quattro voci su una riga a 375px sono il limite: va provato, o si va a due
-   righe. ⚠️ VPM **verde quando conferma, rosso quando contraddice**: la barra
-   si deve leggere senza leggere i numeri. Più un filtro nel pannello ⚙:
-   *solo dove VPM contraddice*.
+4c. [x] **L2 — il numero in lista** — fatto il 9 ottobre 2026 (**1.02.00**).
+   - `hooks/usaVpm.js`: `vpm_dati()` **una volta per sessione**, come
+     `usaClassifiche`. ⚠️ Se la chiamata fallisce la lista funziona comunque e
+     le caselle fanno `—`: VPM è un dato in più, non il contenuto della pagina.
+   - **Il collante sta in `lib/vpm.js`** (`valutaPartita`, `verso`), non nelle
+     pagine: lista e scheda devono leggere lo stesso numero, e la logica in due
+     posti è la strada per farli divergere.
+   - La barra della riga ha **quattro campi**: *giocata · Grado · VPM · quota*.
+     Mattia: *"4 dati ci stanno, non c'è testo solo dei numeri"*. I due numeri
+     stanno in mezzo e **vicini**, perché il confronto fra loro è il motivo per
+     cui ci sono. **Rosso sotto 4, verde sopra 6,5, grigio in mezzo**: si legge
+     senza leggere i numeri.
+   - ⚠️ **L'etichetta della quota è bloccata su una riga** (`nowrap` +
+     ellissi): con la quarta colonna ha meno spazio, e andando a capo avrebbe
+     allungato **solo alcune** card — lista irregolare. È la regola "niente
+     deve cambiare altezza".
+   - **Anche in Partite votate**, che usa la stessa riga: due liste con VPM
+     diversi sulla stessa partita sarebbero un difetto.
+   - Un filtro nel pannello ⚙: **solo VPM < 4**, con la targhetta rossa fuori.
+     È la lista che Mattia cercava a mano in quattro schermate.
+   - **Verificato**: `prova-vpm.js` ora fa passare la strada del database da
+     **`valutaPartita`**, cioè la funzione che chiama l'app — **149/149
+     identiche** su numero e bandierine. Non è una copia del calcolo: è quello.
 
 4d. [ ] **L3 — la scheda.** I tre strati nell'ordine dell'iter (classifica →
    forma → ruolo) con i parametri aperti, e le bandierine accanto al blocco

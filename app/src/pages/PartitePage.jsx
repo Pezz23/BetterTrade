@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { usaProssime } from '../hooks/usaProssime'
+import { usaVpm } from '../hooks/usaVpm'
 import { useAuth } from '../context/AuthContext'
 import { C, F, alpha } from '../theme'
 import { Card, Etichetta } from '../components/ui'
@@ -8,6 +9,7 @@ import SchedaScorrevole from '../components/SchedaScorrevole'
 import DettaglioPartita from '../components/DettaglioPartita'
 import { categoria, FINESTRE, SOGLIE_DEFAULT } from '../lib/attendibilita'
 import { etichetta, sigla } from '../lib/campionati'
+import { valutaPartita, VPM_CONTRARIO } from '../lib/vpm'
 
 // La lista delle partite future, ordinata per attendibilità.
 // I calcoli stanno in lib/attendibilita.js, la riga in components/RigaPartita.jsx:
@@ -24,6 +26,7 @@ const campo = { padding: '6px 10px', borderRadius: 20, background: C.pozzo, bord
 export default function PartitePage() {
   const { isAdmin } = useAuth()
   const { righe, vota, votiDi, mioVoto, caricamento, errore } = usaProssime()
+  const datiVpm = usaVpm()
   const [soglie, setSoglie] = useState(SOGLIE_DEFAULT)
   const [finestra, setFinestra] = useState('settimana')
   const [campionato, setCampionato] = useState('')
@@ -31,6 +34,7 @@ export default function PartitePage() {
   const [quotaMax, setQuotaMax] = useState('')
   const [soloSopraSoglia, setSoloSopraSoglia] = useState(false)
   const [gradoMin, setGradoMin] = useState('')
+  const [soloVpmContro, setSoloVpmContro] = useState(false)
   const [pannello, setPannello] = useState(false)   // i filtri, chiusi di default
   const [apertaId, setApertaId] = useState(null)    // la partita aperta a tutto schermo
 
@@ -68,14 +72,25 @@ export default function PartitePage() {
       .filter(r => qMax === null ? true : quotaMostrata(r) !== null && quotaMostrata(r) <= qMax)
       .filter(r => soloSopraSoglia ? categoria(r.probGiocata, soglie) !== 'no' : true)
       .filter(r => gMin === null ? true : r.grado !== null && r.grado >= gMin)
+      // Le partite dove il campo dice il contrario della giocata: è la lista
+      // che Mattia andava a cercare a mano in quattro schermate.
+      .filter(r => soloVpmContro ? (vpmDi.get(r.id)?.vpm ?? 99) < VPM_CONTRARIO : true)
       .sort((a, b) => b.probGiocata - a.probGiocata)
-  }, [inFinestra, campionato, quotaMin, quotaMax, soloSopraSoglia, soglie, gradoMin])
+  }, [inFinestra, campionato, quotaMin, quotaMax, soloSopraSoglia, soglie, gradoMin, soloVpmContro, vpmDi])
 
   const conteggi = useMemo(() => {
     const c = { centro: 0, giallo: 0, blu: 0 }
     for (const r of inFinestra) { const k = categoria(r.probGiocata, soglie); if (k !== 'no') c[k]++ }
     return c
   }, [inFinestra, soglie])
+
+  // VPM di ogni partita, una volta sola: il calcolo sta in lib/vpm.js, qui
+  // solo la mappa id → valutazione, che serve alla riga e al filtro.
+  const vpmDi = useMemo(() => {
+    const m = new Map()
+    if (datiVpm) for (const r of righe) m.set(r.id, valutaPartita(datiVpm, r))
+    return m
+  }, [datiVpm, righe])
 
   const ultimaData = inFinestra.reduce((m, r) => (r.data > m ? r.data : m), '')
 
@@ -86,8 +101,9 @@ export default function PartitePage() {
     quotaMax && { id: 'qmax', label: `quota ≤ ${quotaMax}`, togli: () => setQuotaMax('') },
     gradoMin && { id: 'grado', label: `grado ≥ ${gradoMin}`, colore: C.menta, togli: () => setGradoMin('') },
     soloSopraSoglia && { id: 'soglia', label: 'sopra soglia', togli: () => setSoloSopraSoglia(false) },
+    soloVpmContro && { id: 'vpm', label: 'VPM contro', colore: C.rosso, togli: () => setSoloVpmContro(false) },
   ].filter(Boolean)
-  const azzera = () => { setCampionato(''); setQuotaMin(''); setQuotaMax(''); setGradoMin(''); setSoloSopraSoglia(false) }
+  const azzera = () => { setCampionato(''); setQuotaMin(''); setQuotaMax(''); setGradoMin(''); setSoloSopraSoglia(false); setSoloVpmContro(false) }
 
   // La scheda di una partita prende tutta la pagina: sul telefono è l'unico
   // modo di leggerla, e la lista resta dov'era quando si torna indietro.
@@ -188,6 +204,14 @@ export default function PartitePage() {
                 {soloSopraSoglia ? 'solo sopra soglia' : 'anche sotto soglia'}
               </button>
             </div>
+
+            <div>
+              <Etichetta style={{ marginBottom: 5 }}>VPM</Etichetta>
+              <button onClick={() => setSoloVpmContro(v => !v)} disabled={!datiVpm}
+                style={{ ...pillola(soloVpmContro, C.rosso), width: '100%', opacity: datiVpm ? 1 : 0.4 }}>
+                {soloVpmContro ? `solo VPM < ${VPM_CONTRARIO}` : 'tutte'}
+              </button>
+            </div>
           </div>
 
           <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C.bordoChiaro}` }}>
@@ -220,6 +244,7 @@ export default function PartitePage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {visibili.map(p => (
           <RigaPartita key={p.id} p={p} cat={categoria(p.probGiocata, soglie)}
+            vpm={vpmDi.get(p.id)?.vpm ?? null}
             voti={votiDi(p.id)} mio={mioVoto(p.id)} puoVotare={isAdmin} onVota={() => vota(p.id)}
             onApri={() => apri(p.id)} />
         ))}
@@ -230,6 +255,10 @@ export default function PartitePage() {
           <b style={{ color: C.fioco }}>Come leggere.</b> L'attendibilità è la probabilità che la giocata vinca, secondo il consenso
           del mercato (media di ~40 book, tolto il margine). Sui favoriti il mercato è calibrato: un 75% vince tre volte su quattro.
           La X secca non viene mai proposta, e nemmeno la doppia chance. Sotto 1,25 si aggiunge l'over 1,5.
+          {' '}<b style={{ color: C.fioco }}>VPM</b> è l'altra campana: guarda solo le squadre — classifica, forma, forma nel ruolo —
+          e dice da 1 a 10 quanto il campo conferma la giocata. <span style={{ color: C.rosso }}>Sotto 4 la contraddice</span>,
+          {' '}<span style={{ color: C.verde }}>sopra 6,5 la conferma</span>. Non è una probabilità e non entra nella scelta delle spin:
+          serve a vedere dove mercato e campo litigano.
           Il <b style={{ color: C.fioco }}>Grado</b> da 1 a 10 dice quanto conviene: 70% la resa (quota × probabilità), 30% quanto paga la quota.
           La quota è di <b style={{ color: C.fioco }}>Codere</b> quando c'è; altrimenti Bet365, altrimenti la massima sul mercato — sotto ogni quota c'è scritto quale.
           Gli orari sono quelli del Regno Unito.

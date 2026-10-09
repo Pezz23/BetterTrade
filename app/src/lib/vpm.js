@@ -191,6 +191,34 @@ export const VPM_CONFERMA = 6.5    // sopra: il campo conferma
  * sono 6-12 partite di squadre che nel frattempo sono cambiate, e Mattia le usa
  * come ultimo controllo, non come punteggio. Sotto 4 scontri non si dice niente.
  */
+/**
+ * Tutto quello che serve a schermo per una partita, dai dati di `vpm_dati()`.
+ * Sta qui e non nella pagina: la lista e la scheda devono leggere lo stesso
+ * numero, e la logica in due posti è la strada per farli divergere.
+ *
+ * `riga` è una partita futura già valutata (`valuta()` in attendibilita.js):
+ * serve `div`, `casa`, `trasferta`, `segno` e `id`.
+ */
+export function valutaPartita(dati, riga) {
+  if (!dati || !riga) return null
+  const squadre = dati.squadre?.[riga.div]
+  const forzaCasa = forzaDi(squadre?.[riga.casa], 'casa')
+  const forzaFuori = forzaDi(squadre?.[riga.trasferta], 'fuori')
+  const inCasa = riga.segno === '1'
+  return {
+    vpm: vpm(inCasa ? forzaCasa : forzaFuori, inCasa ? forzaFuori : forzaCasa),
+    forzaCasa,
+    forzaFuori,
+    bandiere: bandiere(dati.scontri?.[riga.id], riga.casa, riga.trasferta),
+  }
+}
+
+/** Il verso di VPM: conferma, contraddice, o non si pronuncia. */
+export function verso(v) {
+  if (v == null) return null
+  return v < VPM_CONTRARIO ? 'contro' : v > VPM_CONFERMA ? 'conferma' : 'neutro'
+}
+
 export const MIN_SCONTRI = 4      // sotto, il testa a testa non dice niente
 export const H2H_PARI = 0.35      // oltre questa quota di X, è una partita da pareggio
 export const H2H_DOMINIO = 2 / 3  // una delle due ha vinto almeno due terzi
