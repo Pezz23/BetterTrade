@@ -90,22 +90,31 @@ function inScala(x, [peggio, meglio]) {
   return Math.min(10, Math.max(1, 1 + 9 * t))
 }
 
-/** I sette parametri per partita giocata, da una lista di partite viste dalla squadra. */
-export function parametri(partite) {
-  const n = partite.length
-  if (!n) return null
-  const somma = c => partite.reduce((a, p) => a + p[c], 0)
-  const tf = somma('tf'), tc = somma('tc')
+/**
+ * I sette parametri per partita giocata, dalle somme grezze di una finestra:
+ * `{ n, v, gf, gs, tf, tc }` — il formato che restituisce `vpm_dati()` (sql/20)
+ * e che lo script costruisce dalle partite. Una forma sola, due sorgenti.
+ */
+export function parametri(somme) {
+  if (!somme?.n) return null
+  const { n, v, gf, gs, tf, tc } = somme
   return {
     n,
-    vittorie: somma('v') / n,
-    dr: (somma('gf') - somma('gs')) / n,
-    gf: somma('gf') / n,
-    gs: somma('gs') / n,
+    vittorie: v / n,
+    dr: (gf - gs) / n,
+    gf: gf / n,
+    gs: gs / n,
     tf: tf / n,
     tc: tc / n,
     dominio: tf + tc ? tf / (tf + tc) : 0.5,
   }
+}
+
+/** Le somme di una finestra, da una lista di partite viste dalla squadra. */
+export function somme(partite) {
+  if (!partite?.length) return null
+  const t = (c) => partite.reduce((a, p) => a + p[c], 0)
+  return { n: partite.length, v: t('v'), gf: t('gf'), gs: t('gs'), tf: t('tf'), tc: t('tc') }
 }
 
 /** Il punteggio 1-10 di uno strato, con il dettaglio parametro per parametro. */
@@ -149,6 +158,19 @@ export function forza({ stagione, forma, ruolo }, dove) {
 }
 
 /**
+ * La forza di una squadra dalle quattro finestre di `vpm_dati()`, nel ruolo
+ * che avrà: `{ stagione, forma, casa, fuori }` → il punteggio del ruolo giusto.
+ */
+export function forzaDi(finestre, dove) {
+  if (!finestre) return null
+  return forza({
+    stagione: parametri(finestre.stagione),
+    forma: parametri(finestre.forma),
+    ruolo: parametri(finestre[dove]),
+  }, dove)
+}
+
+/**
  * VPM: quanto il campo conferma la giocata consigliata, da 1 a 10.
  *
  * È lo scarto fra la forza di chi si gioca e quella dell'avversario, riportato
@@ -169,31 +191,30 @@ export const VPM_CONFERMA = 6.5    // sopra: il campo conferma
  * sono 6-12 partite di squadre che nel frattempo sono cambiate, e Mattia le usa
  * come ultimo controllo, non come punteggio. Sotto 4 scontri non si dice niente.
  */
+export const MIN_SCONTRI = 4      // sotto, il testa a testa non dice niente
 export const H2H_PARI = 0.35      // oltre questa quota di X, è una partita da pareggio
 export const H2H_DOMINIO = 2 / 3  // una delle due ha vinto almeno due terzi
 
-export function bandiere({ tutti, stessoCampo }, casa, trasferta) {
+export function bandiere(conti, casa, trasferta) {
+  if (!conti) return []
   const b = []
-  const quotaPari = l => (l?.length ? l.filter(s => s.gol_casa === s.gol_trasferta).length / l.length : 0)
+  const { n = 0, pari = 0, n_campo = 0, pari_campo = 0, vinte_casa = 0, vinte_trasferta = 0 } = conti
 
-  // ⚠️ Si guardano **due** liste, e la seconda è quella che conta di più:
+  // ⚠️ Si guardano **due** finestre, e la seconda è quella che conta di più:
   // Lens-Lyon ha 1 pareggio negli ultimi 6 scontri, ma 3 su 6 **giocati a
   // Lens** (9/10/2026). È il campo che fa la partita, e la domanda di Mattia
   // era proprio "su questo campo pareggiano sempre?".
-  for (const [lista, dove] of [[stessoCampo, `a ${casa}`], [tutti, 'negli scontri']]) {
-    if (lista?.length >= 4 && quotaPari(lista) >= H2H_PARI) {
-      const pari = lista.filter(s => s.gol_casa === s.gol_trasferta).length
-      b.push({ tipo: 'pari', grave: true, testo: `${pari} pareggi su ${lista.length} ${dove}` })
+  for (const [tot, quanti, dove] of [[n_campo, pari_campo, `a ${casa}`], [n, pari, 'negli scontri']]) {
+    if (tot >= MIN_SCONTRI && quanti / tot >= H2H_PARI) {
+      b.push({ tipo: 'pari', grave: true, testo: `${quanti} pareggi su ${tot} ${dove}` })
       break   // una sola volta: è lo stesso avviso
     }
   }
 
-  if (tutti?.length >= 4) {
-    const vinte = s => (s.gol_casa > s.gol_trasferta ? s.casa : s.gol_casa < s.gol_trasferta ? s.trasferta : null)
-    for (const sq of [casa, trasferta]) {
-      const v = tutti.filter(s => vinte(s) === sq).length
-      if (v / tutti.length >= H2H_DOMINIO) {
-        b.push({ tipo: 'dominio', grave: false, testo: `${sq} ha vinto ${v} degli ultimi ${tutti.length}` })
+  if (n >= MIN_SCONTRI) {
+    for (const [sq, v] of [[casa, vinte_casa], [trasferta, vinte_trasferta]]) {
+      if (v / n >= H2H_DOMINIO) {
+        b.push({ tipo: 'dominio', grave: false, testo: `${sq} ha vinto ${v} degli ultimi ${n}` })
       }
     }
   }

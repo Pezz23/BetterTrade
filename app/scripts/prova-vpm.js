@@ -5,12 +5,17 @@
 //
 //   node --env-file=.env scripts/prova-vpm.js [--tutte] [--squadra=Lens]
 //
+// Calcola **due volte**: dalle partite grezze e dalla funzione `vpm_dati()`
+// (sql/20), e confronta. Se le due strade divergono il confronto lo dice: è
+// l'unico modo di accorgersi che la funzione SQL e la libreria si sono
+// allontanate, prima che il numero sbagliato finisca a schermo.
+//
 // Usa le stesse librerie dell'app (`src/lib/vpm.js`, `attendibilita.js`): se
 // qui e nell'app i numeri differiscono, la differenza sta nella pagina.
 
 import { admin } from './_admin.js';
 import { valuta, martediChiusura } from '../src/lib/attendibilita.js';
-import { parametri, forza, vpm, bandiere, PARTITE_FINESTRA, VPM_CONTRARIO, VPM_CONFERMA } from '../src/lib/vpm.js';
+import { somme, forza, parametri, forzaDi, vpm, bandiere, PARTITE_FINESTRA, VPM_CONTRARIO, VPM_CONFERMA } from '../src/lib/vpm.js';
 
 const arg = n => process.argv.find(a => a.startsWith(`--${n}`));
 const soloSquadra = arg('squadra')?.split('=')[1];
@@ -46,15 +51,16 @@ for (const m of giocate) {
   }
 }
 
-// La forza di una squadra nel ruolo che avrà: tre finestre dalla sua storia.
-function forzaDi(div, squadra, dove) {
+// La forza di una squadra nel ruolo che avrà, dalle partite grezze: è la
+// strada di riferimento, quella con cui si confronta il database.
+function forzaLocale(div, squadra, dove) {
   const l = storia[`${div}|${squadra}`];
   if (!l) return null;
   const nelRuolo = l.filter(p => p.dove === dove);
   return forza({
-    stagione: parametri(l),
-    forma: parametri(l.slice(-PARTITE_FINESTRA)),
-    ruolo: parametri(nelRuolo.slice(-PARTITE_FINESTRA)),
+    stagione: parametri(somme(l)),
+    forma: parametri(somme(l.slice(-PARTITE_FINESTRA))),
+    ruolo: parametri(somme(nelRuolo.slice(-PARTITE_FINESTRA))),
   }, dove);
 }
 
@@ -70,18 +76,29 @@ const squadre = [...new Set((prossime || []).flatMap(p => [p.casa, p.trasferta])
 const scontriTutti = await tuttePagine((a, b) => admin.from('partite')
   .select('data,casa,trasferta,gol_casa,gol_trasferta')
   .in('casa', squadre).in('trasferta', squadre).order('data', { ascending: false }).range(a, b));
-const scontriDi = (c, t) => ({
-  tutti: scontriTutti.filter(s => (s.casa === c && s.trasferta === t) || (s.casa === t && s.trasferta === c)).slice(0, 6),
-  stessoCampo: scontriTutti.filter(s => s.casa === c && s.trasferta === t).slice(0, 6),
-});
+// I conti del testa a testa nella stessa forma che restituisce vpm_dati().
+function contiDi(c, t) {
+  const tutti = scontriTutti.filter(s => (s.casa === c && s.trasferta === t) || (s.casa === t && s.trasferta === c)).slice(0, 6);
+  const campo = scontriTutti.filter(s => s.casa === c && s.trasferta === t).slice(0, 6);
+  const vinte = sq => tutti.filter(s => (s.gol_casa > s.gol_trasferta ? s.casa : s.gol_casa < s.gol_trasferta ? s.trasferta : null) === sq).length;
+  return {
+    n: tutti.length, pari: tutti.filter(s => s.gol_casa === s.gol_trasferta).length,
+    vinte_casa: vinte(c), vinte_trasferta: vinte(t),
+    n_campo: campo.length, pari_campo: campo.filter(s => s.gol_casa === s.gol_trasferta).length,
+  };
+}
+
+// La seconda strada: tutto in una chiamata, come farà l'app.
+const { data: dati, error: eDati } = await admin.rpc('vpm_dati');
+if (eDati) { console.error('✗ vpm_dati:', eDati.message); process.exit(1); }
 
 // ── Il calcolo ────────────────────────────────────────────────────────────────
 const righe = [];
 for (const p of (prossime || [])) {
   const r = valuta(p);
   if (r.prob === null) continue;
-  const fCasa = forzaDi(p.div, p.casa, 'casa');
-  const fFuori = forzaDi(p.div, p.trasferta, 'fuori');
+  const fCasa = forzaLocale(p.div, p.casa, 'casa');
+  const fFuori = forzaLocale(p.div, p.trasferta, 'fuori');
   const miaForza = r.segno === '1' ? fCasa : fFuori;
   const suaForza = r.segno === '1' ? fFuori : fCasa;
   righe.push({
@@ -89,7 +106,13 @@ for (const p of (prossime || [])) {
     squadraGiocata: r.segno === '1' ? p.casa : p.trasferta,
     fCasa, fFuori,
     v: vpm(miaForza, suaForza),
-    bandiere: bandiere(scontriDi(p.casa, p.trasferta), p.casa, p.trasferta),
+    bandiere: bandiere(contiDi(p.casa, p.trasferta), p.casa, p.trasferta),
+    // la stessa cosa, ma calcolata dai dati del database
+    vSql: vpm(
+      forzaDi(dati.squadre[p.div]?.[r.segno === '1' ? p.casa : p.trasferta], r.segno === '1' ? 'casa' : 'fuori'),
+      forzaDi(dati.squadre[p.div]?.[r.segno === '1' ? p.trasferta : p.casa], r.segno === '1' ? 'fuori' : 'casa'),
+    ),
+    bandiereSql: bandiere(dati.scontri[p.id], p.casa, p.trasferta),
   });
 }
 
@@ -116,4 +139,16 @@ for (const r of elenco) {
 if (!tutte && !soloSquadra && mostra.length > elenco.length) {
   console.log(`\n… e altre ${mostra.length - elenco.length}: --tutte per vederle.`);
 }
+// ── Il confronto fra le due strade ────────────────────────────────────────────
+const diversi = righe.filter(r => Math.abs((r.v ?? -1) - (r.vSql ?? -1)) > 0.005);
+const bandiereDiverse = righe.filter(r =>
+  r.bandiere.map(b => b.testo).join('|') !== r.bandiereSql.map(b => b.testo).join('|'));
+console.log(`\nConfronto partite grezze ↔ vpm_dati(): ${righe.length - diversi.length}/${righe.length} identiche` +
+  (diversi.length ? ' ⚠️' : ' ✓') + ` · bandierine: ${righe.length - bandiereDiverse.length}/${righe.length}` +
+  (bandiereDiverse.length ? ' ⚠️' : ' ✓'));
+for (const r of diversi.slice(0, 5)) console.log(`  ⚠️ ${r.casa} - ${r.trasferta}: locale ${n2(r.v)} vs sql ${n2(r.vSql)}`);
+for (const r of bandiereDiverse.slice(0, 5)) {
+  console.log(`  ⚠️ ${r.casa} - ${r.trasferta}: locale [${r.bandiere.map(b => b.testo)}] vs sql [${r.bandiereSql.map(b => b.testo)}]`);
+}
+
 console.log('\nNiente è stato scritto.');

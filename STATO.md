@@ -18,8 +18,8 @@ lotto I (la posizione in classifica nel tondo, "compila per quota") e la
 (`src/versione.js`, ora **1.01.02**), il **blocco del weekend** nelle spin
 (voce 5b, provato da Mattia: *"ok funziona"*) e **`npm run lint`**, che è la
 rete sotto la schermata nera di quel pomeriggio.
-**Prossimo passo:** **lotto L — VPM**, voce 4b: portare a schermo il calcolo
-che già gira (funzione SQL + la barra della riga + i tre strati nella scheda). In sospeso fino a dopo questo weekend: **la spin 2**, che per via
+**Prossimo passo:** **lotto L — VPM**, voce 4c (L2): il numero nella barra
+della lista. I dati (L1) sono fatti e verificati. In sospeso fino a dopo questo weekend: **la spin 2**, che per via
 dei voti scende al 61,9% e al 47% (voce 5).
 
 **Recuperato il 7 ottobre**: Mattia ha cambiato wi-fi e football-data è tornato
@@ -185,13 +185,45 @@ ricalcola il proprio bankroll, e non può creare utenti.
      9,27, e Barcellona 9,39 / Porto 9,96 / Freiburg 9,91: nessun segno
      invertito. Su 149 partite del weekend, 5 sotto 4 e 12 sopra 8.
 
-4b. [ ] **Portarlo a schermo.** Serve una funzione SQL che dia i tre strati di
-   tutte le squadre in una chiamata (come `classifiche()`, sql/18), poi il
-   numero nella **barra della riga** — *giocata · Grado · VPM · quota* — e i
-   tre strati aperti nella scheda. ⚠️ Quattro voci su una riga di telefono sono
-   il massimo: va provato a 375px, o si va a due righe.
-   ⚠️ VPM **verde quando conferma, rosso quando contraddice**: la barra si deve
-   leggere senza leggere i numeri.
+4b. [x] **L1 — i dati, in una chiamata** — fatto il 9 ottobre 2026.
+   `sql/20-vpm.sql` → **`vpm_dati()`**, applicata e provata: **76,9 KB in
+   837 ms**, 15 campionati e gli scontri di 183 partite future (per confronto
+   `classifiche()` è 17,5 KB in 131 ms — accettabile per una chiamata per
+   sessione).
+   - Restituisce due blocchi: **squadre** (per campionato e squadra, le quattro
+     finestre `stagione · forma · casa · fuori` come somme grezze `n,v,gf,gs,tf,tc`)
+     e **scontri** (per `prossima_id`, i conti del testa a testa: ultimi 6
+     complessivi e ultimi 6 **sullo stesso campo**).
+   - ⚠️ **Somme grezze, non punteggi**: ancore e pesi restano in `lib/vpm.js`,
+     così si ritoccano senza migrazione. Stessa divisione dell'attendibilità —
+     il database dà i numeri, la libreria decide cosa valgono.
+   - ⚠️ **Niente filtro sul campionato negli scontri**, e il primo tentativo
+     aveva sbagliato: con `p.div = f.div` Ipswich-Fulham passava da 6 scontri a
+     2 e la bandierina spariva. I club sono gli stessi club, e `forma_partita()`
+     (sql/17) li mostra già così: due conteggi diversi sulla stessa partita
+     nella stessa schermata sarebbero un difetto.
+   - **Provato due volte, di proposito**: `scripts/prova-vpm.js` ora calcola
+     **dalle partite grezze e da `vpm_dati()`** e confronta — **149/149
+     identiche sul numero e sulle bandierine**. È così che si è trovato
+     l'errore del filtro: il confronto segnalava 8 bandierine diverse.
+   - **Permessi verificati con la chiave anon**: `permission denied for
+     function vpm_dati`. I tre `revoke`/`grant` di sql/19 sono nel file.
+
+4c. [ ] **L2 — il numero in lista.** `hooks/usaVpm.js` (una volta per sessione,
+   come `usaClassifiche`), il collante già pronto in `lib/vpm.js` (`forzaDi`,
+   `bandiere`), e la barra della riga: *giocata · Grado · VPM · quota*.
+   ⚠️ Quattro voci su una riga a 375px sono il limite: va provato, o si va a due
+   righe. ⚠️ VPM **verde quando conferma, rosso quando contraddice**: la barra
+   si deve leggere senza leggere i numeri. Più un filtro nel pannello ⚙:
+   *solo dove VPM contraddice*.
+
+4d. [ ] **L3 — la scheda.** I tre strati nell'ordine dell'iter (classifica →
+   forma → ruolo) con i parametri aperti, e le bandierine accanto al blocco
+   "Scontri diretti" che esiste già.
+
+4e. [ ] **L4 — dopo qualche settimana.** Ritoccare i pesi con le partite vere
+   davanti, e rispondere a *VPM aggiunge qualcosa al mercato?* — si fonde con
+   la voce 7 (giocate vere contro proposte).
 
 ## 🔵 Lotto E — Le spin
 *`SlotPage.jsx`, `SpinProvvisoriePage.jsx`, `lib/spin.js`, `rendiconto.js`.*

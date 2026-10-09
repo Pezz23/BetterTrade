@@ -213,7 +213,17 @@ controllo. ⚠️ Si guardano **due liste**, e quella che conta è il **solo ste
 campo**: Lens-Lyon ha 1 pareggio negli ultimi 6 scontri ma **3 su 6 giocati a
 Lens**. Il pareggio è la bandierina grave, perché per noi la X è una sconfitta.
 
-Si guarda da terminale con `scripts/prova-vpm.js`, che non scrive niente.
+**I dati arrivano da `vpm_dati()`** (`sql/20`), una chiamata per sessione come
+`classifiche()`: per ogni squadra le quattro finestre come **somme grezze**, e
+per ogni partita futura i conti del testa a testa. ⚠️ Gli scontri **non**
+filtrano sul campionato — i club sono gli stessi club anche quando uno era in
+seconda divisione, e `forma_partita()` li mostra già così.
+
+**`scripts/prova-vpm.js` calcola due volte** — dalle partite grezze e da
+`vpm_dati()` — e confronta. ⚠️ Non togliere quel confronto: è l'unico modo di
+accorgersi che la funzione SQL e la libreria si sono allontanate prima che il
+numero sbagliato finisca a schermo, ed è così che il 9/10 si è trovato il
+filtro sbagliato (8 bandierine su 149 diverse).
 
 ⚠️ **Una stellina scavalca la soglia, non il calendario.** Una partita votata
 entra nella spin anche se sta sotto soglia (`candidate()` in `lib/spin.js`
