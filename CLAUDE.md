@@ -543,6 +543,11 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   perché chiamati dal JSX, cioè dopo. Riordinati.
   ⚠️ **In un componente l'ordine delle righe è semantica, non stile**: un
   `useMemo` che legge un altro `useMemo` deve stare sotto di lui.
+- **`new Date().toISOString().slice(0,10)` è la data UTC, non quella di oggi.**
+  Fra mezzanotte e le due italiane restituisce **ieri**: il filtro "Oggi"
+  avrebbe mostrato le partite del giorno prima, e `usaProssime` le caricava già
+  così. Si passa da mezzogiorno — `oggiLocale()` in `lib/attendibilita.js`, la
+  stessa che usa la finestra, così le due non possono divergere (9/10/2026).
 - **Niente deve cambiare altezza quando arriva un dato.** Nella slot il ✓/✗ è
   più grande del pronostico e allungava la casella; la riga delle combinazioni
   vinte compariva dal nulla e spingeva giù la pagina sotto le dita. Si risolve

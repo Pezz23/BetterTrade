@@ -148,7 +148,9 @@ export default function PartitePage() {
           )
         })}
       </div>
-      {finestra !== 'settimana' && perFinestra[finestra] === perFinestra.settimana && !caricamento && (
+      {/* Solo per le finestre più larghe di "fino a lunedì": su "Oggi" il
+          confronto non vuol dire niente, è una finestra più stretta. */}
+      {['due', 'tutte'].includes(finestra) && perFinestra[finestra] === perFinestra.settimana && !caricamento && (
         <div style={{ fontSize: 11, color: C.fioco, fontFamily: F.sans, marginBottom: 8 }}>
           Nessuna partita in più rispetto a "fino a lunedì": i bookmaker non hanno ancora quotato quelle successive. Arrivano con i prossimi aggiornamenti.
         </div>

@@ -20,17 +20,31 @@ const COLORE_VPM = { contro: C.rosso, conferma: C.verde, incerto: C.fioco }
 // sotto, e la linea che la divide dalla precedente.
 const ALTA_VALORE = 20
 
-function Colonna({ valore, etichetta, colore, coloreEtichetta, divisore, dimensione = 17, primo = false }) {
+function Colonna({ valore, etichetta, colore, coloreEtichetta, divisore, dimensione = 17, primo = false, prefisso = null }) {
   return (
     <div style={{
       textAlign: 'center', padding: '0 4px',
       borderLeft: primo ? 'none' : `1px solid ${alpha(divisore, 0.3)}`,
     }}>
+      {/* ⚠️ Il prefisso è **appoggiato al bordo sinistro** e il numero resta
+          centrato nella colonna: messo accanto alla cifra la spostava fuori
+          centro e si confondeva con lei — Mattia: "è brutto, quasi non si
+          capisce". Fuori dal flusso (`absolute`) il numero non si muove. */}
       <div style={{
+        position: 'relative',
         height: ALTA_VALORE, display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: dimensione, fontWeight: dimensione < 17 ? 800 : 700, fontFamily: F.mono, color: colore,
         lineHeight: 1, whiteSpace: 'nowrap',
-      }}>{valore}</div>
+      }}>
+        {prefisso != null && (
+          <span style={{
+            position: 'absolute', left: 0, top: 0, bottom: 0,
+            display: 'flex', alignItems: 'center',
+            fontSize: 13, fontWeight: 700, lineHeight: 1,
+          }}>{prefisso}</span>
+        )}
+        {valore}
+      </div>
       <div style={{ fontSize: 8, fontFamily: F.mono, color: coloreEtichetta || C.spento, letterSpacing: '0.1em', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {etichetta}
       </div>
@@ -79,9 +93,8 @@ export default function RigaPartita({ p, cat, vpm = null, voti = 0, mio = false,
             il dato non c'è: niente deve cambiare misura quando arriva. */}
         <Colonna etichetta="VPM" colore={COLORE_VPM[vsVpm] || C.fantasma} divisore={c.colore}
           coloreEtichetta={vsVpm && vsVpm !== 'incerto' ? COLORE_VPM[vsVpm] : undefined}
-          valore={vpm?.punti != null
-            ? <><span style={{ fontSize: 11, fontWeight: 400, opacity: 0.75 }}>{vpm.segno} </span>{vpm.punti.toFixed(2).replace('.', ',')}</>
-            : '—'} />
+          prefisso={vpm?.punti != null ? vpm.segno : null}
+          valore={vpm?.punti != null ? vpm.punti.toFixed(2).replace('.', ',') : '—'} />
 
         {/* Per la combinata con l'over non abbiamo la quota (nessuna fonte dà
             l'over 1,5): si mostra quella del segno secco, e lo si dice sotto.

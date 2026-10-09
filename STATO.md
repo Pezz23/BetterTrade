@@ -311,6 +311,21 @@ ricalcola il proprio bankroll, e non può creare utenti.
      criteri di riserva** (attendibilità, poi data) — senza, due partite con lo
      stesso Grado si scambiano di posto a ogni ridisegno e la lista balla.
 
+4c-quinquies. [x] **Finestra "Oggi" e il segno di VPM al bordo** — 9 ottobre
+   2026 (**1.05.00**).
+   - **"Oggi"** è la prima pillola delle finestre, accanto a "Fino a lunedì":
+     oggi dà **17 partite** su 141 della settimana. ⚠️ La data è **locale**
+     (`oggiLocale()`), non `toISOString`: quella è UTC e fra mezzanotte e le due
+     italiane dà ieri — provato, all'01:00 del 10/10 UTC dice 09/10. **La stessa
+     funzione la usa ora anche `usaProssime`**, che prima caricava con la data
+     UTC: così le due non possono divergere.
+   - La nota *"nessuna partita in più"* ora compare solo per le finestre **più
+     larghe** di "fino a lunedì": su "Oggi" quel confronto non vuol dire niente.
+   - **Il segno di VPM è appoggiato al bordo sinistro della cella**, fuori dal
+     flusso, e il numero resta centrato. Mattia: *"è brutto, quasi non si
+     capisce"*. Messo accanto alla cifra la spostava fuori centro e si
+     confondeva con lei; `position: absolute` lo stacca senza muovere il numero.
+
 4d. [ ] **L3 — la scheda.** I tre strati nell'ordine dell'iter (classifica →
    forma → ruolo) con i parametri aperti, e le bandierine accanto al blocco
    "Scontri diretti" che esiste già.

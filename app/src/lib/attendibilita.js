@@ -170,7 +170,20 @@ export function martediChiusura(oggi = new Date()) {
   return d.toISOString().slice(0, 10)
 }
 
+/**
+ * La data di oggi, **in ora locale**.
+ *
+ * ⚠️ `new Date().toISOString().slice(0,10)` è la data **UTC**: fra mezzanotte e
+ * le due italiane restituisce ieri, e un filtro "Oggi" mostrerebbe le partite
+ * del giorno prima. Si passa da mezzogiorno, come in `martediChiusura`.
+ */
+export function oggiLocale(d = new Date()) {
+  const x = new Date(d); x.setHours(12, 0, 0, 0)
+  return x.toISOString().slice(0, 10)
+}
+
 export const FINESTRE = [
+  { id: 'oggi',      label: 'Oggi',              fine: () => oggiLocale() },
   { id: 'settimana', label: 'Fino a lunedì',     fine: () => lunediProssimo(0) },
   { id: 'due',       label: 'Anche la prossima', fine: () => lunediProssimo(1) },
   { id: 'tutte',     label: 'Tutte',             fine: () => '9999-12-31' },

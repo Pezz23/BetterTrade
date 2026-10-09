@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { useAuth } from '../context/AuthContext'
-import { valuta } from '../lib/attendibilita'
+import { valuta, oggiLocale } from '../lib/attendibilita'
 
 // Le partite future valutate, con i voti degli admin. Lo usano la pagina
 // Partite e le Spin provvisorie: stessa lista, stesse stelline, un solo posto
@@ -16,7 +16,10 @@ export function usaProssime() {
 
   useEffect(() => {
     async function carica() {
-      const oggi = new Date().toISOString().slice(0, 10)
+      // ⚠️ Data locale, non UTC: fra mezzanotte e le due italiane `toISOString`
+      // dà ieri, e la lista mostrava partite già giocate. Stessa funzione che
+      // usa la finestra "Oggi", così le due non possono divergere.
+      const oggi = oggiLocale()
       const { data, error } = await supabase
         .from('prossime_partite')
         .select('id, div, campionato, data, ora, casa, trasferta, scaricato_il, fonte, book, book_1, book_x, book_2, b365_1, b365_x, b365_2, b365_over25, avg_ap_1, avg_ap_x, avg_ap_2, max_ap_1, max_ap_x, max_ap_2')
