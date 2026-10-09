@@ -213,6 +213,26 @@ ricalcola il proprio bankroll, e non può creare utenti.
       priorità**. Prima si capisce quanto prezzo si può recuperare, perché quei
       3,4 punti sono più grandi di qualunque correzione.
 
+15c. [x] **Backtest A2 — Mattia gioca su Bet365** (10/10/2026). Il +3,4 della
+    massima non è suo, quindi: c'è un sottoinsieme di Bet365 sopra 100?
+    - **No, e non è dimostrabile.** "Bet365 paga più della media" dà 101,2%
+      [96,9 … 105,6]; attendibilità 65-70% dà 101,3% [98,4 … 104,3]. Nessuno
+      significativo.
+    - ⚠️ **Il limite è l'archivio, non il criterio**: per dimostrare +2% servono
+      **3.553 scommesse**, la fascia ne ha **2.733 in otto stagioni**. Il
+      vantaggio minimo visibile è **±2,3%**. Un vantaggio vero del 2% resta
+      invisibile — quindi **nessun backtest su questi dati può validare una
+      selezione**, e va detto prima di chiederglielo.
+    - ⚠️ **Il CLV è negativo (−3,15% contro l'exchange di chiusura) ma è una
+      misura sbagliata per questa fascia**: la chiusura implica 70,5% e il
+      favorito ha vinto 72,7%, quindi prevedeva resa 96,8% contro il 99,8%
+      reale. Il bias sui favoriti sopravvive alla chiusura. **Il CLV resta
+      valido solo dove è stato validato** (valore a quota media 6).
+    - **Conclusione**: sui favoriti corti a Bet365 si gioca **alla pari**
+      (99,8% ± 2,3). I guadagni dimostrabili sono **strutturali**: quote corte
+      invece di lunghe (+5,5 punti) e **una partita per volta** invece di due o
+      tre. La selezione serve a **escludere**, non a creare margine.
+
 16. **Trovare il voto minimo da giocare**, misurato: sopra quale voto le spin
     pagano. È la domanda che un output unico rende rispondibile e che oggi, con
     tre indicatori e una soglia su uno solo, non lo è.

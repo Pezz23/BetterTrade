@@ -323,6 +323,47 @@ cambia: la scala a recupero rompe il pari esattamente a resa 100%.)
   **−0,20** · a 102,1% rende **+2,28**. Tutto il sistema vive in una banda di
   quattro punti, che è la stessa larghezza dello scarto fra i book.
 
+#### Misurato il 10/10/2026 — Mattia gioca su Bet365, e il quadro è questo
+
+**Il +3,4 della massima di mercato non è disponibile**: serve il conto su quel
+book. Quindi la domanda diventa: su **Bet365**, c'è un sottoinsieme con resa
+sopra 100? Misurato sulla fascia 1,30-1,45 (2.733 partite):
+
+- **Bet365 paga più della media di mercato** (748 partite): resa **101,2%**
+  [96,9 … 105,6] — non significativo. Con scarto > +2% (124): 103,2%, intervallo
+  enorme.
+- **Per attendibilità**: 65-70% → **101,3%** [98,4 … 104,3] (1.661 partite) ·
+  70-75% → 97,6% · 60-65% → 96,4%. Nessuno significativo.
+
+⚠️ **E non lo sarà mai con questo archivio.** La deviazione standard di una
+scommessa a 1,37 è **0,608**, quindi per dimostrare un vantaggio servono:
+**+2% → 3.553 scommesse · +1% → 14.211**. La fascia ha **2.733 partite in otto
+stagioni** (~340 l'anno): il vantaggio minimo visibile è **±2,3%**. Un vantaggio
+reale del 2% è **invisibile** qui. Non si può validare col backtest, e chi dice
+il contrario sta leggendo il rumore.
+
+⚠️⚠️ **Il CLV NON vale sui favoriti corti, e questo smentisce in parte la regola
+scritta sopra.** Misurato: CLV della fascia contro la chiusura = **−5,66%**
+(media) e **−3,15%** (exchange), negativo in tutte le fasce e tutte le stagioni.
+Sembrerebbe una condanna, ma **la chiusura sottoprezza i favoriti**: implica
+**70,5%** mentre il favorito ha vinto davvero **72,7%** — 2,2 punti di
+favourite-longshot bias che restano anche a mercato chiuso. Tradotto: la
+chiusura prevedeva resa **96,8%**, la realtà ha dato **99,8%**.
+**Quindi il CLV va usato solo dove è stato validato** — le scommesse di valore a
+quota media 6 (+2,0%) — e **non sui favoriti a 1,30-1,45**, dove è sistematicamente
+pessimista. Se una sessione futura rimisura il CLV e conclude "la scala perde",
+sta usando lo strumento sbagliato.
+
+**La conclusione onesta:** sul suo book, la fascia dei favoriti corti è
+**approssimativamente un gioco alla pari** (99,8% ± 2,3). Non si dimostra un
+vantaggio, ma non si sanguina come su tutto il resto: tutti i favoriti insieme
+fanno 95,3%, la fascia 1,70-2,00 il 94,3%. **I guadagni dimostrabili sono
+strutturali, non di selezione**: stare sulle **quote corte** invece che lunghe
+(+5,5 punti) e giocare **una partita per volta** invece di due o tre
+(SOFT −5,0% per ciclo contro HARD −10,6%, perché la resa di una combinata è il
+prodotto delle rese). La selezione serve a **escludere** i sottoinsiemi peggiori,
+non a creare un margine.
+
 ⚠️ **Corollario sul formato:** l'attendibilità **non si converte in 1-10**.
 È il seme del voto finale e l'unica cosa calibrata che abbiamo; una conversione
 lineare trasforma `75%` in `7,75` — le stesse cifre, nessun guadagno, e si perde
