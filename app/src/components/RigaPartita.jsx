@@ -16,6 +16,28 @@ export { CATEGORIE, pct, giorno }
 // senza leggere i numeri.
 const COLORE_VPM = { contro: C.rosso, conferma: C.verde, neutro: C.fioco }
 
+// Una colonna della barra: il valore in una fascia di altezza fissa, l'etichetta
+// sotto, e la linea che la divide dalla precedente.
+const ALTA_VALORE = 20
+
+function Colonna({ valore, etichetta, colore, coloreEtichetta, divisore, dimensione = 17, primo = false }) {
+  return (
+    <div style={{
+      textAlign: 'center', padding: '0 4px',
+      borderLeft: primo ? 'none' : `1px solid ${alpha(divisore, 0.3)}`,
+    }}>
+      <div style={{
+        height: ALTA_VALORE, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: dimensione, fontWeight: dimensione < 17 ? 800 : 700, fontFamily: F.mono, color: colore,
+        lineHeight: 1, whiteSpace: 'nowrap',
+      }}>{valore}</div>
+      <div style={{ fontSize: 8, fontFamily: F.mono, color: coloreEtichetta || C.spento, letterSpacing: '0.1em', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {etichetta}
+      </div>
+    </div>
+  )
+}
+
 export default function RigaPartita({ p, cat, vpm = null, voti = 0, mio = false, puoVotare = false, onVota, onApri }) {
   const c = CATEGORIE[cat]
   const quota = p.quotaGiocata ?? p.quota
@@ -36,49 +58,34 @@ export default function RigaPartita({ p, cat, vpm = null, voti = 0, mio = false,
 
       <TestataPartita p={p} cat={cat} compatta />
 
-      {/* Quattro colonne **uguali**, ogni numero centrato nella sua: prima la
-          giocata stava a sinistra e la quota a destra, con larghezze diverse, e
+      {/* Quattro colonne **uguali**, divise da una linea, ogni valore centrato
+          nella sua — in larghezza e in altezza. Prima la giocata stava a
+          sinistra e la quota a destra con colonne di larghezze diverse, e
           scorrendo la lista i numeri ballavano da una riga all'altra.
-          Ogni colonna ha la sua etichetta sotto, anche la giocata: senza, quella
-          colonna sarebbe l'unica più alta e la fila si vedrebbe storta. */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', alignItems: 'start', gap: 6, marginTop: 10, padding: '8px 6px',
+          ⚠️ La fascia del valore ha **altezza fissa**: la giocata è scritta più
+          piccola delle cifre (deve starci "1+O1,5"), e senza quell'altezza le
+          quattro etichette sotto finirebbero a quote diverse. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', marginTop: 10, padding: '8px 0',
         background: alpha(c.colore, 0.07), border: `1px solid ${alpha(c.colore, 0.28)}`, borderRadius: 0 }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 15, fontWeight: 800, fontFamily: F.mono, color: c.colore, lineHeight: 1, whiteSpace: 'nowrap' }}>{pronosticoDa(p.giocata)}</div>
-          <div style={{ fontSize: 8, fontFamily: F.mono, color: C.spento, letterSpacing: '0.1em', marginTop: 3 }}>GIOCATA</div>
-        </div>
+        <Colonna etichetta="GIOCATA" colore={c.colore} dimensione={15}
+          valore={pronosticoDa(p.giocata)} divisore={c.colore} primo />
 
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 17, fontWeight: 700, fontFamily: F.mono, color: C.testo, lineHeight: 1 }}>
-            {p.grado != null ? p.grado.toFixed(2).replace('.', ',') : '—'}
-          </div>
-          <div style={{ fontSize: 8, fontFamily: F.mono, color: C.spento, letterSpacing: '0.1em', marginTop: 3 }}>GRADO</div>
-        </div>
+        <Colonna etichetta="GRADO" colore={C.testo} divisore={c.colore}
+          valore={p.grado != null ? p.grado.toFixed(2).replace('.', ',') : '—'} />
 
         {/* VPM: quanto il campo conferma la giocata. Lo spazio è riservato
             anche quando il dato non c'è — niente deve cambiare altezza o
             larghezza quando arriva un numero. */}
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 17, fontWeight: 700, fontFamily: F.mono, color: COLORE_VPM[vsVpm] || C.fantasma, lineHeight: 1 }}>
-            {vpm != null ? vpm.toFixed(2).replace('.', ',') : '—'}
-          </div>
-          <div style={{ fontSize: 8, fontFamily: F.mono, color: vsVpm === 'neutro' || !vsVpm ? C.spento : COLORE_VPM[vsVpm], letterSpacing: '0.1em', marginTop: 3 }}>VPM</div>
-        </div>
+        <Colonna etichetta="VPM" colore={COLORE_VPM[vsVpm] || C.fantasma} divisore={c.colore}
+          coloreEtichetta={vsVpm && vsVpm !== 'neutro' ? COLORE_VPM[vsVpm] : undefined}
+          valore={vpm != null ? vpm.toFixed(2).replace('.', ',') : '—'} />
 
         {/* Per la combinata con l'over non abbiamo la quota (nessuna fonte dà
-            l'over 1,5): si mostra quella del segno secco, e si dice che l'over
-            va letto sul book. */}
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 17, fontWeight: 700, fontFamily: F.mono, color: C.oro, lineHeight: 1 }}>
-            {quota ? quota.toFixed(2).replace('.', ',') : '—'}
-          </div>
-          {/* ⚠️ Una riga sola: con quattro colonne uguali lo spazio è un quarto
-              della card, e questa scritta andando a capo allungherebbe solo
-              alcune righe — lista irregolare. La fonte sta nella scheda. */}
-          <div style={{ fontSize: 8, fontFamily: F.mono, color: C.spento, letterSpacing: '0.1em', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {!p.quotaGiocata && p.quota ? `${p.segno} SECCO` : 'QUOTA'}
-          </div>
-        </div>
+            l'over 1,5): si mostra quella del segno secco, e lo si dice sotto.
+            Il nome del book sta nella scheda: in un quarto di card non ci sta. */}
+        <Colonna etichetta={!p.quotaGiocata && p.quota ? `${p.segno} SECCO` : 'QUOTA'}
+          colore={C.oro} divisore={c.colore}
+          valore={quota ? quota.toFixed(2).replace('.', ',') : '—'} />
       </div>
     </Card>
   )

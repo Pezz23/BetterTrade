@@ -261,6 +261,12 @@ ricalcola il proprio bankroll, e non può creare utenti.
      allungato solo alcune righe. Ora dice `QUOTA` o `1 SECCO`; **la fonte
      resta nei dettagli completi della scheda**, dove c'era già.
    - Vale anche per **Partite votate**, che usa la stessa riga.
+   - **Rifinito subito dopo** (1.02.03): valore **centrato anche in altezza** e
+     **linee divisorie** fra le quattro colonne. ⚠️ La fascia del valore ha
+     **altezza fissa** (`ALTA_VALORE`): la giocata è scritta più piccola delle
+     cifre perché deve starci `1+O1,5`, e senza quell'altezza le quattro
+     etichette sotto stavano a quote diverse. Le quattro colonne sono ora un
+     unico componente `Colonna`, così non si possono più disallineare.
 
 4d. [ ] **L3 — la scheda.** I tre strati nell'ordine dell'iter (classifica →
    forma → ruolo) con i parametri aperti, e le bandierine accanto al blocco
