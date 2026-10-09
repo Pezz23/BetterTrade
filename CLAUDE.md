@@ -238,6 +238,27 @@ accorgersi che la funzione SQL e la libreria si sono allontanate prima che il
 numero sbagliato finisca a schermo, ed è così che il 9/10 si è trovato il
 filtro sbagliato (8 bandierine su 149 diverse).
 
+**A schermo** sta in due posti: il numero nella barra della riga
+(`RigaPartita`, col segno appoggiato al bordo sinistro della cella) e il blocco
+**🧮 VPM** nella scheda (`DettaglioPartita`), che mostra le due forze, i tre
+strati e i sette parametri — il valore più alto di ogni riga in grassetto, così
+si trova chi vince quel parametro senza leggere le cifre. Le bandierine del
+testa a testa stanno sopra l'elenco degli **Scontri diretti**, ed enunciano
+sempre *su quante* partite sono calcolate: l'elenco ne mostra 5 complessivi
+(`forma_partita`), la bandierina conta 6 sullo stesso campo, e senza quel "su 6"
+sembra un errore di conto.
+⚠️ Accanto a ogni strato c'è il **peso vero**, non quello nominale: a ottobre
+"nel ruolo" vale 10% invece di 25%, perché le partite in quel ruolo sono 2 su 5
+e il peso che avanza torna alla stagione. Senza quel numero sembrerebbero tre
+strati indipendenti.
+⚠️ **La scheda si calcola VPM da sé** dallo stesso hook di sessione della lista
+(`usaVpm`): stessa funzione, stessi dati, non possono divergere.
+
+⚠️ `vociPesate()` e `forza()` sono **due strade sugli stessi numeri**: deve
+valere `Σ PESI[k] × vociPesate[k] = forza.punti`. `scripts/prova-scheda.js` lo
+controlla su tutte le partite (298 squadre-partita, scarto 3,6·10⁻¹⁵) — se non
+torna, una delle due è stata toccata senza l'altra.
+
 ⚠️ **Una stellina scavalca la soglia, non il calendario.** Una partita votata
 entra nella spin anche se sta sotto soglia (`candidate()` in `lib/spin.js`
 accetta `votiDi`): è un gesto deliberato di una persona, e vale più del calcolo.
@@ -641,6 +662,7 @@ node --env-file=.env scripts/aggiorna.js --esegui                   # LA ROUTINE
 #   = import-storico --stagioni=2627 → riconcilia-prossime → importa-prossime
 node --env-file=.env scripts/prova-vpm.js           # VPM sul weekend: dove campo e mercato litigano
 node --env-file=.env scripts/prova-ordine.js        # i tre ordini della lista, casi limite compresi
+node --env-file=.env scripts/prova-scheda.js --squadra=Lens   # il blocco VPM della scheda, e l'identità dei pesi
 node --env-file=.env scripts/rendiconto.js          # IL RENDICONTO: calibrazione + resa delle proposte
 node --env-file=.env scripts/misura-valore.js --riferimento=media   # il criterio, a fine stagione
 node --env-file=.env scripts/import-storico.js --campionati=P1,N1   # solo alcuni campionati

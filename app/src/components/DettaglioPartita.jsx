@@ -7,6 +7,8 @@ import TestataPartita, { CATEGORIE, Stella, Barra, pct } from './TestataPartita'
 import { pronosticoDa } from '../lib/spin'
 import { sigla } from '../lib/campionati'
 import { tocco } from '../lib/schermo'
+import { usaVpm } from '../hooks/usaVpm'
+import { valutaPartita, vociPesate, verso, PESI, ETICHETTE, NOMI_STRATI, PESI_STRATI, VPM_NETTO } from '../lib/vpm'
 
 // La scheda di una partita: tutto quello che sappiamo, in blocchi.
 // Pensata prima per il telefono — una colonna, numeri grandi, niente muri di
@@ -17,6 +19,36 @@ import { tocco } from '../lib/schermo'
 // cambia lì.
 
 const ESITO = { V: C.verde, N: C.giallo, P: C.rosso }
+const COLORE_VPM = { contro: C.rosso, conferma: C.verde, incerto: C.fioco }
+const PAROLA_VPM = {
+  conferma: 'conferma la giocata',
+  contro: 'dice il contrario della giocata',
+  incerto: 'non si pronuncia: squadre troppo simili',
+}
+
+// Una riga del confronto fra le due squadre: etichetta a sinistra, i due numeri
+// uno per squadra, e in grassetto quello più alto — l'occhio deve trovare da
+// solo chi vince quel parametro, senza leggere le cifre.
+const Confronto = ({ etichetta, nota, a, b, forte = false }) => {
+  const ma = a != null && b != null && a > b
+  const mb = a != null && b != null && b > a
+  const n = x => (x == null ? '—' : x.toFixed(2).replace('.', ','))
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 52px 52px', alignItems: 'baseline', gap: 6, padding: '5px 0' }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: forte ? 12 : 11, fontWeight: forte ? 700 : 500, fontFamily: F.sans, color: forte ? C.testo : C.fioco }}>{etichetta}</div>
+        {nota && <div style={{ fontSize: 9, fontFamily: F.mono, color: C.fantasma }}>{nota}</div>}
+      </div>
+      {[[a, ma], [b, mb]].map(([v, max], i) => (
+        <div key={i} style={{
+          textAlign: 'right', fontFamily: F.mono, fontSize: forte ? 15 : 13,
+          fontWeight: max || forte ? 700 : 400,
+          color: v == null ? C.fantasma : max ? C.testo : C.spento,
+        }}>{n(v)}</div>
+      ))}
+    </div>
+  )
+}
 
 const Blocco = ({ titolo, extra, children, style, sottolinea }) => (
   <div style={{ background: C.card, border: `1px solid ${C.bordo}`, borderRadius: 12, padding: '13px 14px', ...style }}>
@@ -50,6 +82,12 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
   const [dettagli, setDettagli] = useState(false)
   const [scelta, setScelta] = useState(null)   // "<squadra>|<indice>" della casella toccata
   const { forma, errore } = usaForma(p.div, p.casa, p.trasferta)
+  // ⚠️ La scheda si calcola VPM da sé, dallo stesso hook di sessione che usa la
+  // lista: stessa funzione e stessi dati, quindi non possono dire numeri
+  // diversi. Passarlo come proprietà avrebbe voluto dire toccare due pagine.
+  const datiVpm = usaVpm()
+  const v = datiVpm ? valutaPartita(datiVpm, p) : null
+  const vs = verso(v)
   const c = CATEGORIE[cat]
   const squadre = [p.casa, p.trasferta]
   const q = n => n == null ? '—' : Number(n).toFixed(2).replace('.', ',')
@@ -118,6 +156,75 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
         {p.nota && <div style={{ marginTop: 6, fontSize: 11, fontFamily: F.sans, color: C.fioco, lineHeight: 1.5 }}>{p.nota}</div>}
         </div>
       </div>
+
+      {/* ── 2b. VPM: da dove viene il numero ───────────────────────────
+          In lista si legge "2 7,32"; qui dev'essere evidente **perché**, e
+          nell'ordine in cui lo si farebbe a mano: le due forze, i tre strati,
+          i parametri. ⚠️ Accanto a ogni strato c'è il **peso vero**, non quello
+          nominale: a ottobre le partite nel ruolo sono 1-3 e il blocco vale una
+          frazione del suo 25%. Senza quel numero sembrerebbero tre strati
+          indipendenti, e oggi non lo sono. */}
+      {v && v.punti != null && (() => {
+        const forti = [v.forzaCasa, v.forzaFuori]
+        const voci = forti.map(vociPesate)
+        const vincente = v.segno === '1' ? p.casa : p.trasferta
+        return (
+          <Blocco titolo="🧮 VPM" extra={`il campo dice ${v.segno}`} sottolinea>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
+              <div style={{ fontSize: 12, fontFamily: F.sans, color: C.fioco, lineHeight: 1.5 }}>
+                <b style={{ color: COLORE_VPM[vs] }}>{vincente}</b>, e {PAROLA_VPM[vs]}.
+                {vs !== 'incerto' && <> Sotto {String(VPM_NETTO).replace('.', ',')} non si pronuncia.</>}
+              </div>
+              <div style={{ fontSize: 26, fontWeight: 800, fontFamily: F.mono, color: COLORE_VPM[vs], lineHeight: 1, flexShrink: 0 }}>
+                {v.punti.toFixed(2).replace('.', ',')}
+              </div>
+            </div>
+
+            {/* L'intestazione con le due squadre: le colonne qui sotto sono
+                loro, e senza i nomi non si capirebbe quale sia quale. */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 52px 52px', gap: 6, paddingBottom: 6, borderBottom: `1px solid ${C.bordoChiaro}` }}>
+              <div />
+              {squadre.map(sq => (
+                <div key={sq} style={{ textAlign: 'right', fontSize: 9, fontFamily: F.mono, color: C.spento, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {sq.length > 8 ? sq.slice(0, 8) + '…' : sq}
+                </div>
+              ))}
+            </div>
+
+            <Confronto etichetta="FORZA" nota="in casa · fuori" forte
+              a={forti[0]?.punti} b={forti[1]?.punti} />
+
+            <div style={{ borderTop: `1px solid ${C.bordoTenue}`, marginTop: 4, paddingTop: 4 }}>
+              {['stagione', 'forma', 'ruolo'].map(nome => {
+                const sa = forti[0]?.strati?.[nome], sb = forti[1]?.strati?.[nome]
+                const pa = forti[0]?.pesi?.[nome] ?? 0, pb = forti[1]?.pesi?.[nome] ?? 0
+                const pesoDetto = Math.round(pa * 100) === Math.round(pb * 100)
+                  ? `${Math.round(pa * 100)}%` : `${Math.round(pa * 100)}% · ${Math.round(pb * 100)}%`
+                return (
+                  <Confronto key={nome} etichetta={NOMI_STRATI[nome]}
+                    nota={`peso ${pesoDetto} · ${sa?.n ?? 0} e ${sb?.n ?? 0} partite`}
+                    a={sa?.punti} b={sb?.punti} />
+                )
+              })}
+              {forti.some(f => f && f.pesi.ruolo < PESI_STRATI.ruolo - 0.001) && (
+                <div style={{ fontSize: 10, fontFamily: F.sans, color: C.fantasma, lineHeight: 1.5, marginTop: 4 }}>
+                  Lo strato nel ruolo vale meno del suo {Math.round(PESI_STRATI.ruolo * 100)}% perché le partite
+                  giocate in quel ruolo sono meno di cinque: il peso che avanza torna alla stagione.
+                </div>
+              )}
+            </div>
+
+            {/* I parametri, con i tre strati già fusi: la loro somma pesata
+                fa esattamente la FORZA qui sopra. */}
+            <div style={{ borderTop: `1px solid ${C.bordoChiaro}`, marginTop: 8, paddingTop: 6 }}>
+              {Object.keys(PESI).map(k => (
+                <Confronto key={k} etichetta={ETICHETTE[k]} nota={`peso ${(PESI[k] * 100).toFixed(0)}%`}
+                  a={voci[0]?.[k]} b={voci[1]?.[k]} />
+              ))}
+            </div>
+          </Blocco>
+        )
+      })()}
 
       {errore && <Blocco><div style={{ color: C.rosso, fontSize: 12, fontFamily: F.sans }}>⚠️ {errore}</div></Blocco>}
       {!forma && !errore && <Blocco><div style={{ color: C.spento, fontSize: 12, fontFamily: F.mono }}>carico la forma…</div></Blocco>}
@@ -236,6 +343,29 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
 
         {/* ── 5. Gli scontri diretti ────────────────────────────────── */}
         <Blocco titolo="⚔️ Scontri diretti" extra={forma.scontri.length ? `ultimi ${forma.scontri.length}` : null} sottolinea>
+          {/* Le bandierine di VPM, sopra l'elenco: è qui che si viene a
+              cercarle. ⚠️ Dicono su quante partite sono calcolate, e il numero
+              **non coincide** con l'elenco sotto: lì ci sono gli ultimi 5
+              complessivi (`forma_partita`, sql/17), la bandierina guarda gli
+              ultimi 6 e, se li ha, i 6 giocati **su questo campo** — che è la
+              domanda vera. Senza quel "su 6" sembrerebbe un errore di conto. */}
+          {v?.bandiere?.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 10 }}>
+              {v.bandiere.map((b, i) => (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: 7, padding: '7px 9px', borderRadius: 8,
+                  background: `linear-gradient(${alpha(b.grave ? C.rosso : C.fioco, 0.10)},${alpha(b.grave ? C.rosso : C.fioco, 0.10)}), ${C.card}`,
+                  border: `1px solid ${alpha(b.grave ? C.rosso : C.fioco, b.grave ? 0.45 : 0.25)}`,
+                }}>
+                  <span style={{ fontSize: 13, lineHeight: 1 }}>{b.grave ? '🔴' : '⚪️'}</span>
+                  <span style={{ fontSize: 12, fontFamily: F.sans, color: b.grave ? C.testo : C.fioco, lineHeight: 1.4 }}>
+                    {b.testo}
+                    {b.tipo === 'pari' && <span style={{ color: C.spento }}> — per noi il pareggio è una sconfitta</span>}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
           {forma.scontri.length === 0
             ? <div style={{ fontSize: 12, color: C.fantasma, fontFamily: F.sans }}>nessun precedente in archivio (dal 2016)</div>
             : (() => {

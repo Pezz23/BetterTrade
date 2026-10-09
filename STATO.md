@@ -18,8 +18,10 @@ lotto I (la posizione in classifica nel tondo, "compila per quota") e la
 (`src/versione.js`, ora **1.01.02**), il **blocco del weekend** nelle spin
 (voce 5b, provato da Mattia: *"ok funziona"*) e **`npm run lint`**, che è la
 rete sotto la schermata nera di quel pomeriggio.
-**Prossimo passo:** **lotto L — VPM**, voce 4d (L3): i tre strati aperti nella
-scheda della partita, con le bandierine del testa a testa. L1 e L2 sono fatti. In sospeso fino a dopo questo weekend: **la spin 2**, che per via
+**Prossimo passo:** VPM è **finito e in uso** (L1-L3). Resta **L4**, da fare fra
+qualche settimana con le partite vere davanti: ritoccare i pesi e rispondere a
+*VPM aggiunge qualcosa al mercato?*. Nel frattempo i lotti liberi sono **E**
+(il resto delle spin), **F** (automazione) e **M** (backtest). In sospeso fino a dopo questo weekend: **la spin 2**, che per via
 dei voti scende al 61,9% e al 47% (voce 5).
 
 **Recuperato il 7 ottobre**: Mattia ha cambiato wi-fi e football-data è tornato
@@ -326,9 +328,33 @@ ricalcola il proprio bankroll, e non può creare utenti.
      capisce"*. Messo accanto alla cifra la spostava fuori centro e si
      confondeva con lei; `position: absolute` lo stacca senza muovere il numero.
 
-4d. [ ] **L3 — la scheda.** I tre strati nell'ordine dell'iter (classifica →
-   forma → ruolo) con i parametri aperti, e le bandierine accanto al blocco
-   "Scontri diretti" che esiste già.
+4d. [x] **L3 — la scheda** — fatto il 9 ottobre 2026 (**1.06.00**), provato da
+   Mattia in `npm run dev` prima del commit.
+   - Blocco **🧮 VPM** subito sotto la giocata: le due forze a confronto, i tre
+     strati, i sette parametri. Il numero più alto di ogni riga è in grassetto e
+     chiaro, l'altro spento — si trova chi vince quel parametro **senza leggere
+     le cifre**.
+   - ⚠️ **Accanto a ogni strato c'è il peso VERO, non quello nominale.** Su
+     Lens-Lyon "nel ruolo" vale **10%** e non 25%, perché Lens ha giocato 2
+     partite in casa su 5: il peso che avanza torna alla stagione, che sale a
+     60%. Una riga lo spiega in chiaro. Senza quel numero sembrerebbero tre
+     strati indipendenti, e a ottobre non lo sono.
+   - **Quello che la lista non poteva dire**: nella riga "nel ruolo" Lens fa
+     **7,29** contro il 6,55 di Lyon — in casa Lens è più squadra di quanto Lyon
+     lo sia fuori. È il passo 3 dell'iter che funziona; pesa 10%, quindi non
+     ribalta niente, ma ora si vede invece di essere dedotto.
+   - **Le bandierine** stanno nel blocco "⚔️ Scontri diretti", sopra l'elenco.
+     ⚠️ L'elenco mostra **5** scontri (`forma_partita`, sql/17) e la bandierina
+     conta **6, sullo stesso campo**: per questo la scritta dice sempre *su
+     quante*, altrimenti sembra un errore di conto.
+   - ⚠️ **La scheda si calcola VPM da sé**, dallo stesso hook di sessione della
+     lista: stessa funzione e stessi dati, quindi non possono divergere. Passarlo
+     come proprietà avrebbe voluto dire toccare due pagine.
+   - **Nuovo controllo che resta**: `vociPesate()` (i parametri con i tre strati
+     fusi) e `forza()` sono due strade sugli stessi numeri, quindi deve valere
+     `Σ pesi × parametri = FORZA`. `scripts/prova-scheda.js` lo verifica su
+     tutte le partite: **298 squadre-partita, scarto massimo 3,6·10⁻¹⁵**. Se un
+     giorno qualcuno tocca i pesi in un posto e non nell'altro, lo dice subito.
 
 4e. [ ] **L4 — dopo qualche settimana.** Ritoccare i pesi con le partite vere
    davanti, e rispondere a *VPM aggiunge qualcosa al mercato?* — si fonde con

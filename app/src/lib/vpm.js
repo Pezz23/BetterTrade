@@ -179,6 +179,41 @@ export function forzaDi(finestre, dove) {
   }, dove)
 }
 
+// Come si chiamano a schermo, nell'ordine dei pesi.
+export const ETICHETTE = {
+  vittorie: 'Vittorie',
+  gs: 'Gol subiti',
+  gf: 'Gol fatti',
+  dominio: 'Dominio',
+  tc: 'Tiri concessi',
+  tf: 'Tiri in porta',
+  dr: 'Differenza reti',
+}
+
+export const NOMI_STRATI = { stagione: 'Stagione', forma: 'Forma', ruolo: 'Nel ruolo' }
+
+/**
+ * Ogni parametro con i tre strati già fusi, per mostrare **da dove viene** la
+ * forza nella scheda della partita.
+ *
+ * ⚠️ Usa gli stessi pesi degli strati, quindi vale l'identità
+ * `Σ PESI[k] × vociPesate[k] = forza.punti`: se un giorno non tornasse, uno dei
+ * due calcoli è stato toccato senza l'altro. `scripts/prova-scheda.js` lo
+ * controlla su tutte le partite.
+ */
+export function vociPesate(f) {
+  if (!f) return null
+  const out = {}
+  for (const k of Object.keys(PESI)) {
+    out[k] = 0
+    for (const [nome, peso] of Object.entries(f.pesi)) {
+      const s = f.strati[nome]
+      if (s && peso) out[k] += peso * s.voci[k]
+    }
+  }
+  return out
+}
+
 /**
  * Il verdetto del campo: quale segno preferiscono le squadre e quanto.
  *
