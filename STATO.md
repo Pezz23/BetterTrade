@@ -268,6 +268,28 @@ ricalcola il proprio bankroll, e non può creare utenti.
      etichette sotto stavano a quote diverse. Le quattro colonne sono ora un
      unico componente `Colonna`, così non si possono più disallineare.
 
+4c-ter. [x] **VPM girato: il verdetto del campo, non il voto alla giocata** —
+   9 ottobre 2026 (**1.03.00**). Mattia, guardando la lista: *"la partita Lens
+   Lyon la vedo con VPM 3,68. Sbagliatissimo, è una partita minimo minimo da 6"*.
+   - **Aveva ragione sulla sostanza.** Il calcolo era coerente — la giocata
+     consigliata è l'1 su Lens, il campo dice Lyon, quindi voto basso — ma
+     rispondeva alla domanda sbagliata: lui non guarda quanto è buono l'1,
+     guarda **chi è più squadra**. Lo stesso scarto dal lato di Lyon fa **7,32**
+     (i due sono speculari, sommano 11).
+   - **Ora VPM dice il segno del campo e quanto è netto**: 5,5 forze pari, 10
+     divario massimo. **Il disaccordo col mercato è il colore**: verde stesso
+     segno, rosso segno opposto, grigio sotto 6. In lista si legge `2 7,32` in
+     rosso — il campo dice 2, la giocata è 1.
+   - Il filtro diventa **"solo campo ≠ mercato"**, e conta solo se il campo è
+     netto (≥ 6): un campo indeciso non è un disaccordo.
+   - ⚠️ **Lezione**: un indice che riassume un giudizio deve rispondere alla
+     domanda di chi lo legge, non a quella più comoda da calcolare.
+   - ⚠️ **Trovato di rimbalzo**: il confronto fra le due strade ha segnalato una
+     bandierina diversa su Virtus Entella-Juve Stabia. Non era la funzione SQL:
+     era lo **script** che paginava 34.000 scontri ordinati per sola `data`, con
+     migliaia di pari merito — `.range()` su un ordine non deterministico perde
+     righe. Aggiunto `.order('id')`. Di nuovo **149/149**.
+
 4d. [ ] **L3 — la scheda.** I tre strati nell'ordine dell'iter (classifica →
    forma → ruolo) con i parametri aperti, e le bandierine accanto al blocco
    "Scontri diretti" che esiste già.

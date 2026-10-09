@@ -15,7 +15,7 @@
 
 import { admin } from './_admin.js';
 import { valuta, martediChiusura } from '../src/lib/attendibilita.js';
-import { somme, forza, parametri, vpm, bandiere, valutaPartita, PARTITE_FINESTRA, VPM_CONTRARIO, VPM_CONFERMA } from '../src/lib/vpm.js';
+import { somme, forza, parametri, vpm, bandiere, valutaPartita, verso, PARTITE_FINESTRA, VPM_NETTO } from '../src/lib/vpm.js';
 
 const arg = n => process.argv.find(a => a.startsWith(`--${n}`));
 const soloSquadra = arg('squadra')?.split('=')[1];
@@ -73,9 +73,16 @@ const { data: prossime } = await admin.from('prossime_partite')
 
 // Gli scontri diretti fra le squadre coinvolte, in una sola chiamata.
 const squadre = [...new Set((prossime || []).flatMap(p => [p.casa, p.trasferta]))];
+// ⚠️ **`id` come secondo criterio, e non è un vezzo**: queste sono ~34.000
+// righe, cioè 35 pagine, e `data` ha migliaia di pari merito. Paginando con
+// `.range()` su un ordine non deterministico, fra una pagina e l'altra il
+// database può restituire le righe in ordine diverso: alcune escono due volte
+// e altre si perdono. Il 9/10/2026 così sparivano 2 dei 4 scontri di
+// Virtus Entella-Juve Stabia, e il confronto con `vpm_dati()` lo ha scoperto.
 const scontriTutti = await tuttePagine((a, b) => admin.from('partite')
   .select('data,casa,trasferta,gol_casa,gol_trasferta')
-  .in('casa', squadre).in('trasferta', squadre).order('data', { ascending: false }).range(a, b));
+  .in('casa', squadre).in('trasferta', squadre)
+  .order('data', { ascending: false }).order('id').range(a, b));
 // I conti del testa a testa nella stessa forma che restituisce vpm_dati().
 function contiDi(c, t) {
   const tutti = scontriTutti.filter(s => (s.casa === c && s.trasferta === t) || (s.casa === t && s.trasferta === c)).slice(0, 6);
@@ -99,18 +106,19 @@ for (const p of (prossime || [])) {
   if (r.prob === null) continue;
   const fCasa = forzaLocale(p.div, p.casa, 'casa');
   const fFuori = forzaLocale(p.div, p.trasferta, 'fuori');
-  const miaForza = r.segno === '1' ? fCasa : fFuori;
-  const suaForza = r.segno === '1' ? fFuori : fCasa;
+  const vLocale = vpm(fCasa, fFuori);
   righe.push({
     ...r,
     squadraGiocata: r.segno === '1' ? p.casa : p.trasferta,
     fCasa, fFuori,
-    v: vpm(miaForza, suaForza),
+    v: vLocale?.punti ?? null,
+    segnoCampo: vLocale?.segno ?? null,
+    accordo: vLocale ? vLocale.segno === r.segno : null,
     bandiere: bandiere(contiDi(p.casa, p.trasferta), p.casa, p.trasferta),
     // La stessa cosa dai dati del database, **passando per la funzione che usa
     // l'app** (`valutaPartita`): così il confronto verifica il codice vero e
     // non una sua copia scritta qui.
-    ...(() => { const v = valutaPartita(dati, r); return { vSql: v.vpm, bandiereSql: v.bandiere } })(),
+    ...(() => { const v = valutaPartita(dati, r); return { vSql: v.punti, bandiereSql: v.bandiere, versoSql: verso(v) } })(),
   });
 }
 
@@ -118,18 +126,23 @@ const pct = x => `${(x * 100).toFixed(0)}%`;
 const n2 = x => (x == null ? '  — ' : x.toFixed(2).padStart(5));
 
 console.log(`${righe.length} partite da oggi a martedì ${limite} · stagione ${stagione}`);
-console.log(`VPM sotto ${VPM_CONTRARIO} = il campo contraddice la giocata · sopra ${VPM_CONFERMA} = la conferma\n`);
+console.log(`VPM = il segno che dice il campo e quanto è netto (5,5 pari … 10) · sotto ${VPM_NETTO} non si pronuncia`);
+console.log(`⛔ il campo dice l'altro segno · ✅ d'accordo col mercato · · indeciso\n`);
 
+// L'ordine utile: prima i disaccordi, dal più netto. È la domanda vera —
+// dove il campo dice il contrario del mercato, e lo dice con forza.
+const peso = r => (r.accordo === false ? -(r.v ?? 0) : 100 - (r.v ?? 0));
 const mostra = righe
   .filter(r => !soloSquadra || r.casa.includes(soloSquadra) || r.trasferta.includes(soloSquadra))
-  .sort((a, b) => (a.v ?? 99) - (b.v ?? 99));
+  .sort((a, b) => peso(a) - peso(b));
 
 const elenco = tutte || soloSquadra ? mostra : mostra.slice(0, 12);
 for (const r of elenco) {
-  const segnale = r.v == null ? '  ?' : r.v < VPM_CONTRARIO ? '⛔' : r.v > VPM_CONFERMA ? '✅' : '  ·';
+  const v = r.versoSql;
+  const segnale = !v ? '  ?' : v === 'contro' ? '⛔' : v === 'conferma' ? '✅' : '  ·';
   console.log(
     `${segnale} ${r.data.slice(5)} ${r.div.padEnd(4)} ${`${r.casa} - ${r.trasferta}`.padEnd(36)}` +
-    ` ${r.giocata.padEnd(8)} att ${pct(r.probGiocata)}  VPM ${n2(r.v)}` +
+    ` ${r.giocata.padEnd(8)} att ${pct(r.probGiocata)}  VPM ${r.segnoCampo ?? '?'}${n2(r.v)}` +
     `   forza ${n2(r.fCasa?.punti)} vs ${n2(r.fFuori?.punti)}`
   );
   for (const b of r.bandiere) console.log(`        ${b.grave ? '🔴' : '⚪️'} ${b.testo}`);

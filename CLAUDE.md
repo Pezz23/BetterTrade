@@ -168,14 +168,27 @@ testa. Vive in `src/lib/vpm.js`.
 persona": VPM è calcolato.** L'indice da digitare a mano era un'altra idea —
 la voce 4 della to-do — e questa l'ha **sostituita**.
 
-⚠️ **VPM non è una probabilità e non è calibrato su niente.** Dice quanto il
-campo **conferma la giocata consigliata**, da 1 a 10: sotto 4 la contraddice,
-sopra 6,5 la conferma. La probabilità resta l'attendibilità, che viene dal
-mercato. Il senso di VPM è **vedere dove i due litigano** — Lens-Lyon del
-9/10: il mercato dà l'1 al 39%, VPM 3,68 perché Lyon è secondo con +8 e Lens
-quindicesimo. ⚠️ Come il Grado, **non entra nella selezione delle spin**: se
-Mattia vuole giocare un disaccordo, lo strumento è **la stellina**, che esiste
-già per questo.
+⚠️ **VPM non è una probabilità e non è calibrato su niente.** Dice **quale
+segno preferiscono le squadre e quanto**: `5,5` = forze pari, `10` = divario
+massimo. Non scende sotto 5,5 per costruzione, perché guarda sempre il lato più
+forte. **Il disaccordo col mercato è il colore, non il numero**: verde se il
+segno è lo stesso della giocata consigliata, rosso se è l'altro, grigio sotto
+`VPM_NETTO` = 6 (squadre troppo simili perché la preferenza voglia dire
+qualcosa). L'accordo si misura **sul segno**, non sul valore: la giocata può
+essere "1 + over 1,5" e lì conta solo l'1.
+
+⚠️ **Girato il 9/10/2026, poche ore dopo averlo fatto.** La prima versione dava
+un voto *alla giocata consigliata dal mercato*: su Lens-Lyon diceva **3,68**,
+perché la consigliata era l'1 su Lens e il campo dice Lyon. Mattia:
+*"sbagliatissimo, è una partita minimo da 6"*. Il calcolo era coerente ma
+rispondeva a un'altra domanda — lui non guarda quanto è buono l'1, guarda **chi
+è più squadra**. Lo stesso scarto letto dal lato di Lyon fa **7,32** (i due sono
+speculari: sommano 11). **Lezione:** un indice che riassume un giudizio deve
+rispondere alla domanda di chi lo legge, non a quella più comoda da calcolare.
+
+⚠️ Come il Grado, **non entra nella selezione delle spin**: se Mattia vuole
+giocare un disaccordo, lo strumento è **la stellina**, che esiste già per
+questo.
 
 **I pesi** (`PESI`) vengono dalle correlazioni misurate su 561 squadre-stagione:
 vittorie 0,30 · gol subiti 0,18 · gol fatti 0,13 · **dominio 0,13** · tiri in
@@ -547,6 +560,14 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   montata e tiene da sola il suo punto, e il gesto indietro scopre quello che
   c'è sotto. **Prima c'era un rattoppo** (salvare e rimettere `window.scrollY`):
   tolto, perché la struttura giusta l'ha reso inutile.
+- **Paginare con `.range()` su un ordine con pari merito perde righe.** Nello
+  script di VPM gli scontri diretti sono ~34.000 (35 pagine) ordinati per sola
+  `data`, che ha migliaia di pari merito: fra una pagina e l'altra Postgres può
+  restituirli in ordine diverso, quindi alcune righe escono due volte e altre
+  **spariscono**. Così sparivano 2 dei 4 scontri di Virtus Entella-Juve Stabia
+  (9/10/2026). **Ogni query paginata vuole un secondo criterio univoco**
+  (`.order('data').order('id')`). L'ha scoperto il confronto fra le due strade,
+  non un errore: senza quel confronto sarebbe passato.
 - **Sei elementi a larghezza fissa su una riga non stanno su un telefono.**
   Nella lista "LE VOTATE" l'ultima scritta usciva dallo schermo. Quando una
   riga ha più di tre o quattro informazioni, **si divide in due righe** invece

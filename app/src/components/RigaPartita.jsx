@@ -11,10 +11,10 @@ import { sigla } from '../lib/campionati'
 
 export { CATEGORIE, pct, giorno }
 
-// Il colore di VPM dice da sé se il campo è d'accordo con la giocata: rosso
-// contro, verde conferma, grigio non si pronuncia. La barra si deve leggere
-// senza leggere i numeri.
-const COLORE_VPM = { contro: C.rosso, conferma: C.verde, neutro: C.fioco }
+// Il colore di VPM dice da sé se il campo è d'accordo col mercato: verde
+// conferma, rosso contraddice, grigio non si pronuncia (squadre troppo simili).
+// La barra si deve leggere senza leggere i numeri.
+const COLORE_VPM = { contro: C.rosso, conferma: C.verde, incerto: C.fioco }
 
 // Una colonna della barra: il valore in una fascia di altezza fissa, l'etichetta
 // sotto, e la linea che la divide dalla precedente.
@@ -73,12 +73,15 @@ export default function RigaPartita({ p, cat, vpm = null, voti = 0, mio = false,
         <Colonna etichetta="GRADO" colore={C.testo} divisore={c.colore}
           valore={p.grado != null ? p.grado.toFixed(2).replace('.', ',') : '—'} />
 
-        {/* VPM: quanto il campo conferma la giocata. Lo spazio è riservato
-            anche quando il dato non c'è — niente deve cambiare altezza o
-            larghezza quando arriva un numero. */}
+        {/* VPM: il segno che dice il campo, e quanto è netto. Il segno sta
+            davanti in piccolo — come la Q della quota — perché il numero da
+            solo non dice **di chi** parla. Lo spazio è riservato anche quando
+            il dato non c'è: niente deve cambiare misura quando arriva. */}
         <Colonna etichetta="VPM" colore={COLORE_VPM[vsVpm] || C.fantasma} divisore={c.colore}
-          coloreEtichetta={vsVpm && vsVpm !== 'neutro' ? COLORE_VPM[vsVpm] : undefined}
-          valore={vpm != null ? vpm.toFixed(2).replace('.', ',') : '—'} />
+          coloreEtichetta={vsVpm && vsVpm !== 'incerto' ? COLORE_VPM[vsVpm] : undefined}
+          valore={vpm?.punti != null
+            ? <><span style={{ fontSize: 11, fontWeight: 400, opacity: 0.75 }}>{vpm.segno} </span>{vpm.punti.toFixed(2).replace('.', ',')}</>
+            : '—'} />
 
         {/* Per la combinata con l'over non abbiamo la quota (nessuna fonte dà
             l'over 1,5): si mostra quella del segno secco, e lo si dice sotto.

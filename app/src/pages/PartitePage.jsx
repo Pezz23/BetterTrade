@@ -9,7 +9,7 @@ import SchedaScorrevole from '../components/SchedaScorrevole'
 import DettaglioPartita from '../components/DettaglioPartita'
 import { categoria, FINESTRE, SOGLIE_DEFAULT } from '../lib/attendibilita'
 import { etichetta, sigla } from '../lib/campionati'
-import { valutaPartita, VPM_CONTRARIO } from '../lib/vpm'
+import { valutaPartita, VPM_NETTO } from '../lib/vpm'
 
 // La lista delle partite future, ordinata per attendibilità.
 // I calcoli stanno in lib/attendibilita.js, la riga in components/RigaPartita.jsx:
@@ -82,9 +82,11 @@ export default function PartitePage() {
       .filter(r => qMax === null ? true : quotaMostrata(r) !== null && quotaMostrata(r) <= qMax)
       .filter(r => soloSopraSoglia ? categoria(r.probGiocata, soglie) !== 'no' : true)
       .filter(r => gMin === null ? true : r.grado !== null && r.grado >= gMin)
-      // Le partite dove il campo dice il contrario della giocata: è la lista
-      // che Mattia andava a cercare a mano in quattro schermate.
-      .filter(r => soloVpmContro ? (vpmDi.get(r.id)?.vpm ?? 99) < VPM_CONTRARIO : true)
+      // Le partite dove il campo dice il contrario del mercato, ed è **netto**:
+      // è la lista che Mattia andava a cercare a mano in quattro schermate.
+      // Un campo indeciso (sotto VPM_NETTO) non è un disaccordo.
+      .filter(r => { if (!soloVpmContro) return true
+        const v = vpmDi.get(r.id); return v?.accordo === false && v.punti >= VPM_NETTO })
       .sort((a, b) => b.probGiocata - a.probGiocata)
   }, [inFinestra, campionato, quotaMin, quotaMax, soloSopraSoglia, soglie, gradoMin, soloVpmContro, vpmDi])
 
@@ -103,7 +105,7 @@ export default function PartitePage() {
     quotaMax && { id: 'qmax', label: `quota ≤ ${quotaMax}`, togli: () => setQuotaMax('') },
     gradoMin && { id: 'grado', label: `grado ≥ ${gradoMin}`, colore: C.menta, togli: () => setGradoMin('') },
     soloSopraSoglia && { id: 'soglia', label: 'sopra soglia', togli: () => setSoloSopraSoglia(false) },
-    soloVpmContro && { id: 'vpm', label: 'VPM contro', colore: C.rosso, togli: () => setSoloVpmContro(false) },
+    soloVpmContro && { id: 'vpm', label: 'campo contro mercato', colore: C.rosso, togli: () => setSoloVpmContro(false) },
   ].filter(Boolean)
   const azzera = () => { setCampionato(''); setQuotaMin(''); setQuotaMax(''); setGradoMin(''); setSoloSopraSoglia(false); setSoloVpmContro(false) }
 
@@ -211,7 +213,7 @@ export default function PartitePage() {
               <Etichetta style={{ marginBottom: 5 }}>VPM</Etichetta>
               <button onClick={() => setSoloVpmContro(v => !v)} disabled={!datiVpm}
                 style={{ ...pillola(soloVpmContro, C.rosso), width: '100%', opacity: datiVpm ? 1 : 0.4 }}>
-                {soloVpmContro ? `solo VPM < ${VPM_CONTRARIO}` : 'tutte'}
+                {soloVpmContro ? 'solo campo ≠ mercato' : 'tutte'}
               </button>
             </div>
           </div>
@@ -246,7 +248,7 @@ export default function PartitePage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {visibili.map(p => (
           <RigaPartita key={p.id} p={p} cat={categoria(p.probGiocata, soglie)}
-            vpm={vpmDi.get(p.id)?.vpm ?? null}
+            vpm={vpmDi.get(p.id) ?? null}
             voti={votiDi(p.id)} mio={mioVoto(p.id)} puoVotare={isAdmin} onVota={() => vota(p.id)}
             onApri={() => apri(p.id)} />
         ))}
@@ -258,9 +260,10 @@ export default function PartitePage() {
           del mercato (media di ~40 book, tolto il margine). Sui favoriti il mercato è calibrato: un 75% vince tre volte su quattro.
           La X secca non viene mai proposta, e nemmeno la doppia chance. Sotto 1,25 si aggiunge l'over 1,5.
           {' '}<b style={{ color: C.fioco }}>VPM</b> è l'altra campana: guarda solo le squadre — classifica, forma, forma nel ruolo —
-          e dice da 1 a 10 quanto il campo conferma la giocata. <span style={{ color: C.rosso }}>Sotto 4 la contraddice</span>,
-          {' '}<span style={{ color: C.verde }}>sopra 6,5 la conferma</span>. Non è una probabilità e non entra nella scelta delle spin:
-          serve a vedere dove mercato e campo litigano.
+          e dice <b style={{ color: C.fioco }}>quale segno preferisce il campo e quanto</b>, da 5,5 (forze pari) a 10.
+          {' '}<span style={{ color: C.verde }}>Verde se è lo stesso segno del mercato</span>,
+          {' '}<span style={{ color: C.rosso }}>rosso se è l'altro</span>, grigio sotto 6 — squadre troppo simili perché voglia dire
+          qualcosa. Non è una probabilità e non entra nella scelta delle spin: serve a vedere dove mercato e campo litigano.
           Il <b style={{ color: C.fioco }}>Grado</b> da 1 a 10 dice quanto conviene: 70% la resa (quota × probabilità), 30% quanto paga la quota.
           La quota è di <b style={{ color: C.fioco }}>Codere</b> quando c'è; altrimenti Bet365, altrimenti la massima sul mercato — sotto ogni quota c'è scritto quale.
           Gli orari sono quelli del Regno Unito.

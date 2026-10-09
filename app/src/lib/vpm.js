@@ -10,11 +10,20 @@
 // persona": VPM è calcolato. L'indice messo a mano era un'altra idea (voce 4
 // della to-do) e questa l'ha sostituita.
 //
-// ⚠️ VPM non è una probabilità e non è calibrato su niente: dice quanto il
-// campo **conferma la giocata consigliata**, non quanto è probabile che esca.
-// La probabilità resta l'attendibilità, che viene dal mercato. VPM serve a
-// vedere **dove i due litigano**: è lì che il metodo di Mattia guadagnava.
-// Perciò non entra nella selezione delle spin, come il Grado.
+// ⚠️ VPM non è una probabilità e non è calibrato su niente: dice **quale segno
+// preferiscono le squadre e quanto**, guardando solo il campo. La probabilità
+// resta l'attendibilità, che viene dal mercato. VPM serve a vedere **dove i due
+// litigano**: è lì che il metodo di Mattia guadagnava. Non entra nella
+// selezione delle spin, come il Grado.
+//
+// ⚠️ **Il 9/10/2026 è stato girato.** La prima versione dava un voto alla
+// *giocata consigliata dal mercato*: su Lens-Lyon diceva **3,68**, perché la
+// consigliata era l'1 su Lens e il campo dice Lyon. Matematicamente coerente,
+// ma Mattia l'ha letto come un errore — *"sbagliatissimo, è una partita minimo
+// da 6"* — e aveva ragione sulla sostanza: lui non guarda quanto è buono l'1,
+// guarda **chi è più squadra**. Lo stesso calcolo dal lato di Lyon fa **7,32**
+// (i due sono speculari: sommano 11). Ora VPM dice il segno del campo, e il
+// disaccordo col mercato è il **colore**, non il numero.
 
 // ── I pesi dei parametri ──────────────────────────────────────────────────────
 // Scelti il 9/10/2026 sulle correlazioni misurate su 561 squadre-stagione
@@ -171,20 +180,25 @@ export function forzaDi(finestre, dove) {
 }
 
 /**
- * VPM: quanto il campo conferma la giocata consigliata, da 1 a 10.
+ * Il verdetto del campo: quale segno preferiscono le squadre e quanto.
  *
- * È lo scarto fra la forza di chi si gioca e quella dell'avversario, riportato
- * sulla scala: forze pari = 5,5, nove punti di vantaggio = 10, nove di
- * svantaggio = 1. Sotto 4 il campo sta dicendo il contrario della giocata.
+ * `5,5` = forze pari, `10` = divario massimo. Non scende sotto 5,5 **per
+ * costruzione**, perché guarda sempre il lato più forte: la domanda è "quanto
+ * è netto", non "quanto è buono il segno del mercato".
  */
-export function vpm(forzaGiocata, forzaAvversario) {
-  if (!forzaGiocata || !forzaAvversario) return null
-  const scarto = forzaGiocata.punti - forzaAvversario.punti   // −9 … +9
-  return Math.min(10, Math.max(1, 1 + 9 * (scarto + 9) / 18))
+export function vpm(forzaCasa, forzaFuori) {
+  if (!forzaCasa || !forzaFuori) return null
+  const scarto = forzaCasa.punti - forzaFuori.punti
+  return {
+    segno: scarto >= 0 ? '1' : '2',
+    punti: Math.min(10, 5.5 + Math.abs(scarto) / 2),
+  }
 }
 
-export const VPM_CONTRARIO = 4.0   // sotto: il campo contraddice la giocata
-export const VPM_CONFERMA = 6.5    // sopra: il campo conferma
+// Sotto questa soglia il campo **non si pronuncia**: le due squadre si
+// assomigliano troppo perché la preferenza voglia dire qualcosa, e il colore
+// resta grigio invece di gridare accordo o disaccordo.
+export const VPM_NETTO = 6.0
 
 /**
  * Le bandierine del testa a testa. ⚠️ Non entrano nel numero, di proposito:
@@ -204,19 +218,24 @@ export function valutaPartita(dati, riga) {
   const squadre = dati.squadre?.[riga.div]
   const forzaCasa = forzaDi(squadre?.[riga.casa], 'casa')
   const forzaFuori = forzaDi(squadre?.[riga.trasferta], 'fuori')
-  const inCasa = riga.segno === '1'
+  const v = vpm(forzaCasa, forzaFuori)
   return {
-    vpm: vpm(inCasa ? forzaCasa : forzaFuori, inCasa ? forzaFuori : forzaCasa),
+    segno: v?.segno ?? null,          // il segno che dice il campo
+    punti: v?.punti ?? null,          // quanto è netto, 5,5-10
+    // ⚠️ L'accordo si misura sul **segno**, non sul numero: la giocata
+    // consigliata può essere "1 + over 1,5", e lì conta solo l'1.
+    accordo: v ? v.segno === riga.segno : null,
     forzaCasa,
     forzaFuori,
     bandiere: bandiere(dati.scontri?.[riga.id], riga.casa, riga.trasferta),
   }
 }
 
-/** Il verso di VPM: conferma, contraddice, o non si pronuncia. */
+/** Il verso di VPM: conferma il mercato, lo contraddice, o non si pronuncia. */
 export function verso(v) {
-  if (v == null) return null
-  return v < VPM_CONTRARIO ? 'contro' : v > VPM_CONFERMA ? 'conferma' : 'neutro'
+  if (!v || v.punti == null) return null
+  if (v.punti < VPM_NETTO) return 'incerto'
+  return v.accordo ? 'conferma' : 'contro'
 }
 
 export const MIN_SCONTRI = 4      // sotto, il testa a testa non dice niente

@@ -66,7 +66,7 @@ export default function VotatePage() {
           <RigaPartita key={p.id} p={p} cat={categoria(p.probGiocata, SOGLIE_DEFAULT)}
             /* lo stesso numero della pagina Partite: due liste con VPM diversi
                sulla stessa partita sarebbero un difetto */
-            vpm={datiVpm ? valutaPartita(datiVpm, p)?.vpm ?? null : null}
+            vpm={datiVpm ? valutaPartita(datiVpm, p) : null}
             voti={votiDi(p.id)} mio={mioVoto(p.id)} puoVotare={isAdmin} onVota={() => vota(p.id)}
             onApri={() => setApertaId(p.id)} />
         ))}
