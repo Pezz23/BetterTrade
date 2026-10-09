@@ -18,9 +18,8 @@ lotto I (la posizione in classifica nel tondo, "compila per quota") e la
 (`src/versione.js`, ora **1.01.02**), il **blocco del weekend** nelle spin
 (voce 5b, provato da Mattia: *"ok funziona"*) e **`npm run lint`**, che è la
 rete sotto la schermata nera di quel pomeriggio.
-**Prossimo passo:** **lotto L** (un'attendibilità messa a mano: tre decisioni da
-prendere prima di scrivere codice) oppure il resto di **E** (le spin) o **F**
-(automazione). In sospeso fino a dopo questo weekend: **la spin 2**, che per via
+**Prossimo passo:** **lotto L — VPM**, voce 4b: portare a schermo il calcolo
+che già gira (funzione SQL + la barra della riga + i tre strati nella scheda). In sospeso fino a dopo questo weekend: **la spin 2**, che per via
 dei voti scende al 61,9% e al 47% (voce 5).
 
 **Recuperato il 7 ottobre**: Mattia ha cambiato wi-fi e football-data è tornato
@@ -150,17 +149,49 @@ identificato. `sql/19-permessi-funzioni.sql` revoca PUBLIC **e `anon`** su
 tutte e otto. Riprovato dopo: un utente normale legge classifiche e forma,
 ricalcola il proprio bankroll, e non può creare utenti.
 
-## 🔵 Lotto L — Un'attendibilità messa a mano
-*`lib/attendibilita.js` + database + interfaccia.*
+## 🟡 Lotto L — VPM, la valutazione della partita
+*`lib/vpm.js` (fatto) · SQL + `RigaPartita` + `DettaglioPartita` (da fare).*
 
-4. **Indice di attendibilità manuale**, accanto a quello calcolato. Da decidere
-   insieme prima di toccare il codice:
-   - **chi lo mette** (solo admin? uno per persona come le stelline?),
-   - **che forma ha** (1-10 come il Grado? una percentuale?),
-   - **cosa ne fa la selezione**: sostituisce l'attendibilità, la corregge, o
-     resta un dato a fianco come il Grado?
-   ⚠️ Serve una colonna o una tabella nuova: le stelline (`voti_partite`) sono
-   un sì/no per persona, questo è un numero.
+4. **~~Indice di attendibilità manuale~~ → diventato VPM** il 9 ottobre 2026.
+   L'idea di partenza era un numero **digitato a mano**; parlandone è diventata
+   una cosa migliore: **riprodurre l'iter che Mattia fa già a mano**, che è
+   ripetibile e quindi calcolabile. Il nome lo ha scelto lui — **VPM,
+   Valutazione Partita Manuale** — e vuol dire "riproduce il giudizio manuale",
+   non "lo scrive una persona". ⚠️ Quindi **non serve più** la tabella nuova per
+   i voti numerici, e le tre decisioni (chi lo mette, che forma ha, cosa ne fa
+   la selezione) sono risolte: lo calcola il database, è 1-10 come il Grado, e
+   **non entra nella selezione delle spin**.
+
+4a. [x] **Il calcolo** — `src/lib/vpm.js`, puro e provabile da terminale con
+   `scripts/prova-vpm.js`. L'iter di Mattia, nelle sue parole: *"1) classifica,
+   gol fatti subiti e differenza · 2) la forma nelle ultime 5/10 · 3) forma casa
+   e fuori, ci sono squadre che in casa non subiscono gol · 4) testa a testa,
+   per vedere se pareggiano sempre"*. I primi tre sono lo stesso calcolo su tre
+   finestre (45/30/25); il quarto è una **bandierina**, non un peso.
+   - **Misurato prima di scegliere i pesi** (561 squadre-stagione, 24/25+25/26):
+     vittorie e differenza reti correlano **0,93** — nell'Excel pesavano 0,30 e
+     0,20, cioè metà indice su un'informazione sola, e la differenza reti è
+     scesa a 0,05. Gol fatti e tiri in porta **0,90**, gol subiti e tiri
+     concessi **0,81**: i tiri stanno accanto ai gol, non al posto loro.
+   - **Il possesso palla non esiste** nei dati: al suo posto `dominio` = quota
+     dei tiri in porta. Misura chi fa male invece di chi tiene la palla.
+   - **Ancore separate per casa e fuori**, perché la misura lo impone (mediana
+     del dominio 0,548 contro 0,447): altrimenti la squadra di casa prendeva un
+     bonus gratuito, e il fattore campo è già nella quota.
+   - **Verificato sui dati veri del 9/10.** Lens-Lyon: il mercato dà l'1 al 39%,
+     VPM **3,68** (Lens 4,90 contro Lyon 8,54) più la bandierina rossa
+     *"3 pareggi su 6 a Lens"* — che il conteggio sui soli scontri complessivi
+     non vedeva (1 su 6). Le **9 partite della spin 1** escono tutte fra 6,37 e
+     9,27, e Barcellona 9,39 / Porto 9,96 / Freiburg 9,91: nessun segno
+     invertito. Su 149 partite del weekend, 5 sotto 4 e 12 sopra 8.
+
+4b. [ ] **Portarlo a schermo.** Serve una funzione SQL che dia i tre strati di
+   tutte le squadre in una chiamata (come `classifiche()`, sql/18), poi il
+   numero nella **barra della riga** — *giocata · Grado · VPM · quota* — e i
+   tre strati aperti nella scheda. ⚠️ Quattro voci su una riga di telefono sono
+   il massimo: va provato a 375px, o si va a due righe.
+   ⚠️ VPM **verde quando conferma, rosso quando contraddice**: la barra si deve
+   leggere senza leggere i numeri.
 
 ## 🔵 Lotto E — Le spin
 *`SlotPage.jsx`, `SpinProvvisoriePage.jsx`, `lib/spin.js`, `rendiconto.js`.*

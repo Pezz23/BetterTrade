@@ -1,0 +1,201 @@
+// VPM — Valutazione Partita Manuale.
+//
+// È l'automazione dell'iter che Mattia fa a mano prima di una giocata
+// (8-9/10/2026): 1) la classifica con gol fatti, subiti e differenza reti,
+// 2) come sta andando nelle ultime partite, 3) come va **nel ruolo** che avrà
+// domenica — ci sono squadre che in casa sono un'altra squadra — e 4) il testa
+// a testa, per sapere se quella partita pareggia sempre.
+//
+// ⚠️ "Manuale" sta per "riproduce il giudizio manuale", NON per "lo scrive una
+// persona": VPM è calcolato. L'indice messo a mano era un'altra idea (voce 4
+// della to-do) e questa l'ha sostituita.
+//
+// ⚠️ VPM non è una probabilità e non è calibrato su niente: dice quanto il
+// campo **conferma la giocata consigliata**, non quanto è probabile che esca.
+// La probabilità resta l'attendibilità, che viene dal mercato. VPM serve a
+// vedere **dove i due litigano**: è lì che il metodo di Mattia guadagnava.
+// Perciò non entra nella selezione delle spin, come il Grado.
+
+// ── I pesi dei parametri ──────────────────────────────────────────────────────
+// Scelti il 9/10/2026 sulle correlazioni misurate su 561 squadre-stagione
+// (24/25 e 25/26). Le due cose che quelle correlazioni impongono:
+//
+// · vittorie e differenza reti correlano **0,93**: sono lo stesso numero due
+//   volte. Nell'Excel di Mattia pesavano 0,30 + 0,20 = metà dell'indice su
+//   un'informazione sola, quindi la differenza reti scende a 0,05 — resta per
+//   distinguere chi vince di misura da chi stravince.
+// · gol fatti e tiri in porta correlano 0,90, gol subiti e tiri concessi 0,81:
+//   i tiri non sono un parametro nuovo, sono la **versione meno rumorosa**
+//   dello stesso. Un gol è un evento fortunato, cinque tiri in porta a partita
+//   no — quindi stanno accanto ai gol, non al posto loro.
+//
+// Le vittorie restano il peso più alto perché è quello che si gioca: non si
+// mette mai la X, quindi un pareggio vale zero ed è giusto che valga zero.
+// La difesa pesa più dell'attacco perché **il pareggio nasce dai gol presi**:
+// chi segna poco e non prende gol vince di misura, chi segna tanto e ne prende
+// tanti fa 2-2 e ci fa perdere la schedina.
+export const PESI = {
+  vittorie: 0.30,   // V / partite giocate
+  gs:       0.18,   // gol subiti, invertito
+  gf:       0.13,   // gol fatti
+  dominio:  0.13,   // tiri in porta fatti / (fatti + concessi)
+  tc:       0.12,   // tiri in porta concessi, invertito
+  tf:       0.09,   // tiri in porta fatti
+  dr:       0.05,   // differenza reti / partite giocate
+}
+
+// ⚠️ Il possesso palla NON c'è: football-data non lo pubblica, e nessuna delle
+// 59 colonne di `partite` lo contiene. `dominio` è il suo sostituto e dice una
+// cosa migliore: il possesso misura chi tiene la palla (il Barcellona ha il 70%
+// anche quando perde), il dominio misura **chi fa male**.
+export const INVERTITI = ['gs', 'tc']   // meno è meglio
+
+// ── I pesi dei tre strati ─────────────────────────────────────────────────────
+// I passi 1-2-3 dell'iter sono lo stesso calcolo su tre finestre.
+export const PESI_STRATI = { stagione: 0.45, forma: 0.30, ruolo: 0.25 }
+
+// ⚠️ A ottobre i tre strati guardano quasi le stesse partite: con 5 giornate
+// giocate "le ultime 5" SONO la stagione. Lo strato forma comincia a dire
+// qualcosa di diverso da gennaio, e va detto a schermo invece di far finta.
+export const PARTITE_FINESTRA = 5
+export const MIN_PARTITE = 3   // sotto, VPM non c'è: nessun numero, non un numero prudente
+
+// ── Le ancore della scala ─────────────────────────────────────────────────────
+// 5° e 95° percentile misurati il 9/10/2026 su 24/25 + 25/26 (10.466 partite):
+// 561 squadre-stagione, 18.682 finestre di 5, 8.219 finestre di 5 in casa e
+// altrettante fuori.
+//
+// ⚠️ Percentili e non minimo-massimo: una squadra mostruosa non deve schiacciare
+// la scala di tutte le altre. ⚠️ **Fissi**, come GRADO_MIN/GRADO_MAX: se si
+// ricalcolassero sulle squadre del weekend, la stessa squadra cambierebbe VPM
+// ogni settimana e il numero non sarebbe più confrontabile con quello di sette
+// giorni prima.
+//
+// ⚠️ Casa e fuori hanno ancore **separate**, ed è la misura a imporlo: la
+// mediana del dominio è 0,548 in casa e 0,447 fuori, le vittorie 0,40 contro
+// 0,20. Con ancore uniche ogni squadra di casa prenderebbe un bonus gratuito —
+// e il fattore campo sta già dentro la quota, quindi sarebbe contato due volte.
+// Così invece "8,0 fuori" vuol dire "forte rispetto a come vanno le altre in
+// trasferta", che è il confronto giusto.
+export const ANCORE = {
+  stagione: { vittorie:[0.158,0.647], dr:[-0.912,1.105], gf:[0.816,2.105], gs:[1.882,0.886], tf:[3.105,6.059], tc:[5.647,3.119], dominio:[0.375,0.642] },
+  forma:    { vittorie:[0,0.8],       dr:[-1.4,1.6],     gf:[0.4,2.4],     gs:[2.4,0.6],     tf:[2.4,6.6],     tc:[6.4,2.4],     dominio:[0.316,0.688] },
+  casa:     { vittorie:[0,0.8],       dr:[-1.2,1.8],     gf:[0.6,2.6],     gs:[2.2,0.4],     tf:[2.8,7.2],     tc:[6.0,2.2],     dominio:[0.361,0.732] },
+  fuori:    { vittorie:[0,0.8],       dr:[-1.8,1.2],     gf:[0.4,2.2],     gs:[2.6,0.6],     tf:[2.0,6.2],     tc:[7.0,2.8],     dominio:[0.273,0.641] },
+}
+
+/** Da valore grezzo a 1-10, con gli estremi già orientati (il secondo è il "meglio"). */
+function inScala(x, [peggio, meglio]) {
+  const t = (x - peggio) / (meglio - peggio)
+  return Math.min(10, Math.max(1, 1 + 9 * t))
+}
+
+/** I sette parametri per partita giocata, da una lista di partite viste dalla squadra. */
+export function parametri(partite) {
+  const n = partite.length
+  if (!n) return null
+  const somma = c => partite.reduce((a, p) => a + p[c], 0)
+  const tf = somma('tf'), tc = somma('tc')
+  return {
+    n,
+    vittorie: somma('v') / n,
+    dr: (somma('gf') - somma('gs')) / n,
+    gf: somma('gf') / n,
+    gs: somma('gs') / n,
+    tf: tf / n,
+    tc: tc / n,
+    dominio: tf + tc ? tf / (tf + tc) : 0.5,
+  }
+}
+
+/** Il punteggio 1-10 di uno strato, con il dettaglio parametro per parametro. */
+export function strato(par, ancore) {
+  if (!par) return null
+  const voci = {}
+  let tot = 0
+  for (const [k, peso] of Object.entries(PESI)) {
+    const v = inScala(par[k], ancore[k])
+    voci[k] = v
+    tot += peso * v
+  }
+  return { punti: tot, voci, n: par.n }
+}
+
+/**
+ * La forza di una squadra nel ruolo che avrà: unisce i tre strati.
+ *
+ * ⚠️ Lo strato si guadagna il peso in proporzione alle partite che ha. A
+ * ottobre le partite in casa giocate sono 1-3, non 5: invece di far finta di
+ * averne cinque, il blocco prende il suo peso × (quante ne ha / 5) e il resto
+ * torna alla stagione. Così l'indice si appoggia su quello che esiste, e il
+ * peso cresce da sé col calendario.
+ */
+export function forza({ stagione, forma, ruolo }, dove) {
+  const sStagione = strato(stagione, ANCORE.stagione)
+  if (!sStagione || stagione.n < MIN_PARTITE) return null
+  const sForma = strato(forma, ANCORE.forma)
+  const sRuolo = strato(ruolo, ANCORE[dove])
+
+  const quota = (s, peso) => (s ? peso * Math.min(1, s.n / PARTITE_FINESTRA) : 0)
+  const pForma = quota(sForma, PESI_STRATI.forma)
+  const pRuolo = quota(sRuolo, PESI_STRATI.ruolo)
+  const pStagione = 1 - pForma - pRuolo
+
+  return {
+    punti: pStagione * sStagione.punti + pForma * (sForma?.punti ?? 0) + pRuolo * (sRuolo?.punti ?? 0),
+    strati: { stagione: sStagione, forma: sForma, ruolo: sRuolo },
+    pesi: { stagione: pStagione, forma: pForma, ruolo: pRuolo },
+  }
+}
+
+/**
+ * VPM: quanto il campo conferma la giocata consigliata, da 1 a 10.
+ *
+ * È lo scarto fra la forza di chi si gioca e quella dell'avversario, riportato
+ * sulla scala: forze pari = 5,5, nove punti di vantaggio = 10, nove di
+ * svantaggio = 1. Sotto 4 il campo sta dicendo il contrario della giocata.
+ */
+export function vpm(forzaGiocata, forzaAvversario) {
+  if (!forzaGiocata || !forzaAvversario) return null
+  const scarto = forzaGiocata.punti - forzaAvversario.punti   // −9 … +9
+  return Math.min(10, Math.max(1, 1 + 9 * (scarto + 9) / 18))
+}
+
+export const VPM_CONTRARIO = 4.0   // sotto: il campo contraddice la giocata
+export const VPM_CONFERMA = 6.5    // sopra: il campo conferma
+
+/**
+ * Le bandierine del testa a testa. ⚠️ Non entrano nel numero, di proposito:
+ * sono 6-12 partite di squadre che nel frattempo sono cambiate, e Mattia le usa
+ * come ultimo controllo, non come punteggio. Sotto 4 scontri non si dice niente.
+ */
+export const H2H_PARI = 0.35      // oltre questa quota di X, è una partita da pareggio
+export const H2H_DOMINIO = 2 / 3  // una delle due ha vinto almeno due terzi
+
+export function bandiere({ tutti, stessoCampo }, casa, trasferta) {
+  const b = []
+  const quotaPari = l => (l?.length ? l.filter(s => s.gol_casa === s.gol_trasferta).length / l.length : 0)
+
+  // ⚠️ Si guardano **due** liste, e la seconda è quella che conta di più:
+  // Lens-Lyon ha 1 pareggio negli ultimi 6 scontri, ma 3 su 6 **giocati a
+  // Lens** (9/10/2026). È il campo che fa la partita, e la domanda di Mattia
+  // era proprio "su questo campo pareggiano sempre?".
+  for (const [lista, dove] of [[stessoCampo, `a ${casa}`], [tutti, 'negli scontri']]) {
+    if (lista?.length >= 4 && quotaPari(lista) >= H2H_PARI) {
+      const pari = lista.filter(s => s.gol_casa === s.gol_trasferta).length
+      b.push({ tipo: 'pari', grave: true, testo: `${pari} pareggi su ${lista.length} ${dove}` })
+      break   // una sola volta: è lo stesso avviso
+    }
+  }
+
+  if (tutti?.length >= 4) {
+    const vinte = s => (s.gol_casa > s.gol_trasferta ? s.casa : s.gol_casa < s.gol_trasferta ? s.trasferta : null)
+    for (const sq of [casa, trasferta]) {
+      const v = tutti.filter(s => vinte(s) === sq).length
+      if (v / tutti.length >= H2H_DOMINIO) {
+        b.push({ tipo: 'dominio', grave: false, testo: `${sq} ha vinto ${v} degli ultimi ${tutti.length}` })
+      }
+    }
+  }
+  return b
+}

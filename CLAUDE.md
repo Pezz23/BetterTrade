@@ -157,6 +157,64 @@ se si ricalcolassero sulla lista del momento, la stessa partita cambierebbe
 Grado ogni settimana. ⚠️ **Il Grado non entra nella selezione delle spin** —
 è solo un dato da guardare (deciso il 30/09/2026).
 
+### VPM — Valutazione Partita Manuale
+
+**Il quarto numero, nato il 9/10/2026.** È l'automazione dell'iter che Mattia
+fa a mano prima di giocare: classifica con gol fatti/subiti/differenza · come
+sta andando nelle ultime · come va **nel ruolo** che avrà domenica · il testa a
+testa. Vive in `src/lib/vpm.js`.
+
+⚠️ **"Manuale" vuol dire "riproduce il giudizio manuale", non "lo scrive una
+persona": VPM è calcolato.** L'indice da digitare a mano era un'altra idea —
+la voce 4 della to-do — e questa l'ha **sostituita**.
+
+⚠️ **VPM non è una probabilità e non è calibrato su niente.** Dice quanto il
+campo **conferma la giocata consigliata**, da 1 a 10: sotto 4 la contraddice,
+sopra 6,5 la conferma. La probabilità resta l'attendibilità, che viene dal
+mercato. Il senso di VPM è **vedere dove i due litigano** — Lens-Lyon del
+9/10: il mercato dà l'1 al 39%, VPM 3,68 perché Lyon è secondo con +8 e Lens
+quindicesimo. ⚠️ Come il Grado, **non entra nella selezione delle spin**: se
+Mattia vuole giocare un disaccordo, lo strumento è **la stellina**, che esiste
+già per questo.
+
+**I pesi** (`PESI`) vengono dalle correlazioni misurate su 561 squadre-stagione:
+vittorie 0,30 · gol subiti 0,18 · gol fatti 0,13 · **dominio 0,13** · tiri in
+porta concessi 0,12 · tiri in porta fatti 0,09 · differenza reti 0,05.
+⚠️ La differenza reti è bassa **di proposito**: correla **0,93** con le
+vittorie, cioè è lo stesso numero due volte (nell'Excel pesava 0,20).
+⚠️ I tiri stanno **accanto** ai gol e non al posto loro: correlano 0,90 (fatti)
+e 0,81 (concessi) coi gol, quindi non sono un parametro nuovo ma la versione
+meno rumorosa dello stesso — un gol è fortuna, cinque tiri in porta a partita no.
+⚠️ La difesa pesa più dell'attacco perché **il pareggio nasce dai gol presi**, e
+per noi la X è una sconfitta.
+⚠️ **Il possesso palla non esiste nei dati** (football-data non lo pubblica, non
+è fra le 59 colonne di `partite`): al suo posto c'è **`dominio`** = tiri in
+porta fatti / (fatti + concessi). Dice una cosa migliore — il possesso misura
+chi tiene la palla, il dominio chi fa male.
+
+**I tre strati** (`PESI_STRATI`): stagione 45% · forma 30% · ruolo 25%.
+⚠️ **Lo strato si guadagna il peso in proporzione alle partite che ha**: a
+ottobre le partite in casa giocate sono 1-3, non 5, quindi il blocco prende il
+suo peso × (quante ne ha / 5) e il resto torna alla stagione. ⚠️ Sotto
+**3 partite VPM non c'è**: nessun numero, non un numero prudente.
+⚠️ A ottobre i tre strati guardano quasi le stesse partite — con 5 giornate
+"le ultime 5" SONO la stagione; la forma comincia a dire altro da gennaio.
+
+**Le ancore** (`ANCORE`) sono il 5° e 95° percentile misurati sulle stagioni
+24/25 e 25/26, e sono **fisse** per la stessa ragione di `GRADO_MIN/MAX`.
+⚠️ **Casa e fuori hanno ancore separate, e la misura lo impone**: la mediana del
+dominio è 0,548 in casa e 0,447 fuori, le vittorie 0,40 contro 0,20. Con ancore
+uniche ogni squadra di casa prenderebbe un bonus gratuito — e il fattore campo
+**è già dentro la quota**, quindi verrebbe contato due volte.
+
+**Il testa a testa è una bandierina, non un peso** (`bandiere()`): sono 6-12
+partite di squadre nel frattempo cambiate, e Mattia lo usa come ultimo
+controllo. ⚠️ Si guardano **due liste**, e quella che conta è il **solo stesso
+campo**: Lens-Lyon ha 1 pareggio negli ultimi 6 scontri ma **3 su 6 giocati a
+Lens**. Il pareggio è la bandierina grave, perché per noi la X è una sconfitta.
+
+Si guarda da terminale con `scripts/prova-vpm.js`, che non scrive niente.
+
 ⚠️ **Una stellina scavalca la soglia, non il calendario.** Una partita votata
 entra nella spin anche se sta sotto soglia (`candidate()` in `lib/spin.js`
 accetta `votiDi`): è un gesto deliberato di una persona, e vale più del calcolo.
@@ -178,8 +236,9 @@ blocco**: là la data è testo `gg/mm` senza anno, quindi si guarda l'**ampiezza
 (oltre 4 giorni fra la prima e l'ultima casella) e si deve poter correggere a
 mano.
 
-⚠️ **I nomi, da non scambiare:** *attendibilità* = probabilità · *resa* =
-quota × probabilità · **Grado** = la resa da 1 a 10 · **voti** = le stelline
+⚠️ **I nomi, da non scambiare:** *attendibilità* = probabilità (il mercato) ·
+*resa* = quota × probabilità · **Grado** = la resa da 1 a 10 · **VPM** = quanto
+il campo conferma la giocata, da 1 a 10 (le squadre) · **voti** = le stelline
 degli admin (`voti_partite`), che restano voti in app e database. ⚠️ **Sta sotto 100 quasi sempre**,
 ed è il margine del book: misurato sull'archivio, nessuna fascia di
 attendibilità ha ROI significativamente positivo. Serve a confrontare due
@@ -520,6 +579,7 @@ node --env-file=.env scripts/verifica-storico.js   # coerenza dell'archivio (set
 node --env-file=.env scripts/audit-archivio.js     # controllo completo (dopo ogni campionato nuovo)
 node --env-file=.env scripts/aggiorna.js --esegui                   # LA ROUTINE: martedì e venerdì dopo le 18
 #   = import-storico --stagioni=2627 → riconcilia-prossime → importa-prossime
+node --env-file=.env scripts/prova-vpm.js           # VPM sul weekend: dove campo e mercato litigano
 node --env-file=.env scripts/rendiconto.js          # IL RENDICONTO: calibrazione + resa delle proposte
 node --env-file=.env scripts/misura-valore.js --riferimento=media   # il criterio, a fine stagione
 node --env-file=.env scripts/import-storico.js --campionati=P1,N1   # solo alcuni campionati
