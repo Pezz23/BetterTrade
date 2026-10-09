@@ -11,4 +11,4 @@
 //   prima        +1  un cambio d'impianto (le altre tornano a 00)
 //
 // ⚠️ Non è la `version` di package.json (quella è npm e non c'entra).
-export const VERSIONE = '1.06.01'
+export const VERSIONE = '1.06.02'

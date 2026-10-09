@@ -129,21 +129,16 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
               <Etichetta style={{ fontSize: 9, marginTop: 3 }}>{p.quotaGiocata ? p.quotaFonte : 'la combinata si legge sul book'}</Etichetta>
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, flex: '1 1 250px' }}>
-            {[['max', q(massima)], ['media', q(p.segno === '1' ? p.avg_ap_1 : p.avg_ap_2)], ['equo', q(p.equo)]].map(([l, v]) => (
-              <div key={l} style={{ background: C.pozzo, border: `1px solid ${C.bordo}`, borderRadius: 8, padding: '7px 8px', textAlign: 'center' }}>
-                <Etichetta style={{ fontSize: 9, marginBottom: 3 }}>{l}</Etichetta>
-                <div style={{ fontSize: 14, fontWeight: 700, fontFamily: F.mono, color: C.testo }}>{v}</div>
-              </div>
-            ))}
-            {/* Il Grado: 70% la resa, 30% quanto paga la quota. La resa in
-                percentuale sta nei dettagli completi — qui serve il numero da
-                confrontare a colpo d'occhio, non la misura esatta. */}
-            <div style={{ background: C.pozzo, border: `1px solid ${alpha(C.oro, 0.35)}`, borderRadius: 8, padding: '7px 8px', textAlign: 'center' }}>
-              <Etichetta style={{ fontSize: 9, marginBottom: 3 }}>grado</Etichetta>
-              <div style={{ fontSize: 14, fontWeight: 700, fontFamily: F.mono, color: p.grado == null ? C.fantasma : C.oro }}>
-                {p.grado == null ? '—' : p.grado.toFixed(2).replace('.', ',')}
-              </div>
+          {/* ⚠️ Le tre quote max/media/equo sono state **togliere di qui** il
+              9/10/2026: erano numeri da consultare, non da guardare, e in cima
+              alla scheda rubavano spazio alla giocata. Restano tutte nei
+              **dettagli completi** in fondo, con le terne per intero.
+              Il Grado resta: 70% la resa, 30% quanto paga la quota, ed è un
+              numero da confrontare a colpo d'occhio. */}
+          <div style={{ background: C.pozzo, border: `1px solid ${alpha(C.oro, 0.35)}`, borderRadius: 10, padding: '10px 16px', textAlign: 'center', flex: '0 1 110px' }}>
+            <Etichetta style={{ fontSize: 9, marginBottom: 4 }}>grado</Etichetta>
+            <div style={{ fontSize: 22, fontWeight: 700, fontFamily: F.mono, color: p.grado == null ? C.fantasma : C.oro, lineHeight: 1 }}>
+              {p.grado == null ? '—' : p.grado.toFixed(2).replace('.', ',')}
             </div>
           </div>
         </div>
@@ -347,42 +342,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
         </Blocco>
       </>}
 
-      {/* ── 6. Il consenso ──────────────────────────────────────────── */}
-      <Blocco titolo="📊 Consenso di mercato" extra={p.quotaFonte ? `quote ${p.quotaFonte}` : null} sottolinea>
-        {[['1', p.p.p1, p.casa, p.q1], ['X', p.p.px, 'pareggio', p.qx], ['2', p.p.p2, p.trasferta, p.q2]].map(([segno, prob, chi, quota]) => {
-          const suo = segno === p.segno
-          return (
-            <div key={segno} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0' }}>
-              <span style={{ width: 16, fontSize: 14, fontWeight: 700, fontFamily: F.mono, color: suo ? C.oro : C.spento }}>{segno}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, gap: 8 }}>
-                  <span style={{ fontSize: 11, color: suo ? C.testo : C.fioco, fontFamily: F.sans, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{chi}</span>
-                  {/* La quota accanto alla probabilità: "il mercato dice 75%" e
-                      "te la pagano 1,30" sono due metà della stessa frase. */}
-                  <span style={{ fontSize: 11, fontFamily: F.mono, color: quota ? (suo ? C.oro : C.spento) : C.fantasma, flexShrink: 0 }}>
-                    {quota ? `@${Number(quota).toFixed(2).replace('.', ',')}` : '—'}
-                  </span>
-                </div>
-                <Barra frazione={prob} colore={suo ? C.verde : C.grigioCupo} />
-              </div>
-              <span style={{ width: 42, textAlign: 'right', fontSize: 14, fontWeight: 700, fontFamily: F.mono, color: suo ? C.testo : C.spento }}>{pct(prob)}</span>
-            </div>
-          )
-        })}
-        <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${C.bordoTenue}`, fontSize: 10, color: C.fantasma, fontFamily: F.sans, lineHeight: 1.5 }}>
-          Le percentuali vengono dalla media di ~40 bookmaker, tolto il margine. La X non si gioca mai.
-        </div>
-      </Blocco>
-
-      {/* Sul telefono si torna indietro anche trascinando: va detto, o il
-          gesto resta nascosto. */}
-      {tocco && onChiudi && (
-        <div style={{ textAlign: 'center', fontSize: 10, color: C.fantasma, fontFamily: F.sans, marginTop: 2 }}>
-          ‹ trascina da sinistra a destra per tornare alla lista
-        </div>
-      )}
-
-      {/* ── 6b. VPM: da dove viene il numero ───────────────────────────
+      {/* ── 6. VPM: da dove viene il numero ────────────────────────────
           In lista si legge "2 7,32"; qui dev'essere evidente **perché**, e
           nell'ordine in cui lo si farebbe a mano: le due forze, i tre strati,
           i parametri.
@@ -454,7 +414,45 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
         )
       })()}
 
-      {/* ── 7. I dettagli tecnici ───────────────────────────────────── */}
+      {/* ── 7. Il consenso ──────────────────────────────────────────────
+          Per ultimo, prima dei dettagli (scelta di Mattia, 9/10/2026): sono le
+          quote crude, cioè il materiale da cui nasce l'attendibilità, non una
+          cosa da leggere per prima. */}
+      <Blocco titolo="📊 Consenso di mercato" extra={p.quotaFonte ? `quote ${p.quotaFonte}` : null} sottolinea>
+        {[['1', p.p.p1, p.casa, p.q1], ['X', p.p.px, 'pareggio', p.qx], ['2', p.p.p2, p.trasferta, p.q2]].map(([segno, prob, chi, quota]) => {
+          const suo = segno === p.segno
+          return (
+            <div key={segno} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0' }}>
+              <span style={{ width: 16, fontSize: 14, fontWeight: 700, fontFamily: F.mono, color: suo ? C.oro : C.spento }}>{segno}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, gap: 8 }}>
+                  <span style={{ fontSize: 11, color: suo ? C.testo : C.fioco, fontFamily: F.sans, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{chi}</span>
+                  {/* La quota accanto alla probabilità: "il mercato dice 75%" e
+                      "te la pagano 1,30" sono due metà della stessa frase. */}
+                  <span style={{ fontSize: 11, fontFamily: F.mono, color: quota ? (suo ? C.oro : C.spento) : C.fantasma, flexShrink: 0 }}>
+                    {quota ? `@${Number(quota).toFixed(2).replace('.', ',')}` : '—'}
+                  </span>
+                </div>
+                <Barra frazione={prob} colore={suo ? C.verde : C.grigioCupo} />
+              </div>
+              <span style={{ width: 42, textAlign: 'right', fontSize: 14, fontWeight: 700, fontFamily: F.mono, color: suo ? C.testo : C.spento }}>{pct(prob)}</span>
+            </div>
+          )
+        })}
+        <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${C.bordoTenue}`, fontSize: 10, color: C.fantasma, fontFamily: F.sans, lineHeight: 1.5 }}>
+          Le percentuali vengono dalla media di ~40 bookmaker, tolto il margine. La X non si gioca mai.
+        </div>
+      </Blocco>
+
+      {/* Sul telefono si torna indietro anche trascinando: va detto, o il
+          gesto resta nascosto. */}
+      {tocco && onChiudi && (
+        <div style={{ textAlign: 'center', fontSize: 10, color: C.fantasma, fontFamily: F.sans, marginTop: 2 }}>
+          ‹ trascina da sinistra a destra per tornare alla lista
+        </div>
+      )}
+
+      {/* ── 8. I dettagli tecnici ───────────────────────────────────── */}
       <div>
         <button onClick={() => setDettagli(v => !v)} style={{ width: '100%', background: 'transparent', border: `1px solid ${C.bordoTenue}`, borderRadius: 10, padding: '9px 12px', color: C.spento, fontFamily: F.mono, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer' }}>
           {dettagli ? '⌃ chiudi i dettagli' : '⌄ dettagli completi'}

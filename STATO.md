@@ -330,10 +330,15 @@ ricalcola il proprio bankroll, e non può creare utenti.
 
 4d. [x] **L3 — la scheda** — fatto il 9 ottobre 2026 (**1.06.00**), provato da
    Mattia in `npm run dev` prima del commit.
-   - Blocco **🧮 VPM** **dopo il consenso di mercato** (1.06.01: prima stava
-     subito sotto la giocata, Mattia l'ha spostato — si legge prima cosa dice il
-     mercato, poi cosa dice il campo): le due forze a confronto, i tre strati,
-     i sette parametri. Il numero più alto di ogni riga è in grassetto e
+   - Blocco **🧮 VPM** in fondo, prima del consenso (spostato due volte da
+     Mattia: 1.06.01 sotto il consenso, poi 1.06.02 il consenso **per ultimo**,
+     quindi l'ordine finale è forma → classifica → scontri → **VPM** → consenso
+     → dettagli): le due forze a confronto, i tre strati, i sette parametri.
+   - **Tolte le tre quote `max · media · equo`** dalla testa della scheda
+     (1.06.02): erano numeri da consultare, non da guardare, e rubavano spazio
+     alla giocata. **Restano tutte nei dettagli completi**, con le terne per
+     intero — verificato, non si è perso niente. Il Grado resta accanto alla
+     giocata, più grande di prima perché ora ha la riga per sé. Il numero più alto di ogni riga è in grassetto e
      chiaro, l'altro spento — si trova chi vince quel parametro **senza leggere
      le cifre**.
    - ⚠️ **Accanto a ogni strato c'è il peso VERO, non quello nominale.** Su

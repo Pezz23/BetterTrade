@@ -240,8 +240,7 @@ filtro sbagliato (8 bandierine su 149 diverse).
 
 **A schermo** sta in due posti: il numero nella barra della riga
 (`RigaPartita`, col segno appoggiato al bordo sinistro della cella) e il blocco
-**🧮 VPM** nella scheda (`DettaglioPartita`), **dopo il consenso di mercato** —
-prima si legge cosa dice il mercato, poi cosa dice il campo — che mostra le due forze, i tre
+**🧮 VPM** nella scheda (`DettaglioPartita`), che mostra le due forze, i tre
 strati e i sette parametri — il valore più alto di ogni riga in grassetto, così
 si trova chi vince quel parametro senza leggere le cifre. Le bandierine del
 testa a testa stanno sopra l'elenco degli **Scontri diretti**, ed enunciano
@@ -450,6 +449,14 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   continuamente per guardare la stessa lista da tre lati. L'ordinamento avviene
   **dentro lo stesso `useMemo` dei filtri**, dopo di loro, così vale sempre su
   quello che è rimasto visibile.
+- **L'ordine dei blocchi nella scheda** (`DettaglioPartita`) è una scelta di
+  Mattia, non un caso: evento e giocata · forma · classifica · scontri diretti ·
+  **VPM** · consenso di mercato · dettagli completi. Il consenso sta **per
+  ultimo** perché sono le quote crude, il materiale da cui nasce
+  l'attendibilità, non una cosa da leggere per prima; e le tre quote
+  `max · media · equo` **non stanno più in cima** (9/10/2026) — erano numeri da
+  consultare, non da guardare, e vivono nei dettagli completi con le terne
+  intere. Prima di rimettere qualcosa in alto, chiedere.
 - **I filtri della lista** (`PartitePage`) stanno dietro un tasto `⚙ filtri`,
   con le **targhette di quelli accesi** fuori (si tolgono toccandole) e il
   conto `visibili/totali`. Rifatti così il 2/10/2026 perché in fila non si
