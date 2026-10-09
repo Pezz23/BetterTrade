@@ -244,6 +244,24 @@ ricalcola il proprio bankroll, e non può creare utenti.
      giorni le ha trovate **Mattia**, non io. Se ne capita una terza, la risposta
      è una prova di render delle pagine, non un'altra regola.
 
+4c-bis. [x] **La riga squadrata, quattro colonne uguali** — 9 ottobre 2026
+   (**1.02.02**). Mattia: *"le schede devono diventare quadrate, sotto la barra
+   deve avere 4 colonne equidistanti e il risultato in mezzo alla colonna"*.
+   - **Spigoli vivi** sulla card della riga e sulla barra dentro. ⚠️ Fatto in
+     `RigaPartita`, **non** nel `Card` di `ui.jsx`: quello lo usano anche
+     Dashboard, Bilancio e Reporting, dove gli angoli restano tondi. I tondini
+     delle squadre e le targhette restano rotondi — sono distintivi, non schede.
+   - **`repeat(4, 1fr)`** con tutto centrato: prima la giocata stava a sinistra
+     e la quota a destra, con colonne di larghezze diverse, e scorrendo la lista
+     i numeri ballavano da una riga all'altra.
+   - **Ogni colonna ha la sua etichetta sotto, anche la giocata** (`GIOCATA`):
+     senza, quella sarebbe l'unica colonna più bassa e la fila si vedeva storta.
+   - ⚠️ **Il nome del book è uscito dalla riga**: `Codere · 1 secco` non sta in
+     un quarto di card (86px su ~75 disponibili), e andando a capo avrebbe
+     allungato solo alcune righe. Ora dice `QUOTA` o `1 SECCO`; **la fonte
+     resta nei dettagli completi della scheda**, dove c'era già.
+   - Vale anche per **Partite votate**, che usa la stessa riga.
+
 4d. [ ] **L3 — la scheda.** I tre strati nell'ordine dell'iter (classifica →
    forma → ruolo) con i parametri aperti, e le bandierine accanto al blocco
    "Scontri diretti" che esiste già.

@@ -21,7 +21,9 @@ export default function RigaPartita({ p, cat, vpm = null, voti = 0, mio = false,
   const quota = p.quotaGiocata ?? p.quota
   const vsVpm = verso(vpm)
   return (
-    <Card style={{ padding: '10px 12px', borderColor: cat !== 'no' ? alpha(c.colore, 0.35) : undefined, cursor: 'pointer' }} onClick={onApri}>
+    /* ⚠️ `borderRadius: 0` qui e non nel `Card` di ui.jsx: quello lo usano
+       anche Dashboard, Bilancio e Reporting, e là gli angoli restano tondi. */
+    <Card style={{ padding: '10px 12px', borderRadius: 0, borderColor: cat !== 'no' ? alpha(c.colore, 0.35) : undefined, cursor: 'pointer' }} onClick={onApri}>
       {/* la riga dei contrassegni: campionato, categoria, e il voto — che si
           deve poter dare dalla lista, senza aprire la partita */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 10 }}>
@@ -34,12 +36,17 @@ export default function RigaPartita({ p, cat, vpm = null, voti = 0, mio = false,
 
       <TestataPartita p={p} cat={cat} compatta />
 
-      {/* Quattro campi: la giocata, il Grado, VPM, la quota. I due numeri
-          stanno in mezzo perché sono quelli che si guardano scorrendo, e
-          vicini perché il confronto fra loro è il motivo per cui ci sono. */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto 1fr', alignItems: 'center', gap: 8, marginTop: 10, padding: '8px 10px',
-        background: alpha(c.colore, 0.07), border: `1px solid ${alpha(c.colore, 0.28)}`, borderRadius: 8 }}>
-        <div style={{ fontSize: 16, fontWeight: 800, fontFamily: F.mono, color: c.colore, whiteSpace: 'nowrap' }}>{pronosticoDa(p.giocata)}</div>
+      {/* Quattro colonne **uguali**, ogni numero centrato nella sua: prima la
+          giocata stava a sinistra e la quota a destra, con larghezze diverse, e
+          scorrendo la lista i numeri ballavano da una riga all'altra.
+          Ogni colonna ha la sua etichetta sotto, anche la giocata: senza, quella
+          colonna sarebbe l'unica più alta e la fila si vedrebbe storta. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', alignItems: 'start', gap: 6, marginTop: 10, padding: '8px 6px',
+        background: alpha(c.colore, 0.07), border: `1px solid ${alpha(c.colore, 0.28)}`, borderRadius: 0 }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 15, fontWeight: 800, fontFamily: F.mono, color: c.colore, lineHeight: 1, whiteSpace: 'nowrap' }}>{pronosticoDa(p.giocata)}</div>
+          <div style={{ fontSize: 8, fontFamily: F.mono, color: C.spento, letterSpacing: '0.1em', marginTop: 3 }}>GIOCATA</div>
+        </div>
 
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 17, fontWeight: 700, fontFamily: F.mono, color: C.testo, lineHeight: 1 }}>
@@ -51,7 +58,7 @@ export default function RigaPartita({ p, cat, vpm = null, voti = 0, mio = false,
         {/* VPM: quanto il campo conferma la giocata. Lo spazio è riservato
             anche quando il dato non c'è — niente deve cambiare altezza o
             larghezza quando arriva un numero. */}
-        <div style={{ textAlign: 'center', minWidth: 34 }}>
+        <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 17, fontWeight: 700, fontFamily: F.mono, color: COLORE_VPM[vsVpm] || C.fantasma, lineHeight: 1 }}>
             {vpm != null ? vpm.toFixed(2).replace('.', ',') : '—'}
           </div>
@@ -61,15 +68,15 @@ export default function RigaPartita({ p, cat, vpm = null, voti = 0, mio = false,
         {/* Per la combinata con l'over non abbiamo la quota (nessuna fonte dà
             l'over 1,5): si mostra quella del segno secco, e si dice che l'over
             va letto sul book. */}
-        <div style={{ textAlign: 'right' }}>
+        <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 17, fontWeight: 700, fontFamily: F.mono, color: C.oro, lineHeight: 1 }}>
-            {quota ? <><span style={{ fontSize: 11, color: C.spento, fontWeight: 400 }}>Q: </span>{quota.toFixed(2).replace('.', ',')}</> : '—'}
+            {quota ? quota.toFixed(2).replace('.', ',') : '—'}
           </div>
-          {/* ⚠️ Una riga sola: con la quarta colonna lo spazio è meno, e questa
-              scritta andando a capo allungherebbe la card di una riga — solo
-              alcune, quindi la lista diventerebbe irregolare. */}
-          <div style={{ fontSize: 9, fontFamily: F.mono, color: C.spento, marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {p.quotaFonte}{!p.quotaGiocata && p.quota ? ` · ${p.segno} secco` : ''}
+          {/* ⚠️ Una riga sola: con quattro colonne uguali lo spazio è un quarto
+              della card, e questa scritta andando a capo allungherebbe solo
+              alcune righe — lista irregolare. La fonte sta nella scheda. */}
+          <div style={{ fontSize: 8, fontFamily: F.mono, color: C.spento, letterSpacing: '0.1em', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {!p.quotaGiocata && p.quota ? `${p.segno} SECCO` : 'QUOTA'}
           </div>
         </div>
       </div>
