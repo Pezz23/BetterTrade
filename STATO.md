@@ -3,7 +3,7 @@
 > To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 8 ottobre 2026
+**Ultimo aggiornamento:** 10 ottobre 2026
 **Fatti il 2 ottobre:** lotto A (le stelline contano, scelta a mano delle
 caselle, pagina Partite votate) e lotto B (scorrimento, filtri rifatti, filtro
 Grado, il Grado al posto della resa).
@@ -18,11 +18,19 @@ lotto I (la posizione in classifica nel tondo, "compila per quota") e la
 (`src/versione.js`, ora **1.01.02**), il **blocco del weekend** nelle spin
 (voce 5b, provato da Mattia: *"ok funziona"*) e **`npm run lint`**, che è la
 rete sotto la schermata nera di quel pomeriggio.
-**Prossimo passo:** VPM è **finito e in uso** (L1-L3). Resta **L4**, da fare fra
-qualche settimana con le partite vere davanti: ritoccare i pesi e rispondere a
-*VPM aggiunge qualcosa al mercato?*. Nel frattempo i lotti liberi sono **E**
-(il resto delle spin), **F** (automazione) e **M** (backtest). In sospeso fino a dopo questo weekend: **la spin 2**, che per via
-dei voti scende al 61,9% e al 47% (voce 5).
+**Fatti il 9-10 ottobre:** **VPM** per intero — il calcolo (`lib/vpm.js`), i dati
+in una chiamata (`sql/20`), il numero in lista col colore, il blocco nella
+scheda — più i **tasti per ordinare** (attendibilità · Grado · VPM), la finestra
+**"Oggi"**, la riga delle partite squadrata a quattro colonne uguali e due
+schermate nere corrette. Contatore a **1.06.02**.
+
+**Prossimo passo — cambio di tema, deciso il 10 ottobre.** Mattia vuole arrivare
+a **un voto unico per la partita** e poi a un **metodo di giocata**: si esce
+dalle spin per un po'. L'ordine è **lotto N** (definire e misurare il voto, con
+backtest sull'archivio) e poi **lotto O** (il metodo di giocata, tipo scalata).
+I lotti fermi ma vivi restano **E** (il resto delle spin), **F** (automazione) e
+**M** (backtest vecchi da riportare su `bfe_*`). **L4** di VPM si fonde nel
+lotto N: i pesi si ritoccano misurando, non a sensazione.
 
 **Recuperato il 7 ottobre**: Mattia ha cambiato wi-fi e football-data è tornato
 raggiungibile. `aggiorna.js --esegui` ha chiuso le 11 partite SP2 del 2-5/10
@@ -151,7 +159,55 @@ identificato. `sql/19-permessi-funzioni.sql` revoca PUBLIC **e `anon`** su
 tutte e otto. Riprovato dopo: un utente normale legge classifiche e forma,
 ricalcola il proprio bankroll, e non può creare utenti.
 
-## 🟡 Lotto L — VPM, la valutazione della partita
+## 🔵 Lotto N — Il voto unico della partita
+*`btscout/scripts/` (misura storica) → poi `lib/`.*
+
+14. **Definire il voto.** Deciso il 10/10/2026 discutendone: il voto finale
+    **resta una probabilità**, non una media di indici.
+    `voto = attendibilità ± correzione del campo (VPM)`, con la correzione
+    limitata a pochi punti.
+    ⚠️ **Perché non una media dei tre** (e i conti che lo dicono): nove esiti si
+    **moltiplicano**, quindi la probabilità deve dominare. Tutte e 9 all'80% →
+    P(9/9) = **13,4%**; al 76% → **8,5%**; al 72% → **5,2%**; al 65% →
+    **2,1%**. Sulla spin 1 del 9/10 (P(9/9) = 8,5% con le attendibilità vere),
+    mettere al centro una partita al 47% costa **−37%** sulla probabilità di
+    tutta la spin.
+    ⚠️ **La quota esce dalla selezione**: il Grado la contiene al 30% di
+    proposito, e dentro un voto di selezione direbbe "accetta una casella meno
+    probabile se paga di più" — su un accumulator da nove è il contrario di
+    quello che conviene, perché le probabilità si moltiplicano e la quota la si
+    incassa solo se vince tutto. La quota risponde a *quanto punto*, non a
+    *cosa gioco*.
+    ⚠️ **Una media di indici non è monotòna nella probabilità di vincere**: un
+    7,8 può essere "78% con VPM mediocre" o "62% con VPM 9,5", due rischi
+    diversissimi, e una soglia su quel numero non governa più niente.
+15. **Misurare VPM nel passato, prima di pesarlo.** Si può: 53.973 partite con
+    risultati e gol, tiri in porta sul **94,7%** dell'archivio, consenso di
+    apertura su **37.910**. Si ricostruisce VPM **com'era il giorno prima** di
+    ogni partita giocata e si risponde a una domanda sola: *fra le partite sopra
+    soglia, quelle dove il campo era d'accordo col mercato hanno vinto più
+    spesso di quelle dove dissentiva — e di quanti punti?*
+    ⚠️ **Col consenso di APERTURA e il VPM di quel giorno**: usare dati che
+    allora non c'erano è il modo classico di scoprire che un sistema funziona
+    fino a quando lo si gioca (vale la trappola apertura/chiusura già scritta in
+    CLAUDE.md).
+    ⚠️ Se la risposta è **zero**, lo si scopre prima di costruirci sopra — e
+    sarebbe coerente con quello che l'archivio ha già detto sulla forma
+    (`misura-forma.js`).
+16. **Trovare il voto minimo da giocare**, misurato: sopra quale voto le spin
+    pagano. È la domanda che un output unico rende rispondibile e che oggi, con
+    tre indicatori e una soglia su uno solo, non lo è.
+
+## 🔵 Lotto O — Il metodo di giocata
+*Dopo il lotto N, e senza toccare le spin.*
+
+17. **Una scalata** (o altro metodo a progressione): definirla, misurarla
+    sull'archivio e capire quale voto minimo la rende sostenibile. Da chiarire
+    con Mattia la variante esatta prima di scrivere qualsiasi cosa.
+    ⚠️ Vale la regola del bankroll: la formula sta in un posto solo, e niente
+    numeri scritti a mano (vedi "Regole che non si toccano" in CLAUDE.md).
+
+## 🟢 Lotto L — VPM, la valutazione della partita
 *`lib/vpm.js` (fatto) · SQL + `RigaPartita` + `DettaglioPartita` (da fare).*
 
 4. **~~Indice di attendibilità manuale~~ → diventato VPM** il 9 ottobre 2026.
@@ -363,7 +419,25 @@ ricalcola il proprio bankroll, e non può creare utenti.
      tutte le partite: **298 squadre-partita, scarto massimo 3,6·10⁻¹⁵**. Se un
      giorno qualcuno tocca i pesi in un posto e non nell'altro, lo dice subito.
 
-4e. [ ] **L4 — dopo qualche settimana.** Ritoccare i pesi con le partite vere
+4f. [ ] **Normalizzare la forma dei tre numeri** (deciso il 10/10, non ancora
+   fatto): stesso corpo e peso per attendibilità, Grado e VPM, il `%` **più
+   piccolo e in alto**, un `/10` esplicito dopo Grado e VPM nella scheda, e
+   l'attendibilità con **un decimale** nella scheda.
+   ⚠️ **L'attendibilità NON si converte in 1-10.** Mattia l'aveva proposto per
+   uniformare; misurando si è visto che non guadagna nulla e perde molto: con
+   una conversione lineare `75%` diventa `7,75` — le stesse cifre con un nome
+   peggiore — e si perde l'unica cosa calibrata che abbiamo ("vince tre volte su
+   quattro", misurato). Ancorandola al campo osservato gli estremi cambierebbero
+   ogni settimana, la trappola già evitata con `GRADO_MIN/MAX` e le `ANCORE`.
+   E le soglie **75/72/65** sono percentuali scelte da Mattia il 23/09, vivono
+   in **nove file** e decidono le spin: due scale sulla stessa cosa sarebbero il
+   difetto peggiore. ⚠️ Decisivo: il **voto unico** (lotto N) sarà una
+   probabilità, quindi l'attendibilità è il suo seme — sono gli **altri due** a
+   dover cedere il posto, un domani.
+
+4e. [x] **L4 — assorbito dal lotto N** (10/10): i pesi di VPM si ritoccano
+   misurando VPM nel passato, non a sensazione dopo qualche settimana. ~~Dopo
+   qualche settimana.~~ Ritoccare i pesi con le partite vere
    davanti, e rispondere a *VPM aggiunge qualcosa al mercato?* — si fonde con
    la voce 7 (giocate vere contro proposte).
 

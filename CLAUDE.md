@@ -259,6 +259,48 @@ valere `Σ PESI[k] × vociPesate[k] = forza.punti`. `scripts/prova-scheda.js` lo
 controlla su tutte le partite (298 squadre-partita, scarto 3,6·10⁻¹⁵) — se non
 torna, una delle due è stata toccata senza l'altra.
 
+### Dove si sta andando: un voto unico, che resta una probabilità
+
+**Deciso parlandone il 10/10/2026.** L'obiettivo di Mattia è **un voto solo per
+la partita**, con una soglia minima per giocare — tre indicatori che diventano
+un output, così il sistema si può misurare invece di discuterlo. La direzione è
+giusta, ma la forma del voto non è libera:
+
+⚠️ **Il voto deve essere la probabilità corretta, non la media dei tre indici.**
+`voto = attendibilità ± correzione del campo (VPM)`, con la correzione limitata
+a pochi punti. Due ragioni, entrambe con i numeri dietro:
+
+- **Nove esiti si moltiplicano.** Tutte e 9 le caselle all'80% danno
+  P(9/9) = **13,4%**; al 76% **8,5%**; al 72% **5,2%**; al 65% **2,1%**. Sulla
+  spin 1 del 9/10 (8,5% reale), portare il centro da 75% a 47% costa **−37%**
+  sulla probabilità di tutta la spin. Quindi la probabilità deve **dominare** il
+  voto: non può essere un terzo di una media.
+- **Una media di indici non è monotòna nella probabilità di vincere.** Un voto
+  7,8 può nascere da "78% con VPM mediocre" o da "62% con VPM 9,5": due rischi
+  diversissimi, e una soglia su quel numero non controlla più niente.
+
+⚠️ **La quota non entra nella selezione.** Il Grado la contiene al 30% *di
+proposito*, ma dentro un voto che scegliere le caselle direbbe "accetta una
+casella meno probabile se paga di più" — e su un accumulator da nove è il
+contrario di quello che conviene, perché le probabilità si moltiplicano mentre
+la quota la si incassa solo se vince tutto. La quota risponde a **quanto punto**
+e **se vale la pena**, non a **cosa gioco**.
+
+⚠️ **I pesi della correzione si misurano, non si scelgono.** VPM si può
+ricostruire nel passato — 53.973 partite con risultati e gol, tiri in porta sul
+94,7%, consenso di apertura su 37.910 — e la domanda è una sola: fra le partite
+sopra soglia, quelle dove il campo era d'accordo col mercato hanno vinto più
+spesso? Da fare **col consenso di apertura e il VPM di quel giorno**: vale la
+trappola apertura/chiusura di sotto. Se la risposta è zero, lo si scopre prima
+di costruirci sopra.
+
+⚠️ **Corollario sul formato:** l'attendibilità **non si converte in 1-10**.
+È il seme del voto finale e l'unica cosa calibrata che abbiamo; una conversione
+lineare trasforma `75%` in `7,75` — le stesse cifre, nessun guadagno, e si perde
+"vince tre volte su quattro". Le soglie 75/72/65 sono percentuali, vivono in
+nove file e decidono le spin: due scale sulla stessa cosa sono il difetto
+peggiore possibile.
+
 ⚠️ **Una stellina scavalca la soglia, non il calendario.** Una partita votata
 entra nella spin anche se sta sotto soglia (`candidate()` in `lib/spin.js`
 accetta `votiDi`): è un gesto deliberato di una persona, e vale più del calcolo.
