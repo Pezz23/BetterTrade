@@ -194,6 +194,25 @@ ricalcola il proprio bankroll, e non può creare utenti.
     ⚠️ Se la risposta è **zero**, lo si scopre prima di costruirci sopra — e
     sarebbe coerente con quello che l'archivio ha già detto sulla forma
     (`misura-forma.js`).
+15b. [x] **Backtest A1 — fatto il 10 ottobre 2026, e ha cambiato le priorità.**
+    `btscout/scripts/misura-resa-favoriti.js`, 37.871 partite.
+    - **Le quote corte sono l'unica fascia che non perde**: 1,30-1,45 →
+      resa **99,8%** [97,5 … 102,1] su 2.733 partite. Tutti i favoriti insieme:
+      **95,3%**; la fascia 1,70-2,00: **94,3%**. È proprio la fascia della SOFT.
+    - **Il favourite-longshot bias si vede**: in 1,35-1,40 l'attendibilità
+      diceva 69,1% e il favorito ha vinto **72,5%**.
+    - ⚠️ **La scoperta vera**: le stesse 2.733 partite a tre prezzi — Bet365
+      99,8%, media di mercato 100,3%, **massima di mercato 103,2%
+      [100,9 … 105,6]**, il solo valore significativamente sopra 100.
+      **Il vantaggio sta nel prezzo, non nella selezione**: +3,4 punti solo
+      cambiando book, più di quanto possa aggiungere qualunque indice.
+    - ⚠️ **Da verificare prima di costruirci sopra**: su quali book Mattia può
+      davvero giocare. La massima di mercato è un prezzo che bisogna POTER
+      prendere, e i book che pagano di più limitano i vincenti.
+    - Conseguenza sul piano: **la voce 15 (misurare VPM nel passato) scende di
+      priorità**. Prima si capisce quanto prezzo si può recuperare, perché quei
+      3,4 punti sono più grandi di qualunque correzione.
+
 16. **Trovare il voto minimo da giocare**, misurato: sopra quale voto le spin
     pagano. È la domanda che un output unico rende rispondibile e che oggi, con
     tre indicatori e una soglia su uno solo, non lo è.
@@ -201,9 +220,40 @@ ricalcola il proprio bankroll, e non può creare utenti.
 ## 🔵 Lotto O — Il metodo di giocata
 *Dopo il lotto N, e senza toccare le spin.*
 
-17. **Una scalata** (o altro metodo a progressione): definirla, misurarla
-    sull'archivio e capire quale voto minimo la rende sostenibile. Da chiarire
-    con Mattia la variante esatta prima di scrivere qualsiasi cosa.
+17. **La "scala a recupero"** — definita con Mattia il 10/10/2026. Nome suo il
+    concetto, mio il nome. Tre versioni, **base 20 € per tutte** (per poterle
+    confrontare, e perché con base 10 la SOFT non sale: l'arrotondamento per
+    eccesso dell'accantonamento si mangia il primo passo).
+
+    | | passo | quota | probabilità | resa |
+    |---|---|---|---|---|
+    | **SOFT** | 1 partita | 1,35-1,40 | ~72% | ~99% |
+    | **MEDIUM** | fino a 2 | 1,70 | ~58% | ~98% |
+    | **HARD** | fino a 3 | ≥ 2,00 | ~47% | ~97% |
+
+    **L'accantonamento è una percentuale dell'UTILE del passo, arrotondata per
+    eccesso** (verificato sull'esempio di Mattia: 10 a 1,70 → 17, utile 7, il
+    65% è 4,55 → accantona 5, rigioca 12). La scaletta:
+    `65% · 35% · 35% · 30% · 30% · 25% …`. La cassa assorbe anche la frazione
+    non giocabile, perché le puntate sono a euro interi.
+    Vocabolario: **la cassa** (l'accantonato, intoccabile) · **fase di
+    recupero** finché la cassa non copre la base · **fase di corsa** dopo.
+
+    ⚠️ **Tutte e tre rompono il pari esattamente a resa 100%** — calcolato, non
+    stimato. La progressione, la scaletta, il numero di passi: **nessuno sposta
+    il punto di pareggio**. La scala **ridistribuisce il rischio, non crea
+    vantaggio**. Serve solo a raccogliere quello che la selezione trova.
+    ⚠️ **Sotto il 100% HARD sanguina 2,5 volte più di SOFT** (−10,6% contro
+    −5,0% per ciclo con base 20), perché ogni partita in più moltiplica il
+    margine del book — la resa di una combinata è il **prodotto** delle rese.
+    Sopra il 100% sono quasi uguali (+5,3% SOFT, +3,9% HARD a resa 101%).
+    **Quindi SOFT domina: stesso guadagno possibile, metà della perdita.**
+    Quello che HARD dà in cambio è la velocità: recupera la base al **2°** passo
+    (47% dei cicli) invece del **5°** (26%), e se cade al secondo hai perso 6 €
+    invece di 14. È una scelta di temperamento, non di matematica.
+18. **Misurare le tre versioni sull'archivio** (backtest B): quanti cicli
+    chiudono in attivo, quanto scende nel peggio, quanto rende in otto stagioni.
+    Ha senso **dopo** aver capito a quale prezzo si può giocare (voce 15b).
     ⚠️ Vale la regola del bankroll: la formula sta in un posto solo, e niente
     numeri scritti a mano (vedi "Regole che non si toccano" in CLAUDE.md).
 

@@ -294,6 +294,35 @@ spesso? Da fare **col consenso di apertura e il VPM di quel giorno**: vale la
 trappola apertura/chiusura di sotto. Se la risposta è zero, lo si scopre prima
 di costruirci sopra.
 
+#### Misurato il 10/10/2026 — il vantaggio sta nel prezzo, non nella selezione
+
+`btscout/scripts/misura-resa-favoriti.js`, su **37.871** partite con favorito
+scelto dal consenso di **apertura**, quota Bet365 di apertura e risultato.
+La domanda era: giocando il favorito secco, la **resa realizzata** supera il
+100%? (Sopra si guadagna, sotto si perde, e nessuna progressione di puntate lo
+cambia: la scala a recupero rompe il pari esattamente a resa 100%.)
+
+- **Il favourite-longshot bias è confermato e si vede**: nella fascia 1,35-1,40
+  l'attendibilità dichiarava **69,1%** e il favorito ha vinto **72,5%**; in
+  1,40-1,45 dichiarava 66,4% e ha vinto 71,4%. Il mercato è conservativo sui
+  favoriti, come già scritto sopra.
+- **Resa per fascia di quota giocata**: tutti i favoriti **95,3%**
+  [94,3 … 96,3] ✗ · 1,70-2,00 **94,3%** ✗ · 1,55-1,70 **96,8%** ✗ ·
+  **1,30-1,45 → 99,8%** [97,5 … 102,1], **indistinguibile da 100** su 2.733
+  partite. ⚠️ Quindi **le quote corte sono l'unica fascia che non perde**: è
+  esattamente la fascia della versione SOFT della scala.
+- ⚠️ **Le stesse 2.733 partite, a tre prezzi**: Bet365 apertura **99,8%** ·
+  media di mercato **100,3%** · **massima di mercato 103,2% [100,9 … 105,6], il
+  solo valore significativamente sopra 100.** Il vantaggio sta **nel prezzo**,
+  non (ancora) nella selezione: cambiare book vale **+3,4 punti**, più di
+  qualunque rifinitura del criterio.
+- ⚠️ **Ma la massima è un prezzo che bisogna POTER giocare**: serve il conto su
+  quel book, e i book che pagano di più limitano i vincenti. Prima di costruirci
+  sopra va verificato su quali book Mattia può davvero puntare.
+- **In euro, su un ciclo SOFT da 20 €**: a resa 97,5% costa **−2,38** · a 99,8%
+  **−0,20** · a 102,1% rende **+2,28**. Tutto il sistema vive in una banda di
+  quattro punti, che è la stessa larghezza dello scarto fra i book.
+
 ⚠️ **Corollario sul formato:** l'attendibilità **non si converte in 1-10**.
 È il seme del voto finale e l'unica cosa calibrata che abbiamo; una conversione
 lineare trasforma `75%` in `7,75` — le stesse cifre, nessun guadagno, e si perde
