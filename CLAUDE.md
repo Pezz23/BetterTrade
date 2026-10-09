@@ -240,7 +240,8 @@ filtro sbagliato (8 bandierine su 149 diverse).
 
 **A schermo** sta in due posti: il numero nella barra della riga
 (`RigaPartita`, col segno appoggiato al bordo sinistro della cella) e il blocco
-**🧮 VPM** nella scheda (`DettaglioPartita`), che mostra le due forze, i tre
+**🧮 VPM** nella scheda (`DettaglioPartita`), **dopo il consenso di mercato** —
+prima si legge cosa dice il mercato, poi cosa dice il campo — che mostra le due forze, i tre
 strati e i sette parametri — il valore più alto di ogni riga in grassetto, così
 si trova chi vince quel parametro senza leggere le cifre. Le bandierine del
 testa a testa stanno sopra l'elenco degli **Scontri diretti**, ed enunciano

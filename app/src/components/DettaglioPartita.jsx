@@ -157,75 +157,6 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
         </div>
       </div>
 
-      {/* ── 2b. VPM: da dove viene il numero ───────────────────────────
-          In lista si legge "2 7,32"; qui dev'essere evidente **perché**, e
-          nell'ordine in cui lo si farebbe a mano: le due forze, i tre strati,
-          i parametri. ⚠️ Accanto a ogni strato c'è il **peso vero**, non quello
-          nominale: a ottobre le partite nel ruolo sono 1-3 e il blocco vale una
-          frazione del suo 25%. Senza quel numero sembrerebbero tre strati
-          indipendenti, e oggi non lo sono. */}
-      {v && v.punti != null && (() => {
-        const forti = [v.forzaCasa, v.forzaFuori]
-        const voci = forti.map(vociPesate)
-        const vincente = v.segno === '1' ? p.casa : p.trasferta
-        return (
-          <Blocco titolo="🧮 VPM" extra={`il campo dice ${v.segno}`} sottolinea>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
-              <div style={{ fontSize: 12, fontFamily: F.sans, color: C.fioco, lineHeight: 1.5 }}>
-                <b style={{ color: COLORE_VPM[vs] }}>{vincente}</b>, e {PAROLA_VPM[vs]}.
-                {vs !== 'incerto' && <> Sotto {String(VPM_NETTO).replace('.', ',')} non si pronuncia.</>}
-              </div>
-              <div style={{ fontSize: 26, fontWeight: 800, fontFamily: F.mono, color: COLORE_VPM[vs], lineHeight: 1, flexShrink: 0 }}>
-                {v.punti.toFixed(2).replace('.', ',')}
-              </div>
-            </div>
-
-            {/* L'intestazione con le due squadre: le colonne qui sotto sono
-                loro, e senza i nomi non si capirebbe quale sia quale. */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 52px 52px', gap: 6, paddingBottom: 6, borderBottom: `1px solid ${C.bordoChiaro}` }}>
-              <div />
-              {squadre.map(sq => (
-                <div key={sq} style={{ textAlign: 'right', fontSize: 9, fontFamily: F.mono, color: C.spento, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {sq.length > 8 ? sq.slice(0, 8) + '…' : sq}
-                </div>
-              ))}
-            </div>
-
-            <Confronto etichetta="FORZA" nota="in casa · fuori" forte
-              a={forti[0]?.punti} b={forti[1]?.punti} />
-
-            <div style={{ borderTop: `1px solid ${C.bordoTenue}`, marginTop: 4, paddingTop: 4 }}>
-              {['stagione', 'forma', 'ruolo'].map(nome => {
-                const sa = forti[0]?.strati?.[nome], sb = forti[1]?.strati?.[nome]
-                const pa = forti[0]?.pesi?.[nome] ?? 0, pb = forti[1]?.pesi?.[nome] ?? 0
-                const pesoDetto = Math.round(pa * 100) === Math.round(pb * 100)
-                  ? `${Math.round(pa * 100)}%` : `${Math.round(pa * 100)}% · ${Math.round(pb * 100)}%`
-                return (
-                  <Confronto key={nome} etichetta={NOMI_STRATI[nome]}
-                    nota={`peso ${pesoDetto} · ${sa?.n ?? 0} e ${sb?.n ?? 0} partite`}
-                    a={sa?.punti} b={sb?.punti} />
-                )
-              })}
-              {forti.some(f => f && f.pesi.ruolo < PESI_STRATI.ruolo - 0.001) && (
-                <div style={{ fontSize: 10, fontFamily: F.sans, color: C.fantasma, lineHeight: 1.5, marginTop: 4 }}>
-                  Lo strato nel ruolo vale meno del suo {Math.round(PESI_STRATI.ruolo * 100)}% perché le partite
-                  giocate in quel ruolo sono meno di cinque: il peso che avanza torna alla stagione.
-                </div>
-              )}
-            </div>
-
-            {/* I parametri, con i tre strati già fusi: la loro somma pesata
-                fa esattamente la FORZA qui sopra. */}
-            <div style={{ borderTop: `1px solid ${C.bordoChiaro}`, marginTop: 8, paddingTop: 6 }}>
-              {Object.keys(PESI).map(k => (
-                <Confronto key={k} etichetta={ETICHETTE[k]} nota={`peso ${(PESI[k] * 100).toFixed(0)}%`}
-                  a={voci[0]?.[k]} b={voci[1]?.[k]} />
-              ))}
-            </div>
-          </Blocco>
-        )
-      })()}
-
       {errore && <Blocco><div style={{ color: C.rosso, fontSize: 12, fontFamily: F.sans }}>⚠️ {errore}</div></Blocco>}
       {!forma && !errore && <Blocco><div style={{ color: C.spento, fontSize: 12, fontFamily: F.mono }}>carico la forma…</div></Blocco>}
 
@@ -450,6 +381,78 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
           ‹ trascina da sinistra a destra per tornare alla lista
         </div>
       )}
+
+      {/* ── 6b. VPM: da dove viene il numero ───────────────────────────
+          In lista si legge "2 7,32"; qui dev'essere evidente **perché**, e
+          nell'ordine in cui lo si farebbe a mano: le due forze, i tre strati,
+          i parametri.
+          ⚠️ Sta **dopo il consenso di mercato** (scelta di Mattia, 9/10/2026):
+          prima si legge cosa dice il mercato, poi cosa dice il campo. Messo in
+          alto rubava la scena alla giocata, che è l'informazione principale. ⚠️ Accanto a ogni strato c'è il **peso vero**, non quello
+          nominale: a ottobre le partite nel ruolo sono 1-3 e il blocco vale una
+          frazione del suo 25%. Senza quel numero sembrerebbero tre strati
+          indipendenti, e oggi non lo sono. */}
+      {v && v.punti != null && (() => {
+        const forti = [v.forzaCasa, v.forzaFuori]
+        const voci = forti.map(vociPesate)
+        const vincente = v.segno === '1' ? p.casa : p.trasferta
+        return (
+          <Blocco titolo="🧮 VPM" extra={`il campo dice ${v.segno}`} sottolinea>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
+              <div style={{ fontSize: 12, fontFamily: F.sans, color: C.fioco, lineHeight: 1.5 }}>
+                <b style={{ color: COLORE_VPM[vs] }}>{vincente}</b>, e {PAROLA_VPM[vs]}.
+                {vs !== 'incerto' && <> Sotto {String(VPM_NETTO).replace('.', ',')} non si pronuncia.</>}
+              </div>
+              <div style={{ fontSize: 26, fontWeight: 800, fontFamily: F.mono, color: COLORE_VPM[vs], lineHeight: 1, flexShrink: 0 }}>
+                {v.punti.toFixed(2).replace('.', ',')}
+              </div>
+            </div>
+
+            {/* L'intestazione con le due squadre: le colonne qui sotto sono
+                loro, e senza i nomi non si capirebbe quale sia quale. */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 52px 52px', gap: 6, paddingBottom: 6, borderBottom: `1px solid ${C.bordoChiaro}` }}>
+              <div />
+              {squadre.map(sq => (
+                <div key={sq} style={{ textAlign: 'right', fontSize: 9, fontFamily: F.mono, color: C.spento, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {sq.length > 8 ? sq.slice(0, 8) + '…' : sq}
+                </div>
+              ))}
+            </div>
+
+            <Confronto etichetta="FORZA" nota="in casa · fuori" forte
+              a={forti[0]?.punti} b={forti[1]?.punti} />
+
+            <div style={{ borderTop: `1px solid ${C.bordoTenue}`, marginTop: 4, paddingTop: 4 }}>
+              {['stagione', 'forma', 'ruolo'].map(nome => {
+                const sa = forti[0]?.strati?.[nome], sb = forti[1]?.strati?.[nome]
+                const pa = forti[0]?.pesi?.[nome] ?? 0, pb = forti[1]?.pesi?.[nome] ?? 0
+                const pesoDetto = Math.round(pa * 100) === Math.round(pb * 100)
+                  ? `${Math.round(pa * 100)}%` : `${Math.round(pa * 100)}% · ${Math.round(pb * 100)}%`
+                return (
+                  <Confronto key={nome} etichetta={NOMI_STRATI[nome]}
+                    nota={`peso ${pesoDetto} · ${sa?.n ?? 0} e ${sb?.n ?? 0} partite`}
+                    a={sa?.punti} b={sb?.punti} />
+                )
+              })}
+              {forti.some(f => f && f.pesi.ruolo < PESI_STRATI.ruolo - 0.001) && (
+                <div style={{ fontSize: 10, fontFamily: F.sans, color: C.fantasma, lineHeight: 1.5, marginTop: 4 }}>
+                  Lo strato nel ruolo vale meno del suo {Math.round(PESI_STRATI.ruolo * 100)}% perché le partite
+                  giocate in quel ruolo sono meno di cinque: il peso che avanza torna alla stagione.
+                </div>
+              )}
+            </div>
+
+            {/* I parametri, con i tre strati già fusi: la loro somma pesata
+                fa esattamente la FORZA qui sopra. */}
+            <div style={{ borderTop: `1px solid ${C.bordoChiaro}`, marginTop: 8, paddingTop: 6 }}>
+              {Object.keys(PESI).map(k => (
+                <Confronto key={k} etichetta={ETICHETTE[k]} nota={`peso ${(PESI[k] * 100).toFixed(0)}%`}
+                  a={voci[0]?.[k]} b={voci[1]?.[k]} />
+              ))}
+            </div>
+          </Blocco>
+        )
+      })()}
 
       {/* ── 7. I dettagli tecnici ───────────────────────────────────── */}
       <div>

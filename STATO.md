@@ -330,8 +330,10 @@ ricalcola il proprio bankroll, e non può creare utenti.
 
 4d. [x] **L3 — la scheda** — fatto il 9 ottobre 2026 (**1.06.00**), provato da
    Mattia in `npm run dev` prima del commit.
-   - Blocco **🧮 VPM** subito sotto la giocata: le due forze a confronto, i tre
-     strati, i sette parametri. Il numero più alto di ogni riga è in grassetto e
+   - Blocco **🧮 VPM** **dopo il consenso di mercato** (1.06.01: prima stava
+     subito sotto la giocata, Mattia l'ha spostato — si legge prima cosa dice il
+     mercato, poi cosa dice il campo): le due forze a confronto, i tre strati,
+     i sette parametri. Il numero più alto di ogni riga è in grassetto e
      chiaro, l'altro spento — si trova chi vince quel parametro **senza leggere
      le cifre**.
    - ⚠️ **Accanto a ogni strato c'è il peso VERO, non quello nominale.** Su
