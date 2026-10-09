@@ -64,6 +64,16 @@ export default function PartitePage() {
   const numero = t => { const n = parseFloat(String(t).replace(',', '.')); return Number.isFinite(n) ? n : null }
   const quotaMostrata = r => r.quotaGiocata ?? r.quota ?? null
 
+  // VPM di ogni partita, una volta sola: il calcolo sta in lib/vpm.js, qui
+  // solo la mappa id → valutazione, che serve alla riga e al filtro.
+  // ⚠️ Deve stare PRIMA di `visibili`, che lo legge nel filtro: `const` ha la
+  // zona morta, e usarlo più sopra è schermata nera al primo render.
+  const vpmDi = useMemo(() => {
+    const m = new Map()
+    if (datiVpm) for (const r of righe) m.set(r.id, valutaPartita(datiVpm, r))
+    return m
+  }, [datiVpm, righe])
+
   const visibili = useMemo(() => {
     const qMin = numero(quotaMin), qMax = numero(quotaMax), gMin = numero(gradoMin)
     return inFinestra
@@ -83,14 +93,6 @@ export default function PartitePage() {
     for (const r of inFinestra) { const k = categoria(r.probGiocata, soglie); if (k !== 'no') c[k]++ }
     return c
   }, [inFinestra, soglie])
-
-  // VPM di ogni partita, una volta sola: il calcolo sta in lib/vpm.js, qui
-  // solo la mappa id → valutazione, che serve alla riga e al filtro.
-  const vpmDi = useMemo(() => {
-    const m = new Map()
-    if (datiVpm) for (const r of righe) m.set(r.id, valutaPartita(datiVpm, r))
-    return m
-  }, [datiVpm, righe])
 
   const ultimaData = inFinestra.reduce((m, r) => (r.data > m ? r.data : m), '')
 

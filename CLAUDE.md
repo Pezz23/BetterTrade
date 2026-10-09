@@ -506,6 +506,17 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   cerca quel nome in tutto `src/` (`grep -rn`), e la pagina si apre davvero.
   ✅ Ora c'è la rete: **`npm run lint`** lo prende in un secondo (`no-undef`,
   uscita 1) sullo stesso file su cui `vite build` passa — provato l'8/10/2026.
+- **Una variabile usata venti righe prima della sua riga è schermata nera, e
+  `no-undef` non la vede.** In `PartitePage` il `useMemo` dei filtri leggeva
+  `vpmDi`, dichiarato più sotto: `const` ha la **zona morta**, quindi al primo
+  render è `Cannot access 'vpmDi' before initialization`. Il nome **esiste**,
+  per questo il linter taceva e il build passava (9/10/2026).
+  ✅ Chiuso con **`no-use-before-define`** (`variables: true`, funzioni libere):
+  acceso, ha trovato subito altri due casi latenti — `nomeBook` in
+  `attendibilita.js` e `votate` in `SpinProvvisoriePage`, che funzionavano solo
+  perché chiamati dal JSX, cioè dopo. Riordinati.
+  ⚠️ **In un componente l'ordine delle righe è semantica, non stile**: un
+  `useMemo` che legge un altro `useMemo` deve stare sotto di lui.
 - **Niente deve cambiare altezza quando arriva un dato.** Nella slot il ✓/✗ è
   più grande del pronostico e allungava la casella; la riga delle combinazioni
   vinte compariva dal nulla e spingeva giù la pagina sotto le dita. Si risolve

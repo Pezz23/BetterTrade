@@ -43,6 +43,10 @@ export function probabilita(q1, qx, q2) {
   return { p1: 1 / q1 / s, px: 1 / qx / s, p2: 1 / q2 / s }
 }
 
+// Il nome leggibile del bookmaker di riferimento, dalla chiave di The Odds API.
+const NOMI_BOOK = { codere_it: 'Codere', pinnacle: 'Pinnacle', williamhill: 'William Hill', unibet_eu: 'Unibet', betfair_ex_eu: 'Betfair' }
+export const nomeBook = chiave => NOMI_BOOK[chiave] || chiave || '—'
+
 /**
  * Arricchisce una riga di prossime_partite con attendibilità e giocata.
  * Restituisce { prob: null } se manca il consenso.
@@ -91,10 +95,6 @@ export function valuta(r) {
 
   return { ...r, p, segno, prob, quota, quotaFonte, q1, qx, q2, equo, scarto, giocata, quotaGiocata, nota, probGiocata, quotaStimata, resa, grado: grado(resa, quotaResa) }
 }
-
-// Il nome leggibile del bookmaker di riferimento, dalla chiave di The Odds API.
-const NOMI_BOOK = { codere_it: 'Codere', pinnacle: 'Pinnacle', williamhill: 'William Hill', unibet_eu: 'Unibet', betfair_ex_eu: 'Betfair' }
-export const nomeBook = chiave => NOMI_BOOK[chiave] || chiave || '—'
 
 // ── Il Grado: la resa in scala da 1 a 10 ─────────────────────────────────────
 // Serve al colpo d'occhio, non alla selezione delle spin: dice quale partita

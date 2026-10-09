@@ -232,6 +232,17 @@ ricalcola il proprio bankroll, e non può creare utenti.
    - **Verificato**: `prova-vpm.js` ora fa passare la strada del database da
      **`valutaPartita`**, cioè la funzione che chiama l'app — **149/149
      identiche** su numero e bandierine. Non è una copia del calcolo: è quello.
+   - ⚠️ **Seconda schermata nera, stessa famiglia** (1.02.01): il `useMemo` dei
+     filtri leggeva `vpmDi`, che avevo dichiarato **venti righe sotto**. `const`
+     ha la zona morta → `Cannot access 'vpmDi' before initialization` al primo
+     render. Il nome esiste, quindi `no-undef` taceva e il build passava.
+     ✅ Chiuso con **`no-use-before-define`** nel linter: acceso, ha trovato
+     subito altri **due casi latenti** (`nomeBook` in `attendibilita.js`,
+     `votate` in `SpinProvvisoriePage`) che funzionavano solo perché chiamati
+     dal JSX. Riordinati, lint a 0.
+     ⚠️ Resta scoperto il montaggio vero della pagina: due schermate nere in due
+     giorni le ha trovate **Mattia**, non io. Se ne capita una terza, la risposta
+     è una prova di render delle pagine, non un'altra regola.
 
 4d. [ ] **L3 — la scheda.** I tre strati nell'ordine dell'iter (classifica →
    forma → ruolo) con i parametri aperti, e le bandierine accanto al blocco

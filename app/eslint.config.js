@@ -35,6 +35,13 @@ export default [
       'react-hooks/rules-of-hooks': 'error',
       // Un argomento che non si usa capita nei gestori; una variabile no.
       'no-unused-vars': ['error', { args: 'none', ignoreRestSiblings: true }],
+      // ⚠️ Una variabile usata PRIMA della sua riga (9/10/2026): in PartitePage
+      // il `useMemo` dei filtri leggeva `vpmDi`, dichiarato venti righe sotto.
+      // `const` ha la zona morta, quindi è `Cannot access before
+      // initialization` al primo render — schermata nera — e né `vite build`
+      // né `no-undef` lo vedono, perché il nome **esiste**.
+      // Le funzioni restano libere: usarle prima di dichiararle è normale.
+      'no-use-before-define': ['error', { functions: false, classes: false, variables: true }],
     },
   },
 

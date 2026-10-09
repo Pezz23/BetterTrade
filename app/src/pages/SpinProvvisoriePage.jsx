@@ -167,6 +167,12 @@ export default function SpinProvvisoriePage() {
   const [casella, setCasella] = useState(null)   // { spin, pos } aperta
   const [perQuota, setPerQuota] = useState(null) // la spin per cui si compila a quota
 
+  // ⚠️ Sta sopra `altrove`, che la legge: `const` ha la zona morta, e oggi
+  // funziona solo perché `altrove` viene chiamata dentro il JSX, cioè dopo.
+  const votate = useMemo(() => componi(soloVotate, quante).map((spin, si) =>
+    spin.map(c => (`${si}|${c.pos}` in aMano ? { ...c, partita: aMano[`${si}|${c.pos}`] } : c))
+  ), [soloVotate, quante, aMano])
+
   // Dove sta già una partita, nelle ALTRE spin: non la blocca (si può ripetere
   // volendo), ma deve essere evidente prima di sceglierla.
   const altrove = spinCorrente => {
@@ -178,9 +184,6 @@ export default function SpinProvvisoriePage() {
     return m
   }
 
-  const votate = useMemo(() => componi(soloVotate, quante).map((spin, si) =>
-    spin.map(c => (`${si}|${c.pos}` in aMano ? { ...c, partita: aMano[`${si}|${c.pos}`] } : c))
-  ), [soloVotate, quante, aMano])
   const nVotate = ordinate.filter(p => votiDi(p.id) > 0).length
   // Tutte le partite con almeno una stellina, anche sotto soglia o oltre il
   // limite: chi ha votato deve vedere dov'è finito il suo voto.
