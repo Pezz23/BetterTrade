@@ -758,6 +758,12 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   montata e tiene da sola il suo punto, e il gesto indietro scopre quello che
   c'è sotto. **Prima c'era un rattoppo** (salvare e rimettere `window.scrollY`):
   tolto, perché la struttura giusta l'ha reso inutile.
+- **Con otto stagioni si guarda la MEDIANA, non la media.** Misurando la scala
+  a recupero (10/10/2026), la fascia 1,50-2,20 sembrava rendere **1.158 €** di
+  media: erano **sei stagioni su sette in perdita più una scala fortunata da
+  7.549 €**. La mediana diceva 76 €. ⚠️ Vale per ogni misura su pochi cicli ad
+  alta varianza: **media + dettaglio per stagione**, sempre, e la decisione si
+  prende sulla mediana.
 - **Paginare con `.range()` su un ordine con pari merito perde righe.** Nello
   script di VPM gli scontri diretti sono ~34.000 (35 pagine) ordinati per sola
   `data`, che ha migliaia di pari merito: fra una pagina e l'altra Postgres può
@@ -822,7 +828,12 @@ node --env-file=.env scripts/aggiorna.js --esegui                   # LA ROUTINE
 node --env-file=.env scripts/prova-vpm.js           # VPM sul weekend: dove campo e mercato litigano
 node --env-file=.env scripts/prova-ordine.js        # i tre ordini della lista, casi limite compresi
 node --env-file=.env scripts/prova-scheda.js --squadra=Lens   # il blocco VPM della scheda, e l'identità dei pesi
+node --env-file=.env scripts/schedina-weekend.js --quota=5    # la schedina del weekend dalle partite vere
 node --env-file=.env scripts/rendiconto.js          # IL RENDICONTO: calibrazione + resa delle proposte
+node --env-file=.env scripts/backtest-scala.js --basepct=10 --scelta=resa   # il metodo di giocata su 8 stagioni
+#   altri pomelli: --passi=6 --banda=1.35,1.45 --bankroll=200 --scelta=att|resa|vpm
+node --env-file=.env scripts/misura-resa-favoriti.js   # la resa realizzata dei favoriti, per fascia e per book
+node --env-file=.env scripts/misura-schedine.js --quota=5   # le schedine del weekend sull'archivio
 node --env-file=.env scripts/misura-valore.js --riferimento=media   # il criterio, a fine stagione
 node --env-file=.env scripts/import-storico.js --campionati=P1,N1   # solo alcuni campionati
 node --env-file=.env scripts/importa-prossime-odds.js --campionati=E0,I1 --esegui   # riprende i campionati caduti (1 credito l'uno)

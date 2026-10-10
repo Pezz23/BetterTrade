@@ -60,6 +60,31 @@ compilano la griglia da sole, la griglia **agganciata alle partite vere** e il
 
 ---
 
+## 🎯 Il metodo di giocata, come esce dai test del 10 ottobre 2026
+
+Non è ancora nell'app: è il risultato del backtest (voce 18), scritto qui perché
+è la cosa che Mattia userà.
+
+| | |
+|---|---|
+| **Quando** | venerdì-sabato e domenica-lunedì, **una** giocata per turno |
+| **Cosa** | **la partita con la resa più alta** fra quelle a quota **1,35-1,45** dove VPM conferma il segno del mercato ed è netto (≥ 6) |
+| **Quanto** | base = **10% del bankroll**, ricalcolata all'inizio di ogni scala |
+| **Come sale** | accantona `65 · 35 · 35 · 30 · 30 · 25%` **dell'utile**, arrotondato per eccesso; il resto si rigioca |
+| **Quando chiude** | al primo passo perso, **o al 6° passo vinto**: si incassa tutto e si riparte |
+| **Da quando** | 5ª giornata di campionato |
+
+Su otto stagioni: mediana **218 €** partendo da 200, mai azzerato, punto più
+basso 75 €, quattro stagioni su sette in attivo.
+
+⚠️ **Mattia gioca su Bet365**, e nell'app le quote arrivano da The Odds API che
+**non lo include** (41 book, nessun Bet365 — verificato). L'app mostra Codere,
+che su questo weekend pagava **2,8 punti meno** della massima. Bet365 ce l'ha
+solo football-data, nel blocco imminente: `importa-prossime.js` lo riempirebbe.
+**Resta da decidere** se metterlo davanti a Codere in `valuta()`.
+
+---
+
 # 🗂 LA TO-DO LIST
 
 > Riscritta il **7 ottobre 2026**: solo quello che manca, numerato 1-13 e diviso
@@ -303,14 +328,50 @@ ricalcola il proprio bankroll, e non può creare utenti.
     Quello che HARD dà in cambio è la velocità: recupera la base al **2°** passo
     (47% dei cicli) invece del **5°** (26%), e se cade al secondo hai perso 6 €
     invece di 14. È una scelta di temperamento, non di matematica.
-18. **Misurare le tre versioni sull'archivio** (backtest B): quanti cicli
-    chiudono in attivo, quanto scende nel peggio, quanto rende in otto stagioni.
-    Ha senso **dopo** aver capito a quale prezzo si può giocare (voce 15b).
-    ⚠️ Vale la regola del bankroll: la formula sta in un posto solo, e niente
-    numeri scritti a mano (vedi "Regole che non si toccano" in CLAUDE.md).
+18. [x] **Backtest delle tre versioni — fatto il 10 ottobre 2026.**
+    `btscout/scripts/backtest-scala.js`, otto stagioni, VPM ricalcolato per ogni
+    partita con le sole partite precedenti. Vincoli dati da Mattia: bankroll
+    200 €, dalla 5ª giornata, **una giocata per turno e due turni per weekend**
+    (venerdì-sabato e domenica-lunedì, perché il secondo passo vuole il
+    risultato del primo).
 
-## 🟢 Lotto L — VPM, la valutazione della partita
-*`lib/vpm.js` (fatto) · SQL + `RigaPartita` + `DettaglioPartita` (da fare).*
+    **Tre cose hanno cambiato il risultato, in ordine di peso:**
+
+    1. ⚠️ **La base va in percentuale del bankroll, non fissa.** Con 20 € fissi
+       la SOFT **si azzera in 2 stagioni su 7** (dopo 47 e 52 turni); con
+       **base = 10% del bankroll** non si azzera mai, in nessuna versione, e la
+       media sale. Una scala morta costa sempre la stessa frazione.
+    2. ⚠️ **Si scegli per RESA, non per attendibilità.** Stesso tutto il resto:
+       per resa **299 €** di media, per attendibilità **183 €**, per VPM 212 €.
+       Non è una fortuna trovata provando: la resa **è** il rendimento atteso
+       per euro, quindi scegliere per resa è scegliere la giocata che rende di
+       più. Scegliere per attendibilità prende le più probabili, che stanno
+       sulle quote più corte — quelle con la resa peggiore (1,7 punti per gamba).
+    3. ⚠️ **Chiudere la scala a 6 passi batte il lasciarla correre.** Senza
+       tetto la SOFT scende da 183 a 142 €: se non si chiude mai, la scala muore
+       sempre, e muore con una posta più grossa. Da 2 a 6 passi è tutto uguale
+       (178-183), oltre peggiora.
+
+    **Il risultato della SOFT** (base 10%, scelta per resa, 6 passi), da 200 €:
+    `122 · 454 · 218 · 97 · 151 · 470 · 581` → **mediana 218 €**, media 299 €,
+    peggiore 97 €, **mai azzerata**, punto più basso toccato 75 €. Quattro
+    stagioni su sette sopra i 200. Gioca 62-67 turni su 80 e apre ~20 scale.
+
+    **MEDIUM** mediana 177 € (3/7 in attivo) · **HARD** mediana 109 € (1/7).
+    SOFT vince in ogni configurazione provata.
+
+    ⚠️ **La fascia 1,35-1,45 — quella scelta da Mattia prima di qualsiasi test —
+    è la migliore su sette provate** (mediana 218; le altre 76-196). Allargare
+    verso l'alto peggiora sempre.
+
+    ⚠️⚠️ **Trappola trovata strada facendo, da non ripetere:** guardando la
+    **media** invece della mediana, la fascia 1,50-2,20 sembrava fare 1.158 € e
+    la HARD 1,35-1,45 1.026 €. Erano **sei stagioni su sette in perdita più una
+    scala fortunata** (7.549 € e 6.606 €). **Con sette stagioni si guarda la
+    mediana**, e si apre sempre il dettaglio per stagione.
+
+## 🟢 Lotto L — VPM, la valutazione della partita — **chiuso il 9-10 ottobre**
+*`lib/vpm.js` · `sql/20` · `hooks/usaVpm.js` · `BarraPartita` · `DettaglioPartita`.*
 
 4. **~~Indice di attendibilità manuale~~ → diventato VPM** il 9 ottobre 2026.
    L'idea di partenza era un numero **digitato a mano**; parlandone è diventata
