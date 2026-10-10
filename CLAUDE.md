@@ -13,7 +13,10 @@ Due pezzi nello stesso repo, non ancora collegati:
 ## ⚠️ PRIMA DI QUALSIASI COSA: leggi STATO.md
 
 **All'inizio di ogni sessione leggi [STATO.md](STATO.md)** — è la to-do list e il
-punto esatto in cui siamo. **Alla fine aggiornalo.** Se una task cambia stato e il
+punto esatto in cui siamo. ⚠️ **Se è passato più di un mese dall'ultimo
+aggiornamento, in cima a STATO c'è il blocco "RIPARTIRE DOPO UNA PAUSA"**: tre
+comandi e la tabella di cosa è scaduto (le quote) e cosa no (il criterio).
+Partire senza quello significa guardare quote di mesi prima. **Alla fine aggiornalo.** Se una task cambia stato e il
 file non lo riflette, la sessione dopo riparte da informazioni sbagliate.
 Aggiornare STATO.md fa parte del lavoro, non è un extra.
 
@@ -226,11 +229,21 @@ chi tiene la palla, il dominio chi fa male.
 ottobre le partite in casa giocate sono 1-3, non 5, quindi il blocco prende il
 suo peso × (quante ne ha / 5) e il resto torna alla stagione. ⚠️ Sotto
 **3 partite VPM non c'è**: nessun numero, non un numero prudente.
-⚠️ A ottobre i tre strati guardano quasi le stesse partite — con 5 giornate
-"le ultime 5" SONO la stagione; la forma comincia a dire altro da gennaio.
+⚠️ **Frase legata al momento in cui è stata scritta (ottobre 2026):** con 5
+giornate giocate i tre strati guardano quasi le stesse partite — "le ultime 5"
+SONO la stagione, e le partite nel ruolo sono 1-3. **Da gennaio è falsa**: gli
+strati divergono e la forma comincia a dire altro. Se leggi questa riga a
+stagione avanzata, è storia.
+⚠️ **A stagione nuova VPM non esiste per le prime 3-4 giornate**, perché
+`MIN_PARTITE` = 3: in agosto-settembre la colonna fa `—` e il voto vale la resa
+senza correzione. **Non è un difetto, è il minimo per avere un dato.**
 
 **Le ancore** (`ANCORE`) sono il 5° e 95° percentile misurati sulle stagioni
-24/25 e 25/26, e sono **fisse** per la stessa ragione di `GRADO_MIN/MAX`.
+24/25 e 25/26, e sono **fisse**: se si ricalcolassero sulle squadre del momento,
+la stessa partita cambierebbe VPM ogni settimana.
+⚠️ **Rimisurarle è lecito solo per aggiungere una stagione, e cambia TUTTI i VPM
+storici**: si fa una volta, si scrive la data accanto ai numeri, e si rifanno i
+backtest che ci stanno sopra. Non si toccano per far quadrare un risultato.
 ⚠️ **Casa e fuori hanno ancore separate, e la misura lo impone**: la mediana del
 dominio è 0,548 in casa e 0,447 fuori, le vittorie 0,40 contro 0,20. Con ancore
 uniche ogni squadra di casa prenderebbe un bonus gratuito — e il fattore campo

@@ -3,60 +3,79 @@
 > To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 10 ottobre 2026
-**Fatti il 2 ottobre:** lotto A (le stelline contano, scelta a mano delle
-caselle, pagina Partite votate) e lotto B (scorrimento, filtri rifatti, filtro
-Grado, il Grado al posto della resa).
-**Fatti il 5 ottobre:** lotto C (scheda finita), lotto D (storico a 30),
-l'ingrandimento automatico su iOS, le coppe valutate e scartate, quote
-aggiornate.
-**Fatti il 7-8 ottobre:** lotto G (pulizia: README, documenti di btscout, PWA
-di chat cancellata), lotto H (si torna indietro trascinando, alla Safari),
-lotto I (la posizione in classifica nel tondo, "compila per quota") e la
-**stretta sui permessi delle funzioni** (sql/19).
-**Fatti l'8 ottobre, dopo:** il **contatore dello sviluppo** in barra
-(`src/versione.js`, ora **1.01.02**), il **blocco del weekend** nelle spin
-(voce 5b, provato da Mattia: *"ok funziona"*) e **`npm run lint`**, che è la
-rete sotto la schermata nera di quel pomeriggio.
-**Fatti il 9-10 ottobre:** **VPM** per intero — il calcolo (`lib/vpm.js`), i dati
-in una chiamata (`sql/20`), il numero in lista col colore, il blocco nella
-scheda — più i **tasti per ordinare** (attendibilità · Grado · VPM), la finestra
-**"Oggi"**, la riga delle partite squadrata a quattro colonne uguali e due
-schermate nere corrette. Contatore a **1.06.02**.
+**Ultimo aggiornamento:** 10 ottobre 2026 · app alla versione **1.07.00**
 
-**Fatto il 10 ottobre (sera):** la **scala a recupero** definita e misurata
-(lotto O) e il **voto a schermo** con la card rifatta (lotto P, 1.07.00).
+---
 
-**Prossimo passo — cambio di tema, deciso il 10 ottobre.** Mattia vuole arrivare
-a **un voto unico per la partita** e poi a un **metodo di giocata**: si esce
-dalle spin per un po'. L'ordine è **lotto N** (definire e misurare il voto, con
-backtest sull'archivio) e poi **lotto O** (il metodo di giocata, tipo scalata).
-I lotti fermi ma vivi restano **E** (il resto delle spin), **F** (automazione) e
-**M** (backtest vecchi da riportare su `bfe_*`). **L4** di VPM si fonde nel
-lotto N: i pesi si ritoccano misurando, non a sensazione.
+# 🔄 RIPARTIRE DOPO UNA PAUSA
 
-**Recuperato il 7 ottobre**: Mattia ha cambiato wi-fi e football-data è tornato
-raggiungibile. `aggiorna.js --esegui` ha chiuso le 11 partite SP2 del 2-5/10
-(**tutte con quote fedeli**) e rinfrescato le quote: archivio a **884 partite**,
-ultima giocata il 5/10, **206 future** fino al 19, 32 book di media, 440 crediti.
-Resta aperta una sola futura: **Levante-Ath Bilbao del 16/09, rinviata e mai
-giocata** — quella non si chiuderà mai, ed è giusto così.
-Sopra soglia: **9 centro, 5 gialle, 21 blu**; dei 19 voti, **12 su partite
-ancora da giocare**.
+Se fra l'ultimo aggiornamento e oggi sono passate settimane o mesi, **i dati
+sono vecchi, non il codice**. In ordine:
+
+```bash
+cd btscout
+node --env-file=.env scripts/aggiorna.js --esegui    # risultati + quote: recupera tutto da solo
+node --env-file=.env scripts/verifica-storico.js     # l'archivio è coerente?
+cd ../app && npm run lint && npm run dev             # 0 errori, poi la barra deve dire 1.07.00
+```
+
+`aggiorna.js` guarda indietro e non perde niente: `riconcilia-prossime` chiude
+le future diventate partite anche se sono di tre mesi fa. **I crediti di The
+Odds API si rigenerano ogni mese** (500), quindi dopo una pausa sono pieni.
+
+**Cosa sarà sicuramente da rifare, e cosa invece regge:**
+
+| | |
+|---|---|
+| ⚠️ **Le quote future** | `prossime_partite` è una fotografia: dopo una pausa è tutta scaduta. La riempie `aggiorna.js`. |
+| ⚠️ **A stagione nuova VPM non esiste per ~4 giornate.** | Serve un minimo di **3 partite giocate** per squadra (`MIN_PARTITE`): in agosto-settembre la colonna VPM fa `—` e il voto vale la resa. **Non è un difetto.** |
+| ⚠️ **Le ancore di VPM** | misurate su 24/25 e 25/26, **fisse di proposito**. Vanno rimisurate solo quando si vuole aggiungere una stagione — e allora cambiano *tutti* i VPM storici, quindi si fa una volta e si scrive la data. |
+| ⚠️ **Le note "a ottobre…"** | in CLAUDE.md e qui ci sono frasi legate al momento (i tre strati di VPM che guardano quasi le stesse partite, le 1-3 partite in casa). **Da gennaio sono false**: la forma comincia a dire altro. |
+| ✅ **Il criterio, le soglie, i pesi** | non scadono: sono misurati sull'archivio, non sulla settimana. |
+| ✅ **sql/01-20, RLS, permessi** | applicati e verificati. `scripts/prova-permessi.js` lo riconferma in un minuto. |
+
+**I numeri qui sotto con una data accanto sono fotografie, non verità**: se
+leggi "884 partite" o "440 crediti" e siamo a marzo, sono vecchi di mesi.
 
 ---
 
 ## Dove siamo in una riga
 
-**L'app e l'archivio sono ora nello stesso database.** `app/` (React+Vite,
-in produzione su Vercel) e le 53.796 partite di 15 campionati vivono entrambi in Supabase;
-`btscout/` resta il motore che le importa e le analizza. Sicurezza chiusa, numeri
-chiusi, archivio dentro. Sopra ci sono la pagina Partite (attendibilità, resa,
-stelline, forma), la **scheda della partita**, le **Spin provvisorie** che
-compilano la griglia da sole, la griglia **agganciata alle partite vere** e il
-**rendiconto** che misura come stiamo andando.
+**L'app funziona e si usa.** `app/` (React+Vite su Vercel) e le 53.973 partite
+di 15 campionati stanno nello stesso Supabase; `btscout/` è il motore che le
+importa e le misura. Sicurezza chiusa, archivio dentro, numeri chiusi.
 
----
+Sopra ci sono: la pagina **Partite** con la card a cinque numeri
+(`quota · attendibilità · VPM · resa · voto`), la **scheda** che spiega da dove
+vengono, le **Spin provvisorie** che compilano la griglia da sole col blocco del
+weekend, la griglia **agganciata alle partite vere**, lo **storico**, la
+**gestione utenti** e il **rendiconto**.
+
+**Dove eravamo arrivati col ragionamento** (10 ottobre): il **voto** riassume
+tutto in un numero (resa × fattore VPM, 100% = pareggio), e la **scala a
+recupero** è il metodo di giocata, misurato su otto stagioni. La conclusione
+onesta è scritta in CLAUDE.md: **sui favoriti corti si gioca alla pari**, i
+guadagni dimostrabili sono strutturali (quote corte, una partita per volta), e
+un vantaggio del 2% **non è dimostrabile** con questo archivio.
+
+## La storia, in breve
+
+| quando | cosa |
+|---|---|
+| 16/09 | chiarito il criterio: **attendibilità = probabilità**, non valore |
+| 23/09 | via la doppia chance · spin agganciate alle partite vere · soglie 75/72/65 |
+| 2-5/10 | lotti A-D: stelline che contano, lista e scheda finite, storico |
+| 7-8/10 | lotti G-H-I: pulizia, gesto indietro alla Safari, classifica nel tondo · permessi (sql/19) · contatore di versione · `npm run lint` |
+| 9/10 | **VPM** per intero (lotto L): calcolo, `sql/20`, lista, scheda |
+| 10/10 | la **scala a recupero** misurata (lotto O) · il **voto** al posto del Grado, card rifatta (lotto P) |
+
+Il dettaglio di ogni lotto, col *perché* di ogni scelta, sta sotto in
+"Fatto di recente": serve a non rifare esperimenti già fatti.
+
+**Fotografia del 7 ottobre 2026** (ormai vecchia, tenuta come riferimento):
+archivio a 884 partite della stagione 26/27, 206 future, 32 book di media,
+440 crediti. Una futura non si chiuderà mai — **Levante-Ath Bilbao del 16/09,
+rinviata e mai giocata** — ed è giusto così.
 
 ---
 
