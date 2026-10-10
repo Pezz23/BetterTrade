@@ -24,6 +24,9 @@ scheda — più i **tasti per ordinare** (attendibilità · Grado · VPM), la fi
 **"Oggi"**, la riga delle partite squadrata a quattro colonne uguali e due
 schermate nere corrette. Contatore a **1.06.02**.
 
+**Fatto il 10 ottobre (sera):** la **scala a recupero** definita e misurata
+(lotto O) e il **voto a schermo** con la card rifatta (lotto P, 1.07.00).
+
 **Prossimo passo — cambio di tema, deciso il 10 ottobre.** Mattia vuole arrivare
 a **un voto unico per la partita** e poi a un **metodo di giocata**: si esce
 dalle spin per un po'. L'ordine è **lotto N** (definire e misurare il voto, con
@@ -158,6 +161,35 @@ account rispondono *"Solo il superadmin…"*, `ricalcola_bankroll` rifiuta,
 identificato. `sql/19-permessi-funzioni.sql` revoca PUBLIC **e `anon`** su
 tutte e otto. Riprovato dopo: un utente normale legge classifiche e forma,
 ricalcola il proprio bankroll, e non può creare utenti.
+
+## 🟢 Lotto P — Il voto a schermo — fatto il 10 ottobre 2026 (**1.07.00**)
+
+19. [x] **La card della partita rifatta**, disposizione decisa da Mattia:
+    - in alto le squadre con **la giocata in mezzo** (prima lì c'era
+      l'attendibilità, che è scesa nella barra);
+    - sotto la barra dei **cinque numeri**: `QUOTA · ATTEND. · VPM · RESA · VOTO`,
+      in un componente nuovo (`BarraPartita.jsx`) **condiviso fra lista e
+      scheda**;
+    - nella scheda la barra ha preso il posto del riquadro con le quote di
+      mercato (max · media · equo), del Grado e del confronto con la massima:
+      erano informazioni di prezzo da consultare, e restano nei dettagli
+      completi. **La nota sulla combinata resta**, perché spiega la giocata e
+      non il prezzo.
+20. [x] **Il VOTO ha preso il posto del Grado.** `voto = resa × (1 + (VPM −
+    5,5)/45)`, cioè da 1,00 a 1,10 di correzione. ⚠️ Il fattore è vicino a 1
+    perché VPM va da 5,5 a 10 e moltiplicare per quei numeri avrebbe fatto
+    perdere al voto il significato di "quanto torna per ogni euro" (100% =
+    pareggio). ⚠️ **Grado cancellato** da `attendibilita.js` con
+    `GRADO_MIN/MAX`, `PESO_QUOTA`, `QUOTA_MIN/MAX`: due numeri costruiti sulla
+    resa erano un doppione.
+21. [x] **Cinque tasti d'ordine**, uno per colonna, sempre visibili; **il secondo
+    tocco inverte**. Il filtro "grado minimo" è diventato **"voto minimo"** in
+    percentuale. Provato con `prova-ordine.js`: tutti e cinque decrescenti,
+    vuoti in fondo, stabili a pari merito e corretti anche al contrario.
+22. [x] **Legenda a scomparsa** (`LegendaPartite.jsx`) sopra il titolo della
+    pagina, chiusa di default, con la spiegazione di ognuno dei cinque numeri.
+    ⚠️ Dice anche che **l'attendibilità non è "quanto spesso vince" ma quanto
+    spesso lo pensa il mercato**, e che sui favoriti è prudente di ~3 punti.
 
 ## 🔵 Lotto N — Il voto unico della partita
 *`btscout/scripts/` (misura storica) → poi `lib/`.*

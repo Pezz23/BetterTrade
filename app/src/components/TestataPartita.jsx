@@ -1,4 +1,5 @@
 import { C, F, alpha } from '../theme'
+import { pronosticoDa } from '../lib/spin'
 import { Etichetta } from './ui'
 import { usaClassifiche, postoDi, fasciaDi } from '../hooks/usaClassifiche'
 
@@ -76,11 +77,14 @@ export default function TestataPartita({ p, cat, compatta = false }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'start', gap: 8 }}>
         {[[p.casa, '1'], [p.trasferta, '2']].map(([sq, segno], i) => (
           <div key={sq} style={{ display: 'contents' }}>
-            {/* l'attendibilità sta fra le due squadre: è il numero che le mette a confronto */}
+            {/* ⚠️ In mezzo alle squadre sta **la giocata** (10/10/2026, scelta di
+                Mattia): è la cosa che si decide, e deve stare dove l'occhio va
+                per primo. L'attendibilità era qui e si è spostata nella barra
+                sotto, con gli altri quattro numeri. */}
             {i === 1 && (
               <div style={{ alignSelf: 'center', textAlign: 'center', padding: '0 6px', minWidth: compatta ? 76 : 96 }}>
-                <Etichetta style={{ fontSize: 9, letterSpacing: '0.12em', marginBottom: 4 }}>attendibilità</Etichetta>
-                <div style={{ fontSize: compatta ? 21 : 26, fontWeight: 700, fontFamily: F.mono, color: c.colore, lineHeight: 1 }}>{pct(p.probGiocata)}</div>
+                <Etichetta style={{ fontSize: 9, letterSpacing: '0.12em', marginBottom: 4 }}>giocata</Etichetta>
+                <div style={{ fontSize: compatta ? 19 : 24, fontWeight: 800, fontFamily: F.mono, color: c.colore, lineHeight: 1.1 }}>{pronosticoDa(p.giocata)}</div>
                 <div style={{ marginTop: compatta ? 5 : 7 }}><Barra frazione={p.probGiocata} colore={c.colore} altezza={compatta ? 5 : 6} /></div>
               </div>
             )}

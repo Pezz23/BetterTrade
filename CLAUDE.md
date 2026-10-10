@@ -142,20 +142,36 @@ quello che si è davvero previsto. Le soglie, scelte da Mattia il 23/09, sono
 **75 / 72 / 65** — servono a riempire da una a tre spin con le migliori, non a
 fare una lista lunga.
 
-**La resa** è `quota × probabilità`: quanto torna in media per ogni euro, 100%
-è il pareggio. ⚠️ **A schermo non si mostra più** (deciso il 2/10/2026): diceva
-la stessa cosa del Grado in un altro modo, e due numeri per la stessa cosa
-confondono. Resta nei **dettagli completi** della scheda, col decimale. **Il Grado** (`grado()` in
-`lib/attendibilita.js`) riassume in **1-10 con due decimali** quanto conviene
-una partita: **70% la resa, 30% il livello della quota** (`PESO_QUOTA`).
-⚠️ La quota pesa a parte **di proposito**: resa = quota × probabilità, quindi
-"1,18 all'82%" e "1,48 al 65%" danno la stessa resa — ma con 100 € rendono 18
-contro 48. Senza quel 30% il Grado sarebbe cieco al guadagno (correlazione con
-la quota: 0,10).
-⚠️ Gli estremi (`GRADO_MIN`, `GRADO_MAX`) sono **fissi, misurati sull'archivio**:
-se si ricalcolassero sulla lista del momento, la stessa partita cambierebbe
-Grado ogni settimana. ⚠️ **Il Grado non entra nella selezione delle spin** —
-è solo un dato da guardare (deciso il 30/09/2026).
+**L'attendibilità non è "quanto spesso vince": è quanto spesso lo pensa il
+mercato.** Ed è una stima **prudente** sui favoriti — misurato sull'archivio,
+dove dichiarava 69,1% il favorito ha vinto **72,5%**. Va detto così a schermo e
+qui dentro: è la stima del mercato, non la verità.
+
+**La resa** è `quota × attendibilità`: quanto torna in media per ogni euro,
+**100% è il pareggio**. ⚠️ Dal 10/10/2026 **si mostra in barra**, accanto al
+voto (prima stava solo nei dettagli completi, perché diceva la stessa cosa del
+Grado — ma il Grado non c'è più).
+
+**Il VOTO** (`voto()` in `lib/vpm.js`) è il numero che riassume tutto:
+
+```
+voto = attendibilità × quota × fattore(VPM) = resa × fattore(VPM)
+fattore = 1 + (VPM − 5,5) / 45     →  da 1,00 a 1,10
+```
+
+⚠️ **Il fattore è vicino a 1 di proposito.** VPM va da 5,5 a 10: moltiplicare
+per quei numeri avrebbe reso il voto 5-10 volte più grande, perdendo il
+significato di "quanto torna per ogni euro" dove 100% è il pareggio. Il tetto
+del +10% è anche il peso che VPM si è **guadagnato**: nel backtest sui favoriti
+corti conferma il mercato nel 95% dei casi, quindi corregge, non comanda.
+⚠️ **Sopra 100% conviene, sotto no** — ed è l'unico numero della barra che dice
+questo. ⚠️ Come prima il Grado, **il voto non entra nella selezione delle spin**.
+
+⚠️ **Il Grado è stato togliere il 10/10/2026**, con `GRADO_MIN/MAX`,
+`PESO_QUOTA` e `QUOTA_MIN/MAX`. Era la resa in scala 1-10 più il livello della
+quota; il voto risponde alla stessa domanda tenendo dentro anche il campo, e
+due numeri costruiti sulla resa a schermo erano un doppione — lo stesso difetto
+per cui il 2/10 la resa era stata togliere dalla barra. **Non ricrearlo.**
 
 ### VPM — Valutazione Partita Manuale
 
@@ -186,7 +202,7 @@ rispondeva a un'altra domanda — lui non guarda quanto è buono l'1, guarda **c
 speculari: sommano 11). **Lezione:** un indice che riassume un giudizio deve
 rispondere alla domanda di chi lo legge, non a quella più comoda da calcolare.
 
-⚠️ Come il Grado, **non entra nella selezione delle spin**: se Mattia vuole
+⚠️ Come il voto, **non entra nella selezione delle spin**: se Mattia vuole
 giocare un disaccordo, lo strumento è **la stellina**, che esiste già per
 questo.
 
@@ -392,9 +408,11 @@ blocco**: là la data è testo `gg/mm` senza anno, quindi si guarda l'**ampiezza
 (oltre 4 giorni fra la prima e l'ultima casella) e si deve poter correggere a
 mano.
 
-⚠️ **I nomi, da non scambiare:** *attendibilità* = probabilità (il mercato) ·
-*resa* = quota × probabilità · **Grado** = la resa da 1 a 10 · **VPM** = quanto
-il campo conferma la giocata, da 1 a 10 (le squadre) · **voti** = le stelline
+⚠️ **I nomi, da non scambiare:** *attendibilità* = la probabilità secondo il
+mercato · *resa* = quota × attendibilità, 100% è il pareggio · **VPM** = quale
+segno dice il campo e quanto è netto, 5,5-10 (le squadre) · **VOTO** = resa ×
+fattore VPM, cioè quanto conviene giocarla · ~~Grado~~, togliere il 10/10 ·
+**voti** = le stelline
 degli admin (`voti_partite`), che restano voti in app e database. ⚠️ **Sta sotto 100 quasi sempre**,
 ed è il margine del book: misurato sull'archivio, nessuna fascia di
 attendibilità ha ROI significativamente positivo. Serve a confrontare due
@@ -548,8 +566,26 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
 - **Le librerie in `src/lib/` importano con l'estensione** (`'./attendibilita.js'`):
   Vite non se ne accorge e Node le può eseguire da terminale per provarle sui
   dati veri, senza browser.
-- **L'ordine della lista sta in `src/lib/ordine.js`**, non nella pagina: i tre
-  criteri (attendibilità, Grado, VPM) con i confronti, e `scripts/prova-ordine.js`
+- **La card di una partita è composta così** (10/10/2026, disposizione decisa da
+  Mattia): in alto le due squadre con **la giocata in mezzo** — `TestataPartita`,
+  la stessa per lista e scheda — e sotto la **barra dei cinque numeri**:
+  `QUOTA · ATTEND. · VPM · RESA · VOTO`. La barra è `components/BarraPartita.jsx`
+  e **la usano sia la riga della lista sia la scheda**: nella scheda ha preso il
+  posto del riquadro con le quote di mercato (max · media · equo) e del Grado,
+  così i numeri sono gli stessi nelle due schermate e non possono divergere. Le
+  quote per intero restano nei **dettagli completi** in fondo alla scheda.
+  ⚠️ Cinque colonne su un telefono da 375px fanno ~63px: il valore sta a **14px**
+  e l'etichetta a **7px**, e la fascia del valore ha **altezza fissa** — senza,
+  le cinque etichette finiscono a quote diverse. ⚠️ Il segno di VPM è
+  **appoggiato al bordo sinistro** della sua colonna, fuori dal flusso: accanto
+  alla cifra la spostava fuori centro.
+- **La spiegazione dei cinque numeri** è `components/LegendaPartite.jsx`, una
+  card a scomparsa **sopra il titolo** della pagina Partite, chiusa di default.
+  Se cambia il significato di un numero, va aggiornata lì: è l'unico posto dove
+  è scritto a schermo.
+- **L'ordine della lista sta in `src/lib/ordine.js`**, non nella pagina: **un
+  criterio per ogni colonna della barra** (quota, attendibilità, VPM, resa,
+  voto) con i confronti, e `scripts/prova-ordine.js`
   li esegue sui dati veri **e su righe finte** con i valori mancanti. Un
   ordinamento dentro un componente non si prova, e i suoi difetti non si vedono:
   un confronto che torna `NaN` non lancia niente, lascia solo la lista in un
@@ -558,7 +594,10 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   due partite a pari merito si scambiano di posto a ogni ridisegno.
   ⚠️ I tasti dell'ordine sono **sempre visibili**, attaccati alla lista e fuori
   dal pannello dei filtri: un filtro si mette una volta, l'ordine si cambia
-  continuamente per guardare la stessa lista da tre lati. L'ordinamento avviene
+  continuamente per guardare la stessa lista da cinque lati. **Il secondo tocco
+  sullo stesso tasto inverte il verso** — serve sulla quota, che a volte la
+  vuoi bassa — e il verso inverso deve tenere i **vuoti sempre in fondo**
+  (provato da `prova-ordine.js`). L'ordinamento avviene
   **dentro lo stesso `useMemo` dei filtri**, dopo di loro, così vale sempre su
   quello che è rimasto visibile.
 - **L'ordine dei blocchi nella scheda** (`DettaglioPartita`) è una scelta di

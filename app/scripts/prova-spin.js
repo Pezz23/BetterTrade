@@ -9,7 +9,7 @@
 // griglia è un dato condiviso da sei persone, e si guarda prima di scriverlo.
 
 import { admin } from './_admin.js';
-import { valuta, grado, categoria, SOGLIE_DEFAULT, martediChiusura } from '../src/lib/attendibilita.js';
+import { valuta, categoria, SOGLIE_DEFAULT, martediChiusura } from '../src/lib/attendibilita.js';
 import { candidate, componi, conStelline, cellaDa, votateOltreIlLimite } from '../src/lib/spin.js';
 
 const quante = Number((process.argv.find(a => a.startsWith('--spin=')) || '--spin=2').split('=')[1]);
@@ -45,7 +45,7 @@ for (const [i, celle] of componi(ordinate, quante).entries()) {
     console.log(
       ` ${pos} ${ruolo(pos)}  ${`${c.casa} - ${c.ospite}`.padEnd(34)}` +
       ` ${c.pronostico.padEnd(8)} q=${(c.quota || '—').padEnd(5)} ${c.data}` +
-      `  att=${(p.probGiocata * 100).toFixed(1)}%  G=${grado(p.resa, p.quotaGiocata)?.toFixed(2)}` +
+      `  att=${(p.probGiocata * 100).toFixed(1)}%  resa=${p.resa ? (p.resa * 100).toFixed(0) + '%' : '—'}` +
       `  ${categoria(p.probGiocata, SOGLIE_DEFAULT).padEnd(6)} ${stelle}`
     );
   }

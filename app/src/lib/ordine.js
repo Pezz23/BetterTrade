@@ -1,49 +1,43 @@
 import { C } from '../theme.js'
 
-// I modi di ordinare la lista delle partite. Stanno in `lib/` e non nella
-// pagina perché Node li può eseguire sui dati veri (`scripts/prova-ordine.js`):
-// l'ordinamento è pieno di casi limite — il valore che manca, il pari merito —
-// e dentro un componente non si provano.
+// I modi di ordinare la lista delle partite: uno per ogni colonna della barra.
+// Stanno in `lib/` e non nella pagina perché Node li può eseguire sui dati veri
+// (`scripts/prova-ordine.js`): l'ordinamento è pieno di casi limite — il valore
+// che manca, il pari merito — e dentro un componente non si provano.
 
 /**
- * ⚠️ Il valore che manca va **in fondo**, non in cima: `null` dentro una
- * sottrazione dà `NaN`, e un confronto che restituisce `NaN` lascia l'array in
- * un ordine qualunque. Non è un dettaglio di stile: senza questo, una lista con
- * tre Gradi assenti si disordina tutta.
+ * ⚠️ Il valore che manca va **in fondo**, non in cima, **in entrambi i versi**:
+ * `null` dentro una sottrazione dà `NaN`, e un confronto che restituisce `NaN`
+ * lascia l'array in un ordine qualunque. Non è un dettaglio di stile: senza
+ * questo, una lista con tre valori assenti si disordina tutta.
  */
 export const fondo = (a, b) => (a == null ? 1 : b == null ? -1 : 0)
 
+// Una chiave per colonna. Quelle che dipendono da VPM arrivano dalla mappa che
+// la pagina costruisce una volta sola.
 export const ORDINI = [
-  {
-    id: 'attendibilita', label: 'attendibilità', colore: C.oro,
-    cmp: (a, b) => b.probGiocata - a.probGiocata,
-  },
-  {
-    id: 'grado', label: 'Grado', colore: C.menta,
-    cmp: (a, b) => fondo(a.grado, b.grado) || (b.grado ?? 0) - (a.grado ?? 0),
-  },
-  {
-    // Prima i campi più netti, a prescindere da chi gli danno ragione: il
-    // disaccordo col mercato si isola col filtro, non con l'ordine.
-    id: 'vpm', label: 'VPM', colore: C.celeste,
-    cmp: (a, b, vpmDi) => {
-      const x = vpmDi?.get(a.id)?.punti, y = vpmDi?.get(b.id)?.punti
-      return fondo(x, y) || (y ?? 0) - (x ?? 0)
-    },
-  },
+  { id: 'quota',  label: 'quota',         colore: C.oro,     chiave: r => r.quotaGiocata ?? r.quota },
+  { id: 'att',    label: 'attendibilità', colore: C.menta,   chiave: r => r.probGiocata },
+  { id: 'vpm',    label: 'VPM',           colore: C.celeste, chiave: (r, v) => v?.get(r.id)?.punti },
+  { id: 'resa',   label: 'resa',          colore: C.testo,   chiave: r => r.resa },
+  { id: 'voto',   label: 'voto',          colore: C.verde,   chiave: (r, v) => v?.get(r.id)?.voto },
 ]
 
-export const ORDINE_DEFAULT = ORDINI[0].id
+export const ORDINE_DEFAULT = 'voto'
 
 /**
- * Il confronto completo di un criterio, con i pari merito già risolti.
+ * Il confronto di un criterio, con i pari merito già risolti.
  *
  * ⚠️ Ogni criterio ha **due criteri di riserva** (l'attendibilità, poi la
- * data): senza, due partite con lo stesso Grado si scambiano di posto a ogni
- * ridisegno e la lista balla sotto le dita. È lo stesso motivo per cui una
- * query paginata vuole un ordine univoco.
+ * data): senza, due partite con lo stesso voto si scambiano di posto a ogni
+ * ridisegno e la lista balla sotto le dita.
  */
-export function confronto(id, vpmDi) {
+export function confronto(id, vpmDi, crescente = false) {
   const o = ORDINI.find(x => x.id === id) ?? ORDINI[0]
-  return (a, b) => o.cmp(a, b, vpmDi) || b.probGiocata - a.probGiocata || a.data.localeCompare(b.data)
+  const verso = crescente ? -1 : 1
+  return (a, b) => {
+    const x = o.chiave(a, vpmDi), y = o.chiave(b, vpmDi)
+    return fondo(x, y) || verso * ((y ?? 0) - (x ?? 0))
+      || b.probGiocata - a.probGiocata || a.data.localeCompare(b.data)
+  }
 }

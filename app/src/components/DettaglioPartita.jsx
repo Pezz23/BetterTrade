@@ -4,9 +4,9 @@ import { Etichetta } from './ui'
 import { usaForma } from '../hooks/usaForma'
 import { striscia } from '../lib/forma'
 import TestataPartita, { CATEGORIE, Stella, Barra, pct } from './TestataPartita'
-import { pronosticoDa } from '../lib/spin'
 import { sigla } from '../lib/campionati'
 import { tocco } from '../lib/schermo'
+import BarraPartita from './BarraPartita'
 import { usaVpm } from '../hooks/usaVpm'
 import { valutaPartita, vociPesate, verso, PESI, ETICHETTE, NOMI_STRATI, PESI_STRATI, VPM_NETTO } from '../lib/vpm'
 
@@ -92,12 +92,9 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
   const squadre = [p.casa, p.trasferta]
   const q = n => n == null ? '—' : Number(n).toFixed(2).replace('.', ',')
 
-  // La massima di mercato sulla stessa giocata: è il confronto che dice
-  // qualcosa ("altrove pagano meglio"). Lo scarto contro la quota equa non lo
-  // direbbe: essendo l'equa senza margine, sarebbe negativo su tutte.
-  const massima = p.segno === '1' ? p.max_ap_1 : p.max_ap_2
-  const quotaMostrata = p.quotaGiocata ?? p.quota
-  const vsMassima = quotaMostrata && massima ? quotaMostrata / massima - 1 : null
+  // ⚠️ Il confronto con la massima di mercato è uscito dalla testata il
+  // 10/10/2026 con le altre informazioni di prezzo. `segnoPct` serve ancora ai
+  // dettagli completi in fondo.
   const segnoPct = v => (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%'
 
   return (
@@ -118,37 +115,17 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
 
         <div style={{ marginTop: 14 }}><TestataPartita p={p} cat={cat} /></div>
 
-        {/* ── La giocata, nello stesso riquadro dell'evento ──────────── */}
+        {/* ── I numeri, gli stessi della lista ──────────────────────────
+            ⚠️ Qui c'erano la quota grande, le tre quote di mercato
+            (max · media · equo), il Grado e il confronto con la massima.
+            Togliere il 10/10/2026: erano informazioni di prezzo da consultare,
+            e la scheda deve mostrare **gli stessi cinque numeri della lista**,
+            dallo stesso componente, così non possono divergere. Le quote per
+            intero restano nei dettagli completi in fondo. */}
         <div style={{ marginTop: 14, paddingTop: 14, borderTop: `2px solid ${alpha(c.colore, 0.35)}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 10,
-            background: alpha(c.colore, 0.08), border: `1px solid ${alpha(c.colore, 0.35)}`, flex: '1 1 190px' }}>
-            <div style={{ fontSize: 20, fontWeight: 800, fontFamily: F.mono, color: c.colore, whiteSpace: 'nowrap' }}>{pronosticoDa(p.giocata)}</div>
-            <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-              <div style={{ fontSize: 26, fontWeight: 700, fontFamily: F.mono, color: C.oro, lineHeight: 1 }}>{quotaMostrata ? q(quotaMostrata) : '—'}</div>
-              <Etichetta style={{ fontSize: 9, marginTop: 3 }}>{p.quotaGiocata ? p.quotaFonte : 'la combinata si legge sul book'}</Etichetta>
-            </div>
-          </div>
-          {/* ⚠️ Le tre quote max/media/equo sono state **togliere di qui** il
-              9/10/2026: erano numeri da consultare, non da guardare, e in cima
-              alla scheda rubavano spazio alla giocata. Restano tutte nei
-              **dettagli completi** in fondo, con le terne per intero.
-              Il Grado resta: 70% la resa, 30% quanto paga la quota, ed è un
-              numero da confrontare a colpo d'occhio. */}
-          <div style={{ background: C.pozzo, border: `1px solid ${alpha(C.oro, 0.35)}`, borderRadius: 10, padding: '10px 16px', textAlign: 'center', flex: '0 1 110px' }}>
-            <Etichetta style={{ fontSize: 9, marginBottom: 4 }}>grado</Etichetta>
-            <div style={{ fontSize: 22, fontWeight: 700, fontFamily: F.mono, color: p.grado == null ? C.fantasma : C.oro, lineHeight: 1 }}>
-              {p.grado == null ? '—' : p.grado.toFixed(2).replace('.', ',')}
-            </div>
-          </div>
-        </div>
-        {vsMassima !== null && (
-          <div style={{ marginTop: 9, fontSize: 11, fontFamily: F.mono, color: C.spento }}>
-            Rispetto alla massima di mercato: <b style={{ color: vsMassima >= 0 ? C.verde : C.ambra }}>{segnoPct(vsMassima)}</b>
-            {vsMassima < -0.03 && <span> · altrove pagano meglio</span>}
-          </div>
-        )}
-        {p.nota && <div style={{ marginTop: 6, fontSize: 11, fontFamily: F.sans, color: C.fioco, lineHeight: 1.5 }}>{p.nota}</div>}
+          <BarraPartita p={p} vpm={v} colore={c.colore} />
+          {/* La nota resta: spiega la giocata, non il prezzo. */}
+          {p.nota && <div style={{ marginTop: 9, fontSize: 11, fontFamily: F.sans, color: C.fioco, lineHeight: 1.5 }}>{p.nota}</div>}
         </div>
       </div>
 

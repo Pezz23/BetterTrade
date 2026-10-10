@@ -257,6 +257,9 @@ export function valutaPartita(dati, riga) {
   return {
     segno: v?.segno ?? null,          // il segno che dice il campo
     punti: v?.punti ?? null,          // quanto è netto, 5,5-10
+    // il voto sta qui e non in attendibilita.js perché ha bisogno di VPM, che
+    // arriva dal database: la riga da sola non può calcolarlo
+    voto: voto(riga.resa, v?.punti ?? null),
     // ⚠️ L'accordo si misura sul **segno**, non sul numero: la giocata
     // consigliata può essere "1 + over 1,5", e lì conta solo l'1.
     accordo: v ? v.segno === riga.segno : null,
@@ -271,6 +274,35 @@ export function verso(v) {
   if (!v || v.punti == null) return null
   if (v.punti < VPM_NETTO) return 'incerto'
   return v.accordo ? 'conferma' : 'contro'
+}
+
+// ── Il VOTO: la resa corretta dal campo ──────────────────────────────────────
+// Deciso il 10/10/2026. `voto = attendibilità × quota × fattore(VPM)`, cioè la
+// **resa** (che è già quota × attendibilità) moltiplicata per un fattore che
+// vale 1,00 quando il campo non si pronuncia e 1,10 quando è netto al massimo.
+//
+// ⚠️ Il fattore è vicino a 1 **di proposito**: VPM va da 5,5 a 10, e
+// moltiplicare per quei numeri avrebbe reso il voto 5-10 volte più grande,
+// perdendo il significato di "quanto torna per ogni euro" — dove 100% è il
+// pareggio. Il tetto del +10% è anche la misura del peso che VPM si è
+// guadagnato: nel backtest sulla fascia dei favoriti corti conferma il mercato
+// nel 95% dei casi, quindi può correggere, non comandare.
+//
+// ⚠️ **Ha preso il posto del Grado** (che era la resa in scala 1-10 più il
+// livello della quota): due numeri costruiti sulla resa a schermo erano un
+// doppione, lo stesso difetto per cui il 2/10 la resa era stata togliere dalla
+// barra. Ora la resa si vede accanto al voto, e il Grado non c'è più.
+export const FATTORE_SCALA = 45     // (vpm − 5,5) / 45 → da 0 a +0,10
+
+export function fattoreVpm(punti) {
+  if (punti == null) return 1
+  return 1 + (punti - 5.5) / FATTORE_SCALA
+}
+
+/** Il voto di una partita: null se manca la resa (combinata senza quota). */
+export function voto(resa, punti) {
+  if (resa == null) return null
+  return resa * fattoreVpm(punti)
 }
 
 export const MIN_SCONTRI = 4      // sotto, il testa a testa non dice niente

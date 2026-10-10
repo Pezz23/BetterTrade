@@ -93,46 +93,16 @@ export function valuta(r) {
   const quotaResa = quotaGiocata ?? quotaStimata
   const resa = quotaResa ? quotaResa * probGiocata : null
 
-  return { ...r, p, segno, prob, quota, quotaFonte, q1, qx, q2, equo, scarto, giocata, quotaGiocata, nota, probGiocata, quotaStimata, resa, grado: grado(resa, quotaResa) }
+  return { ...r, p, segno, prob, quota, quotaFonte, q1, qx, q2, equo, scarto, giocata, quotaGiocata, nota, probGiocata, quotaStimata, resa }
 }
 
-// ── Il Grado: la resa in scala da 1 a 10 ─────────────────────────────────────
-// Serve al colpo d'occhio, non alla selezione delle spin: dice quale partita
-// paga meglio rispetto al rischio, senza dover leggere una percentuale.
-//
-// Perché una scala e non la resa × 10: sulle partite giocabili la resa sta
-// schiacciata fra 0,90 e 0,98 (misurato sulle 4.813 sopra soglia
-// dell'archivio: 1° percentile 0,905, mediana 0,946, massimo 0,987). Moltiplicata
-// per 10 darebbe voti tutti fra 9,0 e 9,8, illeggibili. Stirata su 1-10, un
-// punto di Grado vale poco più di un centesimo di resa e le differenze si vedono.
-//
-// ⚠️ Gli estremi sono FISSI, misurati una volta sull'archivio. Se si
-// ricalcolassero sulla lista del momento, la stessa partita cambierebbe Grado
-// da una settimana all'altra e il numero non vorrebbe dire niente.
-export const GRADO_MIN = 0.90   // resa: sotto, Grado 1
-export const GRADO_MAX = 0.98   // resa: sopra, Grado 10 (raro: 4 partite su 4.813)
+// ⚠️ **Il Grado è stato togliere il 10/10/2026**, con i suoi estremi fissi e il
+// peso della quota. Era la resa in scala 1-10 più il livello della quota, e
+// serviva al colpo d'occhio; il suo posto l'ha preso il **VOTO**
+// (`voto()` in lib/vpm.js) = resa × fattore VPM, che risponde alla stessa
+// domanda — quanto conviene giocarla — tenendo dentro anche il campo.
+// Due numeri costruiti sulla resa a schermo erano un doppione.
 
-// ⚠️ La resa da sola è cieca al livello della quota, e non per sbaglio: resa =
-// quota × probabilità, quindi "1,18 al 82%" e "1,48 al 65%" danno lo stesso
-// numero. Con 100 € la prima rende 18, la seconda 48. Per distinguerle il
-// Grado guarda anche **quanto paga**, con un peso (deciso il 30/09/2026).
-//
-// Quote sulle partite sopra soglia nell'archivio (4.813): 1° pc 1,19, mediana
-// 1,33, 99° pc 1,45 — gli estremi della scala stanno appena fuori.
-export const QUOTA_MIN = 1.15
-export const QUOTA_MAX = 1.55
-export const PESO_QUOTA = 0.30  // 0 = solo resa · 1 = solo quota
-
-const inScala = (x, min, max) => Math.min(10, Math.max(1, 1 + 9 * (x - min) / (max - min)))
-
-export function grado(resa, quota) {
-  if (resa == null) return null
-  const daResa = inScala(resa, GRADO_MIN, GRADO_MAX)
-  if (!quota) return daResa
-  return (1 - PESO_QUOTA) * daResa + PESO_QUOTA * inScala(quota, QUOTA_MIN, QUOTA_MAX)
-}
-
-/** centro | giallo | blu | no, dalla probabilità della giocata e dalle soglie. */
 export function categoria(probGiocata, soglie = SOGLIE_DEFAULT) {
   if (probGiocata === null || probGiocata === undefined) return 'no'
   if (probGiocata >= soglie.centro) return 'centro'

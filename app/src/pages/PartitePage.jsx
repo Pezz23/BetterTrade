@@ -11,6 +11,7 @@ import { categoria, FINESTRE, SOGLIE_DEFAULT } from '../lib/attendibilita'
 import { etichetta, sigla } from '../lib/campionati'
 import { valutaPartita, VPM_NETTO } from '../lib/vpm'
 import { ORDINI, ORDINE_DEFAULT, confronto } from '../lib/ordine'
+import LegendaPartite from '../components/LegendaPartite'
 
 // La lista delle partite future, ordinata per attendibilità.
 // I calcoli stanno in lib/attendibilita.js, la riga in components/RigaPartita.jsx:
@@ -34,9 +35,10 @@ export default function PartitePage() {
   const [quotaMin, setQuotaMin] = useState('')
   const [quotaMax, setQuotaMax] = useState('')
   const [soloSopraSoglia, setSoloSopraSoglia] = useState(false)
-  const [gradoMin, setGradoMin] = useState('')
+  const [votoMin, setVotoMin] = useState('')
   const [soloVpmContro, setSoloVpmContro] = useState(false)
   const [ordine, setOrdine] = useState(ORDINE_DEFAULT)
+  const [crescente, setCrescente] = useState(false)   // secondo tocco: si inverte
   const [pannello, setPannello] = useState(false)   // i filtri, chiusi di default
   const [apertaId, setApertaId] = useState(null)    // la partita aperta a tutto schermo
 
@@ -77,13 +79,15 @@ export default function PartitePage() {
   }, [datiVpm, righe])
 
   const visibili = useMemo(() => {
-    const qMin = numero(quotaMin), qMax = numero(quotaMax), gMin = numero(gradoMin)
+    const qMin = numero(quotaMin), qMax = numero(quotaMax), vMin = numero(votoMin)
     return inFinestra
       .filter(r => campionato ? r.div === campionato : true)
       .filter(r => qMin === null ? true : quotaMostrata(r) !== null && quotaMostrata(r) >= qMin)
       .filter(r => qMax === null ? true : quotaMostrata(r) !== null && quotaMostrata(r) <= qMax)
       .filter(r => soloSopraSoglia ? categoria(r.probGiocata, soglie) !== 'no' : true)
-      .filter(r => gMin === null ? true : r.grado !== null && r.grado >= gMin)
+      // il voto è una percentuale: si scrive 100 e si confronta con 1,00
+      .filter(r => { if (vMin === null) return true
+        const v = vpmDi.get(r.id)?.voto; return v != null && v * 100 >= vMin })
       // Le partite dove il campo dice il contrario del mercato, ed è **netto**:
       // è la lista che Mattia andava a cercare a mano in quattro schermate.
       // Un campo indeciso (sotto VPM_NETTO) non è un disaccordo.
@@ -92,8 +96,8 @@ export default function PartitePage() {
       // L'ordine si applica **dopo** i filtri, nello stesso passaggio: così
       // funziona sempre su quello che è rimasto, senza un secondo elenco da
       // tenere allineato. Il confronto sta in lib/ordine.js.
-      .sort(confronto(ordine, vpmDi))
-  }, [inFinestra, campionato, quotaMin, quotaMax, soloSopraSoglia, soglie, gradoMin, soloVpmContro, vpmDi, ordine])
+      .sort(confronto(ordine, vpmDi, crescente))
+  }, [inFinestra, campionato, quotaMin, quotaMax, soloSopraSoglia, soglie, votoMin, soloVpmContro, vpmDi, ordine, crescente])
 
   const conteggi = useMemo(() => {
     const c = { centro: 0, giallo: 0, blu: 0 }
@@ -108,11 +112,11 @@ export default function PartitePage() {
     campionato && { id: 'camp', label: sigla(campionato), colore: C.blu, togli: () => setCampionato('') },
     quotaMin && { id: 'qmin', label: `quota ≥ ${quotaMin}`, togli: () => setQuotaMin('') },
     quotaMax && { id: 'qmax', label: `quota ≤ ${quotaMax}`, togli: () => setQuotaMax('') },
-    gradoMin && { id: 'grado', label: `grado ≥ ${gradoMin}`, colore: C.menta, togli: () => setGradoMin('') },
+    votoMin && { id: 'voto', label: `voto ≥ ${votoMin}%`, colore: C.verde, togli: () => setVotoMin('') },
     soloSopraSoglia && { id: 'soglia', label: 'sopra soglia', togli: () => setSoloSopraSoglia(false) },
     soloVpmContro && { id: 'vpm', label: 'campo contro mercato', colore: C.rosso, togli: () => setSoloVpmContro(false) },
   ].filter(Boolean)
-  const azzera = () => { setCampionato(''); setQuotaMin(''); setQuotaMax(''); setGradoMin(''); setSoloSopraSoglia(false); setSoloVpmContro(false) }
+  const azzera = () => { setCampionato(''); setQuotaMin(''); setQuotaMax(''); setVotoMin(''); setSoloSopraSoglia(false); setSoloVpmContro(false) }
 
   // La scheda di una partita prende tutta la pagina: sul telefono è l'unico
   // modo di leggerla, e la lista resta dov'era quando si torna indietro.
@@ -121,6 +125,8 @@ export default function PartitePage() {
 
   return (
     <div style={{ padding: '16px' }}>
+      <LegendaPartite />
+
       <Etichetta colore={C.oro} style={{ letterSpacing: 4, marginBottom: 4 }}>PARTITE</Etichetta>
       <div style={{ fontSize: 20, fontWeight: 700, color: C.testo, fontFamily: F.sans, marginBottom: 4 }}>Prossime partite</div>
       <div style={{ fontSize: 12, color: C.spento, fontFamily: F.sans, marginBottom: 14, lineHeight: 1.6 }}>
@@ -199,12 +205,12 @@ export default function PartitePage() {
             </div>
 
             <div>
-              <Etichetta style={{ marginBottom: 5 }}>grado minimo</Etichetta>
+              <Etichetta style={{ marginBottom: 5 }}>voto minimo</Etichetta>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                <input style={{ ...campo, width: 64, borderColor: gradoMin && numero(gradoMin) === null ? C.rosso : C.bordo }}
-                  placeholder="1-10" inputMode="decimal" value={gradoMin} onChange={e => setGradoMin(e.target.value)} />
+                <input style={{ ...campo, width: 64, borderColor: votoMin && numero(votoMin) === null ? C.rosso : C.bordo }}
+                  placeholder="%" inputMode="decimal" value={votoMin} onChange={e => setVotoMin(e.target.value)} />
                 {[6, 7, 8].map(g => (
-                  <button key={g} onClick={() => setGradoMin(String(g))} style={{ ...pillola(numero(gradoMin) === g), padding: '5px 9px' }}>{g}+</button>
+                  <button key={g} onClick={() => setVotoMin(String(g))} style={{ ...pillola(numero(votoMin) === g), padding: '5px 9px' }}>{g}%+</button>
                 ))}
               </div>
             </div>
@@ -257,11 +263,15 @@ export default function PartitePage() {
           mette una volta, l'ordine si cambia continuamente per guardare la
           stessa lista da tre lati. Sta attaccato alla lista, non in cima alla
           pagina, perché è di lei che parla. */}
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
-        <span style={{ fontSize: 11, color: C.spento, fontFamily: F.mono }}>ordina per</span>
+      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
+        <span style={{ fontSize: 11, color: C.spento, fontFamily: F.mono }}>ordina</span>
         {ORDINI.map(o => (
-          <button key={o.id} onClick={() => setOrdine(o.id)} style={pillola(ordine === o.id, o.colore)}>
-            {ordine === o.id ? '↓ ' : ''}{o.label}
+          /* Un tasto per ogni colonna della barra. ⚠️ Il secondo tocco sullo
+             stesso inverte il verso: sulla quota serve davvero, perché a volte
+             la vuoi bassa. */
+          <button key={o.id} onClick={() => { if (ordine === o.id) setCrescente(v => !v); else { setOrdine(o.id); setCrescente(false) } }}
+            style={{ ...pillola(ordine === o.id, o.colore), padding: '6px 10px' }}>
+            {ordine === o.id ? (crescente ? '↑ ' : '↓ ') : ''}{o.label}
           </button>
         ))}
       </div>
