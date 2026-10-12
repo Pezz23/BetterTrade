@@ -125,11 +125,17 @@ punti** misurati il 10/10 erano Codere contro la **massima di mercato**, che è
 il miglior prezzo fra 40 book e **non è giocabile**. Il cambio resta giusto
 perché mostra **il prezzo che Mattia può davvero prendere**, non perché faccia
 guadagnare.
-⚠️ **Il problema vero è un altro, ed è emerso adesso:** `importa-prossime.js`
-ha riempito Bet365 solo sulle **11 partite di oggi** (il file di football-data
-copriva 9-12 ottobre). Le altre **65 su 76 cadono sulla massima**, cioè su un
-prezzo non ottenibile: la loro resa e il loro voto sono **ottimistici**. Si
-riempiranno al prossimo giro di football-data, a metà settimana.
+⚠️ **Secondo giro, deciso da Mattia poco dopo:** la sequenza diventa
+**Bet365 → media di mercato**, e **Codere e la massima escono**. La massima non
+è ottenibile e gonfiava i numeri; la media è una buona stima di Bet365
+(rapporto mediano **100,0%** sulle quote corte, misurato su 11.344 partite).
+⚠️⚠️ **Conseguenza da ricordare: con la media, resa e voto non dicono più
+niente sulla partita.** `resa = quota × attendibilità` e l'attendibilità viene
+già dalla media, quindi la formula si semplifica in `1/margine` (mediana 93,8%).
+È la verità — al prezzo medio non c'è vantaggio — ma a schermo quei due numeri
+**si spengono in grigio** quando la fonte è `MEDIA`.
+**Stato al 12/10: 11 future su 76 con Bet365, 65 con la media, 0 senza quota.**
+Le altre si riempiono al prossimo giro di football-data, a metà settimana.
 
 ### 24-bis. [vecchio testo, per storia] Le quote di Bet365 al posto di Codere
 Mattia gioca su Bet365; l'app quota con Codere, che su un weekend misurato

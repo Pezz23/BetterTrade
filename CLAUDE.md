@@ -537,19 +537,31 @@ Entrambe hanno `bfe_ap_valido`. `prossime_partite` ha `scaricato_il`: una quota
 ha senso solo con l'istante in cui l'hai vista. L'app legge le future con
 `where data >= current_date`.
 
-⚠️ **L'ordine delle fonti della quota giocata, dal 12/10/2026: Bet365 →
-Codere → massima di mercato** (`valuta()` in `lib/attendibilita.js`). Bet365 è
-il book su cui gioca Mattia, e prima veniva dopo Codere.
+⚠️ **L'ordine delle fonti della quota giocata, dal 12/10/2026: Bet365 → media
+di mercato** (`valuta()` in `lib/attendibilita.js`). Bet365 è il book su cui
+gioca Mattia; **Codere e la massima sono usciti**.
+⚠️ **La massima è uscita perché non è ottenibile**: è il miglior prezzo fra 40
+book, e usarla gonfiava resa e voto. La **media** invece è una buona stima di
+quanto pagherebbe Bet365 — misurato su 11.344 partite, il rapporto Bet365/media
+ha mediana **100,0%** sulle quote corte e 99,4-99,6% sul resto.
+⚠️⚠️ **Ma con la media resa e voto non discriminano più, e a schermo si
+spengono** (grigio, `quotaDaConsenso`). `resa = quota × attendibilità`, e
+l'attendibilità viene **già dalla media**: la formula si semplifica in
+`1/margine` — mediana **93,8%**, da 86% a 100,6% — quindi dice quanto margine
+ha preso il book su quella partita, non quanto conviene giocarla. **Non è un
+errore del calcolo, è la verità**: al prezzo medio di mercato non c'è vantaggio
+da nessuna parte, per costruzione. La resa discrimina solo quando il prezzo che
+prendi è **diverso** dal consenso.
 ⚠️ **Misurato il 12/10 su 10 partite: Bet365 e Codere si equivalgono** (scarto
 medio di resa **−0,17 punti**, meglio su 4 e peggio su 5). **Il guadagno di
 questo cambio non è in punti, è in verità**: prima resa e voto si calcolavano
 su un prezzo di un book che Mattia non usa. ⚠️ Non confondere con l'altro
 numero: i **2,8 punti** misurati il 10/10 erano Codere contro la **massima di
 mercato**, che è il miglior prezzo fra 40 book e **non è ottenibile**.
-⚠️ **Quando manca tutto si cade sulla massima, e va detto**: il 12/10 erano
-**65 future su 76**. La loro resa e il loro voto sono **ottimistici**, perché
-quel prezzo non si può prendere. Per questo l'etichetta della colonna QUOTA
-mostra **da quale book** viene (`BET365` · `CODERE` · `MASSIMA`).
+⚠️ **Bet365 copre solo il blocco imminente** (football-data): il 12/10 erano
+**11 future su 76**, il resto cadeva sulla media. L'etichetta della colonna
+QUOTA mostra sempre la fonte (`BET365` · `MEDIA`), e con `MEDIA` resa e voto
+sono grigi: vuol dire "questo numero non è confrontabile con gli altri".
 
 Le future arrivano da **due fonti** che si fondono sulla stessa riga:
 football-data (`fixtures.csv`, il prossimo blocco, l'unica con Bet365) e

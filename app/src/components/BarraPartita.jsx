@@ -71,11 +71,18 @@ export default function BarraPartita({ p, cat, vpm = null, colore }) {
         prefisso={vpm?.punti != null ? vpm.segno : null}
         valore={vpm?.punti != null ? num2(vpm.punti) : '—'} etichetta="VPM" />
 
-      <Colonna divisore={c} colore={C.testo} valore={pct1(p.resa)} etichetta="RESA" />
+      {/* ⚠️ Resa e voto si **spengono** quando la quota è la media di mercato:
+          lì `resa = quota × attendibilità` si semplifica in 1/margine, perché
+          l'attendibilità viene dalla stessa media. Direbbero quanto margine ha
+          preso il book, non quanto conviene la partita. Il grigio dice "questo
+          numero non è confrontabile con gli altri". */}
+      <Colonna divisore={c} colore={p.quotaDaConsenso ? C.fantasma : C.testo}
+        valore={pct1(p.resa)} etichetta="RESA" />
 
       {/* Il voto è la resa corretta dal campo: verde sopra il pareggio, rosso
           sotto. È l'unico numero della barra che dice "conviene o no". */}
-      <Colonna divisore={c} colore={vpm?.voto == null ? C.fantasma : vpm.voto >= 1 ? C.verde : C.ambra}
+      <Colonna divisore={c}
+        colore={p.quotaDaConsenso || vpm?.voto == null ? C.fantasma : vpm.voto >= 1 ? C.verde : C.ambra}
         valore={pct1(vpm?.voto)} etichetta="VOTO" />
     </div>
   )

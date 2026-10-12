@@ -67,12 +67,20 @@ export function valuta(r) {
   // The Odds API non lo include (41 bookmaker, nessun Bet365 — verificato).
   // Quindi le partite oltre il weekend in corso cadono su Codere o sulla
   // massima finché il prossimo giro di football-data non le porta.
-  // ⚠️ La **massima** è l'ultima scelta e va presa per quello che è: il miglior
-  // prezzo del mercato, non un prezzo che Mattia può davvero ottenere. Resa e
-  // voto di quelle partite sono ottimistici — `quotaFonte` lo dice a schermo.
+  // ⚠️ **La seconda scelta è la MEDIA di mercato, non la massima** (12/10/2026,
+  // scelta di Mattia). La massima è il miglior prezzo fra 40 book e **non è
+  // ottenibile**: usarla gonfiava resa e voto. La media invece è una buona
+  // stima di quanto pagherebbe Bet365 — misurato su 11.344 partite, il rapporto
+  // Bet365/media ha mediana **100,0%** sulle quote corte e 99,4-99,6% sul resto.
+  // ⚠️ **Ma con la media resa e voto non discriminano più.** `resa = quota ×
+  // attendibilità`, e l'attendibilità viene **già** dalla media: la formula si
+  // semplifica in `1/margine` (mediana 93,8%, da 86% a 100,6%). Dice quanto
+  // margine ha preso il book su quella partita, non quanto conviene giocarla.
+  // Non è un errore, è la verità: al prezzo medio non c'è vantaggio da nessuna
+  // parte. Per questo a schermo **resa e voto si spengono** quando la fonte è
+  // la media — `quotaStimata` è il campo che lo dice.
   const terna = r.b365_1 ? { q: [r.b365_1, r.b365_x, r.b365_2], fonte: 'Bet365' }
-              : r.book_1 ? { q: [r.book_1, r.book_x, r.book_2], fonte: nomeBook(r.book) }
-              : r.max_ap_1 ? { q: [r.max_ap_1, r.max_ap_x, r.max_ap_2], fonte: 'massima' }
+              : r.avg_ap_1 ? { q: [r.avg_ap_1, r.avg_ap_x, r.avg_ap_2], fonte: 'media' }
               : null
   const [q1, qx, q2] = terna?.q ?? [null, null, null]
   const quotaFonte = terna?.fonte ?? null
@@ -100,7 +108,10 @@ export function valuta(r) {
   const quotaResa = quotaGiocata ?? quotaStimata
   const resa = quotaResa ? quotaResa * probGiocata : null
 
-  return { ...r, p, segno, prob, quota, quotaFonte, q1, qx, q2, equo, scarto, giocata, quotaGiocata, nota, probGiocata, quotaStimata, resa }
+  // ⚠️ Vero quando la quota non viene da un book vero: resa e voto, che si
+  // calcolano da lei, non vanno letti come numeri della partita.
+  const quotaDaConsenso = quotaFonte === 'media'
+  return { ...r, p, segno, prob, quota, quotaFonte, quotaDaConsenso, q1, qx, q2, equo, scarto, giocata, quotaGiocata, nota, probGiocata, quotaStimata, resa }
 }
 
 // ⚠️ **Il Grado è stato togliere il 10/10/2026**, con i suoi estremi fissi e il
