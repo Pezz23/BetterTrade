@@ -122,6 +122,16 @@ solo football-data, nel blocco imminente: `importa-prossime.js` lo riempirebbe.
 > in lotti per file toccati. Quello che è stato fatto sta sotto, in "Fatto di
 > recente": serve a capire *perché* una cosa è com'è, non cosa resta.
 
+### Tasti spostati — 12 ottobre 2026 (**1.16.00**)
+
+In basso: **Dashboard · Partite · Slot · Spin**. Nel menu ☰: Partite votate,
+Storico, Andamento, **Reporting**, **Bilancio**, Utenti. Scelta di Mattia: in
+basso il giro settimanale, nel menu quello che si apre a giornata chiusa.
+⚠️ La TabBar ora **filtra per ruolo** come il menu: `Spin` è `soloAdmin`, e
+senza filtro un utente normale avrebbe visto un tasto verso una pagina che la
+RLS gli svuota. Con tre tasti la barra si ridistribuisce da sola.
+⚠️ In basso l'etichetta è "Spin" e non "Spin provvisorie": i tasti sono a 9px.
+
 ## ✅ COSA RESTA, dopo il 12 ottobre
 
 Le quattro priorità del 12/10 sono chiuse. Quello che è rimasto aperto, in

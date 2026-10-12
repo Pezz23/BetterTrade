@@ -15,25 +15,35 @@ import { C, F, alpha } from './theme'
 import { VERSIONE } from './versione'
 
 // ── Tab bar bottom ────────────────────────────────────────────────────────────
+// ⚠️ **Rifatta il 12/10/2026, scelta di Mattia**: in basso stanno le pagine del
+// giro settimanale — si guardano le partite, si compila la spin, si gioca.
+// Reporting e Bilancio sono passati nel menu: si aprono a giornata chiusa, non
+// mentre si decide.
+// ⚠️ `soloAdmin` qui **non basta a nascondere**: la TabBar va filtrata come il
+// menu, altrimenti un utente normale vede un tasto che non può usare. La
+// protezione vera resta la policy RLS.
 const TABS_BASE = [
-  { id:'dashboard', label:'Dashboard', icon:'◈' },
-  { id:'slot',      label:'Slot',      icon:'⊞' },
-  { id:'reporting', label:'Reporting', icon:'◫' },
-  { id:'bilancio',  label:'Bilancio',  icon:'◉' },
+  { id:'dashboard',   label:'Dashboard', icon:'◈' },
+  { id:'partite',     label:'Partite',   icon:'⚽' },
+  { id:'slot',        label:'Slot',      icon:'⊞' },
+  { id:'provvisorie', label:'Spin',      icon:'🎰', soloAdmin:true },
 ]
-// Il menu ad hamburger: tutto quello che non sta nei 4 tasti in basso.
+// Il menu ad hamburger: tutto quello che non sta nei tasti in basso.
 // `soloAdmin` nasconde la voce, ma la protezione vera è la policy RLS.
 const VOCI_MENU = [
-  { id:'partite', label:'Partite',  icon:'⚽', desc:'Le prossime partite con l\'indice di attendibilità' },
-  { id:'provvisorie', label:'Spin provvisorie', icon:'🎰', desc:'Le spin compilate da sole, in anteprima', soloAdmin:true },
   { id:'votate',      label:'Partite votate',   icon:'⭐', desc:'Quelle con la stellina: entrano nella spin comunque' },
   { id:'storico',     label:'Storico',          icon:'📚', desc:'L\'archivio e come stanno andando le proposte' },
   { id:'andamento',   label:'Andamento',        icon:'📈', desc:'Quale indicatore ci azzecca, giorno per giorno' },
-  { id:'utenti',  label:'Utenti',   icon:'◎',  desc:'Gestione utenti e password', soloAdmin:true },
+  { id:'reporting',   label:'Reporting',        icon:'◫', desc:'Le giornate registrate, per persona e per settimana' },
+  { id:'bilancio',    label:'Bilancio',         icon:'◉', desc:'Saldi, movimenti e bankroll del gruppo' },
+  { id:'utenti',      label:'Utenti',           icon:'◎', desc:'Gestione utenti e password', soloAdmin:true },
 ]
 
-function TabBar({ active, onChange }) {
-  const tabs = TABS_BASE
+function TabBar({ active, onChange, isAdmin }) {
+  // ⚠️ Stesso filtro del menu: senza, un utente normale vedrebbe il tasto Spin
+  // e finirebbe su una pagina che la RLS gli svuota. Con tre tasti invece di
+  // quattro la barra si ridistribuisce da sola (`flex:1`).
+  const tabs = TABS_BASE.filter(t => !t.soloAdmin || isAdmin)
   return (
     <div style={{
       position:'fixed', bottom:0, left:0, right:0, zIndex:100,
@@ -209,7 +219,7 @@ function AppShell() {
       }}>
         {renderPage()}
       </div>
-      <TabBar active={tab} onChange={setTab} />
+      <TabBar active={tab} onChange={setTab} isAdmin={isAdmin} />
     </div>
   )
 }

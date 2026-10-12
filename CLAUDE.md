@@ -1080,10 +1080,20 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   `pannello` (#111111). **Una copia che nessuno legge non si accorge di essere
   sbagliata.** Restano `--bg`, `--border`, `--text`, `--sans` (più
   `--barra-alta` e `--barra-bassa`, che sono misure e le usa il JSX).
-- **Navigazione**: 4 tasti in basso (Dashboard, Slot, Reporting, Bilancio) per
-  l'uso quotidiano; il menu ☰ in alto a destra per il resto (`VOCI_MENU` in
-  `App.jsx`): **Partite, Spin provvisorie, Partite votate, Storico, Utenti**.
+- **Navigazione**, rifatta il 12/10/2026 (scelta di Mattia): in basso
+  (`TABS_BASE`) **Dashboard · Partite · Slot · Spin**, cioè il giro
+  settimanale — si guardano le partite, si compila la spin, si gioca. Nel menu
+  ☰ (`VOCI_MENU`) il resto: **Partite votate, Storico, Andamento, Reporting,
+  Bilancio, Utenti**. ⚠️ **Reporting e Bilancio sono scesi dalla barra al
+  menu**: si aprono a giornata chiusa, non mentre si decide.
   Una pagina nuova va nel menu, non come quinto tasto in basso.
+  ⚠️⚠️ **La TabBar si filtra per ruolo esattamente come il menu**: `Spin` è
+  `soloAdmin`, e senza il filtro un utente normale vedrebbe un tasto che lo
+  porta su una pagina che la RLS gli svuota. Con tre tasti invece di quattro la
+  barra si ridistribuisce da sola (`flex:1`). Come sempre, `soloAdmin` nasconde
+  e basta: **la protezione è la policy**.
+  ⚠️ In basso l'etichetta è **"Spin"**, non "Spin provvisorie": i tasti sono a
+  9px e il nome intero non ci sta.
 - **L'attendibilità è in `src/lib/attendibilita.js`**, solo calcoli: probabilità
   dal consenso (`avg_ap_*`, non l'exchange), regole di gioco, categorie, finestra
   della settimana. **La composizione delle spin è in `src/lib/spin.js`**
