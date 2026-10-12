@@ -55,14 +55,16 @@ export default function BarraPartita({ p, cat, vpm = null, colore }) {
         sbagliato e non sappiamo quale, quindi **nessuno dei cinque numeri
         sotto vale**. Si dice qui, sopra la barra, perché è il posto dove
         l'occhio arriva prima — e la partita resta visibile apposta: nasconderla
-        vorrebbe dire che il difetto non lo trova più nessuno. */}
+        vorrebbe dire che il difetto non lo trova più nessuno.
+        ⚠️ **Una riga sola** (scelta di Mattia, 12/10/2026): la spiegazione per
+        esteso — quanti punti di scarto, quale fonte dice cosa — sta in
+        `controlla-dati.js`, che la stampa quando serve. A schermo, sopra una
+        card, serve sapere *che* c'è un problema, non perché. */}
     {p.quoteIncoerenti && (
       <div style={{ padding: '5px 8px', marginBottom: 4, fontSize: 10, fontFamily: F.mono,
         lineHeight: 1.4, color: C.rosso, letterSpacing: '0.02em',
         background: alpha(C.rosso, 0.1), border: `1px solid ${alpha(C.rosso, 0.4)}` }}>
-        ⚠️ QUOTE IN CONFLITTO — Bet365 e il consenso non dicono la stessa partita
-        ({(p.scartoQuote * 100).toFixed(0)} punti di scarto). I numeri qui sotto non valgono,
-        e questa partita non entra nelle spin.
+        ⚠️ QUOTE IN CONFLITTO — Partita da verificare.
       </div>
     )}
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', padding: '7px 0',

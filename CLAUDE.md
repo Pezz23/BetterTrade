@@ -1022,7 +1022,11 @@ aggancio nostro.
    (`candidate()`), e ⚠️ **questo lo scavalca anche una stellina** — la
    stellina è un giudizio su una partita, qui il **dato** è rotto e nessun
    giudizio lo ripara.
-3. A schermo lo dice **sopra la barra**, in rosso, con quanti punti di scarto.
+3. A schermo lo dice **sopra la barra**, in rosso, in **una riga sola**:
+   *"⚠️ QUOTE IN CONFLITTO — Partita da verificare."* (scelta di Mattia). Il
+   dettaglio — quanti punti, quale fonte dice cosa — lo stampa
+   `controlla-dati.js`: sopra una card serve sapere **che** c'è un problema,
+   non perché.
    ⚠️ **La partita resta visibile di proposito**: nasconderla vorrebbe dire che
    il difetto non lo trova più nessuno.
 
