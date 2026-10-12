@@ -245,10 +245,29 @@ contro 94,7% ±1,7, cioè **lo stesso numero**. Il motivo: il modello completo
 quell'accoppiata **ce l'ha già dentro** come uno dei suoi due termini, e
 buttare l'altro perde informazione senza togliere abbastanza rumore.
 
-**Cosa resterebbe da provare, se un domani interessasse**: l'aggiustamento per
-la forza degli avversari affrontati (la stessa cosa che manca a VPM) e la
-correzione di Dixon-Coles sui punteggi bassi, che peserebbe più sul GG che
-sull'over.
+**Provato anche l'aggiustamento per la forza degli avversari affrontati**
+(idea di Mattia: *"l'avversario conta tantissimo, anzi è la base"*) —
+`prova-gol-avversari.js`. Ogni partita della storia ripesata per chi c'era di
+fronte: i tiri fatti divisi per quanto quell'avversario concedeva, i subiti per
+quanto produceva. Quattro intensità (nessuna · metà · piena · piena senza
+stretta): **+0,0039 tutte e quattro**, over 2,5 prime 9 **54,6% tutte**, in
+soldi 94,6-94,7% ±1,7. **Identico.**
+⚠️ **Non perché l'avversario non conti: perché si compensa da sé.** In una
+stagione una squadra incontra quasi tutte le altre, quindi la media degli
+avversari affrontati **tende alla media del campionato**, che è già il
+denominatore del modello. La correzione sposta i gol attesi di 0,021 in media
+(0,055 a forza piena, massimo 0,41): cambia il numero, non l'ordine.
+⚠️ **Provata anche nell'unica fetta dove poteva valere**, con entrambe le
+squadre sotto le 8 partite giocate (5.426 partite): +0,0007 senza correzione,
++0,0009 con quella piena, e sulle prime 9 la correzione **peggiora** (54,3%
+contro 54,6%). ⚠️ Lì si vede però un'altra cosa: **a inizio stagione il modello
+non aggiunge quasi niente** (+0,0007 contro +0,0039 sul totale). Il limite di
+agosto-settembre sono le poche partite, non l'avversario.
+
+**Cosa resterebbe da provare, se un domani interessasse**: la correzione di
+Dixon-Coles sui punteggi bassi, che peserebbe più sul GG che sull'over.
+L'aggiustamento per gli avversari è **chiuso**: provato, non serve — e lo stesso
+ragionamento (gli avversari si compensano entro la stagione) vale per VPM.
 
 ---
 

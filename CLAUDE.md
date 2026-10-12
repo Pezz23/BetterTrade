@@ -387,6 +387,27 @@ stesso numero**. L'idea è sensata ma **il modello completo la contiene già**:
 `attacco(favorita) × difesa(sfavorita)` è uno dei suoi due termini, e buttare
 l'altro perde informazione senza togliere abbastanza rumore.
 
+⚠️ **Provato anche l'aggiustamento per la FORZA DEGLI AVVERSARI AFFRONTATI**
+(idea di Mattia, 12/10: *"l'avversario conta tantissimo, anzi è la base"*) —
+`scripts/prova-gol-avversari.js`. Ogni partita della storia viene ripesata per
+chi c'era di fronte **prima** di entrare nella media: i tiri fatti divisi per
+quanto quell'avversario concedeva, quelli subiti per quanto produceva. Tre
+intensità (nessuna · metà · piena) più una **senza stretta**. Risultato sulle
+stesse 34.434 partite: **+0,0039 in tutte e quattro**, over 2,5 nelle prime 9
+54,6% in tutte, e in soldi 94,6-94,7% ±1,7. **Identico.**
+⚠️ **Il motivo non è che l'avversario non conta: è che si compensa da sé.**
+Entro una stagione ogni squadra incontra quasi tutte le altre, quindi la media
+degli avversari affrontati tende alla media del campionato — che è già il
+denominatore del modello. La correzione sposta i gol attesi di **0,021** in
+media (0,055 a forza piena, massimo 0,41): cambia il numero, non l'ordine.
+⚠️ **Provata anche nell'unica fetta dove poteva valere** — quando entrambe le
+squadre hanno giocato **meno di 8 partite**, cioè quando una può aver incontrato
+solo le prime tre in classifica. 5.426 partite: **+0,0007 senza correzione,
++0,0009 con quella piena senza stretta**, e sulle prime 9 la correzione *peggiora*
+(54,3% contro 54,6%). ⚠️ Nota a margine: **a inizio stagione il modello non
+aggiunge quasi niente** (+0,0007 contro +0,0039 sul totale) — il limite di
+agosto-settembre non è l'avversario, sono le poche partite.
+
 ⚠️⚠️ **Ma migliorarlo non lo renderebbe redditizio, e questo chiude il
 discorso:** prendendo le prime 9 partite di ogni giorno **secondo il mercato
 stesso**, giocare l'over 2,5 rende **95,2%**. Nemmeno chi prezza quelle partite
@@ -1017,6 +1038,7 @@ node --env-file=.env scripts/misura-schedine.js --quota=5   # le schedine del we
 node --env-file=.env scripts/prova-gol.js                  # il modello dei gol contro i risultati veri
 node --env-file=.env scripts/prova-indicatori.js --stagioni=8   # quale indicatore sceglie meglio
 node --env-file=.env scripts/prova-gol-varianti.js         # si può migliorare l'indice dei gol? (no)
+node --env-file=.env scripts/prova-gol-avversari.js        # e correggendo per gli avversari affrontati? (no)
 #   pomelli: --base=gol|tiri|misto --k=20 --stagioni=3
 node --env-file=.env scripts/misura-valore.js --riferimento=media   # il criterio, a fine stagione
 node --env-file=.env scripts/import-storico.js --campionati=P1,N1   # solo alcuni campionati
