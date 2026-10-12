@@ -3,7 +3,7 @@
 > To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 12 ottobre 2026, sera · app alla versione **1.20.00**
+**Ultimo aggiornamento:** 13 ottobre 2026 · app alla versione **1.20.01**
 
 **Le quattro priorità del 12/10 sono tutte chiuse** (voci 24-27): Bet365 al
 posto di Codere, la pagina **Andamento**, l'indicatore **Goal/NoGoal** e quello
@@ -24,7 +24,7 @@ sono vecchi, non il codice**. In ordine:
 cd btscout
 node --env-file=.env scripts/aggiorna.js --esegui    # risultati + quote: recupera tutto da solo
 node --env-file=.env scripts/verifica-storico.js     # l'archivio è coerente?
-cd ../app && npm run lint && npm run dev             # 0 errori, poi la barra deve dire 1.20.00
+cd ../app && npm run lint && npm run dev             # 0 errori, poi la barra deve dire 1.20.01
 ```
 
 `aggiorna.js` guarda indietro e non perde niente: `riconcilia-prossime` chiude
@@ -121,6 +121,41 @@ solo football-data, nel blocco imminente: `importa-prossime.js` lo riempirebbe.
 > Riscritta il **7 ottobre 2026**: solo quello che manca, numerato 1-13 e diviso
 > in lotti per file toccati. Quello che è stato fatto sta sotto, in "Fatto di
 > recente": serve a capire *perché* una cosa è com'è, non cosa resta.
+
+### ESPN ha recuperato il weekend — 13 ottobre 2026 (**1.20.01**)
+
+football-data è ancora fermo al 20/09. ESPN ha riempito il buco:
+
+```
+risultati mancanti   123  →  6
+righe da ESPN in archivio      133
+da verificare a mano            15
+```
+
+**58 alias di nomi squadra, scritti a mano**, uno per uno verificati contro
+l'archivio. ⚠️ Gli accenti li risolve la macchina (`Almería` → `Almeria`: è
+normalizzare, non indovinare); tutto il resto è a mano, e il motivo si chiama
+**Paris** — cercando "paris" escono `Paris FC` e `Paris SG`, i due club che un
+automatismo aveva già confuso. Idem `Sporting CP` (Lisbona) accanto a
+`Sp Braga`.
+
+⚠️ **Due difetti di robustezza corretti**: un `502` di ESPN e poi un
+`ECONNRESET` del database avevano ucciso tre recuperi lunghi. Ora `tollera()`
+copre **tutto il giro di una partita** e i recuperi lunghi si fanno **uno alla
+volta**.
+
+⚠️ **Il prossimo weekend c'è già**: 123 partite dal 16 al 19/10 con le quote di
+consenso, ma **solo 11 con Bet365** — quella arriva da football-data. Finché
+resta fermo, la colonna QUOTA dirà `MEDIA` e resa/voto saranno grigi.
+
+⚠️ **RECUPERO STORICO SERIE A ancora da finire**: fatte 1920 e 2021 (380
+partite ciascuna), in corso dalla 2122. Si rilancia con
+`importa-espn.js --campionati=I1 --da=2019-07-01 --esegui`: riprende da dove si
+è fermato.
+
+**Difetto a schermo corretto:** la griglia della Slot usciva dalla finestra
+quando la si restringeva. In una griglia CSS `1fr` non scende sotto il
+contenuto: serve `minmax(0,1fr)` **e** `minWidth:0` nel contenitore interno.
 
 ### SCELTA al posto di RESA — 12 ottobre 2026 (**1.20.00**)
 

@@ -1130,6 +1130,19 @@ sporca l'archivio e ogni misura che ci sta sopra.
 `coalesce`, quindi riempie i buchi (possesso, tiri) e lascia stare il
 risultato di football-data.
 
+**I nomi, 58 alias scritti a mano al 13/10/2026.** Due regole:
+⚠️ **Gli accenti li toglie la macchina**: `Almería` → `Almeria` non è
+indovinare, è normalizzare — la stessa stringa in due codifiche. Ha risolto da
+solo una decina di casi spagnoli.
+⚠️⚠️ **Tutto il resto è scritto a mano, e il motivo ha un nome: Paris.**
+Cercando "paris" in archivio escono **`Paris FC` e `Paris SG`**, due club
+diversi della stessa città — ed è esattamente l'abbinamento che un automatismo
+di somiglianza aveva sbagliato. Stessa trappola con `Sporting CP`, che è lo
+Sporting di **Lisbona** mentre in archivio c'è anche `Sp Braga`.
+⚠️ Alcuni alias sono **vecchi nomi di club** che football-data non ha mai
+aggiornato: `Istanbul Basaksehir` → `Buyuksehyr`, `Waasland-Beveren` →
+`Beveren`, `Deportivo` → `La Coruna`.
+
 **I nomi**: ESPN espone cinque nomi per squadra (`displayName`,
 `shortDisplayName`, `name`, `location`, `abbreviation`) e `shortDisplayName` è
 praticamente lo stile di football-data — "Manchester City" → **"Man City"**.
@@ -1144,6 +1157,17 @@ storico diventa "nome sconosciuto": provando il recupero del 2024, Empoli e
 Hellas Verona — oggi fuori dalla Serie A — risultavano sconosciute. Con i nomi
 presi dall'evento: **70 partite su 70 agganciate, zero dubbie**.
 
+⚠️⚠️ **Un intoppo della fonte non deve uccidere il lavoro, e il database è una
+fonte come le altre.** Il 12/10 un singolo `502` di ESPN ha fatto cadere un
+recupero da mezz'ora dopo 246 partite; il giorno dopo un `ECONNRESET` del
+database ne ha uccisi **due insieme** (li avevo lanciati in parallelo). Ora
+`tollera()` avvolge **tutto il giro di una partita**, non solo la chiamata a
+ESPN: quella partita si salta, si conta, si stampa in fondo, e il lavoro va
+avanti — postgres.js riapre la connessione da solo. ⚠️ **E i recuperi lunghi si
+fanno uno alla volta.**
+⚠️ **I giorni si chiedono all'archivio, non al calendario**: la Serie A gioca
+in ~130 giorni l'anno, e camminando sul calendario civile due richieste su tre
+cadono a vuoto (2.660 chiamate invece di 1.399).
 ⚠️ **Si va piano di proposito**: `PAUSA_MS = 350` fra le chiamate. Non c'è un
 limite dichiarato, e proprio per questo non si corre — una fonte non
 documentata si tiene buona.
@@ -1570,6 +1594,16 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   (9/10/2026). **Ogni query paginata vuole un secondo criterio univoco**
   (`.order('data').order('id')`). L'ha scoperto il confronto fra le due strade,
   non un errore: senza quel confronto sarebbe passato.
+- **In una griglia `1fr` NON scende sotto il contenuto: serve `minmax(0,1fr)`.**
+  Un elemento di griglia ha `min-width:auto`, quindi una colonna `1fr` si
+  allarga fino a contenere il testo più lungo e **spinge fuori schermo** tutte
+  le colonne di destra. Nella Slot, con un nome come *"St. Gilloise –
+  Oud-Heverlee Leuven"*, la riga usciva dalla finestra appena la si
+  restringeva (13/10/2026, trovato da Mattia). ⚠️ **Serve anche `minWidth:0`
+  sul contenitore dentro la cella** — `SceltaPartita` ce l'aveva nel pulsante
+  ma non nel div che lo avvolge, e il minimo si era semplicemente spostato di
+  un livello. ⚠️ `TestataPartita` e le righe di `DettaglioPartita` erano già a
+  posto: la Slot era l'unica scoperta.
 - **Sei elementi a larghezza fissa su una riga non stanno su un telefono.**
   Nella lista "LE VOTATE" l'ultima scritta usciva dallo schermo. Quando una
   riga ha più di tre o quattro informazioni, **si divide in due righe** invece

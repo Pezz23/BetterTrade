@@ -90,7 +90,17 @@ function TabellaGriglia({tiles,isAdmin,onUpdate,onCambia,onReset,syncing,libera,
   const [confirmReset,setConfirmReset]=useState(false)
   // Sulle spin agganciate la partita è una casella sola (il menu con ricerca);
   // sulla spin libera restano i due campi di testo come sempre.
-  const COLS=libera?'64px 1fr 12px 1fr 52px 54px 80px':'64px 1fr 52px 54px 80px'   // 64: ci deve stare '1+O1,5'
+  // ⚠️⚠️ **`minmax(0,1fr)` e non `1fr`.** In una griglia un elemento ha
+  // `min-width:auto`, quindi una colonna `1fr` **non scende mai sotto la
+  // larghezza del suo contenuto**: con un nome lungo come "St. Gilloise –
+  // Oud-Heverlee Leuven" la riga si allargava oltre lo schermo e le colonne di
+  // destra finivano fuori (trovato da Mattia il 13/10/2026 restringendo la
+  // finestra). `minmax(0,…)` toglie quel minimo e lascia che il testo si
+  // accorci con i puntini. ⚠️ Serve **anche** `minWidth:0` sul contenitore
+  // dentro la cella: senza, il minimo si sposta solo di un livello.
+  // ⚠️ Le colonne fisse sommano 250px: sotto i ~310px di finestra la colonna
+  // della partita resta strettissima ma la riga **non esce più**.
+  const COLS=libera?'64px minmax(0,1fr) 12px minmax(0,1fr) 52px 54px 80px':'64px minmax(0,1fr) 52px 54px 80px'   // 64: ci deve stare '1+O1,5'
   function handleReset() {
     if (!confirmReset){setConfirmReset(true);setTimeout(()=>setConfirmReset(false),3000);return}
     onReset();setConfirmReset(false)

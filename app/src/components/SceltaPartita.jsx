@@ -36,8 +36,12 @@ export default function SceltaPartita({ casa, ospite, collegata, partite, onSceg
 
   const etichetta = casa || ospite ? `${casa || '?'} – ${ospite || '?'}` : 'scegli la partita…'
 
+  // ⚠️ `minWidth: 0` sul contenitore: è una cella della griglia della Slot, e
+  // senza non può stringersi sotto la larghezza del nome della partita — la
+  // riga uscirebbe dallo schermo invece di accorciare il testo coi puntini.
+
   return (
-    <div ref={box} style={{ position: 'relative' }}>
+    <div ref={box} style={{ position: 'relative', minWidth: 0 }}>
       <button disabled={disabled} onClick={() => { setAperto(v => !v); setTesto('') }} style={{
         width: '100%', textAlign: 'left', background: C.pozzo,
         border: `1px solid ${collegata ? alpha(C.verde, 0.35) : C.bordo}`, borderRadius: 5,

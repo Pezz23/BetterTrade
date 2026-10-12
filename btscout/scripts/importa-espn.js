@@ -61,7 +61,19 @@ async function giorniDaGuardare(div) {
   return [...set].sort();
 }
 
-const conto = { viste: 0, completate: 0, create: 0, invariate: 0, dubbie: 0 };
+const conto = { viste: 0, completate: 0, create: 0, invariate: 0, dubbie: 0, saltate: 0 };
+const saltate = [];
+
+// ⚠️⚠️ **Un intoppo della fonte non deve uccidere il lavoro.** Il 12/10/2026 un
+// singolo `502` su una partita del 2019 ha fatto cadere un recupero da
+// mezz'ora dopo 246 partite già fatte. ESPN è un'API non documentata: che
+// tossisca ogni tanto è normale, e la risposta giusta è **saltare quella
+// partita e andare avanti**, non fermarsi. Le saltate si contano e si
+// stampano: un recupero che perde pezzi in silenzio sarebbe peggio.
+async function tollera(cosa, descrizione) {
+  try { return await cosa() }
+  catch (e) { conto.saltate++; saltate.push(`${descrizione} → ${e.message.split(' → ').pop()}`); return null }
+}
 const dubbie = [], create = [];
 
 for (const div of DIVS) {
@@ -79,10 +91,23 @@ for (const div of DIVS) {
   console.log(`${div}: ${nostri.size} nomi nostri in archivio · ${giorni.length} giorni da guardare`);
 
   for (const g of giorni) {
-    const eventi = await partiteDelGiorno(div, g);
+    const eventi = await tollera(() => partiteDelGiorno(div, g), `${div} giorno ${g}`) || [];
     for (const e of eventi) {
       if (!e.finita) continue;
       conto.viste++;
+      // ⚠️ **Anche il database può cadere a metà**, non solo ESPN: il
+      // 12/10/2026 un `ECONNRESET` ha ucciso due recuperi lunghi insieme —
+      // probabilmente per averli lanciati in parallelo sulla stessa
+      // connessione. Una partita che fallisce si salta e si conta; il giro
+      // continua, e postgres.js riapre la connessione da solo alla prossima.
+      await tollera(() => unaPartita(e, div, nostri, campionato), `${div} ${e.data} ${e.casa}-${e.trasferta}`);
+    }
+  }
+}
+
+async function unaPartita(e, div, nostri, campionato) {
+  {
+    {
       const casa = nostroNome({ nomi: e.nomiCasa }, nostri);
       const trasferta = nostroNome({ nomi: e.nomiTrasferta }, nostri);
       const motivoNome = !casa ? `nome sconosciuto: ${e.casa}` : !trasferta ? `nome sconosciuto: ${e.trasferta}` : null;
@@ -99,9 +124,9 @@ for (const div of DIVS) {
         const p = cand[0];
         // ⚠️ Non si tocca mai il risultato di football-data: ESPN completa i
         // buchi (possesso, e i tiri se mancano), non riscrive quello che c'è.
-        const st = await statistiche(div, e.id);
+        const st = await tollera(() => statistiche(div, e.id), `${div} ${e.data} ${e.casa}-${e.trasferta}`);
         const serve = p.possesso_casa == null || p.tirip_casa == null;
-        if (!st || !serve) { conto.invariate++; continue }
+        if (!st || !serve) { conto.invariate++; return }
         if (ESEGUI) await sql`
           update partite set
             possesso_casa  = coalesce(possesso_casa,  ${st.casa.possesso}),
@@ -112,7 +137,7 @@ for (const div of DIVS) {
             tiri_trasf     = coalesce(tiri_trasf,     ${st.trasferta.tiri})
           where id = ${p.id}`;
         conto.completate++;
-        continue;
+        return;
       }
 
       // nessun candidato in `partite`: forse è una partita che football-data
@@ -124,7 +149,7 @@ for (const div of DIVS) {
           and data between ${e.data}::date - 1 and ${e.data}::date + 1`;
 
       if (cand.length === 0 && fut.length === 1) {
-        const st = await statistiche(div, e.id);
+        const st = await tollera(() => statistiche(div, e.id), `${div} ${e.data} ${e.casa}-${e.trasferta}`);
         if (ESEGUI) {
           const [nuova] = await sql`
             insert into partite (div, campionato, data, casa, trasferta, gol_casa, gol_trasferta, esito,
@@ -147,7 +172,7 @@ for (const div of DIVS) {
         create.push(`${div} ${fut[0].data}  ${casa} ${e.golCasa}-${e.golTrasferta} ${trasferta}` +
           `   tiri in porta ${st?.casa.tirip ?? '—'}-${st?.trasferta.tirip ?? '—'}` +
           ` · possesso ${st?.casa.possesso ?? '—'}-${st?.trasferta.possesso ?? '—'}`);
-        continue;
+        return;
       }
 
       // tutto il resto aspetta una persona
@@ -155,7 +180,7 @@ for (const div of DIVS) {
                    : fut.length > 1 ? `${fut.length} partite in calendario combaciano`
                    : 'nessuna partita nostra combacia');
       conto.dubbie++;
-      const st = motivoNome ? null : await statistiche(div, e.id);
+      const st = motivoNome ? null : await tollera(() => statistiche(div, e.id), `${div} ${e.data} ${e.casa}-${e.trasferta}`);
       dubbie.push({ div, data: e.data, casa: e.casa, trasferta: e.trasferta, motivo,
                     gol: `${e.golCasa}-${e.golTrasferta}`, candidati: [...cand, ...fut] });
       if (ESEGUI) await sql`
@@ -179,6 +204,10 @@ console.log(`  completate (possesso/tiri aggiunti)  ${conto.completate}`);
 console.log(`  create (football-data non le ha)     ${conto.create}`);
 console.log(`  già a posto, niente da aggiungere    ${conto.invariate}`);
 console.log(`  da verificare a mano                 ${conto.dubbie}`);
+if (conto.saltate) {
+  console.log(`  ⚠️ saltate per errore della fonte     ${conto.saltate}  (rilancia per riprenderle)`);
+  saltate.slice(0, 8).forEach(x => console.log(`     ${x}`));
+}
 if (create.length) {
   console.log('\n── create ──');
   create.forEach(x => console.log('  ' + x));
