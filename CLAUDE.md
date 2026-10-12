@@ -446,61 +446,61 @@ senza quote…"*): era un trafiletto sotto a una griglia già densa e si leggeva
 come rumore. Quello che diceva resta qui, dove serve a chi sviluppa; a schermo
 resta la sola riga che spiega il colore.
 
-#### Le dieci celle, e perché sette non si accendono mai
+#### Il gradiente delle dieci celle — 12 ottobre 2026
 
-Il blocco **⚽ Gol attesi** mostra **due righe da cinque**: `OVER 0,5 · 1,5 ·
-2,5 · 3,5 · GOAL` sopra, `UNDER 0,5 · 1,5 · 2,5 · 3,5 · NOGOAL` sotto.
+Il blocco **⚽ Gol attesi** ha **due righe da cinque**: over 0,5/1,5/2,5/3,5 +
+GOAL sopra, under + NOGOAL sotto. Ogni cella ha un **gradiente a quattro
+fasce**: rosso · giallo · verdino · verde brillante.
 
-⚠️⚠️ **Il colore risponde a una domanda sola, e il 12/10/2026 l'ho sbagliata
-una volta.** La prima versione accendeva dove l'esito arriva **più spesso del
-suo solito**: statisticamente giusto, praticamente inutile — l'**over 3,5 si
-illuminava al 35%** pur arrivando solo il 37,9% delle volte, cioè una giocata
-che perde due volte su tre. Mattia: *"ho previsione 3,01 gol e si illumina
-l'over 3,5, c'è qualcosa che non va"*. La domanda giusta è la sua: **da che
-valore in su quella giocata ha dato esiti positivi in passato?**
-⚠️ **Lezione, la stessa di VPM**: un indice e il suo colore devono rispondere
-alla domanda di chi li legge, non a quella più comoda da calcolare. Lo scarto
-sulla base è il metro dello statistico; il tasso assoluto è il metro di chi
-gioca.
+⚠️ **La regola viene da un esempio di Mattia**: *"con over 2,5 abbiamo il 64%:
+0-40 rosso, 40-54 giallo, 54-60 verdino, 60 in su verde"*. Quei tre tagli,
+sulla base del 51%, sono esattamente **base − 20% dello spazio sotto · base +
+6% dello spazio sopra · base + 20% dello spazio sopra** (`tagliGol()`).
+⚠️⚠️ **Gli scarti sono in proporzione allo spazio disponibile, non in punti
+fissi**, ed è quello che fa funzionare la scala su tutte e dieci le righe:
+l'over 0,5 ha base 92,9% e sopra gli restano sette punti, quindi "base + 10
+punti" non esisterebbe. Le basi (`BASI_GOL`) sono misurate su 33.141 partite e
+si rimisurano solo per aggiungere una stagione, come le ANCORE di VPM.
 
-**Due condizioni, e servono entrambe** (`SOGLIE_COLORE` in `lib/gol.js`):
-1. **il pavimento** — l'esito arriva almeno il **70%** delle volte
-   (over/under) o il **65%** (Goal/NoGoal). Scelti da Mattia.
-2. **deve selezionare** — una riga che supera il pavimento già dal suo valore
-   più basso darebbe una cella **sempre accesa**, che non dice niente su
-   *questa* partita. La soglia si alza finché esclude.
+**Verificato che le fasce vogliano dire qualcosa** — il tasso vero dentro
+ognuna, rosso → verde:
 
-| | verde | verde chiaro | tasso | al giorno |
+| | rosso | giallo | verdino | verde |
 |---|---|---|---|---|
-| over 0,5 | 95% | 93% | 95,5% / 94,3% | 4,5 |
-| over 1,5 | 80% | 75% | 83,2% / 80,0% | 4,5 |
-| under 3,5 | 80% | 73% | 79,3% / 77,1% | 3,4 |
+| over 1,5 | 65% | 73% | 78% | **83%** |
+| over 2,5 | 41% | 49% | 58% | **62%** |
+| over 3,5 | 22% | 28% | 35% | 44% |
+| under 2,5 | 38% | 45% | 54% | **59%** |
+| under 3,5 | 56% | 68% | 75% | **78%** |
+| Goal | 48% | 52% | 59% | **68%** |
 
-⚠️⚠️ **Le altre sette non si accendono mai, e non è un difetto.** Il massimo
-tasso che raggiungono, a qualunque soglia, sta sotto il pavimento: over 2,5
-**64%** · under 2,5 62% · Goal **61%** · NoGoal 55% · over 3,5 43% · under 1,5
-35% · under 0,5 12%. **Quelle giocate non hanno mai funzionato abbastanza**, e
-la cella spenta è esattamente l'informazione richiesta. Riaggiungerle a
-`SOGLIE_COLORE` vuol dire riaccendere una giocata che perde.
-⚠️ **Il Goal è il caso al limite**: tocca il 61%, e col pavimento a 60% si
-accenderebbe dal 57% in su (3,4 partite al giorno). Sta a 65% per scelta di
-Mattia — se cambia idea è un numero solo.
-⚠️ **La riga CONSIGLIO non usa più il verde**: da quando il verde vuol dire
-"ha funzionato", un CONSIGLIO verde accanto a una cella GOAL spenta direbbe due
-cose opposte. Il consiglio resta (dice quale lato preferisce il modello) in
-tinta neutra.
-⚠️ **La fascia si decide sul numero ARROTONDATO**, quello che la persona legge.
-Col valore pieno una cella mostrava `93%` e restava spenta perché sotto c'era
-0,9299: **il colore smentisce la cifra che ha accanto**, e chi guarda conclude
-che il colore è rotto.
-⚠️ **Questa colorazione vale SOLO per over/under e GG/NG** (richiesta
-esplicita): gli altri numeri hanno già i loro codici — il verde/rosso di VPM è
+Sale su ogni riga, senza scalini al contrario: è questo che rende il colore
+leggibile a colpo d'occhio invece che decorativo.
+
+⚠️⚠️ **Il verde dice "più del solito", NON "giocata vincente", e la differenza
+va tenuta viva.** L'over 3,5 in fascia verde arriva il **44%** delle volte: più
+del suo 28,7% abituale, e comunque una giocata che perde più di quanto vince.
+Le uniche righe dove il verde è **anche** una giocata che ha funzionato sopra
+il 70% sono **over 0,5, over 1,5 e under 3,5** — le altre non ci arrivano a
+nessuna soglia (massimi: over 2,5 64% · under 2,5 62% · Goal 61% · NoGoal 55% ·
+over 3,5 43% · under 1,5 35% · under 0,5 12%). La riga sotto il blocco lo dice
+a schermo.
+⚠️ **Il criterio precedente era sbagliato e Mattia l'ha visto:** accendeva dove
+l'esito arriva più spesso del suo solito **senza fasce**, quindi l'over 3,5 si
+illuminava di verde al 35%. *"Ho previsione 3,01 gol e si illumina l'over 3,5,
+c'è qualcosa che non va."* Il gradiente risolve mostrando **quanto** sopra il
+solito, invece di un sì/no.
+⚠️ **La fascia si decide sul numero ARROTONDATO**, quello che la persona legge:
+col valore pieno una cella mostrava `93%` e stava nella fascia sotto perché
+dietro c'era 0,9299, e il colore smentiva la cifra che aveva accanto.
+⚠️ **Il fondo è acceso in proporzione alla fascia** (verde .16 · rosso .12 ·
+verdino .10 · giallo .05): dieci celle a tinta piena sono un semaforo
+illeggibile, e il giallo è il "niente di che" — deve restare sullo sfondo.
+⚠️ **La riga CONSIGLIO non usa il verde**: con dieci celle colorate accanto,
+un consiglio verde sarebbe l'undicesima tinta che significa un'altra cosa.
+⚠️ **Questo gradiente vale SOLO per over/under e GG/NG** (richiesta esplicita
+di Mattia): gli altri numeri hanno già i loro codici — il verde/rosso di VPM è
 l'accordo col mercato, non una soglia.
-⚠️ **Le soglie vengono da `prova-indicatori.js`**, sezioni *DA CHE VALORE IN SU
-LA GIOCATA HA FUNZIONATO* e *dove si accendono, riga per riga*. ⚠️ Quella
-ricerca cammina sui **valori veri** dell'indicatore, non su una griglia da 0 a
-1: VPM va da 5,5 a 10 e il voto sta attorno a 1, e con la griglia sbagliata
-stampava `—` su righe che invece funzionano (VPM ≥8,2 porta la giocata al 70%).
 
 ⚠️ **Il metro giusto non è il mercato, è la costante.** Un modello che non
 batte "prevedi sempre la frequenza media" non sta dicendo niente sulla singola

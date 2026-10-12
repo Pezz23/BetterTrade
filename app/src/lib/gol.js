@@ -101,58 +101,68 @@ export function consiglioGg(gg) {
   }
 }
 
-// ── LE SOGLIE CHE CONTANO, e il colore che le accende ───────────────────────
-// ⚠️⚠️ **Il colore risponde a UNA domanda sola, e il 12/10/2026 l'ho sbagliata
-// una volta.** La prima versione accendeva dove l'esito arriva **più spesso del
-// suo solito**: statisticamente giusto, praticamente inutile — l'over 3,5 si
-// illuminava al 35% pur arrivando solo il 37,9% delle volte, cioè una giocata
-// che perde due volte su tre. Mattia: *"c'è qualcosa che non va"*, e aveva
-// ragione. La domanda giusta è la sua: **da che valore in su quella giocata ha
-// dato esiti positivi in passato?**
+// ── IL GRADIENTE DELLE CELLE ────────────────────────────────────────────────
+// ⚠️ **La regola viene da un esempio di Mattia** (12/10/2026): *"con over 2,5
+// abbiamo il 64%: 0-40 rosso, 40-54 giallo, 54-60 verdino, 60 in su verde
+// brillante"*. Quei tre tagli, sulla base del 51%, sono esattamente:
+//    giallo  = base − 20% dello spazio **sotto** la base
+//    verdino = base +  6% dello spazio **sopra** la base
+//    verde   = base + 20% dello spazio **sopra** la base
 //
-// Quindi due condizioni, **e servono entrambe**:
-//   1. **il pavimento** — l'esito deve arrivare almeno il **70%** delle volte
-//      (over/under) o il **65%** (Goal/NoGoal). Soglie scelte da Mattia.
-//   2. **deve selezionare** — una riga che supera il pavimento già dal suo
-//      valore più basso darebbe una cella **sempre accesa**, che non dice
-//      niente su *questa* partita. Perciò la soglia si alza finché esclude.
+// ⚠️⚠️ **Gli scarti sono in proporzione allo spazio disponibile, non in punti
+// fissi**, ed è la cosa che fa funzionare la scala su tutte e dieci le righe:
+// l'over 0,5 ha base 92,9% e sopra gli restano sette punti, quindi
+// "base + 10 punti" non esisterebbe nemmeno. In proporzione, invece, ogni riga
+// ha le sue quattro fasce.
 //
-// ⚠️⚠️ **Conseguenza, e va detta: sette celle su dieci non si accendono mai.**
-// Non è un difetto, è la misura su 33.141 partite — il massimo tasso che
-// raggiungono, a qualunque soglia, sta sotto il pavimento:
-//   over 2,5 → 64% · under 2,5 → 62% · Goal → 61% · NoGoal → 55% ·
-//   over 3,5 → 43% · under 1,5 → 35% · under 0,5 → 12%.
-// Quelle giocate **non hanno mai funzionato abbastanza**, e una cella spenta è
-// esattamente l'informazione che Mattia ha chiesto.
-// ⚠️ Il Goal è il caso al limite: tocca il 61% e col pavimento al 60% si
-// accenderebbe dal 57% in su (3,4 partite al giorno). Sta a 65% per scelta.
-export const SOGLIE_COLORE = {
-  // tasso = quante volte la giocata è arrivata davvero, sopra quella soglia
-  'over0':  { forte: 0.95, utile: 0.93, tassoForte: 0.955, tassoUtile: 0.943, alGiorno: 4.5 },
-  'over1':  { forte: 0.80, utile: 0.75, tassoForte: 0.832, tassoUtile: 0.800, alGiorno: 4.5 },
-  'under3': { forte: 0.80, utile: 0.73, tassoForte: 0.793, tassoUtile: 0.771, alGiorno: 3.4 },
-  // ⚠️ Le altre non ci sono **di proposito**: non raggiungono il pavimento a
-  // nessuna soglia. Aggiungerle qui vuol dire riaccendere una giocata che
-  // perde — se un domani si rimisura e una ce la fa, si aggiunge con la data.
-  'over2': null, 'over3': null,
-  'under0': null, 'under1': null, 'under2': null,
-  'gg': null, 'ng': null,
+// ⚠️ **Le basi sono misurate**, non stimate: 33.141 partite in otto stagioni
+// dalla 5ª giornata (`btscout/scripts/prova-indicatori.js`). Si rimisurano solo
+// per aggiungere una stagione, come le ANCORE di VPM.
+//
+// ⚠️ **Verificato che le fasce vogliano dire qualcosa** — dentro ognuna, quante
+// volte l'esito è arrivato davvero (rosso · giallo · verdino · verde):
+//    over 1,5   65% · 73% · 78% · 83%      over 2,5   41% · 49% · 58% · 62%
+//    under 2,5  38% · 45% · 54% · 59%      under 3,5  56% · 68% · 75% · 78%
+//    Goal       48% · 52% · 59% · 68%      over 3,5   22% · 28% · 35% · 44%
+// Sale su ogni riga, senza scalini al contrario: è questo che rende il colore
+// leggibile a colpo d'occhio invece che decorativo.
+//
+// ⚠️⚠️ **Il verde dice "più del solito", NON "giocata vincente".** Sono due
+// cose diverse e vanno tenute separate: l'over 3,5 in fascia verde arriva il
+// 44% delle volte — più del suo 28,7% abituale, e comunque una giocata che
+// perde più di quanto vince. Le uniche righe in cui il verde è **anche** una
+// giocata che ha funzionato (sopra il 70%) sono **over 0,5, over 1,5 e
+// under 3,5**: le altre non ci arrivano a nessuna soglia.
+export const BASI_GOL = {
+  'over0': 0.929, 'over1': 0.754, 'over2': 0.510, 'over3': 0.287,
+  'under0': 0.071, 'under1': 0.246, 'under2': 0.490, 'under3': 0.713,
+  'gg': 0.533, 'ng': 0.467,
+}
+
+/** Le tre soglie del gradiente per una riga, dalla sua base. */
+export function tagliGol(chiave) {
+  const base = BASI_GOL[chiave]
+  if (base == null) return null
+  return {
+    base,
+    giallo: base - 0.20 * base,
+    verdino: base + 0.06 * (1 - base),
+    verde: base + 0.20 * (1 - base),
+  }
 }
 
 /**
- * In quale fascia sta un numero: `'forte'`, `'utile'` o `null`.
- * ⚠️ `null` non vuol dire "andrà male": vuol dire **nessun segnale**. Il numero
- * nella cella resta valido e va letto per quello che è — una probabilità.
+ * In quale fascia sta un numero: `'verde'`, `'verdino'`, `'giallo'` o `'rosso'`.
  */
 export function fasciaGol(chiave, p) {
-  const s = SOGLIE_COLORE[chiave]
-  if (!s || p == null) return null
-  // ⚠️ Si decide sul numero ARROTONDATO, quello che la persona legge. Con il
-  // valore pieno una cella può mostrare "93%" e restare spenta perché sotto
-  // c'è 0,9299: il colore smentisce la cifra che ha accanto, e chi guarda
-  // pensa che il colore sia rotto. Trovato da Mattia il 12/10/2026.
+  const t = tagliGol(chiave)
+  if (!t || p == null) return null
+  // ⚠️ Si decide sul numero ARROTONDATO, quello che la persona legge. Col
+  // valore pieno una cella può mostrare "93%" e stare nella fascia sotto
+  // perché sotto c'è 0,9299: il colore smentisce la cifra che ha accanto, e
+  // chi guarda conclude che il colore è rotto. Trovato da Mattia il 12/10.
   const letto = Math.round(p * 100) / 100
-  return letto >= s.forte ? 'forte' : letto >= s.utile ? 'utile' : null
+  return letto >= t.verde ? 'verde' : letto >= t.verdino ? 'verdino' : letto >= t.giallo ? 'giallo' : 'rosso'
 }
 
 /**

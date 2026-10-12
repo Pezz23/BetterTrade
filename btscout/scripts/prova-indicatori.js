@@ -295,6 +295,43 @@ riassunto(`le prime ${PRIME_WEEKEND} di ogni weekend`, perWeekend, PRIME_WEEKEND
   console.log(`\n   si legge "62%→2,0" = da quel valore in su l'esito arriva al tasso della colonna,`);
   console.log(`   e sono 2,0 partite al giorno. "—" = non ci arriva a nessuna soglia utilizzabile.`);
 
+  // ── IL GRADIENTE A QUATTRO FASCE ──────────────────────────────────────────
+  // ⚠️ Regola ricavata dall'esempio di Mattia (12/10/2026): *"con over 2,5
+  // abbiamo il 64%: 0-40 rosso, 40-54 giallo, 54-60 verdino, 60 in su verde
+  // brillante"*. Quei tre tagli, sulla base del 51%, sono esattamente:
+  //    giallo  = base − 20% dello spazio sotto la base
+  //    verdino = base +  6% dello spazio sopra la base
+  //    verde   = base + 20% dello spazio sopra la base
+  // ⚠️ Gli scarti sono **in proporzione allo spazio disponibile**, non in punti
+  // fissi: l'over 0,5 ha base 92,9% e sopra gli restano 7 punti, quindi
+  // "base + 10 punti" non esisterebbe. In proporzione invece la scala vale per
+  // tutte e dieci le righe.
+  // Qui si verifica che le fasce vogliano dire qualcosa: dentro ognuna, quante
+  // volte l'esito è arrivato davvero.
+  const taglia4 = (base) => ({
+    giallo: base - 0.20 * base,
+    verdino: base + 0.06 * (1 - base),
+    verde: base + 0.20 * (1 - base),
+  });
+  console.log(`\n══ IL GRADIENTE: quanto vale ogni fascia ══\n`);
+  console.log(`   ${'riga'.padEnd(11)} ${'base'.padStart(5)}  ${'tagli'.padStart(16)}   rosso · giallo · verdino · verde  (tasso vero, % delle partite)`);
+  for (const S of SOGLIE) {
+    const tutte = valutate.filter(x => S.val(x) != null);
+    // ⚠️ Solo le righe dei gol: attendibilità, VPM, voto e resa non hanno un
+    // gradiente a schermo, e voto/resa stanno attorno a 1 — finivano tutti
+    // nella fascia verde per sbaglio.
+    if (!tutte.length || !/^(over|under|Goal|NoGoal)/.test(S.label)) continue;
+    const base = tutte.filter(S.esito).length / tutte.length;
+    const t = taglia4(base);
+    const fascia = (v) => v >= t.verde ? 3 : v >= t.verdino ? 2 : v >= t.giallo ? 1 : 0;
+    const out = [0, 1, 2, 3].map(i => {
+      const l = tutte.filter(x => fascia(S.val(x)) === i);
+      if (!l.length) return '—'.padStart(13);
+      return `${(l.filter(S.esito).length / l.length * 100).toFixed(0)}% (${(l.length / tutte.length * 100).toFixed(0)}%)`.padStart(13);
+    });
+    console.log(`   ${S.label.padEnd(11)} ${(base * 100).toFixed(1).padStart(5)}  ${`${(t.giallo * 100).toFixed(0)}·${(t.verdino * 100).toFixed(0)}·${(t.verde * 100).toFixed(0)}`.padStart(16)}  ${out.join('')}`);
+  }
+
   console.log(`\n   ✓ = sopra quella soglia l'esito arriva più spesso che in generale, e lo scarto`);
   console.log(`       è più grande del margine d'errore. · = lo scarto sta dentro il rumore.`);
 }

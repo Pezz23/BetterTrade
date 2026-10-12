@@ -9,7 +9,7 @@ import { tocco } from '../lib/schermo'
 import BarraPartita from './BarraPartita'
 import { usaVpm } from '../hooks/usaVpm'
 import { valutaPartita, vociPesate, verso, PESI, ETICHETTE, NOMI_STRATI, PESI_STRATI, VPM_NETTO } from '../lib/vpm'
-import { golAttesi, SOGLIE_OVER, consiglioGg, FIDUCIA_GG, fasciaGol, SOGLIE_COLORE, intervalloGol } from '../lib/gol'
+import { golAttesi, SOGLIE_OVER, consiglioGg, FIDUCIA_GG, fasciaGol, tagliGol, intervalloGol } from '../lib/gol'
 
 // La scheda di una partita: tutto quello che sappiamo, in blocchi.
 // Pensata prima per il telefono — una colonna, numeri grandi, niente muri di
@@ -449,13 +449,21 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
               partita e Mattia le guarda entrambe: la cella spenta di una e
               accesa dell'altra è l'informazione. */}
           {(() => {
-            const cella = (chiave, etichetta, p, tinta) => {
+            // ⚠️ Quattro fasce, non due: rosso sotto la base, giallo attorno,
+            //    verdino sopra, verde ben sopra. Le soglie sono in
+            //    `tagliGol()` e vengono dalle basi misurate.
+            const TINTE = { verde: C.verde, verdino: C.menta, giallo: C.giallo, rosso: C.rosso }
+            const cella = (chiave, etichetta, p) => {
               const f = fasciaGol(chiave, p)
-              const colore = f === 'forte' ? C.verde : f === 'utile' ? C.menta : C.testo
+              const colore = TINTE[f] || C.testo
+              // ⚠️ Il fondo è acceso in proporzione alla fascia: un rosso o un
+              // verde pieni su dieci celle farebbero un semaforo illeggibile,
+              // e il giallo è il "niente di che" — deve restare sullo sfondo.
+              const forza = f === 'verde' ? 0.16 : f === 'rosso' ? 0.12 : f === 'verdino' ? 0.10 : 0.05
               return (
                 <div key={etichetta} style={{ textAlign: 'center', padding: '7px 2px', borderRadius: 0,
-                  background: `linear-gradient(${alpha(f ? colore : tinta, f ? 0.12 : 0.07)},${alpha(f ? colore : tinta, f ? 0.12 : 0.07)}), ${C.card}`,
-                  border: `1px solid ${alpha(f ? colore : tinta, f ? 0.45 : 0.25)}` }}>
+                  background: `linear-gradient(${alpha(colore, forza)},${alpha(colore, forza)}), ${C.card}`,
+                  border: `1px solid ${alpha(colore, f === 'giallo' ? 0.25 : 0.45)}` }}>
                   <div style={{ fontSize: 15, fontWeight: 700, fontFamily: F.mono, color: colore, lineHeight: 1 }}>
                     {(p * 100).toFixed(0)}%
                   </div>
@@ -521,13 +529,15 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
               cosa è successo DAVVERO sopra quelle soglie, misurato. Il `title`
               col mouse non esiste su telefono, quindi sta scritto. */}
           <div style={{ marginTop: 6, fontSize: 10, fontFamily: F.sans, color: C.fantasma, lineHeight: 1.5 }}>
-            <span style={{ color: C.verde, fontWeight: 700 }}>Verde</span> e{' '}
-            <span style={{ color: C.menta, fontWeight: 700 }}>verde chiaro</span>: da quel valore in su,
-            su 33.141 partite, quella giocata è arrivata il{' '}
-            {(SOGLIE_COLORE.over1.tassoForte * 100).toFixed(0)}% delle volte (over 1,5 dall&apos;80%),
-            il {(SOGLIE_COLORE.over0.tassoForte * 100).toFixed(0)}% (over 0,5 dal 95%),
-            il {(SOGLIE_COLORE.under3.tassoForte * 100).toFixed(0)}% (under 3,5 dall&apos;80%).
-            Le altre caselle non si accendono mai: a nessuna soglia hanno superato il 70%.
+            Il colore confronta il numero con quanto quell'esito arriva di solito:{' '}
+            <span style={{ color: C.rosso, fontWeight: 700 }}>rosso</span> sotto il normale,{' '}
+            <span style={{ color: C.giallo, fontWeight: 700 }}>giallo</span> attorno,{' '}
+            <span style={{ color: C.menta, fontWeight: 700 }}>verdino</span> sopra,{' '}
+            <span style={{ color: C.verde, fontWeight: 700 }}>verde</span> ben sopra — soglie dalle basi
+            misurate su 33.141 partite ({(tagliGol('over2').base * 100).toFixed(0)}% per l&apos;over 2,5,{' '}
+            {(tagliGol('gg').base * 100).toFixed(0)}% per il Goal). ⚠️ Verde vuol dire «più del solito», non
+            «giocata vincente»: l&apos;over 3,5 in verde arriva il 44% delle volte. Le uniche dove il verde
+            è anche una giocata che ha funzionato sopra il 70% sono over 0,5, over 1,5 e under 3,5.
           </div>
         </Blocco>
       )}
