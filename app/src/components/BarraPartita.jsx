@@ -52,9 +52,17 @@ export default function BarraPartita({ p, cat, vpm = null, colore }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', padding: '7px 0',
       background: alpha(c, 0.07), border: `1px solid ${alpha(c, 0.28)}`, borderRadius: 0 }}>
+      {/* ⚠️ L'etichetta dice **da quale book** viene la quota (12/10/2026): da
+          quando Bet365 ha la precedenza le fonti sono tre e si alternano nella
+          stessa lista — Bet365 sul weekend in corso, Codere o la massima sulle
+          partite più lontane. Sapere chi paga quel prezzo conta, soprattutto
+          perché la **massima** non è un prezzo che si può davvero ottenere.
+          Col segno davanti quando la quota mostrata è del segno secco e la
+          giocata è la combinata con l'over. */}
       <Colonna primo divisore={c} colore={C.oro}
         valore={quota ? quota.toFixed(2).replace('.', ',') : '—'}
-        etichetta={!p.quotaGiocata && p.quota ? `${p.segno} SECCO` : 'QUOTA'} />
+        etichetta={!quota ? 'QUOTA'
+          : `${(p.quotaFonte || 'quota').toUpperCase()}${!p.quotaGiocata && p.quota ? ` ${p.segno}` : ''}`} />
 
       <Colonna divisore={c} colore={c} valore={pct1(p.probGiocata)} etichetta="ATTEND." />
 

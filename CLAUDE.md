@@ -537,6 +537,20 @@ Entrambe hanno `bfe_ap_valido`. `prossime_partite` ha `scaricato_il`: una quota
 ha senso solo con l'istante in cui l'hai vista. L'app legge le future con
 `where data >= current_date`.
 
+⚠️ **L'ordine delle fonti della quota giocata, dal 12/10/2026: Bet365 →
+Codere → massima di mercato** (`valuta()` in `lib/attendibilita.js`). Bet365 è
+il book su cui gioca Mattia, e prima veniva dopo Codere.
+⚠️ **Misurato il 12/10 su 10 partite: Bet365 e Codere si equivalgono** (scarto
+medio di resa **−0,17 punti**, meglio su 4 e peggio su 5). **Il guadagno di
+questo cambio non è in punti, è in verità**: prima resa e voto si calcolavano
+su un prezzo di un book che Mattia non usa. ⚠️ Non confondere con l'altro
+numero: i **2,8 punti** misurati il 10/10 erano Codere contro la **massima di
+mercato**, che è il miglior prezzo fra 40 book e **non è ottenibile**.
+⚠️ **Quando manca tutto si cade sulla massima, e va detto**: il 12/10 erano
+**65 future su 76**. La loro resa e il loro voto sono **ottimistici**, perché
+quel prezzo non si può prendere. Per questo l'etichetta della colonna QUOTA
+mostra **da quale book** viene (`BET365` · `CODERE` · `MASSIMA`).
+
 Le future arrivano da **due fonti** che si fondono sulla stessa riga:
 football-data (`fixtures.csv`, il prossimo blocco, l'unica con Bet365) e
 **The Odds API** (3-4 settimane, consenso di 40+ book, niente Bet365 — non

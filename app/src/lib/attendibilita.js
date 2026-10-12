@@ -58,13 +58,20 @@ export function valuta(r) {
   const segno = p.p1 >= p.p2 ? '1' : '2'          // il favorito fra 1 e 2: la X è esclusa
   const prob = segno === '1' ? p.p1 : p.p2
 
-  // La terna di quote su cui si gioca, in ordine di preferenza: il bookmaker di
-  // riferimento (Codere, l'unico italiano fra quelli disponibili), poi Bet365
-  // quando football-data lo porta, poi la massima sul mercato. Codere non quota
-  // tutto — mancano Belgio e Portogallo, e le partite lontane — quindi la
-  // scala serve davvero. `quotaFonte` dice quale delle tre è.
-  const terna = r.book_1 ? { q: [r.book_1, r.book_x, r.book_2], fonte: nomeBook(r.book) }
-              : r.b365_1 ? { q: [r.b365_1, r.b365_x, r.b365_2], fonte: 'Bet365' }
+  // La terna di quote su cui si gioca, in ordine di preferenza.
+  // ⚠️ **Bet365 per primo dal 12/10/2026: è il book su cui gioca Mattia.**
+  // Prima veniva prima Codere, e su un weekend misurato pagava 2,8 punti meno
+  // della massima di mercato — su un sistema che vive in una banda di quattro
+  // punti è la differenza fra giocare alla pari e perdere.
+  // ⚠️ Bet365 arriva **solo da football-data**, che copre il blocco imminente:
+  // The Odds API non lo include (41 bookmaker, nessun Bet365 — verificato).
+  // Quindi le partite oltre il weekend in corso cadono su Codere o sulla
+  // massima finché il prossimo giro di football-data non le porta.
+  // ⚠️ La **massima** è l'ultima scelta e va presa per quello che è: il miglior
+  // prezzo del mercato, non un prezzo che Mattia può davvero ottenere. Resa e
+  // voto di quelle partite sono ottimistici — `quotaFonte` lo dice a schermo.
+  const terna = r.b365_1 ? { q: [r.b365_1, r.b365_x, r.b365_2], fonte: 'Bet365' }
+              : r.book_1 ? { q: [r.book_1, r.book_x, r.book_2], fonte: nomeBook(r.book) }
               : r.max_ap_1 ? { q: [r.max_ap_1, r.max_ap_x, r.max_ap_2], fonte: 'massima' }
               : null
   const [q1, qx, q2] = terna?.q ?? [null, null, null]

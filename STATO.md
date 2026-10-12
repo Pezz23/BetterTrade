@@ -115,7 +115,23 @@ solo football-data, nel blocco imminente: `importa-prossime.js` lo riempirebbe.
 
 ## 🔥 PRIORITÀ OGGI — deciso da Mattia il 12 ottobre 2026
 
-### 24. Le quote di Bet365 al posto di Codere
+### 24. [x] Le quote di Bet365 al posto di Codere — **fatto il 12/10 (1.08.00)**
+`valuta()` ora preferisce **Bet365 → Codere → massima**, e l'etichetta della
+colonna QUOTA dice da quale book viene.
+⚠️ **Il guadagno non è quello che mi aspettavo, e va detto:** misurato sulle 10
+partite di oggi che hanno entrambi i prezzi, **Bet365 e Codere si equivalgono**
+— scarto medio di resa **−0,17 punti**, meglio su 4 e peggio su 5. I **2,8
+punti** misurati il 10/10 erano Codere contro la **massima di mercato**, che è
+il miglior prezzo fra 40 book e **non è giocabile**. Il cambio resta giusto
+perché mostra **il prezzo che Mattia può davvero prendere**, non perché faccia
+guadagnare.
+⚠️ **Il problema vero è un altro, ed è emerso adesso:** `importa-prossime.js`
+ha riempito Bet365 solo sulle **11 partite di oggi** (il file di football-data
+copriva 9-12 ottobre). Le altre **65 su 76 cadono sulla massima**, cioè su un
+prezzo non ottenibile: la loro resa e il loro voto sono **ottimistici**. Si
+riempiranno al prossimo giro di football-data, a metà settimana.
+
+### 24-bis. [vecchio testo, per storia] Le quote di Bet365 al posto di Codere
 Mattia gioca su Bet365; l'app quota con Codere, che su un weekend misurato
 pagava **2,8 punti meno** della massima di mercato.
 ⚠️ **Oggi `b365_*` è vuota su tutte le future**: l'ultimo import è venuto da The
