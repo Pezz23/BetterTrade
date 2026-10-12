@@ -273,6 +273,30 @@ mercato stesso. **Stesso difetto della resa sui segni** (51,2%, la peggiore):
 resa alta = quota alta = partita che il book ritiene poco probabile da over.
 **La resa dice se il prezzo conviene, non cosa giocare.**
 
+### ⚠️ Il metro di Mattia: la tabella delle soglie — 12 ottobre 2026
+
+*"Non voglio una sfera di cristallo che indovina tutte. Voglio indicatori che
+mi aiutano a leggere la partita, e statisticare se sopra una certa soglia ha
+senso giocarlo: se l'indicatore è sopra al tot%, succede X volte."*
+
+⚠️ **"Non batte il mercato" e "non rende" non sono bocciature.** Avevo chiuso
+l'indice dei gol e poi il GG su quei criteri: nessuno dei due è il criterio di
+Mattia. La tabella sta in `prova-indicatori.js`, sezione *LA TABELLA DELLE
+SOGLIE*: 33.141 partite, 1.461 giorni, otto stagioni. Colonne obbligatorie:
+**succede %** · **contro la base** · **a giornata** (una soglia che dà mezza
+partita a weekend ha ragione e non serve).
+
+**Con questo metro funzionano tutti.** I punti utili: attendibilità ≥70% →
+76,6% (1,7 partite al giorno) · ≥75% → 81,6% · **VPM ≥8,0 → 68,6%**, ≥8,5 →
+71,4% · voto ≥100% → 67,3% · over 1,5 ≥80% → 83,2% · over 2,5 ≥65% → 64,9% ·
+**Goal ≥60% → 62,0%** contro una base del 53,3%.
+⚠️ Tutte le righe hanno scarto maggiore del margine d'errore tranne voto ≥90% e
+resa ≥90%, che selezionano quasi tutto.
+⚠️ **VPM era l'indicatore più sottovalutato**: col metro del mercato perdeva
+contro l'attendibilità, col metro della soglia sale pulito e monotòno.
+⚠️ **Limiti dell'archivio**: 51 partite sopra attendibilità 80% in otto
+stagioni, 17 sopra voto 105%. Oltre lì non si misura niente.
+
 ### Il Goal/NoGoal — fatto il 12 ottobre 2026
 
 Chiesto da Mattia: *"un indicatore che mi dia visione, se la partita sarà da

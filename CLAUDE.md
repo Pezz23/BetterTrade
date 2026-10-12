@@ -484,6 +484,59 @@ nostro rende 94,7%. **Il tetto di questo mercato è una perdita**: l'indice dei
 gol serve a leggere la partita, e investirci altro tempo compra un colore più
 nitido, non dei soldi.
 
+#### ⚠️⚠️ IL METRO GIUSTO: la tabella delle soglie
+
+**Chiarito da Mattia il 12/10/2026, dopo che avevo misurato tutto col metro
+sbagliato.** Parole sue: *"non voglio una sfera di cristallo che indovina tutte.
+Voglio creare degli indicatori che mi aiutano a vedere e leggere la partita, e
+statisticare se sopra a una certa soglia quell'indicatore ha senso giocarlo:
+se l'indicatore è sopra al tot%, succede X volte."*
+
+⚠️ **Quindi "non batte il mercato" e "non è redditizio" NON sono bocciature.**
+Avevo chiuso due volte un indicatore su quei criteri (l'indice dei gol il
+12/10, poi il GG) e nessuno dei due era il criterio di Mattia. La domanda è
+**interna all'indicatore**: sopra la soglia, quante volte arriva l'esito, su
+quante partite, contro la frequenza generale.
+
+**La tabella la stampa `scripts/prova-indicatori.js`** (sezione *LA TABELLA
+DELLE SOGLIE*), su **33.141 partite in 1.461 giorni di gioco**, otto stagioni,
+dalla 5ª giornata. Tre colonne obbligatorie, e nessuna è facoltativa:
+**succede %** · **contro la base** (senza, non si distingue "la soglia
+seleziona" da "quell'esito è frequente") · **a giornata** (una soglia che dà
+mezza partita a weekend ha ragione e non serve a niente).
+
+| indicatore | soglia | partite | a giornata | succede | contro la base |
+|---|---|---|---|---|---|
+| **attendibilità** → la giocata | 70% | 2.466 | 1,7 | **76,6%** | +25,8 ±1,7 |
+| | 75% | 674 | 0,5 | **81,6%** | +30,8 ±2,9 |
+| **VPM** → la giocata | 7,0 | 9.076 | 6,2 | 60,8% | +10,0 ±1,0 |
+| | 8,0 | 2.416 | 1,7 | **68,6%** | +17,8 ±1,9 |
+| | 8,5 | 958 | 0,7 | **71,4%** | +20,6 ±2,9 |
+| **voto** → la giocata | 95% | 20.123 | 13,8 | 53,6% | +2,8 ±0,7 |
+| | 100% | 2.312 | 1,6 | **67,3%** | +16,5 ±1,9 |
+| **resa** → la giocata | 95% | 7.216 | 4,9 | 52,7% | +1,9 ±1,2 |
+| **over 1,5** | 80% | 6.627 | 4,5 | **83,2%** | +7,8 ±0,9 |
+| **over 2,5** | 60% | 4.296 | 2,9 | 61,1% | +10,2 ±1,5 |
+| | 65% | 1.383 | 0,9 | **64,9%** | +14,0 ±2,5 |
+| **Goal** | 58% | 3.602 | 2,5 | 60,0% | +6,7 ±1,6 |
+| | 60% | 1.138 | 0,8 | **62,0%** | +8,7 ±2,8 |
+
+⚠️ **Con questo metro funzionano tutti**, e lo scarto è più grande del margine
+d'errore in ogni riga tranne due (voto ≥90% e resa ≥90%, che selezionano quasi
+tutto e quindi non selezionano).
+⚠️ **VPM sale in modo pulito e monotòno** — 53,2% a 6,0 · 60,8% a 7,0 · 71,4%
+a 8,5 — ed è l'indicatore che avevo più sottovalutato: col metro del mercato
+"perdeva" contro l'attendibilità, col metro della soglia è una lettura
+affidabile della partita.
+⚠️ **Anche il GG funziona**, pur essendo quasi imprevedibile in media: sopra il
+60% i gol da entrambe arrivano il 62,0% delle volte contro il 53,3% generale.
+"Quasi imprevedibile" e "inutile sopra soglia" sono due cose diverse.
+⚠️ **L'attendibilità oltre il 75% non si misura**: 51 partite sopra l'80% in
+otto stagioni, zero sopra l'85%. Le soglie 75/72/65 delle spin stanno al
+confine di quello che l'archivio può dire.
+⚠️ **Il voto a 100% è un muro, non una scala**: 2.312 partite sopra, 17 sopra
+105%. Chi legge la tabella non deve aspettarsi un voto 110%.
+
 #### Misurato il 12/10/2026 — quale indicatore sceglie meglio
 
 `btscout/scripts/prova-indicatori.js`, su **33.133 partite** di otto stagioni,

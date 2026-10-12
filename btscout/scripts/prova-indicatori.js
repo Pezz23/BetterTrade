@@ -91,6 +91,10 @@ for (const r of righe) {
       casa: r.casa, trasferta: r.trasferta, combinata, vinta, segnoGiusto,
       att: probGiocata, vpm: v?.punti ?? null, resa, quotaResa,
       voto: voto(resa, v?.punti ?? null), golAttesi: gol?.totale ?? null,
+      // gli indicatori dei gol, con il loro esito vero accanto
+      pOver25: gol?.over?.[2] ?? null, pOver15: gol?.over?.[1] ?? null, pGg: gol?.gg ?? null,
+      over25: r.gol_casa + r.gol_trasferta > 2, over15: r.gol_casa + r.gol_trasferta > 1,
+      gg: r.gol_casa > 0 && r.gol_trasferta > 0,
       accordoVpm: v ? (v.segno === '1' ? 'H' : 'A') === segno : null,
     });
   }
@@ -160,6 +164,59 @@ for (const x of valutate.filter(x => x.vpm != null)) {
 riassunto(`le prime ${EVIDENZIATE} di ogni giorno (le evidenziate)`, perGiorno, EVIDENZIATE);
 riassunto(`le prime ${PRIME} di ogni giorno`, perGiorno, PRIME);
 riassunto(`le prime ${PRIME_WEEKEND} di ogni weekend`, perWeekend, PRIME_WEEKEND);
+
+// ── LA TABELLA DELLE SOGLIE ─────────────────────────────────────────────────
+// ⚠️ **Questo è il metro di Mattia**, chiarito il 12/10/2026: *"non voglio una
+// sfera di cristallo che indovina tutte. Voglio indicatori che mi aiutano a
+// leggere la partita, e sapere se sopra una certa soglia ha senso giocarlo:
+// se l'indicatore è sopra al tot%, succede X volte."*
+// Quindi niente confronti col mercato e niente soldi: per ogni indicatore,
+// **sopra ogni soglia, quante volte l'esito arriva** e su quante partite.
+// ⚠️ La colonna BASE resta, ed è l'unica cosa che rende leggibile il resto:
+// senza, non si distingue "la soglia seleziona" da "quell'esito è frequente".
+// ⚠️ La colonna A GIORNATA dice se la soglia è **usabile**: una soglia che dà
+// mezza partita a weekend ha ragione e non serve a niente.
+{
+  const giorni = new Set(valutate.map(x => x.data)).size;
+  const SOGLIE = [
+    { label: 'attendibilità', val: x => x.att,     esito: x => x.vinta,   fmt: v => `${(v * 100).toFixed(0)}%`,
+      liv: [0.60, 0.65, 0.70, 0.75, 0.80, 0.85], nota: 'la giocata proposta (segno, e over 1,5 se combinata)' },
+    { label: 'VPM',           val: x => x.vpm,     esito: x => x.vinta,   fmt: v => v.toFixed(1).replace('.', ','),
+      liv: [6, 6.5, 7, 7.5, 8, 8.5], nota: 'la giocata proposta' },
+    { label: 'voto',          val: x => x.voto,    esito: x => x.vinta,   fmt: v => `${(v * 100).toFixed(0)}%`,
+      liv: [0.90, 0.95, 1.00, 1.05, 1.10], nota: 'la giocata proposta' },
+    { label: 'resa',          val: x => x.resa,    esito: x => x.vinta,   fmt: v => `${(v * 100).toFixed(0)}%`,
+      liv: [0.90, 0.95, 1.00, 1.05, 1.10], nota: 'la giocata proposta' },
+    { label: 'over 1,5',      val: x => x.pOver15, esito: x => x.over15,  fmt: v => `${(v * 100).toFixed(0)}%`,
+      liv: [0.70, 0.75, 0.78, 0.80, 0.82], nota: 'arrivano almeno 2 gol' },
+    { label: 'over 2,5',      val: x => x.pOver25, esito: x => x.over25,  fmt: v => `${(v * 100).toFixed(0)}%`,
+      liv: [0.45, 0.50, 0.55, 0.60, 0.65], nota: 'arrivano almeno 3 gol' },
+    { label: 'Goal',          val: x => x.pGg,     esito: x => x.gg,      fmt: v => `${(v * 100).toFixed(0)}%`,
+      liv: [0.52, 0.55, 0.58, 0.60, 0.62], nota: 'segnano entrambe' },
+  ];
+  console.log(`\n\n══ LA TABELLA DELLE SOGLIE ══  ${valutate.length} partite in ${giorni} giorni di gioco\n`);
+  for (const S of SOGLIE) {
+    const tutte = valutate.filter(x => S.val(x) != null);
+    if (!tutte.length) continue;
+    const base = tutte.filter(S.esito).length / tutte.length;
+    console.log(`── ${S.label} → ${S.nota}`);
+    console.log(`   ${'soglia'.padStart(7)}  ${'partite'.padStart(7)}  ${'a giornata'.padStart(10)}  ${'succede'.padStart(8)}   contro la base ${(base * 100).toFixed(1)}%`);
+    for (const t of S.liv) {
+      const l = tutte.filter(x => S.val(x) >= t);
+      if (l.length < 100) { console.log(`   ${S.fmt(t).padStart(7)}  ${String(l.length).padStart(7)}  troppo poche per dire qualcosa`); continue }
+      const q = l.filter(S.esito).length / l.length;
+      // l'intervallo: con poche partite una soglia "migliore" può essere rumore
+      const es = Math.sqrt(q * (1 - q) / l.length);
+      const d = (q - base) * 100;
+      const utile = d - 1.96 * es * 100 > 0;
+      console.log(`   ${S.fmt(t).padStart(7)}  ${String(l.length).padStart(7)}  ${(l.length / giorni).toFixed(1).padStart(10)}  ${(q * 100).toFixed(1).padStart(7)}%` +
+        `   ${(d >= 0 ? '+' : '')}${d.toFixed(1)} ±${(1.96 * es * 100).toFixed(1)}  ${utile ? '✓' : '·'}`);
+    }
+    console.log('');
+  }
+  console.log(`   ✓ = sopra quella soglia l'esito arriva più spesso che in generale, e lo scarto`);
+  console.log(`       è più grande del margine d'errore. · = lo scarto sta dentro il rumore.`);
+}
 
 // ── Il punto in comune: quando sono tutti d'accordo ─────────────────────────
 console.log(`\n── quando TUTTI E QUATTRO mettono la partita fra le prime ${EVIDENZIATE} del giorno ──`);
