@@ -30,7 +30,7 @@ for (const o of ORDINI) {
   for (const r of lista.slice(0, 5)) {
     const v = vpmDi.get(r.id);
     console.log(`  ${`${r.casa} - ${r.trasferta}`.padEnd(34)} q ${n2(r.quotaGiocata ?? r.quota)}  att ${pc(r.probGiocata)}` +
-      `  VPM ${v?.segno ?? '?'} ${n2(v?.punti)}  resa ${pc(r.resa)}  voto ${pc(v?.voto)}`);
+      `  VPM ${v?.segno ?? '?'} ${n2(v?.punti)}  scelta ${pc(v?.scelta)}  resa ${pc(r.resa)}  voto ${pc(v?.voto)}`);
   }
   const chiave = r => o.chiave(r, vpmDi);
   const valori = lista.map(chiave);

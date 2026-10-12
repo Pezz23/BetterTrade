@@ -921,6 +921,55 @@ blocco**: là la data è testo `gg/mm` senza anno, quindi si guarda l'**ampiezza
 (oltre 4 giorni fra la prima e l'ultima casella) e si deve poter correggere a
 mano.
 
+### SCELTA — l'attendibilità corretta dal campo (12/10/2026)
+
+**Ha preso il posto della resa nella barra**, su richiesta di Mattia dopo una
+giornata di misure. `scelta = attendibilità + 0,10 × (VPM − 5,5)/4,5`,
+`null` quando il campo contraddice il mercato (`scelta()` in `lib/vpm.js`).
+
+**Com'è nata.** Mattia cercava *"le partite dove la quota è alta e la
+probabilità supera il 50%"*, e proponeva `VPM × quota`. Misurando è venuto
+fuori il contrario di quello che cercava, più una cosa vera:
+- ⚠️ **VPM è calibrato**, e non lo sapevamo: quando dice 5,5-6 il suo segno
+  vince il 38,2% (il mercato dava 38,2%), a 7-7,5 il 55,3% (53,8%), a 8,5+ il
+  74,2% (72,6%). **Si può trasformare in una probabilità.**
+- ⚠️⚠️ **Ma il disaccordo col mercato è da evitare, non da cercare**: su 7.593
+  partite il segno del campo vince **27,2%** dove il book ne dava **29,5%**, e
+  giocarle rende **86,8%**. Peggiora con la quota: sopra 4,00 scende a 80,6%.
+  Per questo il disaccordo vale `null` e non un punteggio basso.
+- ⚠️ **Una quota alta non compensa mai una probabilità più bassa di quella
+  implicita**, perché la quota è alta *proprio per quello*. È il motivo per cui
+  ogni formula moltiplicata per la quota ordina male.
+
+⚠️⚠️ **Quanto vale, detto onestamente: mezzo punto non dimostrato.** Tarato
+sulle prime sei stagioni e verificato sulle ultime due, mai viste: il guadagno
+passa da **+0,9** a **+0,5 punti di resa** con un intervallo di ±5,6; stagione
+per stagione la mediana è **+0,2**, positiva in 5 su 8. **La direzione regge,
+la grandezza no.** Il +0,8/+1,1 della prima misura era gonfiato perché le
+soglie erano scelte sugli stessi dati su cui venivano giudicate.
+
+⚠️ **Perché al posto della resa.** La resa ordinava male: `quota ×
+attendibilità` vuol dire che in cima finiscono le quote lunghe, cioè le partite
+meno probabili — ultima fra gli indicatori sulle azzeccate (51,2% contro 60,3%
+dell'attendibilità). La scelta, sul 10% migliore di 33.133 partite, rende
+**99,2%** con 75,8% di azzeccate. ⚠️ **La resa non è sparita**: resta nei
+dettagli completi della scheda e **dentro il voto**.
+⚠️ **Non ha il pareggio a 100%**: serve a ordinare, non a dire quanto rende.
+Quel ruolo resta del voto.
+
+⚠️⚠️ **IL VOTO NON È CAMBIATO, ed è una scelta misurata.** `voto = resa ×
+fattore(VPM)` continua a usare la **resa**, non la scelta. Se usasse la scelta,
+**VPM entrerebbe due volte** — e misurato costa: `scelta × quota × fattore`
+rende **95,6%** contro il **97,8%** del voto di oggi. Il motivo generale è
+sempre lo stesso: moltiplicare per la quota sposta la selezione sulle quote
+lunghe. Confronto completo sul 10% migliore:
+`scelta da sola 99,2% · attendibilità 99,1% · voto 97,8% · scelta × quota
+96,4% · scelta × quota × fattore 95,6%`.
+
+⚠️ **La pagina Andamento misura ancora `resa` fra i quattro indicatori**, non
+la scelta: è giusto così finché le misure storiche parlano di resa, ma quando
+si rifà `calcola-andamento.js` conviene aggiungerla.
+
 ⚠️ **I nomi, da non scambiare:** *attendibilità* = la probabilità secondo il
 mercato · *resa* = quota × attendibilità, 100% è il pareggio · **VPM** = quale
 segno dice il campo e quanto è netto, 5,5-10 (le squadre) · **VOTO** = resa ×

@@ -39,8 +39,27 @@ const stagioneDi = (data) => {
   return `${String(inizio).slice(2)}${String(inizio + 1).slice(2)}`;
 };
 
-const giorni = [];
-for (let d = new Date(DA); d <= new Date(A); d.setDate(d.getDate() + 1)) giorni.push(giornoLocale(d).replaceAll('-', ''));
+// ⚠️ **I giorni si chiedono all'archivio, non al calendario.** La Serie A
+// gioca in ~130 giorni l'anno: camminando sul calendario civile due richieste
+// su tre cadono su giorni senza partite, e un recupero di otto stagioni passa
+// da 890 chiamate a 2.660. Le date le sappiamo già — sono quelle delle partite
+// che abbiamo (da completare) e quelle del calendario (da creare).
+// ⚠️ Si tiene **un giorno prima e uno dopo** per ogni data nostra: ESPN ragiona
+// in UTC e una partita può slittare di poche ore oltre la mezzanotte.
+async function giorniDaGuardare(div) {
+  const r = await sql`
+    select distinct data from (
+      select data from partite          where div = ${div} and data between ${DA} and ${A}
+      union
+      select data from prossime_partite where div = ${div} and data between ${DA} and ${A}
+    ) t order by data`;
+  const set = new Set();
+  for (const { data } of r) for (const d of [-1, 0, 1]) {
+    const x = new Date(data); x.setDate(x.getDate() + d);
+    set.add(giornoLocale(x).replaceAll('-', ''));
+  }
+  return [...set].sort();
+}
 
 const conto = { viste: 0, completate: 0, create: 0, invariate: 0, dubbie: 0 };
 const dubbie = [], create = [];
@@ -56,6 +75,7 @@ for (const div of DIVS) {
   // A"): si prende da una riga che c'è già, non si inventa — due nomi diversi
   // per lo stesso `div` sarebbero un difetto silenzioso.
   const [{ campionato }] = await sql`select campionato from partite where div = ${div} limit 1`;
+  const giorni = await giorniDaGuardare(div);
   console.log(`${div}: ${nostri.size} nomi nostri in archivio · ${giorni.length} giorni da guardare`);
 
   for (const g of giorni) {

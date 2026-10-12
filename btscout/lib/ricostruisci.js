@@ -96,6 +96,14 @@ export async function ricostruisci({ stagioni: quante = 3, daGiornata = 5 } = {}
         golTotali: r.gol_casa + r.gol_trasferta,
         ggVero: r.gol_casa > 0 && r.gol_trasferta > 0,
         accordoVpm: v ? (v.segno === '1' ? 'H' : 'A') === segno : null,
+        // ⚠️ Serve a chiedersi **chi ha ragione quando campo e mercato
+        // litigano**: senza l'esito vero e le due probabilità grezze si può
+        // solo sapere se ha vinto il favorito del mercato, non se ha vinto il
+        // segno che preferiva VPM.
+        esito: r.esito,
+        segnoVpm: v ? (v.segno === '1' ? 'H' : 'A') : null,
+        p1, p2,
+        q1: Number(r.b365_1), q2: Number(r.b365_2),
       });
     }
 

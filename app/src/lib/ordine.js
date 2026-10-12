@@ -19,7 +19,11 @@ export const ORDINI = [
   { id: 'quota',  label: 'quota',         colore: C.oro,     chiave: r => r.quotaGiocata ?? r.quota },
   { id: 'att',    label: 'attendibilità', colore: C.menta,   chiave: r => r.probGiocata },
   { id: 'vpm',    label: 'VPM',           colore: C.celeste, chiave: (r, v) => v?.get(r.id)?.punti },
-  { id: 'resa',   label: 'resa',          colore: C.testo,   chiave: r => r.resa },
+  // ⚠️ Si ordina per **scelta** e non più per resa (12/10/2026): la resa
+  // ordinava male — `quota × attendibilità` vuol dire che in cima finiscono le
+  // quote lunghe, cioè le partite meno probabili. Misurato: ultima fra gli
+  // indicatori sulle azzeccate (51,2% contro 60,3% dell'attendibilità).
+  { id: 'scelta', label: 'scelta',        colore: C.testo,   chiave: (r, v) => v?.get(r.id)?.scelta },
   { id: 'voto',   label: 'voto',          colore: C.verde,   chiave: (r, v) => v?.get(r.id)?.voto },
 ]
 

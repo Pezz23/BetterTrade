@@ -65,6 +65,12 @@ export const PESI_STRATI = { stagione: 0.45, forma: 0.30, ruolo: 0.25 }
 // ⚠️ A ottobre i tre strati guardano quasi le stesse partite: con 5 giornate
 // giocate "le ultime 5" SONO la stagione. Lo strato forma comincia a dire
 // qualcosa di diverso da gennaio, e va detto a schermo invece di far finta.
+// ⚠️ I due estremi della scala di VPM, nominati una volta sola: erano scritti
+// a mano in `vpm()` e servono anche qui. Due copie dello stesso numero sono
+// il modo di ritrovarsi con due scale diverse.
+export const VPM_MIN = 5.5    // forze pari
+export const VPM_MAX = 10     // divario massimo
+
 export const PARTITE_FINESTRA = 5
 export const MIN_PARTITE = 3   // sotto, VPM non c'è: nessun numero, non un numero prudente
 
@@ -238,7 +244,7 @@ export function vpm(forzaCasa, forzaFuori) {
   const scarto = forzaCasa.punti - forzaFuori.punti
   return {
     segno: scarto >= 0 ? '1' : '2',
-    punti: Math.min(10, 5.5 + Math.abs(scarto) / 2),
+    punti: Math.min(VPM_MAX, VPM_MIN + Math.abs(scarto) / 2),
   }
 }
 
@@ -266,15 +272,19 @@ export function valutaPartita(dati, riga) {
   const forzaCasa = forzaDi(squadre?.[riga.casa], 'casa')
   const forzaFuori = forzaDi(squadre?.[riga.trasferta], 'fuori')
   const v = vpm(forzaCasa, forzaFuori)
+  const accordo = v ? v.segno === riga.segno : null
   return {
     segno: v?.segno ?? null,          // il segno che dice il campo
     punti: v?.punti ?? null,          // quanto è netto, 5,5-10
+    // il punteggio di scelta: attendibilità corretta dal campo. Sta qui per lo
+    // stesso motivo del voto — serve VPM, che la riga da sola non ha.
+    scelta: scelta(riga.probGiocata, { punti: v?.punti ?? null, accordo }),
     // il voto sta qui e non in attendibilita.js perché ha bisogno di VPM, che
     // arriva dal database: la riga da sola non può calcolarlo
     voto: voto(riga.resa, v?.punti ?? null),
     // ⚠️ L'accordo si misura sul **segno**, non sul numero: la giocata
     // consigliata può essere "1 + over 1,5", e lì conta solo l'1.
-    accordo: v ? v.segno === riga.segno : null,
+    accordo,
     forzaCasa,
     forzaFuori,
     bandiere: bandiere(dati.scontri?.[riga.id], riga.casa, riga.trasferta),
@@ -315,6 +325,47 @@ export function fattoreVpm(punti) {
 export function voto(resa, punti) {
   if (resa == null) return null
   return resa * fattoreVpm(punti)
+}
+
+// ── LA SCELTA: attendibilità corretta dal campo ─────────────────────────────
+// **Nata il 12/10/2026**, al posto della resa nella barra. Mattia cercava "le
+// partite dove la quota è alta e la probabilità supera il 50%", e misurando è
+// venuto fuori il contrario di quello che cercavamo — ma anche una cosa vera.
+//
+// ⚠️⚠️ **Cosa dice e cosa non dice.** Non è una resa e **non ha il pareggio a
+// 100%**: è un numero per **ordinare** le partite, non per sapere quanto
+// rendono. Misurato sul 10% migliore di 33.133 partite: la scelta rende 99,2%
+// (75,8% azzeccate), l'attendibilità da sola 99,1% (75,9%). Praticamente pari —
+// il guadagno vero sta nel **prezzo**, non nelle azzeccate.
+//
+// ⚠️ **Il disaccordo col campo vale `null`, non un punteggio basso.** Misurato
+// su 7.593 partite: quando VPM contraddice il mercato il suo segno vince
+// **27,2%** dove il book ne dava **29,5%**, e giocarle rende **86,8%**. Non è
+// un caso da pesare meno: è un caso da non giocare.
+//
+// ⚠️⚠️ **Il peso è 0,10 e vale poco: va detto.** Tarato sulle prime sei
+// stagioni e verificato sulle ultime due, mai viste: il guadagno passa da
+// +0,9 a **+0,5 punti di resa**, con un intervallo di ±5,6. Stagione per
+// stagione: mediana **+0,2**, positiva in 5 su 8. **La direzione regge, la
+// grandezza no.** Chi legge questo numero sappia che vale mezzo punto non
+// dimostrato, non un vantaggio.
+//
+// ⚠️ **Non si moltiplica per la quota.** Provato: `scelta × quota` rende 96,4%
+// e `scelta × quota × fattore(VPM)` 95,6% (lì VPM entra due volte). Ogni volta
+// che si moltiplica per la quota si scelgono quote più lunghe, e quelle
+// rendono meno. Per questo **il voto resta com'era** e continua a usare la
+// resa: la resa non è sbagliata, è solo un'altra domanda.
+export const PESO_CAMPO = 0.10
+
+/**
+ * Il punteggio di scelta: `attendibilità + 0,10 × (VPM − 5,5)/4,5`.
+ * `null` quando il campo contraddice il mercato, o quando VPM non c'è.
+ */
+export function scelta(att, v) {
+  if (att == null) return null
+  if (!v || v.punti == null) return att        // senza VPM resta l'attendibilità
+  if (v.accordo === false) return null         // disaccordo: non si sceglie
+  return att + PESO_CAMPO * ((v.punti - VPM_MIN) / (VPM_MAX - VPM_MIN))
 }
 
 export const MIN_SCONTRI = 4      // sotto, il testa a testa non dice niente

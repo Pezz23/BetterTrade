@@ -3,7 +3,7 @@
 > To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 12 ottobre 2026, sera · app alla versione **1.19.00**
+**Ultimo aggiornamento:** 12 ottobre 2026, sera · app alla versione **1.20.00**
 
 **Le quattro priorità del 12/10 sono tutte chiuse** (voci 24-27): Bet365 al
 posto di Codere, la pagina **Andamento**, l'indicatore **Goal/NoGoal** e quello
@@ -24,7 +24,7 @@ sono vecchi, non il codice**. In ordine:
 cd btscout
 node --env-file=.env scripts/aggiorna.js --esegui    # risultati + quote: recupera tutto da solo
 node --env-file=.env scripts/verifica-storico.js     # l'archivio è coerente?
-cd ../app && npm run lint && npm run dev             # 0 errori, poi la barra deve dire 1.19.00
+cd ../app && npm run lint && npm run dev             # 0 errori, poi la barra deve dire 1.20.00
 ```
 
 `aggiorna.js` guarda indietro e non perde niente: `riconcilia-prossime` chiude
@@ -121,6 +121,28 @@ solo football-data, nel blocco imminente: `importa-prossime.js` lo riempirebbe.
 > Riscritta il **7 ottobre 2026**: solo quello che manca, numerato 1-13 e diviso
 > in lotti per file toccati. Quello che è stato fatto sta sotto, in "Fatto di
 > recente": serve a capire *perché* una cosa è com'è, non cosa resta.
+
+### SCELTA al posto di RESA — 12 ottobre 2026 (**1.20.00**)
+
+`scelta = attendibilità + 0,10 × (VPM−5,5)/4,5`, `—` quando il campo
+contraddice il mercato. Nata dalla domanda di Mattia (*"le partite con quota
+alta e probabilità sopra il 50%"*), che ha prodotto tre misure nuove:
+
+1. ⚠️ **VPM è calibrato** (38,2% → 74,2% seguendo il mercato quasi punto per
+   punto): si può usare come probabilità. Non lo sapevamo.
+2. ⚠️⚠️ **Il disaccordo col mercato è da evitare**: 27,2% contro il 29,5% del
+   book, resa 86,8%, e peggiora con la quota (80,6% sopra 4,00).
+3. ⚠️ **Nessuna formula moltiplicata per la quota ordina bene**: una quota alta
+   non compensa mai una probabilità più bassa di quella implicita.
+
+**Quanto vale: mezzo punto non dimostrato.** Fuori campione +0,5 ±5,6; mediana
+per stagione +0,2, positiva in 5 su 8. Il +0,9 della taratura era gonfiato.
+
+⚠️ **Il voto NON è cambiato**: continua a usare la resa. Con la scelta VPM
+entrerebbe due volte, e costa — 95,6% contro 97,8%.
+⚠️ La resa resta nei dettagli della scheda e dentro il voto.
+⚠️ **Da fare:** la pagina Andamento misura ancora `resa` fra i quattro
+indicatori; al prossimo `calcola-andamento.js` conviene aggiungere `scelta`.
 
 ### Il voto 200%: quando le due fonti litigano — 12 ottobre 2026 (**1.19.00**)
 

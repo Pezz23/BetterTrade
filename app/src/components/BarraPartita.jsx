@@ -93,8 +93,19 @@ export default function BarraPartita({ p, cat, vpm = null, colore }) {
           l'attendibilità viene dalla stessa media. Direbbero quanto margine ha
           preso il book, non quanto conviene la partita. Il grigio dice "questo
           numero non è confrontabile con gli altri". */}
-      <Colonna divisore={c} colore={p.quotaDaConsenso ? C.fantasma : C.testo}
-        valore={pct1(p.resa)} etichetta="RESA" />
+      {/* ⚠️ **SCELTA, al posto della resa** (12/10/2026). La resa non serviva a
+          scegliere: `quota × attendibilità` vuol dire che resa alta = quota
+          lunga = partita meno probabile, e infatti era l'ultima fra gli
+          indicatori sulle azzeccate (51,2%). Qui c'è l'attendibilità corretta
+          dal campo, che sul 10% migliore di 33.133 partite rende 99,2%.
+          ⚠️ **Non ha il pareggio a 100%**: serve a ordinare, non a dire quanto
+          rende. Per quello c'è il voto, accanto.
+          ⚠️ `—` quando il campo contraddice il mercato: lì il segno del campo
+          vince il 27,2% contro il 29,5% del book, quindi non è un punteggio
+          basso, è una partita da non scegliere. La resa per intero resta nei
+          dettagli completi della scheda. */}
+      <Colonna divisore={c} colore={vpm?.scelta == null ? C.fantasma : C.testo}
+        valore={pct1(vpm?.scelta)} etichetta="SCELTA" />
 
       {/* Il voto è la resa corretta dal campo: verde sopra il pareggio, rosso
           sotto. È l'unico numero della barra che dice "conviene o no". */}
