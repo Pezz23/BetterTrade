@@ -264,6 +264,15 @@ contro 54,6%). ⚠️ Lì si vede però un'altra cosa: **a inizio stagione il mo
 non aggiunge quasi niente** (+0,0007 contro +0,0039 sul totale). Il limite di
 agosto-settembre sono le poche partite, non l'avversario.
 
+⚠️⚠️ **E l'indicatore degli over è la probabilità, non la resa.** Misurato il
+12/10 su richiesta di Mattia: scegliendo le prime 9 del giorno per
+`quota over × nostra probabilità`, l'over 2,5 si avvera **47,2%** contro una
+base del 50,9% — **peggio del caso** — e rende 93,6% ±1,9 contro il 94,7% della
+probabilità nuda. Col *p* del mercato: 49,0% e 95,7% ±1,9, indistinguibile dal
+mercato stesso. **Stesso difetto della resa sui segni** (51,2%, la peggiore):
+resa alta = quota alta = partita che il book ritiene poco probabile da over.
+**La resa dice se il prezzo conviene, non cosa giocare.**
+
 **Cosa resterebbe da provare, se un domani interessasse**: la correzione di
 Dixon-Coles sui punteggi bassi, che peserebbe più sul GG che sull'over.
 L'aggiustamento per gli avversari è **chiuso**: provato, non serve — e lo stesso

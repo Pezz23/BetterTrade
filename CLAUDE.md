@@ -408,6 +408,18 @@ solo le prime tre in classifica. 5.426 partite: **+0,0007 senza correzione,
 aggiunge quasi niente** (+0,0007 contro +0,0039 sul totale) — il limite di
 agosto-settembre non è l'avversario, sono le poche partite.
 
+⚠️⚠️ **E l'indicatore degli over NON è la resa, è la probabilità.** Chiesto da
+Mattia il 12/10 ("usiamo resa come consiglio per gli over?") e misurato subito
+in `prova-gol-varianti.js`: scegliendo le prime 9 di ogni giorno per
+`quota over × nostra probabilità` l'over 2,5 si avvera **47,2%**, cioè **sotto
+la base del 50,9%** — peggio del caso — e rende **93,6% ±1,9** contro il 94,7%
+della probabilità nuda. Col *p* del mercato va 49,0% e 95,7% ±1,9, che è lo
+stesso numero del mercato (95,2% ±1,6). ⚠️ **È lo stesso difetto che la resa ha
+sui segni** (51,2% di azzeccate, la peggiore): `resa = quota × probabilità`,
+quindi resa alta vuol dire **quota alta**, e un over a quota alta è una partita
+che il book ritiene poco probabile da over. **La resa dice se il prezzo
+conviene, non cosa giocare** — esattamente come la quota.
+
 ⚠️⚠️ **Ma migliorarlo non lo renderebbe redditizio, e questo chiude il
 discorso:** prendendo le prime 9 partite di ogni giorno **secondo il mercato
 stesso**, giocare l'over 2,5 rende **95,2%**. Nemmeno chi prezza quelle partite

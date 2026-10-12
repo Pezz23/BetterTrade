@@ -181,6 +181,12 @@ function soldiConIntervallo(l) {
     ['tiri + gol insieme', p => p.favIdx],
     ['il modello completo', p => p.p],
     ['il mercato', p => p.pm],
+    // ⚠️ Scegliere per RESA invece che per probabilità è una domanda diversa:
+    // non "quale over è più probabile" ma "quale over è pagato più di quanto
+    // vale". È la caccia al valore — la strada scartata l'11/09/2026 sui segni,
+    // qui rimisurata sugli over perché Mattia l'ha chiesta.
+    ['resa: quota × nostra p', p => p.q ? p.q * p.p : null],
+    ['resa: quota × p mercato', p => (p.q && p.pm) ? p.q * p.pm : null],
   ];
   for (const [nome, val] of righeOut) {
     let top = [];
