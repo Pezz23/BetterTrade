@@ -3,7 +3,7 @@
 > To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 12 ottobre 2026, sera · app alla versione **1.17.00**
+**Ultimo aggiornamento:** 12 ottobre 2026, sera · app alla versione **1.18.00**
 
 **Le quattro priorità del 12/10 sono tutte chiuse** (voci 24-27): Bet365 al
 posto di Codere, la pagina **Andamento**, l'indicatore **Goal/NoGoal** e quello
@@ -24,7 +24,7 @@ sono vecchi, non il codice**. In ordine:
 cd btscout
 node --env-file=.env scripts/aggiorna.js --esegui    # risultati + quote: recupera tutto da solo
 node --env-file=.env scripts/verifica-storico.js     # l'archivio è coerente?
-cd ../app && npm run lint && npm run dev             # 0 errori, poi la barra deve dire 1.17.00
+cd ../app && npm run lint && npm run dev             # 0 errori, poi la barra deve dire 1.18.00
 ```
 
 `aggiorna.js` guarda indietro e non perde niente: `riconcilia-prossime` chiude
@@ -41,7 +41,7 @@ Odds API si rigenerano ogni mese** (500), quindi dopo una pausa sono pieni.
 | ⚠️ **La tabella `andamento`** | è **derivata**: si rifà con `calcola-andamento.js --stagioni=8 --esegui` (23 secondi) ogni volta che arrivano risultati nuovi. Non è un backup da conservare. |
 | ⚠️ **Le note "a ottobre…"** | in CLAUDE.md e qui ci sono frasi legate al momento (i tre strati di VPM che guardano quasi le stesse partite, le 1-3 partite in casa). **Da gennaio sono false**: la forma comincia a dire altro. |
 | ✅ **Il criterio, le soglie, i pesi** | non scadono: sono misurati sull'archivio, non sulla settimana. |
-| ✅ **sql/01-25, RLS, permessi** | applicati e verificati. `scripts/prova-permessi.js` lo riconferma in un minuto. |
+| ✅ **sql/01-27, RLS, permessi** | applicati e verificati. `scripts/prova-permessi.js` lo riconferma in un minuto. |
 
 **I numeri qui sotto con una data accanto sono fotografie, non verità**: se
 leggi "884 partite" o "440 crediti" e siamo a marzo, sono vecchi di mesi.
@@ -121,6 +121,60 @@ solo football-data, nel blocco imminente: `importa-prossime.js` lo riempirebbe.
 > Riscritta il **7 ottobre 2026**: solo quello che manca, numerato 1-13 e diviso
 > in lotti per file toccati. Quello che è stato fatto sta sotto, in "Fatto di
 > recente": serve a capire *perché* una cosa è com'è, non cosa resta.
+
+### ESPN come seconda fonte — 12 ottobre 2026 (**1.18.00**)
+
+football-data è rimasto **tre settimane indietro** (fermo al 20/09, server che
+risponde 200). ESPN provata sul campo: tutti e 15 i campionati, tiri in porta,
+angoli e **possesso palla**, gratis e senza chiave — ma **API non documentata**,
+quindi affianca e non sostituisce. Niente quote: quelle restano football-data +
+The Odds API.
+
+**I pezzi:** `sql/26` (`partite.fonte`, `possesso_casa/trasf`, tabella
+`importazioni`) · `sql/27` (`decidi_importazione()`) · `btscout/lib/espn.js` ·
+`btscout/lib/nomi-espn.js` (alias **scritti a mano**) ·
+`btscout/scripts/importa-espn.js` · pagina **Importazioni** nel menu ☰.
+
+⚠️ **La regola:** si scrive solo con **una e una sola** partita nostra che
+combacia su campionato + data (±1) + **entrambe** le squadre. Tutto il resto
+aspetta una persona nella pagina Importazioni. ESPN non riscrive mai quello che
+c'è: tutti gli update passano da `coalesce`.
+⚠️ **I nomi si leggono dalla partita, non dalla rosa del campionato**: con
+`/teams` tutto lo storico diventava "nome sconosciuto" (Empoli e Verona oggi
+non sono in Serie A). Corretto: **70 su 70 agganciate, zero dubbie**.
+
+**Risultato del primo giro:** 8 partite di Serie A del 10-11/10 che
+football-data non ha — create, **zero doppioni**, le "giocate senza risultato"
+da 131 a 123.
+
+⚠️ **RECUPERO STORICO IN CORSO** (avviato il 12/10 sera): Serie A dal 2019,
+2.660 giorni, ~35 minuti. Si controlla con
+`select count(*) from partite where div='I1' and possesso_casa is not null`
+(il totale è 3.858). Se si interrompe, **si rilancia e basta**: salta quello
+che ha già.
+
+### 🔜 DA FARE: i backtest col possesso palla
+
+⚠️ **Deciso il 12/10/2026: quando i dati ci sono, si misura.** Il possesso è
+raccolto ma **non entra in nessun indice** finché non si è dimostrato che
+aggiunge qualcosa. La domanda non è "è un dato interessante" ma **"batte il
+`dominio` che usiamo già?"** — tiri in porta fatti / (fatti + concessi), scelto
+perché *il possesso misura chi tiene la palla, il dominio chi fa male*.
+
+Da fare, in ordine:
+1. **La correlazione**, come per gli altri pesi di VPM: possesso contro
+   vittorie, su tutte le squadre-stagione di Serie A. Si confronta con lo 0,13
+   del dominio.
+2. **VPM con il possesso al posto del dominio**, e poi **accanto**: rimisurare
+   la tabella delle soglie (`prova-indicatori.js`) e vedere se le azzeccate
+   sopra soglia salgono.
+3. **I gol attesi**: il possesso come base alternativa ai tiri in porta in
+   `prova-gol-varianti.js` (`--base=`), contro i +0,0039 attuali.
+⚠️ **Il metro è quello di Mattia**: non "batte il mercato" ma **sopra la soglia
+l'esito arriva più spesso?**
+⚠️ **Solo Serie A**: i numeri saranno su un campionato solo, quindi meno
+partite e intervalli più larghi. Prima di estendere la raccolta agli altri 14
+conviene sapere se vale la pena — sono ~34.000 richieste.
 
 ### La spunta "GIOCATA" — 12 ottobre 2026 (**1.17.00**)
 

@@ -11,6 +11,7 @@ import ReportingPage from './pages/ReportingPage'
 import BilancioPage from './pages/BilancioPage'
 import PartitePage from './pages/PartitePage'
 import AndamentoPage from './pages/AndamentoPage'
+import ImportazioniPage from './pages/ImportazioniPage'
 import { C, F, alpha } from './theme'
 import { VERSIONE } from './versione'
 
@@ -36,6 +37,7 @@ const VOCI_MENU = [
   { id:'andamento',   label:'Andamento',        icon:'📈', desc:'Quale indicatore ci azzecca, giorno per giorno' },
   { id:'reporting',   label:'Reporting',        icon:'◫', desc:'Le giornate registrate, per persona e per settimana' },
   { id:'bilancio',    label:'Bilancio',         icon:'◉', desc:'Saldi, movimenti e bankroll del gruppo' },
+  { id:'importazioni',label:'Importazioni',     icon:'📥', desc:'Partite da ESPN che non si agganciano da sole' },
   { id:'utenti',      label:'Utenti',           icon:'◎', desc:'Gestione utenti e password', soloAdmin:true },
 ]
 
@@ -201,6 +203,7 @@ function AppShell() {
       case 'votate':    return <VotatePage />
       case 'storico':   return <StoricoPage />
       case 'andamento': return <AndamentoPage />
+      case 'importazioni': return <ImportazioniPage />
       case 'utenti':    return <UtentiPage />
       default:          return <DashboardPage />
     }

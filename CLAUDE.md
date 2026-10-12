@@ -996,6 +996,80 @@ Dettagli, tabelle e limiti in STATO.md.
 
 ---
 
+## ESPN, la seconda fonte dei risultati
+
+**Aggiunta il 12/10/2026**, dopo che football-data è rimasto **tre settimane
+indietro** (fermo al 20 settembre, server che risponde 200, nessun errore da
+nessuna parte). ⚠️ **Il problema non era football-data: era avere una fonte
+sola senza allarme.** Ce ne siamo accorti solo perché Mattia ha chiesto di
+aggiornare.
+
+| | |
+|---|---|
+| **Cosa dà** | risultati **in giornata**, tiri in porta, tiri, angoli e **possesso palla**, su tutti e 15 i campionati (provati uno per uno) |
+| **Cosa non dà** | **le quote**: quelle restano football-data (Bet365) e The Odds API (consenso) |
+| **Costo** | gratis, nessuna chiave |
+| **Rischio** | **API non documentata**, è quella che alimenta il loro sito: nessun contratto, può cambiare o chiudere senza avviso |
+
+⚠️ **ESPN affianca, non sostituisce.** `partite.fonte` dice da dove viene ogni
+riga (`football-data` di default, `espn` per le altre): senza, una riga ESPN
+sarebbe indistinguibile — non si saprebbe perché le mancano le quote, e quando
+football-data pubblica si creerebbe un doppione invece di completarla.
+
+### La regola che tiene pulito l'archivio: non si indovina mai
+
+`scripts/importa-espn.js` scrive **solo** quando esiste **una e una sola**
+partita nostra che combacia su **campionato + data (±1 giorno) + tutt'e due le
+squadre**. Zero candidati, due candidati, un nome mai visto → la riga finisce
+in `importazioni` e **aspetta una persona** (pagina **Importazioni** nel menu).
+⚠️ **Un risultato messo sulla partita sbagliata non si vede e non si corregge**:
+sporca l'archivio e ogni misura che ci sta sopra.
+⚠️ **ESPN non riscrive mai quello che c'è**: tutti gli aggiornamenti passano da
+`coalesce`, quindi riempie i buchi (possesso, tiri) e lascia stare il
+risultato di football-data.
+
+**I nomi**: ESPN espone cinque nomi per squadra (`displayName`,
+`shortDisplayName`, `name`, `location`, `abbreviation`) e `shortDisplayName` è
+praticamente lo stile di football-data — "Manchester City" → **"Man City"**.
+Misurato: **18 su 20** si agganciano da soli, in Premier come in Serie A. Le
+eccezioni stanno in `lib/nomi-espn.js`, **scritte a mano**: in Serie A sono
+`AS Roma → Roma` e `Internazionale → Inter`.
+⚠️⚠️ **Non si aggiungono alias con un automatismo di somiglianza**: il 5/10 un
+abbinamento automatico mise il **PSG sul Paris FC**.
+⚠️⚠️ **I nomi si leggono dalla partita, non dalla rosa del campionato.**
+Chiedendo `/teams` si conoscono solo le squadre di quest'anno, e tutto lo
+storico diventa "nome sconosciuto": provando il recupero del 2024, Empoli e
+Hellas Verona — oggi fuori dalla Serie A — risultavano sconosciute. Con i nomi
+presi dall'evento: **70 partite su 70 agganciate, zero dubbie**.
+
+⚠️ **Si va piano di proposito**: `PAUSA_MS = 350` fra le chiamate. Non c'è un
+limite dichiarato, e proprio per questo non si corre — una fonte non
+documentata si tiene buona.
+⚠️ **La data di ESPN è UTC**; per gli orari europei non cambia giorno, ma la
+finestra di ±1 copre le partite spostate di poche ore. Il filtro vero sono le
+due squadre.
+⚠️ `prossime_partite` **non ha** la colonna `stagione` (ha un `fonte`, ma lì
+vuol dire "da quale book vengono le quote"): si ricava dalla data, da luglio in
+poi è l'anno nuovo. La stessa regola vive **due volte** — in JS nello script e
+in SQL in `decidi_importazione()` — e dà gli stessi valori sulle date provate.
+
+**Le decisioni passano da `decidi_importazione()`** (`sql/27`, `security
+definer` col controllo admin dentro) e non da due scritture dal browser:
+accettare tocca `partite` **e** `importazioni`, e le due devono riuscire o
+fallire insieme.
+
+### Il possesso palla: raccolto, non ancora usato
+
+⚠️⚠️ **VPM non lo usa, e non va aggiunto senza misurarlo.** Al suo posto c'è
+`dominio` (tiri in porta fatti / totali) per una ragione scritta: *il possesso
+misura chi tiene la palla, il dominio chi fa male*. Adesso il dato c'è —
+`partite.possesso_casa` / `possesso_trasf` — ma metterlo in un indice perché
+"c'è" vuol dire tornare a pesare a sentimento. **Prima si misura se aggiunge
+qualcosa, poi si decide.**
+⚠️ **In avanti costa niente** (~100 partite a weekend), **all'indietro costa**:
+una richiesta per partita, quindi ~34.000 per tutto l'archivio. Si fa un
+campionato per volta. **Serie A per prima**, il 12/10/2026.
+
 ## Storico e calendario: due tabelle, due significati
 
 | Tabella | Contiene | Quote | Si cancella? |
@@ -1446,6 +1520,7 @@ cd btscout && npm install
 node --env-file=.env scripts/verifica-storico.js   # coerenza dell'archivio (settimanale)
 node --env-file=.env scripts/audit-archivio.js     # controllo completo (dopo ogni campionato nuovo)
 node --env-file=.env scripts/aggiorna.js --esegui                   # LA ROUTINE: martedì e venerdì dopo le 18
+node --env-file=.env scripts/importa-espn.js --campionati=I1 --giorni=30 --esegui   # la seconda fonte: risultati e possesso
 #   = import-storico --stagioni=2627 → riconcilia-prossime → importa-prossime
 node --env-file=.env scripts/prova-vpm.js           # VPM sul weekend: dove campo e mercato litigano
 node --env-file=.env scripts/prova-ordine.js        # i tre ordini della lista, casi limite compresi

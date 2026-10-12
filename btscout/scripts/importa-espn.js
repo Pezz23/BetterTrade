@@ -1,0 +1,173 @@
+// IMPORTA DA ESPN: completa le partite che abbiamo e recupera quelle che
+// football-data non ha ancora pubblicato.
+//
+//   node --env-file=.env scripts/importa-espn.js --campionati=I1 --giorni=30
+//   ... --esegui              per scrivere davvero
+//   ... --da=2026-09-01 --a=2026-10-12
+//
+// ⚠️ **Prova a vuoto di default**, come ogni script che tocca i dati.
+//
+// ⚠️⚠️ **LA REGOLA CHE TIENE PULITO L'ARCHIVIO: non si indovina mai.**
+// Una riga si scrive solo quando esiste **una e una sola** partita nostra che
+// combacia su campionato, data (±1 giorno) **e tutt'e due le squadre**. Zero
+// candidati, due candidati, un nome mai visto → la riga finisce in
+// `importazioni` e **aspetta una persona** (pagina Importazioni nell'app).
+// Un risultato messo sulla partita sbagliata non si vede, non si corregge e
+// sporca ogni misura che ci sta sopra.
+
+import { sql } from '../lib/db.js';
+import { CAMPIONATI, partiteDelGiorno, statistiche } from '../lib/espn.js';
+import { nostroNome } from '../lib/nomi-espn.js';
+import { giornoLocale } from '../lib/date.js';
+
+const arg = (n, d) => { const a = process.argv.find(x => x.startsWith(`--${n}=`)); return a ? a.split('=')[1] : d };
+const ESEGUI = process.argv.includes('--esegui');
+const DIVS = arg('campionati', 'I1').split(',').filter(x => CAMPIONATI[x]);
+const GIORNI = Number(arg('giorni', 30));
+const A = arg('a', giornoLocale(new Date()));
+const DA = arg('da', giornoLocale(new Date(Date.now() - GIORNI * 864e5)));
+
+if (!DIVS.length) { console.error('✗ nessun campionato valido. Disponibili:', Object.keys(CAMPIONATI).join(' ')); process.exit(1) }
+console.log(`ESPN → ${DIVS.join(', ')} · dal ${DA} al ${A}${ESEGUI ? '' : '  (prova a vuoto)'}\n`);
+
+// ⚠️ `prossime_partite` **non ha** la colonna `stagione` (ha un `fonte`, ma è
+// un'altra cosa: lì dice da quale book vengono le quote). La stagione si
+// ricava dalla data, come fa football-data: da luglio in poi è l'anno nuovo.
+const stagioneDi = (data) => {
+  const d = new Date(data), a = d.getFullYear(), m = d.getMonth() + 1;
+  const inizio = m >= 7 ? a : a - 1;
+  return `${String(inizio).slice(2)}${String(inizio + 1).slice(2)}`;
+};
+
+const giorni = [];
+for (let d = new Date(DA); d <= new Date(A); d.setDate(d.getDate() + 1)) giorni.push(giornoLocale(d).replaceAll('-', ''));
+
+const conto = { viste: 0, completate: 0, create: 0, invariate: 0, dubbie: 0 };
+const dubbie = [], create = [];
+
+for (const div of DIVS) {
+  // i nomi che usiamo noi in questo campionato, da tutto l'archivio
+  const r = await sql`select distinct casa as s from partite where div = ${div}
+                      union select distinct trasferta from partite where div = ${div}
+                      union select distinct casa from prossime_partite where div = ${div}
+                      union select distinct trasferta from prossime_partite where div = ${div}`;
+  const nostri = new Set(r.map(x => x.s));
+  // ⚠️ `partite.campionato` è obbligatoria e contiene il nome esteso ("Serie
+  // A"): si prende da una riga che c'è già, non si inventa — due nomi diversi
+  // per lo stesso `div` sarebbero un difetto silenzioso.
+  const [{ campionato }] = await sql`select campionato from partite where div = ${div} limit 1`;
+  console.log(`${div}: ${nostri.size} nomi nostri in archivio · ${giorni.length} giorni da guardare`);
+
+  for (const g of giorni) {
+    const eventi = await partiteDelGiorno(div, g);
+    for (const e of eventi) {
+      if (!e.finita) continue;
+      conto.viste++;
+      const casa = nostroNome({ nomi: e.nomiCasa }, nostri);
+      const trasferta = nostroNome({ nomi: e.nomiTrasferta }, nostri);
+      const motivoNome = !casa ? `nome sconosciuto: ${e.casa}` : !trasferta ? `nome sconosciuto: ${e.trasferta}` : null;
+
+      // ⚠️ La finestra di ±1 giorno: la data di ESPN è UTC e una partita può
+      // slittare di poche ore. Il filtro vero sono le due squadre.
+      const cand = motivoNome ? [] : await sql`
+        select id, data::text, casa, trasferta, gol_casa, possesso_casa, tirip_casa
+        from partite
+        where div = ${div} and casa = ${casa} and trasferta = ${trasferta}
+          and data between ${e.data}::date - 1 and ${e.data}::date + 1`;
+
+      if (cand.length === 1) {
+        const p = cand[0];
+        // ⚠️ Non si tocca mai il risultato di football-data: ESPN completa i
+        // buchi (possesso, e i tiri se mancano), non riscrive quello che c'è.
+        const st = await statistiche(div, e.id);
+        const serve = p.possesso_casa == null || p.tirip_casa == null;
+        if (!st || !serve) { conto.invariate++; continue }
+        if (ESEGUI) await sql`
+          update partite set
+            possesso_casa  = coalesce(possesso_casa,  ${st.casa.possesso}),
+            possesso_trasf = coalesce(possesso_trasf, ${st.trasferta.possesso}),
+            tirip_casa     = coalesce(tirip_casa,     ${st.casa.tirip}),
+            tirip_trasf    = coalesce(tirip_trasf,    ${st.trasferta.tirip}),
+            tiri_casa      = coalesce(tiri_casa,      ${st.casa.tiri}),
+            tiri_trasf     = coalesce(tiri_trasf,     ${st.trasferta.tiri})
+          where id = ${p.id}`;
+        conto.completate++;
+        continue;
+      }
+
+      // nessun candidato in `partite`: forse è una partita che football-data
+      // non ha ancora pubblicato. Si guarda nel calendario, che è la stessa
+      // certezza (campionato + data + le due squadre).
+      const fut = (motivoNome || cand.length) ? [] : await sql`
+        select id, data::text, casa, trasferta from prossime_partite
+        where div = ${div} and casa = ${casa} and trasferta = ${trasferta}
+          and data between ${e.data}::date - 1 and ${e.data}::date + 1`;
+
+      if (cand.length === 0 && fut.length === 1) {
+        const st = await statistiche(div, e.id);
+        if (ESEGUI) {
+          const [nuova] = await sql`
+            insert into partite (div, campionato, data, casa, trasferta, gol_casa, gol_trasferta, esito,
+                                 tirip_casa, tirip_trasf, tiri_casa, tiri_trasf,
+                                 angoli_casa, angoli_trasf, possesso_casa, possesso_trasf,
+                                 stagione, fonte)
+            values (${div}, ${campionato}, ${fut[0].data}, ${casa}, ${trasferta}, ${e.golCasa}, ${e.golTrasferta},
+                    ${e.golCasa > e.golTrasferta ? 'H' : e.golCasa < e.golTrasferta ? 'A' : 'D'},
+                    ${st?.casa.tirip ?? null}, ${st?.trasferta.tirip ?? null},
+                    ${st?.casa.tiri ?? null}, ${st?.trasferta.tiri ?? null},
+                    ${st?.casa.angoli ?? null}, ${st?.trasferta.angoli ?? null},
+                    ${st?.casa.possesso ?? null}, ${st?.trasferta.possesso ?? null},
+                    ${stagioneDi(fut[0].data)}, 'espn')
+            returning id`;
+          await sql`update prossime_partite set partita_id = ${nuova.id} where id = ${fut[0].id}`;
+        }
+        conto.create++;
+        // ⚠️ In prova a vuoto si stampa **cosa** verrebbe scritto: un conteggio
+        // dice che ha funzionato, non che ha funzionato **bene**.
+        create.push(`${div} ${fut[0].data}  ${casa} ${e.golCasa}-${e.golTrasferta} ${trasferta}` +
+          `   tiri in porta ${st?.casa.tirip ?? '—'}-${st?.trasferta.tirip ?? '—'}` +
+          ` · possesso ${st?.casa.possesso ?? '—'}-${st?.trasferta.possesso ?? '—'}`);
+        continue;
+      }
+
+      // tutto il resto aspetta una persona
+      const motivo = motivoNome || (cand.length > 1 ? `${cand.length} partite nostre combaciano`
+                   : fut.length > 1 ? `${fut.length} partite in calendario combaciano`
+                   : 'nessuna partita nostra combacia');
+      conto.dubbie++;
+      const st = motivoNome ? null : await statistiche(div, e.id);
+      dubbie.push({ div, data: e.data, casa: e.casa, trasferta: e.trasferta, motivo,
+                    gol: `${e.golCasa}-${e.golTrasferta}`, candidati: [...cand, ...fut] });
+      if (ESEGUI) await sql`
+        insert into importazioni (fonte, motivo, div, data, casa_fonte, trasferta_fonte,
+                                  gol_casa, gol_trasferta, tirip_casa, tirip_trasf,
+                                  tiri_casa, tiri_trasf, angoli_casa, angoli_trasf,
+                                  possesso_casa, possesso_trasf, candidati)
+        values ('espn', ${motivo}, ${div}, ${e.data}, ${e.casa}, ${e.trasferta},
+                ${e.golCasa}, ${e.golTrasferta}, ${st?.casa.tirip ?? null}, ${st?.trasferta.tirip ?? null},
+                ${st?.casa.tiri ?? null}, ${st?.trasferta.tiri ?? null},
+                ${st?.casa.angoli ?? null}, ${st?.trasferta.angoli ?? null},
+                ${st?.casa.possesso ?? null}, ${st?.trasferta.possesso ?? null},
+                ${JSON.stringify([...cand, ...fut])}::jsonb)
+        on conflict (fonte, div, data, casa_fonte, trasferta_fonte) do nothing`;
+    }
+  }
+}
+
+console.log(`\n${conto.viste} partite finite viste su ESPN`);
+console.log(`  completate (possesso/tiri aggiunti)  ${conto.completate}`);
+console.log(`  create (football-data non le ha)     ${conto.create}`);
+console.log(`  già a posto, niente da aggiungere    ${conto.invariate}`);
+console.log(`  da verificare a mano                 ${conto.dubbie}`);
+if (create.length) {
+  console.log('\n── create ──');
+  create.forEach(x => console.log('  ' + x));
+}
+if (dubbie.length) {
+  console.log('\n── da verificare ──');
+  for (const d of dubbie.slice(0, 20))
+    console.log(`  ${d.div} ${d.data}  ${d.casa} ${d.gol} ${d.trasferta}   → ${d.motivo}`);
+  if (dubbie.length > 20) console.log(`  … e altre ${dubbie.length - 20}`);
+}
+if (!ESEGUI) console.log('\nprova a vuoto: non ho scritto niente. Aggiungi --esegui.');
+await sql.end();
