@@ -50,8 +50,23 @@ export default function BarraPartita({ p, cat, vpm = null, colore }) {
   const quota = p.quotaGiocata ?? p.quota
   const vs = verso(vpm)
   return (
+    <>
+    {/* ⚠️ Le due fonti dicono cose diverse su chi vince: uno dei due prezzi è
+        sbagliato e non sappiamo quale, quindi **nessuno dei cinque numeri
+        sotto vale**. Si dice qui, sopra la barra, perché è il posto dove
+        l'occhio arriva prima — e la partita resta visibile apposta: nasconderla
+        vorrebbe dire che il difetto non lo trova più nessuno. */}
+    {p.quoteIncoerenti && (
+      <div style={{ padding: '5px 8px', marginBottom: 4, fontSize: 10, fontFamily: F.mono,
+        lineHeight: 1.4, color: C.rosso, letterSpacing: '0.02em',
+        background: alpha(C.rosso, 0.1), border: `1px solid ${alpha(C.rosso, 0.4)}` }}>
+        ⚠️ QUOTE IN CONFLITTO — Bet365 e il consenso non dicono la stessa partita
+        ({(p.scartoQuote * 100).toFixed(0)} punti di scarto). I numeri qui sotto non valgono,
+        e questa partita non entra nelle spin.
+      </div>
+    )}
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', padding: '7px 0',
-      background: alpha(c, 0.07), border: `1px solid ${alpha(c, 0.28)}`, borderRadius: 0 }}>
+      background: alpha(c, 0.07), border: `1px solid ${alpha(p.quoteIncoerenti ? C.rosso : c, 0.28)}`, borderRadius: 0 }}>
       {/* ⚠️ L'etichetta dice **da quale book** viene la quota (12/10/2026): da
           quando Bet365 ha la precedenza le fonti sono tre e si alternano nella
           stessa lista — Bet365 sul weekend in corso, Codere o la massima sulle
@@ -85,5 +100,6 @@ export default function BarraPartita({ p, cat, vpm = null, colore }) {
         colore={p.quotaDaConsenso || vpm?.voto == null ? C.fantasma : vpm.voto >= 1 ? C.verde : C.ambra}
         valore={pct1(vpm?.voto)} etichetta="VOTO" />
     </div>
+    </>
   )
 }

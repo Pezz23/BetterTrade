@@ -44,4 +44,14 @@ for (const [nome, script, args] of passi) {
   }
   console.log();
 }
+// ⚠️ I controlli alla fine, e **non fermano la routine**: servono a dire cosa
+// guardare, non a impedire l'aggiornamento. Il 12/10/2026 due dati sbagliati
+// sono passati in silenzio perché nessuno chiedeva mai "è andato bene?".
+console.log('━━ controlli ━━');
+try {
+  execFileSync(process.execPath, ['--env-file=.env', join(qui, 'controlla-dati.js')], {
+    stdio: 'inherit', cwd: join(qui, '..'),
+  });
+} catch { /* esce 1 quando trova qualcosa: l'ha già scritto lui */ }
+
 console.log('✓ aggiornamento completato');

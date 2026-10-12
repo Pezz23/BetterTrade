@@ -17,6 +17,9 @@ export const ALIAS = {
   // Serie A (I1) — verificati il 12/10/2026
   'AS Roma': 'Roma',
   'Internazionale': 'Inter',
+  // ⚠️ Trovata dal recupero storico: ESPN scrive SPAL tutto maiuscolo, noi
+  // "Spal". 114 partite in archivio, verificate il 12/10/2026.
+  'SPAL': 'Spal',
 };
 
 /**

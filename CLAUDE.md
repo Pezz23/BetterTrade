@@ -996,6 +996,55 @@ Dettagli, tabelle e limiti in STATO.md.
 
 ---
 
+### ⚠️⚠️ Quando le due fonti si contraddicono, non si gioca
+
+**Trovato da Mattia il 12/10/2026 guardando una card**: voto **200%**, con
+attendibilità 65% accanto a una quota 3,00 — due numeri che non possono stare
+insieme. Sotto c'era questo:
+
+```
+Bet365 (football-data)    2,40  3,10  3,00   partita equilibrata
+consenso (The Odds API)  11,88  3,39  1,40   trasferta straferita
+```
+
+⚠️ **Non era un book impazzito**: media, massima ed exchange del consenso
+concordavano fra loro, quindi erano più book su un evento che **non era quella
+partita**. ESPN conferma che l'accoppiamento Burgos-Granada esiste, e le altre
+dieci partite di Segunda di quei giorni hanno `b365 ≈ consenso`. **Dato
+sbagliato alla fonte, su un evento solo** — la chiave di conflitto
+dell'import è `(div, data, casa, trasferta)`, quindi non è un difetto di
+aggancio nostro.
+
+**La difesa, in tre punti** (`SCARTO_FONTI = 0,15` in `lib/attendibilita.js`):
+1. `scartoFonti(r)` confronta la probabilità del segno 1 **fra 1 e 2** (la X si
+   esclude da entrambe le parti, così il margine diverso non conta).
+2. Oltre 15 punti la partita è `quoteIncoerenti`: **non entra nelle spin**
+   (`candidate()`), e ⚠️ **questo lo scavalca anche una stellina** — la
+   stellina è un giudizio su una partita, qui il **dato** è rotto e nessun
+   giudizio lo ripara.
+3. A schermo lo dice **sopra la barra**, in rosso, con quanti punti di scarto.
+   ⚠️ **La partita resta visibile di proposito**: nasconderla vorrebbe dire che
+   il difetto non lo trova più nessuno.
+
+⚠️ **Non si indovina quale fonte ha ragione**, e non si deve: su 308 future con
+entrambe le quote **una sola** supera la soglia. Il costo del controllo è una
+partita; il costo di non averlo era un voto del 200% preso per buono.
+⚠️ **Il controllo vale solo su `prossime_partite`**, dove b365 e avg sono
+**entrambe di apertura**. In `partite` le `avg_*` sono di **chiusura**, quindi
+uno scarto grande può essere solo la linea che si è mossa.
+
+### I controlli dopo l'aggiornamento
+
+`scripts/controlla-dati.js`, chiamato in coda a `aggiorna.js` (**non ferma la
+routine**: dice cosa guardare, non impedisce l'aggiornamento). Quattro
+controlli, nati ciascuno da un difetto vero passato in silenzio:
+**risultati che non arrivano** (football-data fermo tre settimane rispondendo
+200) · **le due fonti che si contraddicono** (il voto 200%) · **importazioni in
+attesa** di una persona · **doppioni in archivio** (due fonti che scrivono
+sulla stessa tabella).
+⚠️ Il filo comune: **erano tutti dati plausibili e sbagliati**, e nessuno
+chiedeva mai *"è andato bene?"*.
+
 ## ESPN, la seconda fonte dei risultati
 
 **Aggiunta il 12/10/2026**, dopo che football-data è rimasto **tre settimane
@@ -1521,6 +1570,7 @@ node --env-file=.env scripts/verifica-storico.js   # coerenza dell'archivio (set
 node --env-file=.env scripts/audit-archivio.js     # controllo completo (dopo ogni campionato nuovo)
 node --env-file=.env scripts/aggiorna.js --esegui                   # LA ROUTINE: martedì e venerdì dopo le 18
 node --env-file=.env scripts/importa-espn.js --campionati=I1 --giorni=30 --esegui   # la seconda fonte: risultati e possesso
+node --env-file=.env scripts/controlla-dati.js     # cosa è passato in silenzio (gira già dentro aggiorna.js)
 #   = import-storico --stagioni=2627 → riconcilia-prossime → importa-prossime
 node --env-file=.env scripts/prova-vpm.js           # VPM sul weekend: dove campo e mercato litigano
 node --env-file=.env scripts/prova-ordine.js        # i tre ordini della lista, casi limite compresi

@@ -48,6 +48,39 @@ export function probabilita(q1, qx, q2) {
  * Arricchisce una riga di prossime_partite con attendibilità e giocata.
  * Restituisce { prob: null } se manca il consenso.
  */
+// ⚠️⚠️ **Quanto possono discordare le due fonti prima di non crederci più.**
+// Trovato da Mattia il 12/10/2026 su **Burgos-Granada**: a schermo un voto del
+// **200%**, costruito su un'attendibilità del 65% accanto a una quota 3,00 —
+// due numeri che non possono stare insieme. Sotto c'era questo:
+//
+//   Bet365 (football-data)   2,40  3,10  3,00   → partita equilibrata
+//   consenso (The Odds API) 11,88  3,39  1,40   → trasferta straferita
+//
+// Le tre colonne del consenso (media, massima, exchange) **concordavano fra
+// loro**, quindi non era un book impazzito: erano più book su un evento che
+// non era quella partita. ESPN conferma che l'accoppiamento Burgos-Granada
+// esiste davvero, e tutte le altre dieci partite di Segunda di quei giorni
+// hanno `b365 ≈ consenso`. **Dato sbagliato alla fonte, su un evento solo.**
+//
+// ⚠️ Non si può sapere *quale* delle due ha ragione, e non si deve indovinare:
+// quando litigano così, la partita **non si propone**. Misurato: su 308 future
+// con entrambe le quote, **una sola** supera questa soglia — il costo di questo
+// controllo è una partita, il costo di non averlo era un voto del 200% preso
+// per buono.
+export const SCARTO_FONTI = 0.15
+
+/**
+ * Quanto discordano Bet365 e il consenso sul **chi vince**, da 0 a 1.
+ * Si confronta la probabilità del segno 1 **fra 1 e 2** (la X si esclude da
+ * entrambe le parti), così il margine diverso dei due prezzi non conta.
+ * `null` quando manca una delle due fonti: senza confronto non c'è allarme.
+ */
+export function scartoFonti(r) {
+  if (!r.b365_1 || !r.b365_2 || !r.avg_ap_1 || !r.avg_ap_2) return null
+  const quota = (a, b) => (1 / a) / (1 / a + 1 / b)
+  return Math.abs(quota(Number(r.b365_1), Number(r.b365_2)) - quota(Number(r.avg_ap_1), Number(r.avg_ap_2)))
+}
+
 export function valuta(r) {
   const p = probabilita(r.avg_ap_1, r.avg_ap_x, r.avg_ap_2)
   if (!p) return { ...r, prob: null }
@@ -108,7 +141,14 @@ export function valuta(r) {
   // ⚠️ Vero quando la quota non viene da un book vero: resa e voto, che si
   // calcolano da lei, non vanno letti come numeri della partita.
   const quotaDaConsenso = quotaFonte === 'media'
-  return { ...r, p, segno, prob, quota, quotaFonte, quotaDaConsenso, q1, qx, q2, equo, scarto, giocata, quotaGiocata, nota, probGiocata, quotaStimata, resa }
+
+  // ⚠️ Le due fonti litigano troppo: uno dei due prezzi è sbagliato e non
+  // sappiamo quale. La partita resta visibile — nasconderla sarebbe peggio,
+  // perché nessuno andrebbe a cercare il difetto — ma **non si propone**.
+  const scartoQuote = scartoFonti(r)
+  const quoteIncoerenti = scartoQuote != null && scartoQuote > SCARTO_FONTI
+  return { ...r, p, segno, prob, quota, quotaFonte, quotaDaConsenso, quoteIncoerenti, scartoQuote,
+           q1, qx, q2, equo, scarto, giocata, quotaGiocata, nota, probGiocata, quotaStimata, resa }
 }
 
 // ⚠️ **Il Grado è stato togliere il 10/10/2026**, con i suoi estremi fissi e il

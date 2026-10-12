@@ -3,7 +3,7 @@
 > To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 12 ottobre 2026, sera · app alla versione **1.18.00**
+**Ultimo aggiornamento:** 12 ottobre 2026, sera · app alla versione **1.19.00**
 
 **Le quattro priorità del 12/10 sono tutte chiuse** (voci 24-27): Bet365 al
 posto di Codere, la pagina **Andamento**, l'indicatore **Goal/NoGoal** e quello
@@ -24,7 +24,7 @@ sono vecchi, non il codice**. In ordine:
 cd btscout
 node --env-file=.env scripts/aggiorna.js --esegui    # risultati + quote: recupera tutto da solo
 node --env-file=.env scripts/verifica-storico.js     # l'archivio è coerente?
-cd ../app && npm run lint && npm run dev             # 0 errori, poi la barra deve dire 1.18.00
+cd ../app && npm run lint && npm run dev             # 0 errori, poi la barra deve dire 1.19.00
 ```
 
 `aggiorna.js` guarda indietro e non perde niente: `riconcilia-prossime` chiude
@@ -121,6 +121,28 @@ solo football-data, nel blocco imminente: `importa-prossime.js` lo riempirebbe.
 > Riscritta il **7 ottobre 2026**: solo quello che manca, numerato 1-13 e diviso
 > in lotti per file toccati. Quello che è stato fatto sta sotto, in "Fatto di
 > recente": serve a capire *perché* una cosa è com'è, non cosa resta.
+
+### Il voto 200%: quando le due fonti litigano — 12 ottobre 2026 (**1.19.00**)
+
+Mattia ha visto una card con **voto 200%** e attendibilità 65% accanto a una
+quota 3,00. Sotto: Bet365 dava `2,40/3,10/3,00`, il consenso `11,88/3,39/1,40`.
+**Due partite diverse.** Media, massima ed exchange del consenso concordavano
+fra loro → più book sullo stesso evento, quindi **dato sbagliato alla fonte**,
+non un aggancio nostro (la chiave di conflitto è già `div+data+casa+trasferta`,
+e ESPN conferma che la partita esiste).
+
+**Difesa:** `SCARTO_FONTI = 0,15`. Oltre 15 punti di scarto sul "chi vince", la
+partita è `quoteIncoerenti`: **fuori dalle spin, anche con la stellina** (lì il
+dato è rotto, non è un giudizio da ribaltare) e **avviso rosso sopra la barra**.
+Resta visibile apposta. ⚠️ Solo su `prossime_partite`: in `partite` le `avg_*`
+sono di chiusura, quindi uno scarto grande può essere la linea che si è mossa.
+⚠️ Misurato: **1 riga su 308**.
+
+**Nuovo: `controlla-dati.js`**, in coda ad `aggiorna.js`. Quattro controlli,
+ognuno nato da un difetto passato in silenzio: risultati che non arrivano · le
+due fonti che litigano · importazioni in attesa · doppioni. **Non ferma la
+routine.** Al primo giro ha trovato: 123 partite senza risultato, la riga di
+Burgos-Granada, 12 importazioni in attesa, zero doppioni.
 
 ### ESPN come seconda fonte — 12 ottobre 2026 (**1.18.00**)
 

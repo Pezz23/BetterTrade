@@ -27,6 +27,13 @@ export function candidate(righe, { soglie = SOGLIE_DEFAULT, votiDi, oggi } = {})
   const votata = r => !!votiDi && votiDi(r.id) > 0
   return righe
     .filter(r => r.data <= limite)
+    // ⚠️ Fuori le partite dove Bet365 e il consenso si contraddicono: uno dei
+    // due prezzi è sbagliato e non si sa quale, quindi l'attendibilità non
+    // vuol dire niente. ⚠️ **Questo lo scavalca anche una stellina**, come il
+    // calendario: la stellina è un giudizio su una partita, qui invece il dato
+    // stesso è rotto, e nessun giudizio lo ripara (12/10/2026, dopo il voto
+    // del 200% su Burgos-Granada).
+    .filter(r => !r.quoteIncoerenti)
     .filter(r => votata(r) || categoria(r.probGiocata, soglie) !== 'no')
     .sort((a, b) => b.probGiocata - a.probGiocata)
 }
