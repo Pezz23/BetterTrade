@@ -208,12 +208,17 @@ da `prova-indicatori.js`: **non duplicarla**) ·
 `btscout/scripts/calcola-andamento.js` · `hooks/usaAndamento.js` ·
 `pages/AndamentoPage.jsx` · i controlli in `scripts/prova-permessi.js`.
 
-⚠️ **RESTA DA FARE: ricostruire le otto stagioni.** Oggi dentro c'è solo la
-26/27 — 234 partite distinte, e **20 giorni su 25 hanno 15 partite o meno**,
-quindi "le prime 15" sono *tutte* e i quattro metodi scelgono la stessa lista.
-Il gruppo delle quattro spunte verdi ha **4 partite**. Basta
-`calcola-andamento.js --stagioni=8 --esegui`: non serve la rete, i dati sono
-già in Supabase. Decisione lasciata a Mattia tre volte, mai presa.
+**[x] Le otto stagioni sono dentro** (12/10, sera): 101.237 righe, 23 secondi
+di ricalcolo. Con la sola 26/27 il gruppo delle quattro spunte verdi aveva 4
+partite; ora ne ha 1.118.
+
+⚠️⚠️ **Trovato un troncamento silenzioso mentre si decideva.** La pagina
+scaricava la tabella per contarla, e **PostgREST restituisce 1000 righe senza
+dirlo**: con 1.212 righe il riassunto girava su cinque sesti dei dati, senza
+errori e con numeri plausibili. Risolto con `sql/23`: cinque funzioni che
+contano nel database, soglie come parametri, e un `p_limite` **scritto** sui
+tasti (400) invece di quello implicito. La pagina parte dalla stagione più
+recente e avvisa in ambra quando l'elenco è al tetto.
 
 ### 26-27. [x] Gol attesi — over x,5 **e** Goal/NoGoal — fatto il 12/10 (**1.09.00**)
 I due punti erano **lo stesso lavoro**: un modello sui gol li produce entrambi.

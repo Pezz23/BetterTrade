@@ -724,6 +724,22 @@ sotto la base.
 
 #### Come sono fatti i dati
 
+⚠️⚠️ **I conteggi li fa il database, non il browser** (`sql/23`): `andamento`
+ha **101.237 righe** sulle otto stagioni, e scaricarle per contarle non è
+fattibile — oltre al fatto che PostgREST ne dà 1000 **in silenzio**. Cinque
+funzioni, tutte con le soglie come **parametri** (servono proprio a essere
+spostate): `andamento_riassunto` · `andamento_accordo` (la distribuzione 0-4) ·
+`andamento_chiavi` (i tasti, col risultato già dentro) · `andamento_verdi` ·
+`andamento_stagioni`. Il dettaglio di un giorno si scarica solo all'apertura
+della tendina: 15 righe, 36 per il weekend.
+⚠️ **`andamento_chiavi` ha un `p_limite` esplicito (400)**: senza stagione i
+giorni sono 1636 e il tetto implicito li avrebbe tagliati a 1000 senza dirlo.
+La pagina parte dalla **stagione più recente** e avvisa in ambra quando
+l'elenco è al tetto.
+⚠️ Le funzioni sono chiuse con le **tre righe** (`revoke from public`,
+`revoke from anon`, poi il grant) e verificato dall'API che senza login
+rispondano no.
+
 ⚠️ **La pagina non calcola niente**: legge la tabella `andamento` (sql/21-22).
 Ricostruire VPM e i gol attesi di ogni giornata passata dal browser non è
 fattibile, e un numero che cambia a seconda di quando apri la pagina non è una
@@ -737,10 +753,12 @@ futuro.
 ⚠️ **`andamento` non si scrive dall'app da nessun ruolo**: c'è la sola policy
 di lettura per chi ha fatto login, e la riempie lo script con la service_role.
 Provato in `scripts/prova-permessi.js`.
-⚠️ **Con la sola stagione in corso i numeri non dicono niente**, e lo script lo
-avverte: **20 giorni su 25 hanno 15 partite o meno**, quindi "le prime 15" sono
-*tutte* e i quattro metodi scelgono la stessa lista. Il gruppo delle quattro
-spunte verdi ha **4 partite**. Serve ricostruire l'archivio.
+⚠️ **Le otto stagioni sono dentro dal 12/10/2026**: 101.237 righe, ricalcolate
+in 23 secondi. Con la sola stagione in corso i numeri non dicevano niente —
+20 giorni su 25 avevano 15 partite o meno, quindi "le prime 15" erano *tutte* e
+i quattro metodi sceglievano la stessa lista; il gruppo delle quattro spunte
+verdi aveva 4 partite. ⚠️ L'avviso resta valido anche sull'archivio intero:
+**999 giorni su 1636** hanno 15 partite o meno, e lo script lo stampa.
 ⚠️ `giornoLocale()` nel modulo: il driver postgres consegna oggetti `Date`, e
 `String(data).slice(0,10)` su un Date dà `"Mon Oct 05"`, non la data.
 
@@ -1155,6 +1173,14 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   `revoke all ... from public`, `revoke all ... from anon`, poi il grant.
   Fatto per tutte le funzioni in `sql/19-permessi-funzioni.sql` (8/10/2026);
   vale per ogni funzione che si aggiungerà.
+- **PostgREST restituisce al massimo 1000 righe e non lo dice.** La pagina
+  Andamento scaricava la tabella intera per contarla: con 1.212 righe ne
+  riceveva **1000**, e il riassunto girava su cinque sesti dei dati senza un
+  errore, senza un avviso, con numeri perfettamente plausibili (12/10/2026).
+  **Un troncamento silenzioso è peggio di un errore.** Due regole da allora:
+  i conteggi li fa il database (`sql/23`), e ogni elenco che può crescere ha un
+  **limite scritto** (`p_limite`) invece di affidarsi a quello implicito — un
+  tetto che si vede si può raccontare a chi guarda, uno che non si vede no.
 - **RLS blocca in silenzio, non con un errore.** Una `update` che nessuna policy
   permette modifica zero righe e non solleva nulla. È già successo: un utente
   normale registrava il movimento e il saldo restava fermo. Dopo ogni modifica

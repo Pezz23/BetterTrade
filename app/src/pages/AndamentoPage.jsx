@@ -1,20 +1,24 @@
-import { useState, useMemo, Fragment } from 'react'
+import { useState, useEffect } from 'react'
 import { C, F, alpha } from '../theme'
 import { Card, Etichetta } from '../components/ui'
-import { usaAndamento, METODI, conta, scrivi, tutteVerdi, sopra } from '../hooks/usaAndamento'
+import {
+  METODI, scrivi, sopra, quota,
+  usaRiassunto, usaChiavi, usaStagioni, partiteDi, partiteVerdi,
+} from '../hooks/usaAndamento'
 
 // ANDAMENTO — quanto sono attendibili i nostri indicatori, sulle partite vere.
 //
-// ⚠️ **Non calcola niente**: legge la tabella `andamento` (sql/21-22), riempita
-// da `btscout/scripts/calcola-andamento.js`. Ricostruire VPM e i gol attesi di
-// ogni giornata passata dal browser non è fattibile, e un numero che cambia a
-// seconda di quando apri la pagina non è una misura.
+// ⚠️ **Non calcola niente**: i conteggi arrivano già fatti dalle funzioni di
+// `sql/23`, e il dettaglio di un giorno si scarica solo quando si apre la
+// tendina. Ricostruire VPM e i gol attesi di ogni giornata passata dal browser
+// non è fattibile, e scaricare le 101.237 righe per contarle nemmeno —
+// PostgREST ne dà 1000 e non lo dice.
 //
 // ⚠️ **Lo scopo non è l'archivio, è la soglia.** Mattia (12/10/2026): *"in
 // questo storico vedo tutto, ma non mi interessa: devo studiare
 // l'attendibilità dei nostri indicatori. Attendibilità 37% non la voglio
-// neanche vedere, è rumore"*. Perciò le soglie sono **accese di default** e
-// tutto quello che sta sotto sparisce — dal riassunto, non solo dall'elenco.
+// neanche vedere, è rumore"*. Le soglie sono **accese** e tolgono le partite
+// anche dal riassunto.
 
 const AMBITI = [
   { id: 'giorno',  label: 'Per giorno',  quante: 15 },
@@ -34,25 +38,23 @@ function Tasto({ attivo, onClick, children, colore = C.oro, style }) {
   )
 }
 
-/**
- * L'elenco delle partite scelte, coi quattro valori su ogni riga.
- * ⚠️ Separato dalla pagina perché ora compare **dentro la tendina del giorno**
- * e dentro la card delle quattro spunte: lo stesso elenco in due posti, non
- * due elenchi che prima o poi divergono.
- */
+const gg = (d) => d ? String(d).slice(8, 10) + '/' + String(d).slice(5, 7) : '—'
+
+/** L'elenco delle partite, coi quattro valori su ogni riga. */
 function Elenco({ righe, metodo, soglie, titolo, evidenzia = true }) {
-  const c = conta(righe)
+  const ok = righe.filter(r => r.azzeccata).length
+  const griglia = '1fr 34px 42px 48px 34px 14px'
   return (
     <div style={{ padding: '2px 0 6px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
         <Etichetta>{titolo}</Etichetta>
-        <div style={{ fontFamily: F.mono, fontSize: 12, color: c.perc == null ? C.spento : c.perc >= 0.5 ? C.verde : C.rosso }}>
-          {c.ok}/{c.giocate}{c.perc != null && ` · ${(c.perc * 100).toFixed(0)}%`}
+        <div style={{ fontFamily: F.mono, fontSize: 12, color: !righe.length ? C.spento : ok / righe.length >= 0.5 ? C.verde : C.rosso }}>
+          {ok}/{righe.length}{righe.length > 0 && ` · ${(ok / righe.length * 100).toFixed(0)}%`}
         </div>
       </div>
       {!righe.length && <div style={{ fontSize: 11, color: C.spento, fontFamily: F.mono, padding: '6px 0' }}>nessuna partita sopra soglia qui.</div>}
       {!!righe.length && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 34px 42px 48px 34px 14px', gap: 4, padding: '0 0 3px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: griglia, gap: 4, padding: '0 0 3px' }}>
           <div />
           {METODI.map(M => (
             <div key={M.id} style={{ fontSize: 7, fontFamily: F.mono, letterSpacing: '0.06em', textAlign: 'right',
@@ -63,7 +65,7 @@ function Elenco({ righe, metodo, soglie, titolo, evidenzia = true }) {
       )}
       {righe.map((r, i) => (
         <div key={`${r.weekend}-${r.data}-${r.casa}-${i}`} style={{
-          display: 'grid', gridTemplateColumns: '1fr 34px 42px 48px 34px 14px', gap: 4, alignItems: 'center',
+          display: 'grid', gridTemplateColumns: griglia, gap: 4, alignItems: 'center',
           padding: '5px 0', borderTop: `1px solid ${alpha(C.testo, 0.06)}`,
         }}>
           <div style={{ minWidth: 0 }}>
@@ -71,7 +73,7 @@ function Elenco({ righe, metodo, soglie, titolo, evidenzia = true }) {
               {r.casa} — {r.trasferta}
             </div>
             <div style={{ fontSize: 9, fontFamily: F.mono, color: C.spento }}>
-              {(r.data || r.weekend).slice(8, 10)}/{(r.data || r.weekend).slice(5, 7)} · {r.div} · {r.giocata} · {Number(r.quota).toFixed(2).replace('.', ',')}
+              {gg(r.data || r.weekend)} · {r.div} · {r.giocata} · {Number(r.quota).toFixed(2).replace('.', ',')}
             </div>
           </div>
           {/* ⚠️ Tutti e quattro i valori, non solo quello che ha scelto la
@@ -93,14 +95,64 @@ function Elenco({ righe, metodo, soglie, titolo, evidenzia = true }) {
   )
 }
 
+/** Una tendina: il tasto col risultato, e sotto le partite quando è aperta. */
+function Tendina({ etichetta, conteggio, aperta, onTocca, ambito, metodo, chiave, soglie, titolo }) {
+  const [righe, setRighe] = useState(null)
+  useEffect(() => {
+    if (!aperta) return
+    let vivo = true
+    partiteDi(ambito, metodo, chiave).then(r => { if (vivo) setRighe(r) })
+    return () => { vivo = false }
+  }, [aperta, ambito, metodo, chiave])
+  const c = quota(conteggio)
+  return (
+    <div>
+      <Tasto attivo={aperta} onClick={onTocca} colore={C.viola}
+        style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span>{aperta ? '▾' : '▸'} {etichetta}</span>
+        {/* il risultato sul tasto: senza, per sapere com'è andato un giorno
+            bisognerebbe aprirlo, e con le tendine significa aprirli tutti */}
+        <span style={{ fontSize: 10, color: c.perc == null ? C.spento : c.perc >= 0.5 ? C.verde : C.rosso }}>
+          {c.giocate ? `${c.ok}/${c.giocate}` : '—'}
+        </span>
+      </Tasto>
+      {aperta && (
+        <Card style={{ marginTop: 3 }}>
+          {righe === null
+            ? <div style={{ fontSize: 11, fontFamily: F.mono, color: C.spento, padding: '6px 0' }}>carico…</div>
+            : <Elenco righe={righe} metodo={metodo} soglie={soglie} titolo={titolo} />}
+        </Card>
+      )}
+    </div>
+  )
+}
+
 export default function AndamentoPage() {
-  const { righe, errore } = usaAndamento()
   const [ambito, setAmbito] = useState('giorno')
   const [metodo, setMetodo] = useState('att')
-  const [chiave, setChiave] = useState(null)
+  const [stagione, setStagione] = useState(null)        // null = non ancora scelta, '' = tutte
+  const [aperta, setAperta] = useState(null)
   const [soglie, setSoglie] = useState(Object.fromEntries(METODI.map(m => [m.id, m.soglia])))
-  const [filtro, setFiltro] = useState(true)
-  const [verdi, setVerdi] = useState(false)       // il gruppo delle quattro spunte
+  const [verdi, setVerdi] = useState(false)
+  const [righeVerdi, setRigheVerdi] = useState(null)
+
+  const stagioni = usaStagioni()
+  // ⚠️ Si parte dalla stagione più recente, non da "tutte": con tutte, i giorni
+  // sono 1636 e l'elenco dei tasti verrebbe tagliato a 400. Il riassunto e
+  // l'accordo invece sono conteggi, quindi su "tutte" restano completi.
+  useEffect(() => {
+    if (stagione === null && stagioni?.length) setStagione(stagioni[0].stagione)
+  }, [stagioni, stagione])
+  const { riassunto, accordo, errore } = usaRiassunto(soglie, stagione)
+  const chiavi = usaChiavi(ambito, metodo, soglie, stagione)
+
+  useEffect(() => {
+    if (!verdi) return
+    let vivo = true
+    setRigheVerdi(null)
+    partiteVerdi(soglie, stagione).then(r => { if (vivo) setRigheVerdi(r) })
+    return () => { vivo = false }
+  }, [verdi, soglie, stagione])
 
   const muovi = (id, verso) => setSoglie(s => {
     const M = METODI.find(m => m.id === id)
@@ -110,115 +162,78 @@ export default function AndamentoPage() {
     return { ...s, [id]: Math.max(0, Math.round(quanti * M.passo * 1e6) / 1e6) }
   })
 
-  // ⚠️ Il filtro agisce su **quell'indicatore**: guardando il voto si tolgono
-  // le partite col voto basso, non quelle con VPM basso. Le altre tre colonne
-  // restano visibili, perché servono proprio a vedere chi altro avvisava.
-  const passa = (r, id) => !filtro || sopra(r, id, soglie)
-
-  const chiavi = useMemo(() => {
-    if (!righe) return []
-    const campo = ambito === 'giorno' ? 'data' : 'weekend'
-    return [...new Set(righe.filter(r => r.ambito === ambito).map(r => r[campo]))].sort().reverse()
-  }, [righe, ambito])
-  // ⚠️ `null` = tutto chiuso. Il secondo tocco sullo stesso giorno richiude
-  // (richiesta di Mattia): una tendina che si apre e basta obbliga a scorrere
-  // per tornare all'elenco dei giorni.
-  const apri = (k) => setChiave(c => c === k ? null : k)
-  const aperta = chiave && chiavi.includes(chiave) ? chiave : null
-
-  // ⚠️ I giorni raggruppati **per weekend, uno sull'altro** (richiesta di
-  // Mattia): un elenco piatto di venticinque date non dice a quale weekend
-  // appartengono, e il weekend è l'unità con cui si gioca.
-  const perWeekend = useMemo(() => {
-    if (!righe || ambito !== 'giorno') return []
-    const m = new Map()
-    for (const r of righe.filter(x => x.ambito === 'giorno')) {
-      if (!m.has(r.weekend)) m.set(r.weekend, new Set())
-      m.get(r.weekend).add(r.data)
-    }
-    return [...m.entries()].sort((a, b) => b[0].localeCompare(a[0]))
-      .map(([wk, giorni]) => [wk, [...giorni].sort()])
-  }, [righe, ambito])
-
-  // Le partite distinte dell'ambito, una per riga, coi quattro valori: è la
-  // base sia del gruppo "quattro spunte verdi" sia dei conteggi.
-  const distinte = useMemo(() => {
-    if (!righe) return []
-    const viste = new Map()
-    for (const r of righe.filter(x => x.ambito === ambito)) {
-      const k = `${r.weekend}|${r.data}|${r.casa}|${r.trasferta}`
-      if (!viste.has(k)) viste.set(k, r)
-    }
-    return [...viste.values()]
-  }, [righe, ambito])
-
-  const gruppoVerdi = useMemo(() => distinte.filter(r => tutteVerdi(r, soglie)), [distinte, soglie])
-
-  // le partite di una chiave (giorno o weekend), per il metodo scelto
-  const partiteDi = (k) => {
-    if (!righe) return []
-    const campo = ambito === 'giorno' ? 'data' : 'weekend'
-    return righe.filter(r => r.ambito === ambito && r.metodo === metodo && r[campo] === k && passa(r, metodo))
-      .sort((a, b) => a.posizione - b.posizione)
-  }
+  const rig = (metodoId, ambitoId) => quota(riassunto?.find(r => r.metodo === metodoId && r.ambito === ambitoId))
+  const acc = (n) => quota(accordo?.find(a => Number(a.quanti) === n))
+  const tutteLeVerdi = acc(4)
+  const sotto = (() => {
+    if (!accordo) return { giocate: 0, ok: 0, perc: null }
+    const tot = accordo.reduce((a, x) => ({ giocate: a.giocate + Number(x.giocate), ok: a.ok + Number(x.azzeccate) }), { giocate: 0, ok: 0 })
+    const g = tot.giocate - tutteLeVerdi.giocate, o = tot.ok - tutteLeVerdi.ok
+    return { giocate: g, ok: o, perc: g ? o / g : null }
+  })()
 
   if (errore) return <div style={{ padding: 16 }}><Card><div style={{ color: C.rosso, fontSize: 13 }}>Non riesco a leggere l&apos;andamento: {errore}</div></Card></div>
-  if (!righe) return <div style={{ padding: 16, color: C.spento, fontFamily: F.mono, fontSize: 12 }}>carico…</div>
-  if (!righe.length) return (
-    <div style={{ padding: 16 }}><Card>
-      <div style={{ fontSize: 13, color: C.testo, lineHeight: 1.6 }}>Ancora nessun dato. Si riempie da terminale:
-        <div style={{ fontFamily: F.mono, fontSize: 11, color: C.spento, marginTop: 8 }}>node --env-file=.env scripts/calcola-andamento.js --esegui</div>
-      </div></Card></div>
-  )
 
-  const gg = (d) => d ? d.slice(8, 10) + '/' + d.slice(5, 7) : '—'
+  // le tendine, raggruppate per weekend quando l'ambito è il giorno
+  const gruppi = (() => {
+    if (!chiavi) return null
+    if (ambito === 'weekend') return [[null, chiavi]]
+    const m = new Map()
+    for (const k of chiavi) { if (!m.has(k.weekend)) m.set(k.weekend, []); m.get(k.weekend).push(k) }
+    return [...m.entries()]
+  })()
 
   return (
     <div style={{ padding: '12px 12px 90px' }}>
-      <h2 style={{ fontSize: 15, fontFamily: F.mono, letterSpacing: '0.1em', color: C.testo, margin: '4px 0 10px' }}>ANDAMENTO</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '4px 0 10px' }}>
+        <h2 style={{ fontSize: 15, fontFamily: F.mono, letterSpacing: '0.1em', color: C.testo, margin: 0 }}>ANDAMENTO</h2>
+        <select value={stagione ?? ''} onChange={e => { setStagione(e.target.value); setAperta(null) }}
+          style={{ background: C.card, color: C.testo, border: `1px solid ${alpha(C.oro, 0.3)}`,
+            fontFamily: F.mono, fontSize: 12, padding: '4px 6px' }}>
+          <option value="">tutte le stagioni</option>
+          {(stagioni || []).map(s => (
+            <option key={s.stagione} value={s.stagione}>{s.stagione.slice(0, 2)}/{s.stagione.slice(2)}</option>
+          ))}
+        </select>
+      </div>
 
       {/* ── Le soglie ─────────────────────────────────────────────────────── */}
       <Card style={{ marginBottom: 12 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <Etichetta>SOGLIE MINIME</Etichetta>
-          <Tasto attivo={filtro} onClick={() => setFiltro(f => !f)} colore={filtro ? C.verde : C.spento}>
-            {filtro ? 'filtro acceso' : 'filtro spento'}
-          </Tasto>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto auto', gap: '3px 6px', alignItems: 'center' }}>
+        <Etichetta>SOGLIE MINIME</Etichetta>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto auto', gap: '3px 6px', alignItems: 'center', marginTop: 6 }}>
           {METODI.map(M => {
-            // quante partite sopravvivono a questa soglia, e con che esito:
-            // è il numero che rende la soglia una scelta e non un'opinione
-            const c = conta(distinte.filter(r => sopra(r, M.id, soglie)))
+            const c = rig(M.id, 'giorno')
             return (
-              <Fragment key={M.id}>
+              <div key={M.id} style={{ display: 'contents' }}>
                 <div style={{ fontSize: 12, fontFamily: F.mono, color: C.testo }}>{M.label}</div>
                 <Tasto onClick={() => muovi(M.id, -1)} colore={C.spento} style={{ padding: '2px 8px' }}>−</Tasto>
                 <div style={{ fontFamily: F.mono, fontSize: 13, fontWeight: 700, color: C.oro, minWidth: 62, textAlign: 'center' }}>
                   {scrivi(M.id, soglie[M.id])}
                 </div>
                 <Tasto onClick={() => muovi(M.id, +1)} colore={C.spento} style={{ padding: '2px 8px' }}>+</Tasto>
-                <div style={{ fontFamily: F.mono, fontSize: 10, color: C.spento, textAlign: 'right', minWidth: 76 }}>
-                  {c.giocate ? `${(c.perc * 100).toFixed(0)}% su ${c.giocate}` : 'nessuna'}
+                {/* quanto rende quella soglia, mentre la muovi: è il numero che
+                    la rende una scelta e non un'opinione */}
+                <div style={{ fontFamily: F.mono, fontSize: 10, color: C.spento, textAlign: 'right', minWidth: 86 }}>
+                  {c.giocate ? `${(c.perc * 100).toFixed(1)}% su ${c.giocate}` : 'nessuna'}
                 </div>
-              </Fragment>
+              </div>
             )
           })}
         </div>
       </Card>
 
-      {/* ── Il riassunto, sulle partite che passano la soglia ──────────────── */}
+      {/* ── Il riassunto ──────────────────────────────────────────────────── */}
       <Card style={{ marginBottom: 12 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '4px 10px', alignItems: 'center' }}>
-          <Etichetta>RIASSUNTO{filtro ? ' · sopra soglia' : ''}</Etichetta>
+          <Etichetta>RIASSUNTO · sopra soglia</Etichetta>
           {AMBITI.map(a => (
             <div key={a.id} style={{ fontSize: 8, fontFamily: F.mono, color: C.spento, letterSpacing: '0.08em', textAlign: 'right' }}>PRIME {a.quante}</div>
           ))}
           {METODI.map(M => (
-            <Fragment key={M.id}>
+            <div key={M.id} style={{ display: 'contents' }}>
               <div style={{ fontSize: 12, fontFamily: F.mono, color: C.testo }}>{M.label}</div>
               {AMBITI.map(a => {
-                const c = conta(righe.filter(r => r.ambito === a.id && r.metodo === M.id && passa(r, M.id)))
+                const c = rig(M.id, a.id)
                 return (
                   <div key={a.id} style={{ textAlign: 'right', fontFamily: F.mono }}>
                     <span style={{ fontSize: 15, fontWeight: 700, color: c.perc == null ? C.spento : c.perc >= 0.6 ? C.verde : c.perc >= 0.5 ? C.testo : C.rosso }}>
@@ -228,123 +243,84 @@ export default function AndamentoPage() {
                   </div>
                 )
               })}
-            </Fragment>
+            </div>
           ))}
         </div>
       </Card>
 
-      {/* ── Le quattro spunte verdi ────────────────────────────────────────── */}
+      {/* ── L'accordo fra i quattro ───────────────────────────────────────── */}
       {/* ⚠️ La domanda di Mattia: *"esiste un punto in comune per questi 4
-          valori?"*. Qui si vede sulle partite vere. ⚠️ Il gruppo pesca solo
-          fra le partite che almeno un metodo ha messo nelle sue prime: una
-          partita che nessuno ha scelto non è in tabella, quindi non può
-          comparire qui nemmeno se superasse tutte e quattro le soglie. */}
-      {(() => {
-        const c = conta(gruppoVerdi)
-        const tutte = conta(distinte)
-        return (
-          <Card style={{ marginBottom: 12, borderColor: alpha(C.verde, 0.4) }}
-            onClick={() => setVerdi(v => !v)}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
-              <div>
-                <Etichetta colore={C.verde}>✓✓✓✓ TUTTE E QUATTRO SOPRA SOGLIA</Etichetta>
-                <div style={{ fontSize: 10, fontFamily: F.mono, color: C.spento, marginTop: 3 }}>
-                  {c.giocate} partite su {tutte.giocate} · le altre fanno {tutte.giocate - c.giocate ? ((tutte.ok - c.ok) / (tutte.giocate - c.giocate) * 100).toFixed(1) + '%' : '—'}
-                </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontFamily: F.mono, fontSize: 20, fontWeight: 700, color: c.perc == null ? C.spento : c.perc >= 0.6 ? C.verde : C.testo }}>
-                  {c.perc == null ? '—' : (c.perc * 100).toFixed(1) + '%'}
-                </div>
-                <div style={{ fontSize: 9, fontFamily: F.mono, color: C.spento }}>{verdi ? 'tocca per chiudere' : 'tocca per vederle'}</div>
-              </div>
-            </div>
-          </Card>
-        )
-      })()}
-
-      {/* ── I tasti ────────────────────────────────────────────────────────── */}
-      {!verdi && (
-        <>
-          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-            {AMBITI.map(a => <Tasto key={a.id} attivo={ambito === a.id} onClick={() => { setAmbito(a.id); setChiave(null) }}>{a.label}</Tasto>)}
+          valori?"*. Qui si vede sulle partite vere, e la riga per riga dice
+          anche **quanto** l'accordo conta: se 2 e 4 danno lo stesso numero,
+          chiedere l'accordo di tutti è solo un modo di avere meno partite.
+          ⚠️ Pesca solo fra le partite che almeno un metodo ha messo nelle sue
+          prime 15: una che nessuno ha scelto non è in tabella. */}
+      <Card style={{ marginBottom: 12, borderColor: alpha(C.verde, 0.35) }}>
+        <div onClick={() => setVerdi(v => !v)} style={{ cursor: 'pointer' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Etichetta colore={C.verde}>QUANTI INDICATORI SOPRA SOGLIA</Etichetta>
+            <span style={{ fontSize: 9, fontFamily: F.mono, color: C.spento }}>{verdi ? 'chiudi l’elenco' : 'tocca per le 4 verdi'}</span>
           </div>
-          <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
-            {METODI.map(M => <Tasto key={M.id} attivo={metodo === M.id} onClick={() => setMetodo(M.id)} colore={C.celestePieno}>{M.breve}</Tasto>)}
-          </div>
-
-          {/* ⚠️ Il giorno è una tendina: si tocca, si apre sotto, si ritocca
-              e si chiude. I giorni restano uno sull'altro e raggruppati per
-              weekend, così si vede a quale weekend appartiene quello aperto. */}
-          {ambito === 'giorno' ? (
-            <div style={{ marginBottom: 12 }}>
-              {perWeekend.map(([wk, giorni]) => (
-                <div key={wk} style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 9, fontFamily: F.mono, color: C.spento, letterSpacing: '0.08em', marginBottom: 3 }}>
-                    WEEKEND DEL {gg(wk)}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4, marginTop: 8 }}>
+            {[0, 1, 2, 3, 4].map(n => {
+              const c = acc(n)
+              const tinta = n === 4 ? C.verde : C.testo
+              return (
+                <div key={n} style={{ textAlign: 'center', padding: '6px 2px',
+                  background: `linear-gradient(${alpha(tinta, n === 4 ? 0.12 : 0.04)},${alpha(tinta, n === 4 ? 0.12 : 0.04)}), ${C.card}`,
+                  border: `1px solid ${alpha(tinta, n === 4 ? 0.45 : 0.15)}` }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, fontFamily: F.mono, color: c.perc == null ? C.spento : tinta, lineHeight: 1 }}>
+                    {c.perc == null ? '—' : (c.perc * 100).toFixed(0) + '%'}
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    {giorni.map(d => {
-                      const l = partiteDi(d), c = conta(l)
-                      return (
-                        <div key={d}>
-                          <Tasto attivo={aperta === d} onClick={() => apri(d)} colore={C.viola}
-                            style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span>{aperta === d ? '▾' : '▸'} {gg(d)}</span>
-                            {/* il risultato del giorno sul tasto: così si sceglie
-                                quale aprire invece di aprirli tutti per sapere */}
-                            <span style={{ fontSize: 10, color: c.perc == null ? C.spento : c.perc >= 0.5 ? C.verde : C.rosso }}>
-                              {c.giocate ? `${c.ok}/${c.giocate}` : '—'}
-                            </span>
-                          </Tasto>
-                          {aperta === d && (
-                            <Card style={{ marginTop: 3 }}>
-                              <Elenco righe={l} metodo={metodo} soglie={soglie}
-                                titolo={`${gg(d)} · ${METODI.find(m => m.id === metodo)?.label}`} />
-                            </Card>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
+                  <div style={{ fontSize: 8, fontFamily: F.mono, color: C.spento, marginTop: 3 }}>{n} · {c.giocate}</div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 12 }}>
-              {chiavi.map(k => {
-                const l = partiteDi(k), c = conta(l)
-                return (
-                  <div key={k}>
-                    <Tasto attivo={aperta === k} onClick={() => apri(k)} colore={C.viola}
-                      style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>{aperta === k ? '▾' : '▸'} weekend del {gg(k)}</span>
-                      <span style={{ fontSize: 10, color: c.perc == null ? C.spento : c.perc >= 0.5 ? C.verde : C.rosso }}>
-                        {c.giocate ? `${c.ok}/${c.giocate}` : '—'}
-                      </span>
-                    </Tasto>
-                    {aperta === k && (
-                      <Card style={{ marginTop: 3 }}>
-                        <Elenco righe={l} metodo={metodo} soglie={soglie}
-                          titolo={`weekend del ${gg(k)} · ${METODI.find(m => m.id === metodo)?.label}`} />
-                      </Card>
-                    )}
-                  </div>
-                )
-              })}
+              )
+            })}
+          </div>
+          <div style={{ fontSize: 10, fontFamily: F.mono, color: C.spento, marginTop: 6 }}>
+            tutte e quattro: {tutteLeVerdi.perc == null ? '—' : (tutteLeVerdi.perc * 100).toFixed(1) + '%'} su {tutteLeVerdi.giocate}
+            {' '}· tutte le altre: {sotto.perc == null ? '—' : (sotto.perc * 100).toFixed(1) + '%'} su {sotto.giocate}
+          </div>
+        </div>
+        {verdi && (righeVerdi === null
+          ? <div style={{ fontSize: 11, fontFamily: F.mono, color: C.spento, paddingTop: 8 }}>carico…</div>
+          : <Elenco righe={righeVerdi} metodo={metodo} soglie={soglie} evidenzia={false} titolo="LE QUATTRO SPUNTE VERDI" />)}
+      </Card>
+
+      {/* ── I tasti e le tendine ──────────────────────────────────────────── */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+        {AMBITI.map(a => <Tasto key={a.id} attivo={ambito === a.id} onClick={() => { setAmbito(a.id); setAperta(null) }}>{a.label}</Tasto>)}
+      </div>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
+        {METODI.map(M => <Tasto key={M.id} attivo={metodo === M.id} onClick={() => { setMetodo(M.id); setAperta(null) }} colore={C.celestePieno}>{M.breve}</Tasto>)}
+      </div>
+
+      {gruppi === null && <div style={{ fontSize: 11, fontFamily: F.mono, color: C.spento }}>carico…</div>}
+      {/* ⚠️ Un elenco tagliato va detto. È la stessa lezione del troncamento a
+          1000: un limite che non si vede fa credere di guardare tutto. */}
+      {chiavi?.length === 400 && (
+        <div style={{ fontSize: 10, fontFamily: F.mono, color: C.ambra, marginBottom: 8 }}>
+          mostro i 400 {ambito === 'giorno' ? 'giorni' : 'weekend'} più recenti — scegli una stagione per vederli tutti
+        </div>
+      )}
+      {gruppi?.map(([wk, lista]) => (
+        <div key={wk || 'tutti'} style={{ marginBottom: 10 }}>
+          {wk && (
+            <div style={{ fontSize: 9, fontFamily: F.mono, color: C.spento, letterSpacing: '0.08em', marginBottom: 3 }}>
+              WEEKEND DEL {gg(wk)}
             </div>
           )}
-        </>
-      )}
-
-      {/* Le quattro spunte verdi hanno il loro elenco, fuori dalle tendine:
-          non appartengono a un giorno solo. */}
-      {verdi && (
-        <Card>
-          <Elenco righe={gruppoVerdi} metodo={metodo} soglie={soglie} evidenzia={false}
-            titolo="LE QUATTRO SPUNTE VERDI" />
-        </Card>
-      )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {lista.map(k => (
+              <Tendina key={String(k.chiave)} ambito={ambito} metodo={metodo} chiave={k.chiave} soglie={soglie}
+                etichetta={ambito === 'giorno' ? gg(k.chiave) : `weekend del ${gg(k.chiave)}`}
+                conteggio={k} aperta={aperta === String(k.chiave)}
+                onTocca={() => setAperta(a => a === String(k.chiave) ? null : String(k.chiave))}
+                titolo={`${ambito === 'giorno' ? gg(k.chiave) : 'weekend del ' + gg(k.chiave)} · ${METODI.find(m => m.id === metodo)?.label}`} />
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
