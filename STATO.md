@@ -3,7 +3,10 @@
 > To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 10 ottobre 2026 · app alla versione **1.07.00**
+**Ultimo aggiornamento:** 12 ottobre 2026 · app alla versione **1.07.00**
+**In cima alla to-do c'è il blocco "PRIORITÀ OGGI"** (voci 24-27), deciso da
+Mattia il 12/10: Bet365 al posto di Codere, la pagina Andamento, e i due
+indicatori nuovi (Goal/NoGoal e Over/Under).
 
 ---
 
@@ -109,6 +112,68 @@ solo football-data, nel blocco imminente: `importa-prossime.js` lo riempirebbe.
 > Riscritta il **7 ottobre 2026**: solo quello che manca, numerato 1-13 e diviso
 > in lotti per file toccati. Quello che è stato fatto sta sotto, in "Fatto di
 > recente": serve a capire *perché* una cosa è com'è, non cosa resta.
+
+## 🔥 PRIORITÀ OGGI — deciso da Mattia il 12 ottobre 2026
+
+### 24. Le quote di Bet365 al posto di Codere
+Mattia gioca su Bet365; l'app quota con Codere, che su un weekend misurato
+pagava **2,8 punti meno** della massima di mercato.
+⚠️ **Oggi `b365_*` è vuota su tutte le future**: l'ultimo import è venuto da The
+Odds API, che **non ha Bet365** (41 bookmaker nella risposta, verificato il
+10/10 con 2 crediti). Si riempie con `importa-prossime.js --esegui`
+(football-data), che però copre **solo il blocco imminente** — 141 partite dei
+nostri campionati quando è stato provato.
+**Ordine delle fonti proposto: Bet365 → Codere → massima** in `valuta()`.
+⚠️ **Cambia resa e voto su tutte le partite**, perché si calcolano dalla quota.
+⚠️ **Da decidere:** rimettere il nome del book nella riga? Era stato tolto il
+10/10 per fare spazio alla quinta colonna, ma con due fonti mischiate sapere
+chi paga quella quota torna a contare.
+
+### 25. Pagina "Andamento" — quale indicatore ci azzecca
+Una pagina nuova (nel menu ☰) che misura **come sono andate le previsioni degli
+indicatori nel tempo**. Per ogni indicatore: le **prime 10 partite di ogni
+singolo giorno** (venerdì · sabato · domenica) e le **prime 30 del weekend**.
+Più una **dashboard** per guardare i numeri nel tempo, e l'analisi del **punto
+in comune**: quando tutti gli indicatori concordano, ci azzeccano sempre?
+
+⚠️ **Decisione già presa (mia):** i numeri si **precalcolano con uno script in
+una tabella**, non al volo. Ricostruire VPM su 54.000 partite dal browser non è
+fattibile — il precedente è `vpm_dati()` (sql/20), ma qui la finestra è tutto
+l'archivio, non il weekend.
+
+**Da chiarire con Mattia prima di scrivere codice:**
+- **"tutti e 4"**: attendibilità, VPM, resa e **voto**? Nel briefing a voce ne
+  ha elencati tre.
+- **Cosa conta come "azzeccata"**: la giocata proposta per intero (per le
+  combinate **anche** l'over 1,5) o solo il segno 1/2?
+- **Le prime 10 fra cosa**: tutte le partite dei 15 campionati di quel giorno,
+  anche sotto soglia, ordinate per quell'indicatore?
+- **Anche il passato?** Si può ricostruire **tutto l'archivio** — il VPM storico
+  è già stato fatto in `backtest-scala.js` — quindi la pagina nascerebbe con
+  otto stagioni dentro invece che vuota.
+
+### 26. Indicatore Goal / No Goal
+⚠️ **Blocco sui dati, trovato il 12/10:** **non esiste una sola colonna di quote
+GG/NG**, né in `partite` né in `prossime_partite`. football-data non le
+pubblica.
+Si può costruire un indicatore **dalle squadre** (come VPM) e misurarlo
+sull'esito storico, perché i gol ci sono. Ma **senza quota non c'è né una
+probabilità di mercato con cui confrontarsi, né qualcosa da giocare**: sarebbe
+un numero inutilizzabile.
+**Strada per averle:** The Odds API ha il mercato `btts`, a crediti in più per
+ogni giro. **Da verificare (2 crediti) prima di decidere.**
+
+### 27. Indicatore Over / Under
+Fattibile, e meglio del punto 26 perché **le quote ci sono**: le colonne
+`*_over25` / `*_under25` esistono in entrambe le tabelle e coprono il **100%
+della stagione in corso** (70% di tutto l'archivio).
+⚠️ **Ma sono vuote su tutte le 76 partite future**, per lo stesso motivo del
+punto 24: The Odds API le dà solo se si chiede il mercato `totals`. Si riempiono
+con l'import di football-data, oppure aggiungendo `totals` alla chiamata.
+⚠️ **L'over 1,5 non è quotato da nessuno** — il progetto lo stima con
+`FATTORE_OVER = 0,908` (misurato). Quindi l'indicatore si fa su **2,5**.
+
+---
 
 ## 🟢 Lotto H — Il gesto di tornare indietro — fatto il 7 ottobre 2026
 
