@@ -235,6 +235,72 @@ ricalcola il proprio bankroll, e non può creare utenti.
     ⚠️ Dice anche che **l'attendibilità non è "quanto spesso vince" ma quanto
     spesso lo pensa il mercato**, e che sui favoriti è prudente di ~3 punti.
 
+## 🔵 Lotto Q — URL veri per le pagine (routing)
+*Da un briefing del secondo cervello: `briefing/2026-10-12-routing-v1.0.md`.
+Valutato il 12/10/2026, **non sviluppato**: la risposta completa sta in
+`briefing/risposte/2026-10-12-routing-v1.0-risposta.md`.*
+
+23. **Ogni pagina ha il suo indirizzo.** Oggi `AppShell` tiene
+    `useState('dashboard')` e uno `switch` di nove casi: l'URL non cambia mai,
+    quindi non si condivide un link, il tasto indietro non fa niente e **ogni
+    ricaricamento riporta alla Dashboard**.
+    Rotte: `/` · `/slot` · `/reporting` · `/bilancio` · `/partite` ·
+    **`/partite/:id`** · `/provvisorie` · `/votate` · **`/votate/:id`** ·
+    `/storico` · `/utenti` · `/login`.
+    **Fattibilità alta**: la navigazione è centralizzata in un punto solo
+    (`App.jsx` 216 righe, `TabBar` con `onChange`, `Menu` con `onVai`), quindi
+    si tocca un file e due componenti. Stima **mezza giornata**.
+
+    ✅ **Verificato il 12/10:** `vercel.json` non esiste da nessuna parte · la
+    **Root Directory su Vercel è `app`**, quindi il rewrite va in
+    **`app/vercel.json`** · l'URL condiviso al gruppo è quello **di
+    produzione**, quindi vedrà il lavoro.
+
+    ⚠️ **Da decidere prima di partire — un link condiviso scade.**
+    `usaProssime` carica solo `data >= oggi`: un link mandato venerdì funziona
+    domenica, ma **martedì la partita non è più nella lista** e la scheda non si
+    apre. O un messaggio *"già giocata"*, o si recupera la riga da `partite`
+    (dove resta per sempre). **Senza una delle due è la prima segnalazione che
+    arriva dal gruppo.**
+
+    ⚠️ **`/votate/:id` serve quanto `/partite/:id`**: anche `VotatePage` apre la
+    stessa scheda col suo `apertaId`. Il briefing non lo citava.
+
+    ⚠️ **Le pagine solo-admin non si difendono da sole, ma RLS tiene.**
+    `SpinProvvisoriePage` non ha nessun controllo su `isAdmin`, `UtentiPage` solo
+    cosmetici. Con gli URL diventano digitabili — però `griglia_write`
+    (`sql/02`) richiede admin/superadmin e `crea_utente` & co. chiamano
+    `esigi_superadmin()` dentro la funzione. Quindi il guard serve alla
+    **chiarezza, non alla sicurezza**: senza, un utente normale preme "Compila
+    spin" e **non succede niente in silenzio** (RLS blocca senza errore).
+    ⚠️ **Manca una prova**: `prova-permessi.js` verifica che l'utente normale
+    *legga* la griglia, non che **non la scriva**. Tre righe, da aggiungere con
+    questo lotto.
+
+    ⚠️ **Il guard deve aspettare `booting`**: la struttura giusta c'è già
+    (`if (booting) return <CARICAMENTO…>` prima di tutto), va solo conservata —
+    il rischio è metterci un `<Navigate to="/login">` sopra e far lampeggiare
+    il login a ogni refresh.
+    ⚠️ **Mai `navigate()` dentro `onAuthStateChange`**: stesso lock di
+    supabase-js che ha già bloccato il login una volta. La navigazione dopo il
+    login si fa dal componente, reagendo al cambio di `currentUser`.
+    ⚠️ **`<Link>`, non `onClick` + `navigate()`** su TabBar e menu: genera un
+    `<a href>` vero, quindi funziona anche "apri in nuova scheda". (Lezione
+    arrivata da IIRF, dove la mancanza è rimasta nascosta per mesi.)
+
+    **Fuori da questo lotto, per scelta:** i filtri nell'URL (otto stati in
+    `PartitePage`: raddoppiano il lavoro, è il lotto dopo), le sotto-viste
+    modali (`casella`, `perQuota`, `confirmReset`: sono dialoghi, non pagine),
+    il dominio personalizzato, altre librerie oltre al router.
+
+    ❌ **Il briefing sbagliava su un punto**, corretto nella risposta: diceva che
+    il gesto "torna indietro trascinando" non esiste nel codice. **Esiste**
+    (`hooks/usaIndietro.js`, usato da `SchedaScorrevole`): la ricerca cercava
+    `onTouchStart`, ma il gesto è agganciato a mano con
+    `addEventListener('touchmove')`. E il ripristino dello scorrimento non c'è
+    **di proposito**, tolto il 7/10 perché la lista non viene più smontata.
+    **STATO.md era corretto, non va cambiato.**
+
 ## 🔵 Lotto N — Il voto unico della partita
 *`btscout/scripts/` (misura storica) → poi `lib/`.*
 

@@ -27,6 +27,36 @@ manca. Quando un lotto finisce, va spuntato lì.
 
 ---
 
+## I briefing arrivano dal secondo cervello
+
+I lavori con peso architetturale vengono preparati fuori da qui e consegnati
+come file in `briefing/` (nome: `YYYY-MM-DD-argomento-vN.N.md`). Li scrive una
+sessione collegata al secondo cervello di Mattia, che conosce tutti i progetti
+ma **non tutto il codice di questo**.
+
+A inizio sessione, se Mattia dice "leggi il briefing": apri `briefing/`, prendi
+quello con la versione più alta e `stato: consegnato`, ed esegui la sezione
+"Verifica prima di partire" **prima** di toccare codice. Se la realtà è diversa
+da come è scritta, **fermati e dillo**.
+
+⛔ **Nessun briefing autorizza a sviluppare.** Prima si risponde con
+fattibilità, impatto sui file, cosa non torna, e la stima. Decide Mattia.
+
+La risposta e, a lavoro finito, l'esito vanno in `briefing/risposte/`
+(`...-vN.N-risposta.md`): quella cartella è tua, `briefing/` no — non
+modificare i file del briefing.
+
+Il briefing dice **cosa fare adesso**. Come funziona questo progetto sta in
+questo file e in STATO.md: se un briefing contraddice un invariante, vince il
+repo — e segnalalo.
+
+⚠️ **Un briefing può sbagliare sui fatti, e il primo l'ha fatto** (12/10/2026):
+cercando `onTouchStart` concludeva che il gesto indietro non esiste, mentre sta
+in `hooks/usaIndietro.js` agganciato a mano con `addEventListener('touchmove')`.
+**Prima di dare per sbagliato STATO.md, cerca con la parola giusta.**
+
+---
+
 ## Come lavorare con Mattia
 
 - **Un passo alla volta.** Quando serve che faccia qualcosa lui (SQL sulla
