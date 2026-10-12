@@ -175,28 +175,45 @@ dire chiedere quote più lunghe.
 *resa realizzata* per chi gioca una singola. Giudicare la resa sulle azzeccate
 è come giudicare un difensore sui gol fatti.
 
-### 25. Pagina "Andamento" — quale indicatore ci azzecca
-Una pagina nuova (nel menu ☰) che misura **come sono andate le previsioni degli
-indicatori nel tempo**. Per ogni indicatore: le **prime 10 partite di ogni
-singolo giorno** (venerdì · sabato · domenica) e le **prime 30 del weekend**.
-Più una **dashboard** per guardare i numeri nel tempo, e l'analisi del **punto
-in comune**: quando tutti gli indicatori concordano, ci azzeccano sempre?
+### 25. [x] Pagina "Andamento" — fatta il 12 ottobre 2026 (**1.14.00**)
 
-⚠️ **Decisione già presa (mia):** i numeri si **precalcolano con uno script in
-una tabella**, non al volo. Ricostruire VPM su 54.000 partite dal browser non è
-fattibile — il precedente è `vpm_dati()` (sql/20), ma qui la finestra è tutto
-l'archivio, non il weekend.
+Nel menu ☰ (📈). Per ogni metodo le **prime 15 di ogni singolo giorno** e le
+**prime 36 del weekend** (senza data); *azzeccata* = la giocata per intero.
 
-**Da chiarire con Mattia prima di scrivere codice:**
-- **"tutti e 4"**: attendibilità, VPM, resa e **voto**? Nel briefing a voce ne
-  ha elencati tre.
-- **Cosa conta come "azzeccata"**: la giocata proposta per intero (per le
-  combinate **anche** l'over 1,5) o solo il segno 1/2?
-- **Le prime 10 fra cosa**: tutte le partite dei 15 campionati di quel giorno,
-  anche sotto soglia, ordinate per quell'indicatore?
-- **Anche il passato?** Si può ricostruire **tutto l'archivio** — il VPM storico
-  è già stato fatto in `backtest-scala.js` — quindi la pagina nascerebbe con
-  otto stagioni dentro invece che vuota.
+⚠️ **Lo scopo è la soglia, non l'archivio.** Mattia: *"attendibilità 37% non la
+voglio neanche vedere, è rumore"*. Le soglie minime sono **accese di default**
+e tolgono le partite anche dal riassunto. Partenza: att 60% · VPM 7,0 · voto
+100% · resa 95%, tutte spostabili dalla pagina — passi 1 punto · 0,10 · 0,25
+punti · 1 punto, scelti da lui.
+⚠️ Ogni riga mostra **tutti e quattro i valori** (sql/22), verde quelli sopra
+la loro soglia: *"per capire quali indicatori mi avrebbero allertato"*.
+⚠️ I giorni sono **tendine** uno sull'altro, raggruppate per weekend; sul tasto
+c'è già il risultato del giorno.
+
+**Il punto in comune esiste** — card "tutte e quattro sopra soglia". Su 33.141
+partite: 0 indicatori 45,7% · 1 → 49,4% · 2 → 65,9% · 3 → 68,4% · **4 → 74,1%**
+(1.118 partite), contro una base del 50,8%.
+⚠️ **Contraddice la misura di poche ore prima** ("combinare peggiora"): quella
+incrociava le **prime 9** di ciascuno, cioè una gara a chi arriva primo. Le
+**soglie** sono un'altra domanda. Due misure che si contraddicono vanno prima
+confrontate sulla domanda, non sui numeri.
+⚠️ **Il guadagno sull'attendibilità da sola non è dimostrabile**: 74,1% ±2,6
+contro 71,6% ±1,1, per 5,6 volte meno partite. Le altre tre senza
+l'attendibilità fanno 44,7%, sotto la base.
+
+**I pezzi:** `app/sql/21-andamento.sql` (tabella + policy, sola lettura dopo il
+login) · `app/sql/22-andamento-valori.sql` (i quattro valori per riga) ·
+`btscout/lib/ricostruisci.js` (la ricostruzione camminando nel tempo, estratta
+da `prova-indicatori.js`: **non duplicarla**) ·
+`btscout/scripts/calcola-andamento.js` · `hooks/usaAndamento.js` ·
+`pages/AndamentoPage.jsx` · i controlli in `scripts/prova-permessi.js`.
+
+⚠️ **RESTA DA FARE: ricostruire le otto stagioni.** Oggi dentro c'è solo la
+26/27 — 234 partite distinte, e **20 giorni su 25 hanno 15 partite o meno**,
+quindi "le prime 15" sono *tutte* e i quattro metodi scelgono la stessa lista.
+Il gruppo delle quattro spunte verdi ha **4 partite**. Basta
+`calcola-andamento.js --stagioni=8 --esegui`: non serve la rete, i dati sono
+già in Supabase. Decisione lasciata a Mattia tre volte, mai presa.
 
 ### 26-27. [x] Gol attesi — over x,5 **e** Goal/NoGoal — fatto il 12/10 (**1.09.00**)
 I due punti erano **lo stesso lavoro**: un modello sui gol li produce entrambi.

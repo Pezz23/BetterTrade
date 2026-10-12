@@ -42,7 +42,7 @@ for (const t of ['users', 'giornate', 'movimenti', 'griglia']) {
 const N = await entra(uN, pN);
 console.log(`\nUTENTE NORMALE — ${N.me.username} (${N.me.role})`);
 
-for (const t of ['users', 'giornate', 'movimenti', 'griglia', 'impostazioni']) {
+for (const t of ['users', 'giornate', 'movimenti', 'griglia', 'impostazioni', 'andamento']) {
   const { data } = await N.s.from(t).select('*').limit(1);
   esito(true, !!(data && data.length), `legge ${t}`);
 }
@@ -62,6 +62,15 @@ if (!eRpc) {
 const { data: upd } = await N.s.from('users').update({ bankroll: 99999 }).eq('id', N.me.id).select();
 esito(false, !!(upd && upd.length), 'scrive users.bankroll a mano');
 
+// ⚠️ `andamento` (sql/21) non si scrive dall'app da nessun ruolo: la riempie
+// `btscout/scripts/calcola-andamento.js` con la service_role. C'è la sola
+// policy di lettura, e la prova serve a non scoprirlo fra sei mesi.
+const { data: andIns } = await N.s.from('andamento').insert([{
+  stagione: 'PROVA', ambito: 'giorno', data: '1970-01-01', weekend: '1970-01-05',
+  metodo: 'att', posizione: 1, div: 'XX', casa: 'Prova', trasferta: 'Prova',
+  giocata: '1', quota: 1, azzeccata: false }]).select();
+esito(false, !!(andIns && andIns.length), 'scrive andamento');
+
 const { error: eGio } = await N.s.from('giornate').insert([{ user_id: N.me.id, stagione: '25/26', week_number: 999, tot_investito: 1, tot_incasso: 1, tot_saldo: 0 }]);
 esito(false, !eGio, 'inserisce una giornata');
 
@@ -75,6 +84,7 @@ if (altri?.length) {
 
 // pulizia con la chiave di servizio, così non resta sporcizia
 await servizio.from('movimenti').delete().eq('user_id', N.me.id).eq('nota', 'PROVA PERMESSI');
+await servizio.from('andamento').delete().eq('stagione', 'PROVA');
 await servizio.from('giornate').delete().eq('user_id', N.me.id).eq('week_number', 999);
 await servizio.rpc; // no-op
 const { data: mvFin } = await servizio.from('movimenti').select('tipo, importo').eq('user_id', N.me.id);
@@ -95,6 +105,11 @@ if (uA && pA) {
   esito(true, true, 'legge le giornate di tutti');
   const { error: eGriglia } = await A.s.from('griglia').update({ updated_at: new Date().toISOString() }).eq('id', 1);
   esito(true, !eGriglia, 'scrive la griglia');
+  const { data: andAdm } = await A.s.from('andamento').insert([{
+    stagione: 'PROVA', ambito: 'giorno', data: '1970-01-01', weekend: '1970-01-05',
+    metodo: 'att', posizione: 2, div: 'XX', casa: 'Prova', trasferta: 'Prova',
+    giocata: '1', quota: 1, azzeccata: false }]).select();
+  esito(false, !!(andAdm && andAdm.length), 'scrive andamento');
   const { data: altri2 } = await A.s.from('users').select('id').neq('id', A.me.id).limit(1);
   const { error: eRpcAdm } = await A.s.rpc('ricalcola_bankroll', { p_user_id: altri2[0].id });
   esito(true, !eRpcAdm, 'ricalcola il bankroll di un altro utente');

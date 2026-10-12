@@ -663,6 +663,87 @@ tutto il resto misurato qui dentro.
 otto fa 96,3%. **Era rumore** — a queste quote servono decine di migliaia di
 scommesse per distinguere due punti.
 
+### La pagina Andamento — studiare le soglie, non guardare l'archivio
+
+**Fatta il 12/10/2026.** Nel menu ☰ (📈 Andamento). Misura **quanto sono
+attendibili i nostri indicatori** sulle partite vere: per ogni metodo, le
+**prime 15 di ogni singolo giorno** e le **prime 36 del weekend intero**
+(scelte di Mattia), con *azzeccata* = **la giocata per intero**, over 1,5
+compreso per le combinate.
+
+⚠️⚠️ **Lo scopo non è l'archivio, è la soglia.** Mattia: *"in questo storico
+vedo tutto, ma non mi interessa: devo studiare l'attendibilità dei nostri
+indicatori. Attendibilità 37% non la voglio neanche vedere, è rumore"*. Perciò
+le **soglie minime sono accese di default** e tolgono le partite **anche dal
+riassunto**, non solo dall'elenco. Partenza (dalla tabella misurata): att 60% ·
+VPM 7,0 · voto 100% · resa 95%. Si muovono dalla pagina — servono a **cercare**
+la soglia buona, non a dichiararla trovata.
+⚠️ **I passi sono scelti da Mattia e non sono uguali fra loro**: attendibilità
+**1 punto** (decide le spin, 75/72/65), VPM **0,10**, voto **0,25 punti**, resa
+1 punto. Il voto ha il passo più fine perché è il più ripido: fra 100% e 101%
+ci sono 1.098 partite.
+⚠️ **Il confronto con la soglia si fa sul numero ARROTONDATO come si vede**
+(`sopra()` in `hooks/usaAndamento.js`), altrimenti una cella che mostra
+`100,25%` accanto a una soglia `100,25%` resta spenta perché sotto c'è
+100,2449. Stessa trappola delle caselle dei gol.
+
+**Ogni riga porta tutti e quattro i valori**, non solo quello del metodo che
+l'ha scelta (sql/22): *"quando clicco Voto vorrei vedere gli altri 3, per
+capire quali indicatori mi avrebbero allertato"*. Verde quelli sopra la loro
+soglia.
+
+**I giorni sono tendine**, uno sull'altro e raggruppati per weekend: un tocco
+apre, il secondo richiude. Sul tasto c'è già il risultato del giorno (`9/14`),
+altrimenti per sapere com'è andato bisognerebbe aprirlo.
+
+#### ⚠️ Il punto in comune esiste — e ribalta una conclusione del 12/10
+
+La card **"tutte e quattro sopra soglia"** risponde alla domanda di Mattia
+*"esiste un punto in comune per questi 4 valori?"*. Misurato su **33.141
+partite**, con le soglie di partenza:
+
+| indicatori sopra soglia | azzeccate | partite |
+|---|---|---|
+| 0 | 45,7% | 17.991 |
+| 1 | 49,4% | 9.026 |
+| 2 | 65,9% | 3.655 |
+| 3 | 68,4% | 1.351 |
+| **4** | **74,1%** | 1.118 |
+
+⚠️ **Sale in modo pulito, e contraddice quello che avevo scritto poche ore
+prima** ("metterli insieme peggiora"). Non è un errore di misura: erano **due
+domande diverse**. L'incrocio delle **prime 9 di ciascuno** è una gara a chi
+arriva primo e lì combinare peggiora; le **soglie** chiedono "sono tutti
+d'accordo che questa è buona?" e lì combinare paga. **Quando due misure si
+contraddicono, guardare prima se rispondono alla stessa domanda.**
+⚠️ **Ma il guadagno sull'attendibilità da sola non è dimostrabile**: tutte e
+quattro **74,1% ±2,6** su 1.118 contro **71,6% ±1,1** su 6.257 — +2,5 punti per
+5,6 volte meno partite, dentro il rumore. Quasi tutto il merito è
+dell'attendibilità: le altre tre sopra soglia **senza** di lei fanno **44,7%**,
+sotto la base.
+
+#### Come sono fatti i dati
+
+⚠️ **La pagina non calcola niente**: legge la tabella `andamento` (sql/21-22).
+Ricostruire VPM e i gol attesi di ogni giornata passata dal browser non è
+fattibile, e un numero che cambia a seconda di quando apri la pagina non è una
+misura. La riempie `btscout/scripts/calcola-andamento.js` (prova a vuoto di
+default, `--esegui` scrive, `--stagioni=8` per il passato).
+⚠️ **La ricostruzione camminando nel tempo sta in `btscout/lib/ricostruisci.js`**,
+estratta da `prova-indicatori.js` quando è servita a due script: **non
+duplicarla**. È il pezzo in cui si sbaglia più facilmente — basta aggiornare la
+storia di una squadra *prima* di valutare la partita e il modello conosce il
+futuro.
+⚠️ **`andamento` non si scrive dall'app da nessun ruolo**: c'è la sola policy
+di lettura per chi ha fatto login, e la riempie lo script con la service_role.
+Provato in `scripts/prova-permessi.js`.
+⚠️ **Con la sola stagione in corso i numeri non dicono niente**, e lo script lo
+avverte: **20 giorni su 25 hanno 15 partite o meno**, quindi "le prime 15" sono
+*tutte* e i quattro metodi scelgono la stessa lista. Il gruppo delle quattro
+spunte verdi ha **4 partite**. Serve ricostruire l'archivio.
+⚠️ `giornoLocale()` nel modulo: il driver postgres consegna oggetti `Date`, e
+`String(data).slice(0,10)` su un Date dà `"Mon Oct 05"`, non la data.
+
 ### Dove si sta andando: un voto unico, che resta una probabilità
 
 **Deciso parlandone il 10/10/2026.** L'obiettivo di Mattia è **un voto solo per
@@ -1250,6 +1331,7 @@ node --env-file=.env scripts/misura-resa-favoriti.js   # la resa realizzata dei 
 node --env-file=.env scripts/misura-schedine.js --quota=5   # le schedine del weekend sull'archivio
 node --env-file=.env scripts/prova-gol.js                  # il modello dei gol contro i risultati veri
 node --env-file=.env scripts/prova-indicatori.js --stagioni=8   # quale indicatore sceglie meglio
+node --env-file=.env scripts/calcola-andamento.js --esegui      # riempie la tabella della pagina Andamento
 node --env-file=.env scripts/prova-gol-varianti.js         # si può migliorare l'indice dei gol? (no)
 node --env-file=.env scripts/prova-gol-avversari.js        # e correggendo per gli avversari affrontati? (no)
 node --env-file=.env scripts/prova-gg.js                   # il Goal/NoGoal: quanto è giusto il consiglio

@@ -10,6 +10,7 @@ import DashboardPage from './pages/DashboardPage'
 import ReportingPage from './pages/ReportingPage'
 import BilancioPage from './pages/BilancioPage'
 import PartitePage from './pages/PartitePage'
+import AndamentoPage from './pages/AndamentoPage'
 import { C, F, alpha } from './theme'
 import { VERSIONE } from './versione'
 
@@ -27,6 +28,7 @@ const VOCI_MENU = [
   { id:'provvisorie', label:'Spin provvisorie', icon:'🎰', desc:'Le spin compilate da sole, in anteprima', soloAdmin:true },
   { id:'votate',      label:'Partite votate',   icon:'⭐', desc:'Quelle con la stellina: entrano nella spin comunque' },
   { id:'storico',     label:'Storico',          icon:'📚', desc:'L\'archivio e come stanno andando le proposte' },
+  { id:'andamento',   label:'Andamento',        icon:'📈', desc:'Quale indicatore ci azzecca, giorno per giorno' },
   { id:'utenti',  label:'Utenti',   icon:'◎',  desc:'Gestione utenti e password', soloAdmin:true },
 ]
 
@@ -188,6 +190,7 @@ function AppShell() {
       case 'provvisorie': return <SpinProvvisoriePage />
       case 'votate':    return <VotatePage />
       case 'storico':   return <StoricoPage />
+      case 'andamento': return <AndamentoPage />
       case 'utenti':    return <UtentiPage />
       default:          return <DashboardPage />
     }
