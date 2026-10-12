@@ -101,50 +101,56 @@ export function consiglioGg(gg) {
   }
 }
 
-// ── LE SOGLIE CHE CONTANO, e il colore che le mostra ────────────────────────
-// ⚠️ **Misurate il 12/10/2026** su 33.141 partite in 1.461 giorni di gioco
-// (`btscout/scripts/prova-indicatori.js`, sezione LA TABELLA DELLE SOGLIE).
-// Rispondono alla domanda di Mattia — *"se l'indicatore è sopra al tot%,
-// succede X volte"* — e il colore serve a non doverla rifare ogni volta:
-// **verde** = sopra la soglia alta · **verde chiaro** = sopra quella utile ·
-// **niente** = il numero non sta dicendo nulla di più della media.
+// ── LE SOGLIE CHE CONTANO, e il colore che le accende ───────────────────────
+// ⚠️⚠️ **Il colore risponde a UNA domanda sola, e il 12/10/2026 l'ho sbagliata
+// una volta.** La prima versione accendeva dove l'esito arriva **più spesso del
+// suo solito**: statisticamente giusto, praticamente inutile — l'over 3,5 si
+// illuminava al 35% pur arrivando solo il 37,9% delle volte, cioè una giocata
+// che perde due volte su tre. Mattia: *"c'è qualcosa che non va"*, e aveva
+// ragione. La domanda giusta è la sua: **da che valore in su quella giocata ha
+// dato esiti positivi in passato?**
 //
-// ⚠️⚠️ **Ogni riga ha la sua scala, e NON si possono colorare con la stessa.**
-// L'over 0,5 sta quasi sempre sopra il 90%: lì un 82% è un numero *basso*,
-// mentre sull'over 1,5 è il massimo che il modello arriva a dire. Un'unica
-// soglia per tutte le righe direbbe il contrario del vero su metà di loro.
+// Quindi due condizioni, **e servono entrambe**:
+//   1. **il pavimento** — l'esito deve arrivare almeno il **70%** delle volte
+//      (over/under) o il **65%** (Goal/NoGoal). Soglie scelte da Mattia.
+//   2. **deve selezionare** — una riga che supera il pavimento già dal suo
+//      valore più basso darebbe una cella **sempre accesa**, che non dice
+//      niente su *questa* partita. Perciò la soglia si alza finché esclude.
 //
-// `forte` e `utile` sono le soglie; `resaForte`/`resaUtile` quante volte
-// l'esito è arrivato davvero sopra di esse, e `base` quante volte arriva in
-// generale — i tre numeri che rendono leggibile il colore.
+// ⚠️⚠️ **Conseguenza, e va detta: sette celle su dieci non si accendono mai.**
+// Non è un difetto, è la misura su 33.141 partite — il massimo tasso che
+// raggiungono, a qualunque soglia, sta sotto il pavimento:
+//   over 2,5 → 64% · under 2,5 → 62% · Goal → 61% · NoGoal → 55% ·
+//   over 3,5 → 43% · under 1,5 → 35% · under 0,5 → 12%.
+// Quelle giocate **non hanno mai funzionato abbastanza**, e una cella spenta è
+// esattamente l'informazione che Mattia ha chiesto.
+// ⚠️ Il Goal è il caso al limite: tocca il 61% e col pavimento al 60% si
+// accenderebbe dal 57% in su (3,4 partite al giorno). Sta a 65% per scelta.
 export const SOGLIE_COLORE = {
-  'over0':  { forte: 0.95, utile: 0.93, veroForte: 0.955, veroUtile: 0.943, base: 0.929 },
-  'over1':  { forte: 0.82, utile: 0.79, veroForte: 0.836, veroUtile: 0.822, base: 0.754 },
-  'over2':  { forte: 0.62, utile: 0.58, veroForte: 0.629, veroUtile: 0.612, base: 0.510 },
-  'over3':  { forte: 0.40, utile: 0.35, veroForte: 0.413, veroUtile: 0.379, base: 0.287 },
-  'under0': { forte: 0.12, utile: 0.10, veroForte: 0.118, veroUtile: 0.104, base: 0.071 },
-  'under1': { forte: 0.30, utile: 0.26, veroForte: 0.306, veroUtile: 0.290, base: 0.246 },
-  'under2': { forte: 0.58, utile: 0.52, veroForte: 0.583, veroUtile: 0.555, base: 0.490 },
-  'under3': { forte: 0.78, utile: 0.75, veroForte: 0.785, veroUtile: 0.771, base: 0.713 },
-  'gg':     { forte: 0.60, utile: 0.57, veroForte: 0.620, veroUtile: 0.597, base: 0.533 },
-  'ng':     { forte: 0.52, utile: 0.50, veroForte: 0.536, veroUtile: 0.520, base: 0.467 },
+  // tasso = quante volte la giocata è arrivata davvero, sopra quella soglia
+  'over0':  { forte: 0.95, utile: 0.93, tassoForte: 0.955, tassoUtile: 0.943, alGiorno: 4.5 },
+  'over1':  { forte: 0.80, utile: 0.75, tassoForte: 0.832, tassoUtile: 0.800, alGiorno: 4.5 },
+  'under3': { forte: 0.80, utile: 0.73, tassoForte: 0.793, tassoUtile: 0.771, alGiorno: 3.4 },
+  // ⚠️ Le altre non ci sono **di proposito**: non raggiungono il pavimento a
+  // nessuna soglia. Aggiungerle qui vuol dire riaccendere una giocata che
+  // perde — se un domani si rimisura e una ce la fa, si aggiunge con la data.
+  'over2': null, 'over3': null,
+  'under0': null, 'under1': null, 'under2': null,
+  'gg': null, 'ng': null,
 }
 
 /**
  * In quale fascia sta un numero: `'forte'`, `'utile'` o `null`.
- * ⚠️ `null` non vuol dire "andrà male": vuol dire **non lo sappiamo**, e il
- * numero va letto come la media del campionato. Colorare tutto di qualcosa
- * sarebbe dire che ogni partita ha un segnale.
+ * ⚠️ `null` non vuol dire "andrà male": vuol dire **nessun segnale**. Il numero
+ * nella cella resta valido e va letto per quello che è — una probabilità.
  */
 export function fasciaGol(chiave, p) {
   const s = SOGLIE_COLORE[chiave]
   if (!s || p == null) return null
   // ⚠️ Si decide sul numero ARROTONDATO, quello che la persona legge. Con il
   // valore pieno una cella può mostrare "93%" e restare spenta perché sotto
-  // c'è 0,9299, oppure mostrare "52%" partendo da 0,5151 e restare spenta pur
-  // essendo alla soglia: in entrambi i casi il colore smentisce la cifra
-  // accanto, e chi guarda pensa che il colore sia rotto. Trovato da Mattia il
-  // 12/10/2026 guardando una scheda vera.
+  // c'è 0,9299: il colore smentisce la cifra che ha accanto, e chi guarda
+  // pensa che il colore sia rotto. Trovato da Mattia il 12/10/2026.
   const letto = Math.round(p * 100) / 100
   return letto >= s.forte ? 'forte' : letto >= s.utile ? 'utile' : null
 }
@@ -152,15 +158,16 @@ export function fasciaGol(chiave, p) {
 /**
  * L'intervallo centrale dei gol totali: `{ da, a, copertura }`.
  * Risponde a "quanti gol aspettarsi", che è la domanda di chi legge — mentre
- * `2,63 in tutto` è una media, e una media di gol è un numero che non si vede
- * mai in campo (non esistono partite da 2,63 gol).
+ * `3,01 in tutto` è una media, e una media di gol non si vede mai in campo
+ * (non esistono partite da 3,01 gol).
  *
- * ⚠️ È la dispersione di Poisson attorno a λ, **non** l'incertezza sul nostro λ:
- * dice "con questa aspettativa, i risultati si sparpagliano così", non "la mia
- * stima è precisa entro questo". Le due cose si sommerebbero, quindi
- * l'intervallo vero è semmai un filo più largo. `copertura` è calcolata, non
- * assunta, e va mostrata accanto: un intervallo senza quanto spesso si avvera
- * non si può leggere.
+ * ⚠️ È la dispersione di Poisson attorno a λ, **non** l'incertezza sul nostro
+ * λ: dice "con questa aspettativa i risultati si sparpagliano così", non "la
+ * mia stima è precisa entro questo". Le due si sommerebbero, quindi
+ * l'intervallo vero è semmai un filo più largo.
+ * ⚠️ `copertura` è **verificata**: su 10.059 partite dichiara 67,9% e si avvera
+ * 67,9% ±0,9 (`btscout/scripts/prova-gol.js`). Va mostrata accanto —
+ * un intervallo senza quanto spesso si avvera non si può leggere.
  */
 export function intervalloGol(lambdaTotale, quota = 0.25) {
   if (lambdaTotale == null) return null

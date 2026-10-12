@@ -299,21 +299,32 @@ stagioni, 17 sopra voto 105%. Oltre lì non si misura niente.
 
 ### Le dieci celle colorate — fatto il 12 ottobre 2026
 
-Il blocco ⚽ della scheda ha ora **due righe da cinque**: over 0,5/1,5/2,5/3,5 +
-GOAL sopra, under 0,5/1,5/2,5/3,5 + NOGOAL sotto. **Verde** sopra la soglia
-alta, **verde chiaro** sopra quella utile, **niente** quando il numero non dice
-più della media. Soglie in `SOGLIE_COLORE` (`lib/gol.js`), misurate su 33.141
-partite, con accanto quante volte l'esito è arrivato davvero.
+Blocco ⚽ a due righe: over 0,5/1,5/2,5/3,5 + GOAL sopra, under + NOGOAL sotto.
 
-⚠️ **Ogni riga ha la sua scala**: over 1,5 verde dall'82% (83,6% contro una
-base del 75,4%), over 2,5 dal 62%, over 3,5 dal 40%, GG dal 60%, under 2,5 dal
-58%. Una soglia unica direbbe il falso su metà delle righe — sull'over 0,5 l'82%
-è un numero basso.
-⚠️ **Solo per over/under e GG/NG**, per richiesta di Mattia: gli altri numeri
-hanno già i loro codici di colore.
-⚠️ Provato che i due lati non si accendono mai insieme: partita aperta → riga
-over tutta verde e under spenta; partita chiusa → il contrario; partita media →
-quasi tutto spento.
+⚠️⚠️ **Il criterio del colore è stato sbagliato una volta e corretto lo stesso
+giorno.** Prima accendeva dove l'esito arriva più spesso del suo solito:
+l'over 3,5 si illuminava al 35% pur arrivando il 37,9% delle volte. Mattia:
+*"c'è qualcosa che non va"*. Ora il colore risponde alla sua domanda — **da che
+valore in su quella giocata ha dato esiti positivi?** — con due condizioni:
+pavimento (70% over/under, 65% Goal/NoGoal, scelti da lui) **e** la soglia deve
+selezionare, altrimenti la cella sarebbe sempre accesa.
+
+| | verde | verde chiaro | tasso | al giorno |
+|---|---|---|---|---|
+| over 0,5 | 95% | 93% | 95,5% / 94,3% | 4,5 |
+| over 1,5 | 80% | 75% | 83,2% / 80,0% | 4,5 |
+| under 3,5 | 80% | 73% | 79,3% / 77,1% | 3,4 |
+
+⚠️ **Le altre sette non si accendono mai**: il massimo tasso raggiungibile sta
+sotto il pavimento (over 2,5 64% · under 2,5 62% · Goal 61% · NoGoal 55% ·
+over 3,5 43% · under 1,5 35% · under 0,5 12%). Non è un difetto: quelle giocate
+non hanno mai funzionato abbastanza.
+⚠️ Il Goal è al limite: con pavimento 60% si accenderebbe dal 57% (3,4 partite
+al giorno). È un numero solo, se Mattia cambia idea.
+⚠️ La riga CONSIGLIO non usa più il verde, per non contraddire la cella GOAL.
+⚠️ Soglie da `prova-indicatori.js`, sezione *DA CHE VALORE IN SU LA GIOCATA HA
+FUNZIONATO*; la ricerca cammina sui valori veri dell'indicatore, non su una
+griglia 0-1 (con quella VPM e voto stampavano `—` per sbaglio).
 
 ### Il Goal/NoGoal — fatto il 12 ottobre 2026
 

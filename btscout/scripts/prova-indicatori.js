@@ -237,7 +237,65 @@ riassunto(`le prime ${PRIME_WEEKEND} di ogni weekend`, perWeekend, PRIME_WEEKEND
     }
     console.log('');
   }
-  console.log(`   ✓ = sopra quella soglia l'esito arriva più spesso che in generale, e lo scarto`);
+  // ── LA SOGLIA PER ARRIVARE A UN TASSO, non per battere la base ────────────
+  // ⚠️ Due domande diverse, e Mattia vuole la seconda (12/10/2026):
+  //   a) "sopra questa soglia l'esito arriva più spesso del suo solito?" —
+  //      statistica, ed è quella che l'over 3,5 supera al 35% pur arrivando
+  //      solo il 37,9% delle volte: vero e inutile da giocare.
+  //   b) "da che valore in su la giocata ha dato esiti positivi?" — pratica.
+  // Qui si risponde a (b): la soglia più bassa da cui l'esito arriva almeno
+  // il tot% delle volte. Vuota = non ci arriva mai, a nessuna soglia.
+  console.log(`\n══ DA CHE VALORE IN SU LA GIOCATA HA FUNZIONATO ══`);
+  console.log(`   (la soglia più bassa che porta l'esito al tasso richiesto, e quante partite dà a giornata)\n`);
+  const TASSI = [0.60, 0.65, 0.70, 0.75, 0.80];
+  console.log(`   ${'indicatore'.padEnd(12)} ${TASSI.map(t => `${(t * 100).toFixed(0)}%`.padStart(14)).join('')}`);
+  for (const S of SOGLIE) {
+    const tutte = valutate.filter(x => S.val(x) != null);
+    if (!tutte.length) continue;
+    // ⚠️ Le soglie si cercano sui VALORI VERI dell'indicatore, non su una
+    // griglia da 0 a 1: VPM va da 5,5 a 10 e il voto sta attorno a 1, quindi
+    // una griglia di percentuali li saltava del tutto e stampava "—" su righe
+    // che invece funzionano (VPM ≥8,5 porta la giocata al 71,4%).
+    const ordinati = tutte.map(S.val).sort((a, b) => a - b);
+    const candidate = [];
+    for (let q = 0; q < 100; q++) candidate.push(ordinati[Math.floor(ordinati.length * q / 100)]);
+    const celle = TASSI.map(T => {
+      for (const t of candidate) {
+        const l = tutte.filter(x => S.val(x) >= t);
+        if (l.length < 300) break;                       // sotto 300 è rumore
+        if (l.filter(S.esito).length / l.length >= T) return `${S.fmt(t)}→${(l.length / giorni).toFixed(1)}`.padStart(14);
+      }
+      return '—'.padStart(14);
+    });
+    console.log(`   ${S.label.padEnd(12)} ${celle.join('')}`);
+  }
+  // ── Il dettaglio delle righe che superano il pavimento di Mattia ──────────
+  // ⚠️ Pavimento: 70% per over/under, 65% per Goal/NoGoal (deciso il
+  // 12/10/2026). ⚠️ E la soglia deve SELEZIONARE: una riga che passa il
+  // pavimento già a partire dal suo valore più basso non dipende dalla
+  // partita, quindi sarebbe una cella sempre accesa — cioè nessuna
+  // informazione. Qui si cerca il punto in cui fa tutt'e due le cose.
+  console.log(`\n── dove si accendono, riga per riga ──`);
+  for (const S of SOGLIE) {
+    const tutte = valutate.filter(x => S.val(x) != null);
+    if (!tutte.length) continue;
+    const ordinati = tutte.map(S.val).sort((a, b) => a - b);
+    const righeOk = [];
+    for (let q = 10; q < 100; q += 5) {
+      const t = ordinati[Math.floor(ordinati.length * q / 100)];
+      const l = tutte.filter(x => S.val(x) >= t);
+      if (l.length < 300) break;
+      const tasso = l.filter(S.esito).length / l.length;
+      righeOk.push(`${S.fmt(t)}:${(tasso * 100).toFixed(0)}%/${(l.length / giorni).toFixed(1)}`);
+    }
+    console.log(`   ${S.label.padEnd(12)} ${righeOk.join('  ')}`);
+  }
+  console.log(`   (soglia : tasso / partite al giorno — si cerca il tasso alto con partite ancora a sufficienza)`);
+
+  console.log(`\n   si legge "62%→2,0" = da quel valore in su l'esito arriva al tasso della colonna,`);
+  console.log(`   e sono 2,0 partite al giorno. "—" = non ci arriva a nessuna soglia utilizzabile.`);
+
+  console.log(`\n   ✓ = sopra quella soglia l'esito arriva più spesso che in generale, e lo scarto`);
   console.log(`       è più grande del margine d'errore. · = lo scarto sta dentro il rumore.`);
 }
 

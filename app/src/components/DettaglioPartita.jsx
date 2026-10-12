@@ -486,14 +486,19 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
               può credere al responso quando arriva (62,0% sopra il 60%). */}
           {(() => {
             const cg = consiglioGg(g.gg)
-            const tinta = cg.esito === 'GOL' ? C.menta : cg.esito === 'NO GOL' ? C.rosso : C.spento
+            // ⚠️ Niente verde qui: da quando il verde vuol dire "da questo
+            // valore in su la giocata ha funzionato", un CONSIGLIO verde
+            // accanto a una cella GOAL spenta direbbe due cose opposte. Il
+            // consiglio resta — dice quale lato preferisce il modello — ma in
+            // tinta neutra, perché al pavimento del 65% non ci arriva mai.
+            const tinta = C.celestePieno
             return (
               <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 padding: '8px 10px', minHeight: 36,
-                background: `linear-gradient(${alpha(tinta, 0.09)},${alpha(tinta, 0.09)}), ${C.card}`,
-                border: `1px solid ${alpha(tinta, 0.3)}` }}>
+                background: `linear-gradient(${alpha(tinta, 0.07)},${alpha(tinta, 0.07)}), ${C.card}`,
+                border: `1px solid ${alpha(tinta, 0.25)}` }}>
                 <span style={{ fontSize: 8, fontFamily: F.mono, color: C.spento, letterSpacing: '0.08em' }}>CONSIGLIO</span>
-                <span style={{ fontSize: 15, fontWeight: 700, fontFamily: F.mono, color: tinta, letterSpacing: '0.04em' }}>
+                <span style={{ fontSize: 15, fontWeight: 700, fontFamily: F.mono, color: C.testo, letterSpacing: '0.04em' }}>
                   {cg.esito || 'IN BILICO'}
                 </span>
                 <span style={{ fontSize: 11, fontFamily: F.mono, color: C.spento }}>
@@ -517,12 +522,12 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
               col mouse non esiste su telefono, quindi sta scritto. */}
           <div style={{ marginTop: 6, fontSize: 10, fontFamily: F.sans, color: C.fantasma, lineHeight: 1.5 }}>
             <span style={{ color: C.verde, fontWeight: 700 }}>Verde</span> e{' '}
-            <span style={{ color: C.menta, fontWeight: 700 }}>verde chiaro</span>: sopra le soglie dove,
-            su 33.141 partite, l&apos;esito è arrivato più spesso che in generale — over 1,5 dall&apos;82%
-            ({(SOGLIE_COLORE.over1.veroForte * 100).toFixed(0)}% contro {(SOGLIE_COLORE.over1.base * 100).toFixed(0)}%),
-            over 2,5 dal 62% ({(SOGLIE_COLORE.over2.veroForte * 100).toFixed(0)}% contro {(SOGLIE_COLORE.over2.base * 100).toFixed(0)}%),
-            Goal dal 60% ({(SOGLIE_COLORE.gg.veroForte * 100).toFixed(0)}% contro {(SOGLIE_COLORE.gg.base * 100).toFixed(0)}%).
-            Senza colore il numero non dice più della media.
+            <span style={{ color: C.menta, fontWeight: 700 }}>verde chiaro</span>: da quel valore in su,
+            su 33.141 partite, quella giocata è arrivata il{' '}
+            {(SOGLIE_COLORE.over1.tassoForte * 100).toFixed(0)}% delle volte (over 1,5 dall&apos;80%),
+            il {(SOGLIE_COLORE.over0.tassoForte * 100).toFixed(0)}% (over 0,5 dal 95%),
+            il {(SOGLIE_COLORE.under3.tassoForte * 100).toFixed(0)}% (under 3,5 dall&apos;80%).
+            Le altre caselle non si accendono mai: a nessuna soglia hanno superato il 70%.
           </div>
         </Blocco>
       )}
