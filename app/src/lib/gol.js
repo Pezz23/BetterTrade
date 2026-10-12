@@ -139,7 +139,14 @@ export const SOGLIE_COLORE = {
 export function fasciaGol(chiave, p) {
   const s = SOGLIE_COLORE[chiave]
   if (!s || p == null) return null
-  return p >= s.forte ? 'forte' : p >= s.utile ? 'utile' : null
+  // ⚠️ Si decide sul numero ARROTONDATO, quello che la persona legge. Con il
+  // valore pieno una cella può mostrare "93%" e restare spenta perché sotto
+  // c'è 0,9299, oppure mostrare "52%" partendo da 0,5151 e restare spenta pur
+  // essendo alla soglia: in entrambi i casi il colore smentisce la cifra
+  // accanto, e chi guarda pensa che il colore sia rotto. Trovato da Mattia il
+  // 12/10/2026 guardando una scheda vera.
+  const letto = Math.round(p * 100) / 100
+  return letto >= s.forte ? 'forte' : letto >= s.utile ? 'utile' : null
 }
 
 export const BASE_DEFAULT = 'tiri'

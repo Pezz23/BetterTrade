@@ -438,9 +438,13 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
             return (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4 }}>
                 {SOGLIE_OVER.map(sg => cella(`over${sg}`, `OVER ${sg},5`, g.over[sg], C.celestePieno))}
-                {cella('gg', 'GOAL', g.gg, C.menta)}
+                {/* ⚠️ Il fondo neutro è lo stesso per tutte e dieci. Prima GOAL e
+                    NOGOAL l'avevano verdino: innocuo finché il verde non voleva
+                    dire niente, fuorviante ora che è il risultato della misura —
+                    sembravano accese anche da spente. */}
+                {cella('gg', 'GOAL', g.gg, C.celestePieno)}
                 {SOGLIE_OVER.map(sg => cella(`under${sg}`, `UNDER ${sg},5`, 1 - g.over[sg], C.celestePieno))}
-                {cella('ng', 'NOGOAL', 1 - g.gg, C.menta)}
+                {cella('ng', 'NOGOAL', 1 - g.gg, C.celestePieno)}
               </div>
             )
           })()}

@@ -458,6 +458,16 @@ misura gli ha dato ragione: è esattamente la soglia dove lo scarto si stacca
 esplicita): gli altri numeri — attendibilità, VPM, resa, voto — hanno già i
 loro codici (il verde/rosso di VPM è l'accordo col mercato, non una soglia) e
 due grammatiche di colore sullo stesso schermo si leggono male.
+⚠️ **La fascia si decide sul numero ARROTONDATO, quello che la persona legge**
+(`fasciaGol`). Col valore pieno una cella mostrava `93%` e restava spenta
+perché sotto c'era 0,9299, o mostrava `52%` partendo da 0,5151 e restava
+spenta pur essendo alla soglia: in entrambi i casi **il colore smentisce la
+cifra che ha accanto**, e chi guarda conclude che il colore è rotto. Trovato da
+Mattia il 12/10/2026 guardando una scheda vera.
+⚠️ **Il fondo neutro è lo stesso per tutte e dieci le celle.** GOAL e NOGOAL
+l'avevano verdino (`C.menta`): innocuo finché il verde non significava niente,
+**fuorviante** da quando è il risultato della misura — sembravano accese anche
+da spente.
 ⚠️ **Niente colore non vuol dire "andrà male": vuol dire non lo sappiamo.**
 Colorare tutto di qualcosa equivale a dire che ogni partita ha un segnale.
 
