@@ -418,6 +418,34 @@ l'evento binario butta via l'informazione di quanti gol) e la **correzione di
 correlazione** imparata dalle stagioni chiuse (invariata: +0,0005). La
 correlazione fra le due squadre esiste ma è già dentro la stretta.
 
+#### La testa del blocco: di chi sono i gol, e quanti aspettarsene
+
+**Rifatta il 12/10/2026.** Prima c'erano i due numeri affiancati con la parola
+*attesi* in mezzo (`1,45 attesi 1,56`) e il totale ripetuto nel titolo. Mattia:
+*"non si capisce una mazza"*, e aveva ragione due volte — **il totale era
+scritto due volte**, e **due numeri con una parola in mezzo si leggono come un
+intervallo** mentre sono di due squadre diverse.
+
+Adesso: il **nome di ciascuna squadra sopra il suo numero** (sinistra la casa,
+destra la trasferta), e sotto l'intervallo vero del totale — `ATTESI DA 2 A 4
+GOL · 62% DELLE VOLTE`, da `intervalloGol()`.
+⚠️ **L'intervallo esiste perché "3,01 in tutto" è una media, e una media di gol
+non si vede mai in campo**: non esistono partite da 3,01 gol. L'intervallo dice
+la stessa cosa in risultati veri.
+⚠️ **La percentuale accanto è verificata, non solo calcolata**: su 10.059
+partite l'intervallo dichiara 67,9% e si avvera **67,9% ±0,9**
+(`scripts/prova-gol.js`, blocco *l'intervallo dei gol*). Un intervallo senza
+quanto spesso si avvera non si può leggere, e uno che promette più di quanto
+mantiene è peggio di niente.
+⚠️ `intervalloGol()` è la dispersione di **Poisson attorno a λ**, non
+l'incertezza sulla nostra stima di λ: dice "con questa aspettativa i risultati
+si sparpagliano così", non "la mia stima è precisa entro questo". Le due si
+sommerebbero, quindi l'intervallo vero è semmai un filo più largo.
+⚠️ **Tolto il paragrafo di avvertenze sotto le celle** (*"Stima dalle squadre,
+senza quote…"*): era un trafiletto sotto a una griglia già densa e si leggeva
+come rumore. Quello che diceva resta qui, dove serve a chi sviluppa; a schermo
+resta la sola riga che spiega il colore.
+
 #### Le dieci celle colorate — fatto il 12/10/2026
 
 Il blocco **⚽ Gol attesi** mostra **due righe da cinque**: `OVER 0,5 · 1,5 ·

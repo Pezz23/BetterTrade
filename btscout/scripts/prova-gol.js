@@ -11,7 +11,7 @@
 // quelle con 2,2, l'indicatore non serve a niente.
 
 import { sql } from '../lib/db.js';
-import { golAttesi, SOGLIE_OVER, K_STRETTA, BASE_DEFAULT } from '../../app/src/lib/gol.js';
+import { golAttesi, SOGLIE_OVER, K_STRETTA, BASE_DEFAULT , intervalloGol } from '../../app/src/lib/gol.js';
 import { MIN_PARTITE, PARTITE_FINESTRA } from '../../app/src/lib/vpm.js';
 
 const arg = (n, d) => { const a = process.argv.find(x => x.startsWith(`--${n}=`)); return a ? Number(a.split('=')[1]) : d };
@@ -138,6 +138,27 @@ if (conMercato.length > 100) {
 }
 
 // ── 4. Le soglie, a colpo d'occhio ──────────────────────────────────────────
+// ── L'INTERVALLO DEI GOL, quello scritto nella scheda ───────────────────────
+// ⚠️ A schermo c'è "da X a Y gol, N% delle volte": quel N è calcolato da
+// Poisson, quindi va **verificato sui risultati veri** prima di stamparlo.
+// Se la copertura dichiarata e quella reale divergono, l'intervallo è una
+// promessa che il modello non mantiene.
+{
+  let somma = 0, dentro = 0, largh = 0;
+  for (const p of prove) {
+    const i = intervalloGol(p.totale);
+    somma += i.copertura;
+    if (p.golVeri >= i.da && p.golVeri <= i.a) dentro++;
+    largh += i.a - i.da + 1;
+  }
+  const d = dentro / prove.length, dich = somma / prove.length;
+  const es = Math.sqrt(d * (1 - d) / prove.length);
+  console.log(`\n── l'intervallo dei gol (quello della scheda) ──`);
+  console.log(`  dichiarato ${(dich * 100).toFixed(1)}%  ·  avverato ${(d * 100).toFixed(1)}% ±${(1.96 * es * 100).toFixed(1)}` +
+    `  ·  largo ${(largh / prove.length).toFixed(1)} risultati su ${prove.length} partite`);
+  console.log(`  ${Math.abs(d - dich) < 1.96 * es ? '✓ mantiene quello che promette' : '✗ promette ' + (dich > d ? 'più' : 'meno') + ' di quanto mantiene'}`);
+}
+
 console.log('\n── quanto spesso si avvera ogni soglia ──');
 for (const s of SOGLIE_OVER) {
   const prev = prove.reduce((a, p) => a + p.over[s], 0) / prove.length;

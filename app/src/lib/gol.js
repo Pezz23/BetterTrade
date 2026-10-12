@@ -149,6 +149,34 @@ export function fasciaGol(chiave, p) {
   return letto >= s.forte ? 'forte' : letto >= s.utile ? 'utile' : null
 }
 
+/**
+ * L'intervallo centrale dei gol totali: `{ da, a, copertura }`.
+ * Risponde a "quanti gol aspettarsi", che è la domanda di chi legge — mentre
+ * `2,63 in tutto` è una media, e una media di gol è un numero che non si vede
+ * mai in campo (non esistono partite da 2,63 gol).
+ *
+ * ⚠️ È la dispersione di Poisson attorno a λ, **non** l'incertezza sul nostro λ:
+ * dice "con questa aspettativa, i risultati si sparpagliano così", non "la mia
+ * stima è precisa entro questo". Le due cose si sommerebbero, quindi
+ * l'intervallo vero è semmai un filo più largo. `copertura` è calcolata, non
+ * assunta, e va mostrata accanto: un intervallo senza quanto spesso si avvera
+ * non si può leggere.
+ */
+export function intervalloGol(lambdaTotale, quota = 0.25) {
+  if (lambdaTotale == null) return null
+  let cum = 0, da = null, a = 0
+  for (let k = 0; k <= 15; k++) {
+    const prima = cum
+    cum += poisson(k, lambdaTotale)
+    if (da === null && cum >= quota) da = k
+    if (prima < 1 - quota) a = k
+    if (cum >= 1 - quota) break
+  }
+  let copertura = 0
+  for (let k = da; k <= a; k++) copertura += poisson(k, lambdaTotale)
+  return { da, a, copertura }
+}
+
 export const BASE_DEFAULT = 'tiri'
 export const SOGLIE_OVER = [0, 1, 2, 3]   // over 0,5 · 1,5 · 2,5 · 3,5
 

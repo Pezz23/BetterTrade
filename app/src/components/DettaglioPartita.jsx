@@ -9,7 +9,7 @@ import { tocco } from '../lib/schermo'
 import BarraPartita from './BarraPartita'
 import { usaVpm } from '../hooks/usaVpm'
 import { valutaPartita, vociPesate, verso, PESI, ETICHETTE, NOMI_STRATI, PESI_STRATI, VPM_NETTO } from '../lib/vpm'
-import { golAttesi, SOGLIE_OVER, consiglioGg, FIDUCIA_GG, fasciaGol, SOGLIE_COLORE } from '../lib/gol'
+import { golAttesi, SOGLIE_OVER, consiglioGg, FIDUCIA_GG, fasciaGol, SOGLIE_COLORE, intervalloGol } from '../lib/gol'
 
 // La scheda di una partita: tutto quello che sappiamo, in blocchi.
 // Pensata prima per il telefono — una colonna, numeri grandi, niente muri di
@@ -404,11 +404,39 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
           partita, non come una previsione da giocare. */}
       {g && (
         <Blocco titolo="⚽ Gol attesi" extra={`${g.totale.toFixed(2).replace('.', ',')} in tutto`} sottolinea>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 10, marginBottom: 12 }}>
-            <span style={{ fontSize: 22, fontWeight: 700, fontFamily: F.mono, color: C.testo }}>{g.lambdaCasa.toFixed(2).replace('.', ',')}</span>
-            <span style={{ fontSize: 11, fontFamily: F.mono, color: C.spento }}>attesi</span>
-            <span style={{ fontSize: 22, fontWeight: 700, fontFamily: F.mono, color: C.testo }}>{g.lambdaFuori.toFixed(2).replace('.', ',')}</span>
+          {/* ⚠️ Prima qui c'erano i due numeri affiancati con "attesi" in mezzo, e
+              il totale ripetuto nel titolo. Mattia (12/10/2026): *"non si
+              capisce una mazza"* — aveva ragione due volte. Il totale era
+              scritto due volte, e due numeri con una parola in mezzo si leggono
+              come un intervallo, mentre sono **di due squadre diverse**.
+              Adesso: sopra di chi sono, sotto l'intervallo vero. */}
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
+            {[[p.casa, g.lambdaCasa], [p.trasferta, g.lambdaFuori]].map(([chi, lam], i) => (
+              <div key={chi} style={{ flex: 1, textAlign: i ? 'right' : 'left', minWidth: 0 }}>
+                <div style={{ fontSize: 9, fontFamily: F.mono, color: C.spento, letterSpacing: '0.06em',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{chi.toUpperCase()}</div>
+                <div style={{ fontSize: 22, fontWeight: 700, fontFamily: F.mono, color: C.testo, lineHeight: 1.1 }}>
+                  {lam.toFixed(2).replace('.', ',')}
+                </div>
+              </div>
+            ))}
           </div>
+
+          {/* ⚠️ "3,01 in tutto" è una media, e una media di gol non si vede mai
+              in campo: non esistono partite da 3,01 gol. L'intervallo dice la
+              stessa cosa in risultati veri. ⚠️ La percentuale accanto è
+              **verificata**, non calcolata e basta: su 10.059 partite dichiara
+              67,9% e si avvera 67,9% (`btscout/scripts/prova-gol.js`). Senza
+              quel numero un intervallo non si può leggere. */}
+          {(() => {
+            const iv = intervalloGol(g.totale)
+            return (
+              <div style={{ textAlign: 'center', marginBottom: 12, fontSize: 11, fontFamily: F.mono, color: C.spento, letterSpacing: '0.04em' }}>
+                ATTESI <span style={{ color: C.testo, fontWeight: 700, fontSize: 13 }}>DA {iv.da} A {iv.a} GOL</span>
+                {' '}· {(iv.copertura * 100).toFixed(0)}% DELLE VOLTE
+              </div>
+            )
+          })()}
 
           {/* ⚠️ IL COLORE È IL RISULTATO DELLA MISURA, non una decorazione.
               Verde = sopra la soglia alta, verde chiaro = sopra quella utile,
@@ -483,12 +511,6 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
             attacco {g.attacco.casa.toFixed(2).replace('.', ',')} · {g.attacco.trasferta.toFixed(2).replace('.', ',')}
             {'   '}difesa {g.difesa.casa.toFixed(2).replace('.', ',')} · {g.difesa.trasferta.toFixed(2).replace('.', ',')}
             {'   '}<span style={{ color: C.fantasma }}>(1,00 = media del campionato, {g.media.toFixed(2).replace('.', ',')} gol)</span>
-          </div>
-          <div style={{ marginTop: 6, fontSize: 10, fontFamily: F.sans, color: C.fantasma, lineHeight: 1.5 }}>
-            Stima dalle squadre, senza quote: calibrata sull'archivio ma più debole del mercato.
-            Serve a leggere la partita, non a scommetterci sopra. Sul Goal/NoGoal il consiglio
-            è giusto il 54% delle volte contro il 53% di chi dice sempre GOL: è una partita
-            quasi imprevedibile, e nemmeno il mercato fa meglio (54%).
           </div>
           {/* ⚠️ Il colore senza la sua spiegazione è una decorazione: qui si dice
               cosa è successo DAVVERO sopra quelle soglie, misurato. Il `title`
