@@ -9,6 +9,7 @@ import { tocco } from '../lib/schermo'
 import BarraPartita from './BarraPartita'
 import { usaVpm } from '../hooks/usaVpm'
 import { valutaPartita, vociPesate, verso, PESI, ETICHETTE, NOMI_STRATI, PESI_STRATI, VPM_NETTO } from '../lib/vpm'
+import { golAttesi, SOGLIE_OVER } from '../lib/gol'
 
 // La scheda di una partita: tutto quello che sappiamo, in blocchi.
 // Pensata prima per il telefono — una colonna, numeri grandi, niente muri di
@@ -88,6 +89,9 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
   const datiVpm = usaVpm()
   const v = datiVpm ? valutaPartita(datiVpm, p) : null
   const vs = verso(v)
+  // I gol attesi: stesso hook, stesse finestre di VPM. Sta nella scheda e non
+  // in barra (scelta di Mattia): è un dato da leggere, non da scorrere.
+  const g = datiVpm ? golAttesi(datiVpm.squadre?.[p.div], p.casa, p.trasferta) : null
   const c = CATEGORIE[cat]
   const squadre = [p.casa, p.trasferta]
   const q = n => n == null ? '—' : Number(n).toFixed(2).replace('.', ',')
@@ -390,6 +394,56 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
           </Blocco>
         )
       })()}
+
+      {/* ── 6b. I gol attesi ───────────────────────────────────────────
+          Stesse finestre e stessi pesi di VPM, ma guarda i gol invece dei
+          risultati. ⚠️ **Non usa nessuna quota**: è una stima dalle squadre.
+          Calibrata (misurato su 10.059 partite: over 2,5 previsto 50,6% contro
+          52,5% vero) ma **debole** — aggiunge un quarto dell'informazione che
+          ha il mercato. Si legge come un colore della partita, non come una
+          previsione da giocare. */}
+      {g && (
+        <Blocco titolo="⚽ Gol attesi" extra={`${g.totale.toFixed(2).replace('.', ',')} in tutto`} sottolinea>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 10, marginBottom: 12 }}>
+            <span style={{ fontSize: 22, fontWeight: 700, fontFamily: F.mono, color: C.testo }}>{g.lambdaCasa.toFixed(2).replace('.', ',')}</span>
+            <span style={{ fontSize: 11, fontFamily: F.mono, color: C.spento }}>attesi</span>
+            <span style={{ fontSize: 22, fontWeight: 700, fontFamily: F.mono, color: C.testo }}>{g.lambdaFuori.toFixed(2).replace('.', ',')}</span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4 }}>
+            {SOGLIE_OVER.map(sg => (
+              <div key={sg} style={{ textAlign: 'center', padding: '7px 2px', borderRadius: 0,
+                background: `linear-gradient(${alpha(C.celestePieno, 0.07)},${alpha(C.celestePieno, 0.07)}), ${C.card}`,
+                border: `1px solid ${alpha(C.celestePieno, 0.25)}` }}>
+                <div style={{ fontSize: 15, fontWeight: 700, fontFamily: F.mono, color: C.testo, lineHeight: 1 }}>
+                  {(g.over[sg] * 100).toFixed(0)}%
+                </div>
+                <div style={{ fontSize: 8, fontFamily: F.mono, color: C.spento, letterSpacing: '0.08em', marginTop: 3 }}>OVER {sg},5</div>
+              </div>
+            ))}
+            <div style={{ textAlign: 'center', padding: '7px 2px',
+              background: `linear-gradient(${alpha(C.menta, 0.07)},${alpha(C.menta, 0.07)}), ${C.card}`,
+              border: `1px solid ${alpha(C.menta, 0.25)}` }}>
+              <div style={{ fontSize: 15, fontWeight: 700, fontFamily: F.mono, color: C.testo, lineHeight: 1 }}>
+                {(g.gg * 100).toFixed(0)}%
+              </div>
+              <div style={{ fontSize: 8, fontFamily: F.mono, color: C.spento, letterSpacing: '0.08em', marginTop: 3 }}>GOAL</div>
+            </div>
+          </div>
+
+          {/* Da dove viene il numero: attacco e difesa rispetto alla media del
+              campionato, dove 1,00 è "come tutti gli altri". */}
+          <div style={{ marginTop: 10, fontSize: 11, fontFamily: F.mono, color: C.spento, lineHeight: 1.6 }}>
+            attacco {g.attacco.casa.toFixed(2).replace('.', ',')} · {g.attacco.trasferta.toFixed(2).replace('.', ',')}
+            {'   '}difesa {g.difesa.casa.toFixed(2).replace('.', ',')} · {g.difesa.trasferta.toFixed(2).replace('.', ',')}
+            {'   '}<span style={{ color: C.fantasma }}>(1,00 = media del campionato, {g.media.toFixed(2).replace('.', ',')} gol)</span>
+          </div>
+          <div style={{ marginTop: 6, fontSize: 10, fontFamily: F.sans, color: C.fantasma, lineHeight: 1.5 }}>
+            Stima dalle squadre, senza quote: calibrata sull'archivio ma più debole del mercato.
+            Serve a leggere la partita, non a scommetterci sopra.
+          </div>
+        </Blocco>
+      )}
 
       {/* ── 7. Il consenso ──────────────────────────────────────────────
           Per ultimo, prima dei dettagli (scelta di Mattia, 9/10/2026): sono le

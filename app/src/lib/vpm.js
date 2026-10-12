@@ -148,16 +148,29 @@ export function strato(par, ancore) {
  * torna alla stagione. Così l'indice si appoggia su quello che esiste, e il
  * peso cresce da sé col calendario.
  */
+/**
+ * I pesi veri dei tre strati, dato quante partite hanno forma e ruolo.
+ *
+ * ⚠️ Lo strato si guadagna il peso **in proporzione alle partite che ha**: a
+ * ottobre le partite nel ruolo sono 1-3 e non 5, quindi il blocco prende il suo
+ * peso × (quante ne ha / 5) e il resto torna alla stagione.
+ * ⚠️ Sta qui, esportata, perché la usa **anche il modello dei gol**
+ * (`lib/gol.js`): la regola è una sola e non va riscritta due volte.
+ */
+export function pesiStrati(nForma, nRuolo) {
+  const quota = (n, peso) => (n ? peso * Math.min(1, n / PARTITE_FINESTRA) : 0)
+  const forma = quota(nForma, PESI_STRATI.forma)
+  const ruolo = quota(nRuolo, PESI_STRATI.ruolo)
+  return { stagione: 1 - forma - ruolo, forma, ruolo }
+}
+
 export function forza({ stagione, forma, ruolo }, dove) {
   const sStagione = strato(stagione, ANCORE.stagione)
   if (!sStagione || stagione.n < MIN_PARTITE) return null
   const sForma = strato(forma, ANCORE.forma)
   const sRuolo = strato(ruolo, ANCORE[dove])
 
-  const quota = (s, peso) => (s ? peso * Math.min(1, s.n / PARTITE_FINESTRA) : 0)
-  const pForma = quota(sForma, PESI_STRATI.forma)
-  const pRuolo = quota(sRuolo, PESI_STRATI.ruolo)
-  const pStagione = 1 - pForma - pRuolo
+  const { stagione: pStagione, forma: pForma, ruolo: pRuolo } = pesiStrati(sForma?.n, sRuolo?.n)
 
   return {
     punti: pStagione * sStagione.punti + pForma * (sForma?.punti ?? 0) + pRuolo * (sRuolo?.punti ?? 0),

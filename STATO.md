@@ -174,26 +174,34 @@ l'archivio, non il weekend.
   è già stato fatto in `backtest-scala.js` — quindi la pagina nascerebbe con
   otto stagioni dentro invece che vuota.
 
-### 26. Indicatore Goal / No Goal
-⚠️ **Blocco sui dati, trovato il 12/10:** **non esiste una sola colonna di quote
-GG/NG**, né in `partite` né in `prossime_partite`. football-data non le
-pubblica.
-Si può costruire un indicatore **dalle squadre** (come VPM) e misurarlo
-sull'esito storico, perché i gol ci sono. Ma **senza quota non c'è né una
-probabilità di mercato con cui confrontarsi, né qualcosa da giocare**: sarebbe
-un numero inutilizzabile.
-**Strada per averle:** The Odds API ha il mercato `btts`, a crediti in più per
-ogni giro. **Da verificare (2 crediti) prima di decidere.**
+### 26-27. [x] Gol attesi — over x,5 **e** Goal/NoGoal — fatto il 12/10 (**1.09.00**)
+I due punti erano **lo stesso lavoro**: un modello sui gol li produce entrambi.
+`src/lib/gol.js`, nel blocco **⚽ Gol attesi** della scheda (dove voleva Mattia).
+Stesse tre finestre e stessi pesi di VPM. **Nessuna quota**, come chiesto.
 
-### 27. Indicatore Over / Under
-Fattibile, e meglio del punto 26 perché **le quote ci sono**: le colonne
-`*_over25` / `*_under25` esistono in entrambe le tabelle e coprono il **100%
-della stagione in corso** (70% di tutto l'archivio).
-⚠️ **Ma sono vuote su tutte le 76 partite future**, per lo stesso motivo del
-punto 24: The Odds API le dà solo se si chiede il mercato `totals`. Si riempiono
-con l'import di football-data, oppure aggiungendo `totals` alla chiamata.
-⚠️ **L'over 1,5 non è quotato da nessuno** — il progetto lo stima con
-`FATTORE_OVER = 0,908` (misurato). Quindi l'indicatore si fa su **2,5**.
+⚠️ **Il blocco sul GG/NG resta vero ma non conta più**: le quote non ci sono, e
+non servono — l'indicatore è delle squadre. La verifica su The Odds API (punto
+C) serve solo se un domani lo si vuole **giocare**.
+
+**Due cose misurate su 10.059 partite, senza le quali era inutilizzabile:**
+- **La stretta verso la media (K = 20).** La prima versione prevedeva 1,79 gol
+  dove ne arrivavano 2,55 e 3,75 dove ne arrivavano 2,99: ordine giusto,
+  ampiezza tripla. `attacco × difesa` moltiplica due rapporti stimati su 5-10
+  partite e il rumore si moltiplica. K = 20 è al centro di un plateau.
+- **La base sono i tiri in porta, non i gol**: l'informazione aggiunta
+  raddoppia (+0,0022 contro +0,0013).
+
+**Esito:** calibrato (over 2,5 previsto 50,6% contro 52,5% vero, GG 54,0 contro
+54,5) ma **debole** — aggiunge +0,0022 contro i +0,0082 del mercato, cioè circa
+**un quarto** di quello che sa il book. A schermo c'è scritto: *"serve a leggere
+la partita, non a scommetterci sopra"*.
+
+⚠️ **Il metro è la costante, non il mercato**: un modello che non batte
+"prevedi sempre la media" non dice niente. `prova-gol.js` lo stampa sempre.
+
+**Se un domani lo si vuole migliorare**, le strade misurabili sono: correggere
+l'indipendenza di Poisson (lo 0-0 è più frequente del previsto) e usare anche i
+tiri totali oltre a quelli in porta.
 
 ---
 

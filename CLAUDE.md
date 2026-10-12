@@ -318,6 +318,55 @@ valere `Σ PESI[k] × vociPesate[k] = forza.punti`. `scripts/prova-scheda.js` lo
 controlla su tutte le partite (298 squadre-partita, scarto 3,6·10⁻¹⁵) — se non
 torna, una delle due è stata toccata senza l'altra.
 
+### I gol attesi — over x,5 e Goal/NoGoal
+
+**Nato il 12/10/2026** da due richieste di Mattia che sono **la stessa cosa**:
+*"un indicatore over x,5, una stima sul numero di reti previste"* e *"un
+indicatore Goal/NoGoal"*. Un modello solo li produce entrambi — `lib/gol.js`,
+visibile nel blocco **⚽ Gol attesi** della scheda.
+
+⚠️ **Non usa nessuna quota, ed è voluto** (Mattia: *"non mi interessa un match
+con le quote"*). Per l'over 2,5 il mercato ci sarebbe; per il GG/NG **no** —
+nessuna colonna in nessuna delle due tabelle, football-data non le pubblica.
+
+Il modello classico: `λcasa = attacco(casa) × difesa(ospite) × media del
+campionato`, con le **stesse tre finestre e gli stessi pesi di VPM** (stagione
+45% · forma 30% · ruolo 25%, peso in proporzione alle partite). Da λ escono
+l'over a tutte le soglie e il GG.
+
+⚠️⚠️ **Due cose sono misurate, non scelte, e senza di loro il modello è
+inutilizzabile.** Misurato su **10.059 partite** (24/25-26/27), camminando nel
+tempo con le sole partite precedenti:
+
+1. **La stretta verso la media** (`K_STRETTA = 20`). La prima versione
+   prevedeva **1,79 gol dove ne arrivavano 2,55** e **3,75 dove ne arrivavano
+   2,99**: l'ordine giusto, l'ampiezza tripla del vero. Succede perché
+   `attacco × difesa` moltiplica due rapporti stimati su 5-10 partite, e il
+   rumore dell'uno si moltiplica col rumore dell'altro. La cura è tirare ogni
+   rapporto verso 1: `1 + (r − 1) × n/(n + K)`. K = 20 sta al centro di un
+   plateau (15-30 danno lo stesso), quindi non è cesellato.
+2. **La base sono i TIRI IN PORTA, non i gol** (`BASE_DEFAULT = 'tiri'`):
+   l'informazione aggiunta **raddoppia** (+0,0022 contro +0,0013). Un gol è un
+   evento fortunato, cinque tiri in porta a partita no.
+
+**Come sta messo adesso:** ben calibrato — over 0,5 previsto 93,0% contro 93,1%
+vero · over 1,5 74,7 / 76,0 · over 2,5 50,6 / 52,5 · over 3,5 29,0 / 29,6 ·
+GG 54,0 / 54,5.
+⚠️ **Ma è debole, e va detto a chi lo legge:** sull'over 2,5 aggiunge **+0,0022**
+rispetto a "prevedere sempre la media del campionato", mentre il mercato
+aggiunge **+0,0082**. Cattura **circa un quarto** di quello che sa il book.
+Serve a **leggere la partita**, non a scommetterci sopra — ed è quello che dice
+la riga sotto il blocco nella scheda.
+⚠️ **Il limite noto**: Poisson assume i gol delle due squadre indipendenti,
+mentre nella realtà sono un po' correlati. Pesa più sul GG (moltiplica due
+probabilità) che sull'over (somma due medie). Non si corregge a sentimento: se
+si corregge, si misura.
+
+⚠️ **Il metro giusto non è il mercato, è la costante.** Un modello che non
+batte "prevedi sempre la frequenza media" non sta dicendo niente sulla singola
+partita. `scripts/prova-gol.js` lo stampa sempre, e i pomelli `--base=` e
+`--k=` servono a rifare la misura invece di fidarsi di questi numeri.
+
 ### Dove si sta andando: un voto unico, che resta una probabilità
 
 **Deciso parlandone il 10/10/2026.** L'obiettivo di Mattia è **un voto solo per
@@ -903,6 +952,8 @@ node --env-file=.env scripts/backtest-scala.js --basepct=10 --scelta=resa   # il
 #   altri pomelli: --passi=6 --banda=1.35,1.45 --bankroll=200 --scelta=att|resa|vpm
 node --env-file=.env scripts/misura-resa-favoriti.js   # la resa realizzata dei favoriti, per fascia e per book
 node --env-file=.env scripts/misura-schedine.js --quota=5   # le schedine del weekend sull'archivio
+node --env-file=.env scripts/prova-gol.js                  # il modello dei gol contro i risultati veri
+#   pomelli: --base=gol|tiri|misto --k=20 --stagioni=3
 node --env-file=.env scripts/misura-valore.js --riferimento=media   # il criterio, a fine stagione
 node --env-file=.env scripts/import-storico.js --campionati=P1,N1   # solo alcuni campionati
 node --env-file=.env scripts/importa-prossime-odds.js --campionati=E0,I1 --esegui   # riprende i campionati caduti (1 credito l'uno)
