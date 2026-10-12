@@ -322,6 +322,53 @@ function Schedine({tiles,isAdmin,sched,isWip,spinIdx}) {
 }
 
 // ── SlotPage ──────────────────────────────────────────────────────────────────
+/**
+ * La spunta "GIOCATA" sotto l'elenco: finché non è accesa, la Dashboard non
+ * conta questa spin.
+ *
+ * ⚠️ Dice **sempre** cosa comporta, accesa o spenta. Una casella di spunta
+ * senza conseguenza scritta si tocca per sbaglio e nessuno capisce perché i
+ * numeri sono cambiati — e qui la conseguenza sono i soldi in Dashboard.
+ * ⚠️ Solo gli admin la toccano (come la griglia), ma **tutti la vedono**: a un
+ * utente normale serve sapere se quello che legge in Dashboard è già giocato.
+ */
+function BottoneGiocata({attiva, isAdmin, onCambia, piena}) {
+  const tinta = attiva ? C.verde : C.spento
+  return (
+    <div style={{marginTop:14, padding:'12px 14px',
+      background:`linear-gradient(${alpha(tinta,attiva?0.12:0.04)},${alpha(tinta,attiva?0.12:0.04)}), ${C.card}`,
+      border:`1px solid ${alpha(tinta,attiva?0.45:0.18)}`, borderRadius:8}}>
+      <div style={{display:'flex',alignItems:'center',gap:12}}>
+        <button onClick={()=>isAdmin&&onCambia(!attiva)} disabled={!isAdmin}
+          aria-pressed={attiva}
+          style={{width:26,height:26,flex:'0 0 26px',cursor:isAdmin?'pointer':'default',
+            background:attiva?C.verde:'transparent', border:`2px solid ${attiva?C.verde:C.bordo}`,
+            borderRadius:5, color:C.fondo, fontSize:16, lineHeight:1, display:'flex',
+            alignItems:'center', justifyContent:'center', fontFamily:F.mono}}>
+          {attiva ? '✓' : ''}
+        </button>
+        <div style={{minWidth:0}}>
+          <div style={{fontFamily:F.mono,fontSize:13,fontWeight:700,letterSpacing:1,color:attiva?C.verde:C.testo}}>
+            GIOCATA
+          </div>
+          <div style={{fontSize:11,fontFamily:F.sans,color:C.spento,lineHeight:1.4,marginTop:2}}>
+            {attiva
+              ? 'questa spin conta in Dashboard'
+              : 'finché non la spunti, la Dashboard la lascia a zero'}
+          </div>
+        </div>
+      </div>
+      {/* ⚠️ Avviso, non blocco: può capitare di spuntare prima di finire di
+          compilare, e impedirlo sarebbe peggio che segnalarlo. */}
+      {attiva && !piena && (
+        <div style={{marginTop:8,fontSize:11,fontFamily:F.sans,color:C.ambra,lineHeight:1.4}}>
+          ⚠️ La griglia è vuota: in Dashboard risulterà investito senza partite.
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function SlotPage() {
   const {isAdmin,isSuperAdmin,getMyBase,getTotalBase,calcSchedule} = useAuth()
   // Le partite future valutate: le stesse della pagina Partite e delle spin
@@ -330,13 +377,18 @@ export default function SlotPage() {
   const [activeSpin,setActiveSpin] = useState(0)
   const [activeTab,setActiveTab]   = useState('griglia')
   const [spins,setSpinsState]      = useState(emptySpins)
+  // ⚠️ La spunta "giocata", una per spin. Non si deduce dalla griglia:
+  // compilare e giocare sono due cose diverse, e la griglia resta modificabile
+  // anche dopo. Finché è falsa, la Dashboard non conta quella spin.
+  const [giocate,setGiocate]       = useState([false,false,false,false])
   const [syncing,setSyncing]       = useState(false)
   const saveTimeout = useRef(null)
 
   useEffect(()=>{
     async function load() {
       setSyncing(true)
-      const {data}=await supabase.from('griglia').select('spins').eq('id',1).single()
+      const {data}=await supabase.from('griglia').select('spins,giocate').eq('id',1).single()
+      if (Array.isArray(data?.giocate)) setGiocate(data.giocate)
       if (data?.spins) {
         const merged=[0,1,2,3].map(si=>{
           const spin=data.spins[si]
@@ -357,6 +409,21 @@ export default function SlotPage() {
       await supabase.from('griglia').update({spins:newSpins,updated_at:new Date().toISOString()}).eq('id',1)
       setSyncing(false)
     },800)
+  }
+
+  // ⚠️ La spunta si salva **subito**, senza il ritardo di 800 ms delle caselle:
+  // quello serve a non scrivere a ogni lettera digitata, ma qui il gesto è uno
+  // solo e deve arrivare prima che l'utente cambi pagina.
+  async function cambiaGiocata(valore) {
+    if (!isAdmin) return
+    const next = giocate.map((g,i)=>i===activeSpin?valore:g)
+    setGiocate(next)
+    setSyncing(true)
+    const {error} = await supabase.from('griglia').update({giocate:next,updated_at:new Date().toISOString()}).eq('id',1)
+    setSyncing(false)
+    // ⚠️ RLS blocca in silenzio: se la scrittura non passa, la spunta deve
+    // tornare indietro invece di restare accesa solo su questo schermo.
+    if (error) setGiocate(giocate)
   }
 
   function setSpins(updater) {
@@ -411,8 +478,12 @@ export default function SlotPage() {
         ))}
       </div>
       {activeTab==='griglia'
-        ?<TabellaGriglia tiles={tiles} isAdmin={isAdmin} onUpdate={updateTile} onCambia={cambiaTile}
-           onReset={resetSpin} syncing={syncing} libera={activeSpin===SPIN_LIBERA} partite={partite}/>
+        ?<>
+          <TabellaGriglia tiles={tiles} isAdmin={isAdmin} onUpdate={updateTile} onCambia={cambiaTile}
+            onReset={resetSpin} syncing={syncing} libera={activeSpin===SPIN_LIBERA} partite={partite}/>
+          <BottoneGiocata attiva={giocate[activeSpin]} isAdmin={isAdmin}
+            onCambia={cambiaGiocata} piena={tiles.some(t=>t.casa)}/>
+        </>
         :<Schedine tiles={tiles} isAdmin={isAdmin} sched={sched} isWip={isWip} spinIdx={activeSpin}/>
       }
     </div>

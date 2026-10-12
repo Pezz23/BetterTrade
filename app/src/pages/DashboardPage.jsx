@@ -33,6 +33,11 @@ function calcIncasso(tiles, sched) {
 export default function DashboardPage() {
   const { currentUser, isSuperAdmin, getMyBase, getTotalBase, calcSchedule } = useAuth()
   const [spins, setSpins]     = useState([[], [], [], []])
+  // ⚠️ La spunta "giocata" di ogni spin, dalla pagina Slot: è l'unica cosa che
+  // fa partire i conti. Prima bastava che una casella avesse una squadra,
+  // quindi la Dashboard mostrava soldi investiti mentre si stava ancora
+  // compilando la griglia (corretto il 12/10/2026, su richiesta di Mattia).
+  const [giocate, setGiocate] = useState([false, false, false, false])
   const [loading, setLoading] = useState(true)
 
   // Carica spin da Supabase ogni 15 secondi
@@ -43,8 +48,11 @@ export default function DashboardPage() {
   }, [])
 
   async function loadSpins() {
-    const { data } = await supabase.from('griglia').select('spins').eq('id',1).single()
+    const { data } = await supabase.from('griglia').select('spins,giocate').eq('id',1).single()
     if (data?.spins) setSpins(data.spins)
+    // ⚠️ Solo se è un array: una colonna nuova su una riga vecchia può tornare
+    // null, e `null[0]` farebbe saltare tutta la pagina.
+    if (Array.isArray(data?.giocate)) setGiocate(data.giocate)
     setLoading(false)
   }
 
@@ -54,6 +62,10 @@ export default function DashboardPage() {
   // Calcola totali su tutte le spin
   const spinResults = [0,1,2,3].map(si => {
     const rawTiles = spins[si] || []
+    // ⚠️ Due condizioni, e la prima è quella che conta: **la spin dev'essere
+    // stata spuntata come giocata** nella pagina Slot. La seconda tiene fuori
+    // una spin spuntata ma ancora vuota, che darebbe investito senza partite.
+    if (!giocate[si]) return null
     if (!rawTiles.some(t => t.casa)) return null
     // Normalizza result da Supabase
     const tiles = rawTiles.map(t=>({
@@ -75,6 +87,11 @@ export default function DashboardPage() {
   const totPct       = totInvestito > 0 ? (totSaldo / totInvestito * 100) : 0
 
   const hasAnyData   = spinResults.some(r => r !== null)
+  // ⚠️ Due vuoti diversi, e confonderli manda la persona a fare la cosa
+  // sbagliata: "non c'è niente da contare" e "c'è tutto ma manca la spunta"
+  // si risolvono in due modi opposti.
+  const compilate    = [0,1,2,3].filter(si => (spins[si] || []).some(t => t.casa)).length
+  const daSpuntare   = compilate > 0 && !hasAnyData
 
   function fmt(n, sign=false) {
     const abs = Math.abs(n).toFixed(2)
@@ -97,8 +114,19 @@ export default function DashboardPage() {
         <div style={{ textAlign:'center', padding:40, color:C.spento, fontFamily:F.sans }}>Caricamento…</div>
       ) : !hasAnyData ? (
         <div style={{ textAlign:'center', padding:'60px 24px', color:C.fantasma, fontSize:14, fontFamily:F.sans, background:C.card, border:`1px solid ${C.bordo}`, borderRadius:10 }}>
-          Nessuna partita inserita oggi.<br/>
-          <span style={{ fontSize:12, color:C.bordoChiaro }}>Inserisci le partite nella Slot per vedere l'andamento live.</span>
+          {daSpuntare ? (
+            <>
+              {compilate === 1 ? 'Una spin è compilata' : `${compilate} spin sono compilate`}, ma nessuna è segnata come giocata.<br/>
+              <span style={{ fontSize:12, color:C.bordoChiaro }}>
+                Nella Slot, sotto l&apos;elenco, spunta <strong style={{ color:C.verde }}>GIOCATA</strong>: da lì la Dashboard comincia a contare.
+              </span>
+            </>
+          ) : (
+            <>
+              Nessuna partita inserita oggi.<br/>
+              <span style={{ fontSize:12, color:C.bordoChiaro }}>Inserisci le partite nella Slot per vedere l&apos;andamento live.</span>
+            </>
+          )}
         </div>
       ) : (
         <>

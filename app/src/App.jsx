@@ -24,9 +24,9 @@ import { VERSIONE } from './versione'
 // protezione vera resta la policy RLS.
 const TABS_BASE = [
   { id:'dashboard',   label:'Dashboard', icon:'◈' },
-  { id:'partite',     label:'Partite',   icon:'⚽' },
   { id:'slot',        label:'Slot',      icon:'⊞' },
   { id:'provvisorie', label:'Spin',      icon:'🎰', soloAdmin:true },
+  { id:'partite',     label:'Partite',   icon:'⚽' },
 ]
 // Il menu ad hamburger: tutto quello che non sta nei tasti in basso.
 // `soloAdmin` nasconde la voce, ma la protezione vera è la policy RLS.

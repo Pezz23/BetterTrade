@@ -3,7 +3,7 @@
 > To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 12 ottobre 2026, sera · app alla versione **1.15.03**
+**Ultimo aggiornamento:** 12 ottobre 2026, sera · app alla versione **1.17.00**
 
 **Le quattro priorità del 12/10 sono tutte chiuse** (voci 24-27): Bet365 al
 posto di Codere, la pagina **Andamento**, l'indicatore **Goal/NoGoal** e quello
@@ -24,7 +24,7 @@ sono vecchi, non il codice**. In ordine:
 cd btscout
 node --env-file=.env scripts/aggiorna.js --esegui    # risultati + quote: recupera tutto da solo
 node --env-file=.env scripts/verifica-storico.js     # l'archivio è coerente?
-cd ../app && npm run lint && npm run dev             # 0 errori, poi la barra deve dire 1.15.03
+cd ../app && npm run lint && npm run dev             # 0 errori, poi la barra deve dire 1.17.00
 ```
 
 `aggiorna.js` guarda indietro e non perde niente: `riconcilia-prossime` chiude
@@ -41,7 +41,7 @@ Odds API si rigenerano ogni mese** (500), quindi dopo una pausa sono pieni.
 | ⚠️ **La tabella `andamento`** | è **derivata**: si rifà con `calcola-andamento.js --stagioni=8 --esegui` (23 secondi) ogni volta che arrivano risultati nuovi. Non è un backup da conservare. |
 | ⚠️ **Le note "a ottobre…"** | in CLAUDE.md e qui ci sono frasi legate al momento (i tre strati di VPM che guardano quasi le stesse partite, le 1-3 partite in casa). **Da gennaio sono false**: la forma comincia a dire altro. |
 | ✅ **Il criterio, le soglie, i pesi** | non scadono: sono misurati sull'archivio, non sulla settimana. |
-| ✅ **sql/01-24, RLS, permessi** | applicati e verificati. `scripts/prova-permessi.js` lo riconferma in un minuto. |
+| ✅ **sql/01-25, RLS, permessi** | applicati e verificati. `scripts/prova-permessi.js` lo riconferma in un minuto. |
 
 **I numeri qui sotto con una data accanto sono fotografie, non verità**: se
 leggi "884 partite" o "440 crediti" e siamo a marzo, sono vecchi di mesi.
@@ -122,9 +122,24 @@ solo football-data, nel blocco imminente: `importa-prossime.js` lo riempirebbe.
 > in lotti per file toccati. Quello che è stato fatto sta sotto, in "Fatto di
 > recente": serve a capire *perché* una cosa è com'è, non cosa resta.
 
+### La spunta "GIOCATA" — 12 ottobre 2026 (**1.17.00**)
+
+Sotto l'elenco della griglia, nella Slot, una spunta **GIOCATA** per spin
+(`griglia.giocate`, sql/25). ⚠️ **È l'unica cosa che fa partire i conti della
+Dashboard**: prima bastava che una casella avesse una squadra, quindi la
+Dashboard mostrava soldi investiti mentre si stava ancora compilando.
+⚠️ La Dashboard vuole **spunta + almeno una casella piena**; una spin spuntata
+e vuota dà un avviso in ambra nella Slot, non un blocco.
+⚠️ I due vuoti della Dashboard sono distinti: "nessuna partita inserita" manda
+a compilare, "3 spin compilate ma nessuna giocata" manda a spuntare.
+⚠️ Solo gli admin la toccano, tutti la vedono; si salva subito e **torna
+indietro se la scrittura non passa** (RLS blocca in silenzio).
+⚠️ **Dopo la migrazione la Dashboard parte da zero**: è voluto. Stato al 12/10:
+3 spin compilate, 0 spuntate.
+
 ### Tasti spostati — 12 ottobre 2026 (**1.16.00**)
 
-In basso: **Dashboard · Partite · Slot · Spin**. Nel menu ☰: Partite votate,
+In basso: **Dashboard · Slot · Spin · Partite** (l'ordine è quello del gesto). Nel menu ☰: Partite votate,
 Storico, Andamento, **Reporting**, **Bilancio**, Utenti. Scelta di Mattia: in
 basso il giro settimanale, nel menu quello che si apre a giornata chiusa.
 ⚠️ La TabBar ora **filtra per ruolo** come il menu: `Spin` è `soloAdmin`, e
