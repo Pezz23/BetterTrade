@@ -151,6 +151,30 @@ nostri campionati quando è stato provato.
 10/10 per fare spazio alla quinta colonna, ma con due fonti mischiate sapere
 chi paga quella quota torna a contare.
 
+### 25-bis. [x] **La misura dietro la pagina — fatta il 12/10, prima della pagina**
+Mattia: *"prima di fare D non puoi provare questo metodo sul passato?"* — sì, ed
+era la mossa giusta: la pagina è una vetrina, la misura è il valore.
+`btscout/scripts/prova-indicatori.js`, **33.133 partite di otto stagioni**.
+Prendendo le prime 9 di ogni giorno secondo ciascun indicatore:
+
+| | azzeccate | resa realizzata |
+|---|---|---|
+| tutte le partite (la base) | 50,8% | 95,5% |
+| **attendibilità** | **60,9%** | **97,8%** |
+| VPM | 56,7% | 96,2% |
+| voto | 55,9% | 97,0% |
+| resa | 51,2% | 96,3% |
+
+⚠️ **L'attendibilità vince su entrambi i metri e nessuna combinazione la batte**
+(provati tutti e 15 i sottoinsiemi: da sola 61,2%, con VPM 60,1%, tutti e
+quattro 55,8%). **La domanda "quando tutti e quattro ci azzeccano" ha risposta
+negativa: metterli insieme peggiora**, perché chiedere anche resa alta vuol
+dire chiedere quote più lunghe.
+⚠️ **Nessuno arriva a 100%**: il migliore rende 97,8%, cioè −2,2% a giocata.
+⚠️ **Due metri, non uno**: *azzeccate* per chi deve indovinare nove esiti,
+*resa realizzata* per chi gioca una singola. Giudicare la resa sulle azzeccate
+è come giudicare un difensore sui gol fatti.
+
 ### 25. Pagina "Andamento" — quale indicatore ci azzecca
 Una pagina nuova (nel menu ☰) che misura **come sono andate le previsioni degli
 indicatori nel tempo**. Per ogni indicatore: le **prime 10 partite di ogni

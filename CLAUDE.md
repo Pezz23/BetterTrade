@@ -367,6 +367,40 @@ batte "prevedi sempre la frequenza media" non sta dicendo niente sulla singola
 partita. `scripts/prova-gol.js` lo stampa sempre, e i pomelli `--base=` e
 `--k=` servono a rifare la misura invece di fidarsi di questi numeri.
 
+#### Misurato il 12/10/2026 — quale indicatore sceglie meglio
+
+`btscout/scripts/prova-indicatori.js`, su **33.133 partite** di otto stagioni,
+dalla 5ª giornata, tutto ricostruito camminando nel tempo (VPM, gol attesi,
+consenso di **apertura**, quota Bet365 di **apertura**). "Azzeccata" = **la
+giocata per intero**: il segno, e per le combinate anche l'over 1,5.
+Prendendo le **prime 9 di ogni giorno** secondo ciascun indicatore:
+
+| | azzeccate | resa realizzata |
+|---|---|---|
+| tutte le partite (la base) | 50,8% | 95,5% |
+| **attendibilità** | **60,9%** | **97,8%** |
+| VPM | 56,7% | 96,2% |
+| voto | 55,9% | 97,0% |
+| resa | 51,2% | 96,3% |
+
+⚠️ **L'attendibilità vince su entrambi i metri, e nessuna combinazione la
+batte.** Provati tutti e 15 i sottoinsiemi: attendibilità da sola **61,2%**,
+con VPM 60,1%, con il voto 59,7%, **tutti e quattro insieme 55,8%**. Ogni
+indicatore aggiunto **abbassa**.
+⚠️ Quindi la risposta alla domanda *"quando tutti e quattro ci azzeccano?"* è:
+**non succede, e metterli insieme peggiora.** Il motivo è che chiedere anche
+una resa alta significa chiedere quote più lunghe, cioè partite meno probabili.
+⚠️ **Due metri, non uno**: *azzeccate* è il metro di chi deve indovinare nove
+esiti; *resa realizzata* è quello di chi gioca una singola. La resa e il voto
+non servono a indovinare — giudicarli sulle azzeccate è come giudicare un
+difensore sui gol fatti. Lo script stampa sempre entrambi.
+⚠️ **Nessun indicatore arriva a 100%**: il migliore rende **97,8%**, cioè −2,2%
+a giocata. La selezione **riduce la perdita, non la ribalta** — coerente con
+tutto il resto misurato qui dentro.
+⚠️ Su tre stagioni la resa dava 94,0% e sembrava la peggiore anche a soldi: su
+otto fa 96,3%. **Era rumore** — a queste quote servono decine di migliaia di
+scommesse per distinguere due punti.
+
 ### Dove si sta andando: un voto unico, che resta una probabilità
 
 **Deciso parlandone il 10/10/2026.** L'obiettivo di Mattia è **un voto solo per
@@ -953,6 +987,7 @@ node --env-file=.env scripts/backtest-scala.js --basepct=10 --scelta=resa   # il
 node --env-file=.env scripts/misura-resa-favoriti.js   # la resa realizzata dei favoriti, per fascia e per book
 node --env-file=.env scripts/misura-schedine.js --quota=5   # le schedine del weekend sull'archivio
 node --env-file=.env scripts/prova-gol.js                  # il modello dei gol contro i risultati veri
+node --env-file=.env scripts/prova-indicatori.js --stagioni=8   # quale indicatore sceglie meglio
 #   pomelli: --base=gol|tiri|misto --k=20 --stagioni=3
 node --env-file=.env scripts/misura-valore.js --riferimento=media   # il criterio, a fine stagione
 node --env-file=.env scripts/import-storico.js --campionati=P1,N1   # solo alcuni campionati
