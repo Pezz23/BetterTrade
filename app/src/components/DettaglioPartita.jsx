@@ -9,7 +9,7 @@ import { tocco } from '../lib/schermo'
 import BarraPartita from './BarraPartita'
 import { usaVpm } from '../hooks/usaVpm'
 import { valutaPartita, vociPesate, verso, PESI, ETICHETTE, NOMI_STRATI, PESI_STRATI, VPM_NETTO } from '../lib/vpm'
-import { golAttesi, SOGLIE_OVER, consiglioGg, FIDUCIA_GG } from '../lib/gol'
+import { golAttesi, SOGLIE_OVER, consiglioGg, FIDUCIA_GG, fasciaGol, SOGLIE_COLORE } from '../lib/gol'
 
 // La scheda di una partita: tutto quello che sappiamo, in blocchi.
 // Pensata prima per il telefono — una colonna, numeri grandi, niente muri di
@@ -410,26 +410,40 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
             <span style={{ fontSize: 22, fontWeight: 700, fontFamily: F.mono, color: C.testo }}>{g.lambdaFuori.toFixed(2).replace('.', ',')}</span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4 }}>
-            {SOGLIE_OVER.map(sg => (
-              <div key={sg} style={{ textAlign: 'center', padding: '7px 2px', borderRadius: 0,
-                background: `linear-gradient(${alpha(C.celestePieno, 0.07)},${alpha(C.celestePieno, 0.07)}), ${C.card}`,
-                border: `1px solid ${alpha(C.celestePieno, 0.25)}` }}>
-                <div style={{ fontSize: 15, fontWeight: 700, fontFamily: F.mono, color: C.testo, lineHeight: 1 }}>
-                  {(g.over[sg] * 100).toFixed(0)}%
+          {/* ⚠️ IL COLORE È IL RISULTATO DELLA MISURA, non una decorazione.
+              Verde = sopra la soglia alta, verde chiaro = sopra quella utile,
+              niente colore = quel numero non dice più della media. Le soglie
+              sono in `SOGLIE_COLORE` e vengono dalla tabella misurata su
+              33.141 partite. ⚠️ Ogni riga ha la SUA scala: sull'over 1,5 il
+              verde parte dall'82%, sull'over 2,5 dal 62%, sul 3,5 dal 40% —
+              un'unica soglia direbbe il falso su metà delle righe.
+              ⚠️ Due righe, over e under, perché sono due letture della stessa
+              partita e Mattia le guarda entrambe: la cella spenta di una e
+              accesa dell'altra è l'informazione. */}
+          {(() => {
+            const cella = (chiave, etichetta, p, tinta) => {
+              const f = fasciaGol(chiave, p)
+              const colore = f === 'forte' ? C.verde : f === 'utile' ? C.menta : C.testo
+              return (
+                <div key={etichetta} style={{ textAlign: 'center', padding: '7px 2px', borderRadius: 0,
+                  background: `linear-gradient(${alpha(f ? colore : tinta, f ? 0.12 : 0.07)},${alpha(f ? colore : tinta, f ? 0.12 : 0.07)}), ${C.card}`,
+                  border: `1px solid ${alpha(f ? colore : tinta, f ? 0.45 : 0.25)}` }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, fontFamily: F.mono, color: colore, lineHeight: 1 }}>
+                    {(p * 100).toFixed(0)}%
+                  </div>
+                  <div style={{ fontSize: 8, fontFamily: F.mono, color: C.spento, letterSpacing: '0.08em', marginTop: 3 }}>{etichetta}</div>
                 </div>
-                <div style={{ fontSize: 8, fontFamily: F.mono, color: C.spento, letterSpacing: '0.08em', marginTop: 3 }}>OVER {sg},5</div>
+              )
+            }
+            return (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4 }}>
+                {SOGLIE_OVER.map(sg => cella(`over${sg}`, `OVER ${sg},5`, g.over[sg], C.celestePieno))}
+                {cella('gg', 'GOAL', g.gg, C.menta)}
+                {SOGLIE_OVER.map(sg => cella(`under${sg}`, `UNDER ${sg},5`, 1 - g.over[sg], C.celestePieno))}
+                {cella('ng', 'NOGOAL', 1 - g.gg, C.menta)}
               </div>
-            ))}
-            <div style={{ textAlign: 'center', padding: '7px 2px',
-              background: `linear-gradient(${alpha(C.menta, 0.07)},${alpha(C.menta, 0.07)}), ${C.card}`,
-              border: `1px solid ${alpha(C.menta, 0.25)}` }}>
-              <div style={{ fontSize: 15, fontWeight: 700, fontFamily: F.mono, color: C.testo, lineHeight: 1 }}>
-                {(g.gg * 100).toFixed(0)}%
-              </div>
-              <div style={{ fontSize: 8, fontFamily: F.mono, color: C.spento, letterSpacing: '0.08em', marginTop: 3 }}>GOAL</div>
-            </div>
-          </div>
+            )
+          })()}
 
           {/* ⚠️ IL CONSIGLIO SUL GOAL/NO GOAL, e il suo silenzio.
               La percentuale sopra dice quanto è probabile; questa riga dice
@@ -471,6 +485,18 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
             Serve a leggere la partita, non a scommetterci sopra. Sul Goal/NoGoal il consiglio
             è giusto il 54% delle volte contro il 53% di chi dice sempre GOL: è una partita
             quasi imprevedibile, e nemmeno il mercato fa meglio (54%).
+          </div>
+          {/* ⚠️ Il colore senza la sua spiegazione è una decorazione: qui si dice
+              cosa è successo DAVVERO sopra quelle soglie, misurato. Il `title`
+              col mouse non esiste su telefono, quindi sta scritto. */}
+          <div style={{ marginTop: 6, fontSize: 10, fontFamily: F.sans, color: C.fantasma, lineHeight: 1.5 }}>
+            <span style={{ color: C.verde, fontWeight: 700 }}>Verde</span> e{' '}
+            <span style={{ color: C.menta, fontWeight: 700 }}>verde chiaro</span>: sopra le soglie dove,
+            su 33.141 partite, l&apos;esito è arrivato più spesso che in generale — over 1,5 dall&apos;82%
+            ({(SOGLIE_COLORE.over1.veroForte * 100).toFixed(0)}% contro {(SOGLIE_COLORE.over1.base * 100).toFixed(0)}%),
+            over 2,5 dal 62% ({(SOGLIE_COLORE.over2.veroForte * 100).toFixed(0)}% contro {(SOGLIE_COLORE.over2.base * 100).toFixed(0)}%),
+            Goal dal 60% ({(SOGLIE_COLORE.gg.veroForte * 100).toFixed(0)}% contro {(SOGLIE_COLORE.gg.base * 100).toFixed(0)}%).
+            Senza colore il numero non dice più della media.
           </div>
         </Blocco>
       )}

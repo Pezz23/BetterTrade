@@ -101,6 +101,47 @@ export function consiglioGg(gg) {
   }
 }
 
+// ── LE SOGLIE CHE CONTANO, e il colore che le mostra ────────────────────────
+// ⚠️ **Misurate il 12/10/2026** su 33.141 partite in 1.461 giorni di gioco
+// (`btscout/scripts/prova-indicatori.js`, sezione LA TABELLA DELLE SOGLIE).
+// Rispondono alla domanda di Mattia — *"se l'indicatore è sopra al tot%,
+// succede X volte"* — e il colore serve a non doverla rifare ogni volta:
+// **verde** = sopra la soglia alta · **verde chiaro** = sopra quella utile ·
+// **niente** = il numero non sta dicendo nulla di più della media.
+//
+// ⚠️⚠️ **Ogni riga ha la sua scala, e NON si possono colorare con la stessa.**
+// L'over 0,5 sta quasi sempre sopra il 90%: lì un 82% è un numero *basso*,
+// mentre sull'over 1,5 è il massimo che il modello arriva a dire. Un'unica
+// soglia per tutte le righe direbbe il contrario del vero su metà di loro.
+//
+// `forte` e `utile` sono le soglie; `resaForte`/`resaUtile` quante volte
+// l'esito è arrivato davvero sopra di esse, e `base` quante volte arriva in
+// generale — i tre numeri che rendono leggibile il colore.
+export const SOGLIE_COLORE = {
+  'over0':  { forte: 0.95, utile: 0.93, veroForte: 0.955, veroUtile: 0.943, base: 0.929 },
+  'over1':  { forte: 0.82, utile: 0.79, veroForte: 0.836, veroUtile: 0.822, base: 0.754 },
+  'over2':  { forte: 0.62, utile: 0.58, veroForte: 0.629, veroUtile: 0.612, base: 0.510 },
+  'over3':  { forte: 0.40, utile: 0.35, veroForte: 0.413, veroUtile: 0.379, base: 0.287 },
+  'under0': { forte: 0.12, utile: 0.10, veroForte: 0.118, veroUtile: 0.104, base: 0.071 },
+  'under1': { forte: 0.30, utile: 0.26, veroForte: 0.306, veroUtile: 0.290, base: 0.246 },
+  'under2': { forte: 0.58, utile: 0.52, veroForte: 0.583, veroUtile: 0.555, base: 0.490 },
+  'under3': { forte: 0.78, utile: 0.75, veroForte: 0.785, veroUtile: 0.771, base: 0.713 },
+  'gg':     { forte: 0.60, utile: 0.57, veroForte: 0.620, veroUtile: 0.597, base: 0.533 },
+  'ng':     { forte: 0.52, utile: 0.50, veroForte: 0.536, veroUtile: 0.520, base: 0.467 },
+}
+
+/**
+ * In quale fascia sta un numero: `'forte'`, `'utile'` o `null`.
+ * ⚠️ `null` non vuol dire "andrà male": vuol dire **non lo sappiamo**, e il
+ * numero va letto come la media del campionato. Colorare tutto di qualcosa
+ * sarebbe dire che ogni partita ha un segnale.
+ */
+export function fasciaGol(chiave, p) {
+  const s = SOGLIE_COLORE[chiave]
+  if (!s || p == null) return null
+  return p >= s.forte ? 'forte' : p >= s.utile ? 'utile' : null
+}
+
 export const BASE_DEFAULT = 'tiri'
 export const SOGLIE_OVER = [0, 1, 2, 3]   // over 0,5 · 1,5 · 2,5 · 3,5
 

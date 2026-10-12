@@ -92,8 +92,10 @@ for (const r of righe) {
       att: probGiocata, vpm: v?.punti ?? null, resa, quotaResa,
       voto: voto(resa, v?.punti ?? null), golAttesi: gol?.totale ?? null,
       // gli indicatori dei gol, con il loro esito vero accanto
-      pOver25: gol?.over?.[2] ?? null, pOver15: gol?.over?.[1] ?? null, pGg: gol?.gg ?? null,
-      over25: r.gol_casa + r.gol_trasferta > 2, over15: r.gol_casa + r.gol_trasferta > 1,
+      pOver05: gol?.over?.[0] ?? null, pOver15: gol?.over?.[1] ?? null,
+      pOver25: gol?.over?.[2] ?? null, pOver35: gol?.over?.[3] ?? null, pGg: gol?.gg ?? null,
+      over05: r.gol_casa + r.gol_trasferta > 0, over15: r.gol_casa + r.gol_trasferta > 1,
+      over25: r.gol_casa + r.gol_trasferta > 2, over35: r.gol_casa + r.gol_trasferta > 3,
       gg: r.gol_casa > 0 && r.gol_trasferta > 0,
       accordoVpm: v ? (v.segno === '1' ? 'H' : 'A') === segno : null,
     });
@@ -187,12 +189,33 @@ riassunto(`le prime ${PRIME_WEEKEND} di ogni weekend`, perWeekend, PRIME_WEEKEND
       liv: [0.90, 0.95, 1.00, 1.05, 1.10], nota: 'la giocata proposta' },
     { label: 'resa',          val: x => x.resa,    esito: x => x.vinta,   fmt: v => `${(v * 100).toFixed(0)}%`,
       liv: [0.90, 0.95, 1.00, 1.05, 1.10], nota: 'la giocata proposta' },
+    // ⚠️ OGNI RIGA HA LA SUA SCALA, e non si possono colorare con la stessa:
+    // l'over 0,5 sta quasi sempre sopra il 90%, quindi lì un 82% è un numero
+    // BASSO, mentre sull'over 1,5 è il massimo che il modello arriva a dire.
+    { label: 'over 0,5',      val: x => x.pOver05, esito: x => x.over05,  fmt: v => `${(v * 100).toFixed(0)}%`,
+      liv: [0.90, 0.92, 0.93, 0.94, 0.95], nota: 'arriva almeno 1 gol' },
     { label: 'over 1,5',      val: x => x.pOver15, esito: x => x.over15,  fmt: v => `${(v * 100).toFixed(0)}%`,
-      liv: [0.70, 0.75, 0.78, 0.80, 0.82], nota: 'arrivano almeno 2 gol' },
+      liv: [0.70, 0.75, 0.78, 0.79, 0.80, 0.82, 0.84], nota: 'arrivano almeno 2 gol' },
     { label: 'over 2,5',      val: x => x.pOver25, esito: x => x.over25,  fmt: v => `${(v * 100).toFixed(0)}%`,
-      liv: [0.45, 0.50, 0.55, 0.60, 0.65], nota: 'arrivano almeno 3 gol' },
+      liv: [0.45, 0.50, 0.55, 0.58, 0.60, 0.62, 0.65], nota: 'arrivano almeno 3 gol' },
+    { label: 'over 3,5',      val: x => x.pOver35, esito: x => x.over35,  fmt: v => `${(v * 100).toFixed(0)}%`,
+      liv: [0.25, 0.30, 0.35, 0.40, 0.45], nota: 'arrivano almeno 4 gol' },
+    // ⚠️ IL LATO UNDER, mai misurato prima. Non è il complemento gratuito:
+    // "l'over 2,5 è improbabile" e "l'under 2,5 è affidabile" sono la stessa
+    // probabilità ma due soglie diverse, perché le basi sono diverse (49% e
+    // 51%) e il modello può essere bravo da un lato e no dall'altro.
+    { label: 'under 1,5',     val: x => x.pOver15 == null ? null : 1 - x.pOver15, esito: x => !x.over15, fmt: v => `${(v * 100).toFixed(0)}%`,
+      liv: [0.20, 0.24, 0.26, 0.28, 0.30], nota: 'meno di 2 gol' },
+    { label: 'under 2,5',     val: x => x.pOver25 == null ? null : 1 - x.pOver25, esito: x => !x.over25, fmt: v => `${(v * 100).toFixed(0)}%`,
+      liv: [0.45, 0.50, 0.52, 0.55, 0.58], nota: 'meno di 3 gol' },
+    { label: 'under 0,5',     val: x => x.pOver05 == null ? null : 1 - x.pOver05, esito: x => !x.over05, fmt: v => `${(v * 100).toFixed(0)}%`,
+      liv: [0.06, 0.08, 0.10, 0.12], nota: 'zero gol (0-0)' },
+    { label: 'under 3,5',     val: x => x.pOver35 == null ? null : 1 - x.pOver35, esito: x => !x.over35, fmt: v => `${(v * 100).toFixed(0)}%`,
+      liv: [0.65, 0.70, 0.72, 0.75, 0.78], nota: 'meno di 4 gol' },
     { label: 'Goal',          val: x => x.pGg,     esito: x => x.gg,      fmt: v => `${(v * 100).toFixed(0)}%`,
-      liv: [0.52, 0.55, 0.58, 0.60, 0.62], nota: 'segnano entrambe' },
+      liv: [0.52, 0.55, 0.57, 0.58, 0.60, 0.62], nota: 'segnano entrambe' },
+    { label: 'NoGoal',        val: x => x.pGg == null ? null : 1 - x.pGg, esito: x => !x.gg, fmt: v => `${(v * 100).toFixed(0)}%`,
+      liv: [0.46, 0.48, 0.50, 0.52, 0.55], nota: 'almeno una non segna' },
   ];
   console.log(`\n\n══ LA TABELLA DELLE SOGLIE ══  ${valutate.length} partite in ${giorni} giorni di gioco\n`);
   for (const S of SOGLIE) {

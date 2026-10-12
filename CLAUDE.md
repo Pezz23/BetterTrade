@@ -418,6 +418,49 @@ l'evento binario butta via l'informazione di quanti gol) e la **correzione di
 correlazione** imparata dalle stagioni chiuse (invariata: +0,0005). La
 correlazione fra le due squadre esiste ma è già dentro la stretta.
 
+#### Le dieci celle colorate — fatto il 12/10/2026
+
+Il blocco **⚽ Gol attesi** mostra **due righe da cinque**: `OVER 0,5 · 1,5 ·
+2,5 · 3,5 · GOAL` sopra, `UNDER 0,5 · 1,5 · 2,5 · 3,5 · NOGOAL` sotto. Le due
+righe sono due letture della stessa partita, e **la cella spenta di una accanto
+a quella accesa dell'altra è l'informazione**.
+
+⚠️ **Il colore è il risultato della misura, non una decorazione**: verde sopra
+la soglia alta, verde chiaro sopra quella utile, **niente colore** quando il
+numero non dice più della media del campionato. Le soglie stanno in
+`SOGLIE_COLORE` (`lib/gol.js`) con accanto **quante volte l'esito è arrivato
+davvero** sopra di esse, e la riga sotto il blocco le enuncia a schermo: un
+colore senza la sua spiegazione è una decorazione.
+
+⚠️⚠️ **Ogni riga ha la sua scala, e non si possono colorare con la stessa.**
+L'over 0,5 sta quasi sempre sopra il 90%: lì un 82% è un numero **basso**,
+mentre sull'over 1,5 è il massimo che il modello arriva a dire. Un'unica soglia
+per tutte le righe direbbe il contrario del vero su metà di loro. Misurate su
+33.141 partite (verde · verde chiaro · base):
+
+| | verde | verde chiaro | base |
+|---|---|---|---|
+| over 0,5 | 95% → 95,5% | 93% → 94,3% | 92,9% |
+| over 1,5 | 82% → 83,6% | 79% → 82,2% | 75,4% |
+| over 2,5 | 62% → 62,9% | 58% → 61,2% | 51,0% |
+| over 3,5 | 40% → 41,3% | 35% → 37,9% | 28,7% |
+| under 0,5 | 12% → 11,8% | 10% → 10,4% | 7,1% |
+| under 1,5 | 30% → 30,6% | 26% → 29,0% | 24,6% |
+| under 2,5 | 58% → 58,3% | 52% → 55,5% | 49,0% |
+| under 3,5 | 78% → 78,5% | 75% → 77,1% | 71,3% |
+| GG | 60% → 62,0% | 57% → 59,7% | 53,3% |
+| NG | 52% → 53,6% | 50% → 52,0% | 46,7% |
+
+⚠️ **Il verde dell'over 1,5 parte dall'82% perché l'ha chiesto Mattia**, e la
+misura gli ha dato ragione: è esattamente la soglia dove lo scarto si stacca
+(+8,3 ±1,2). Il verde chiaro al 79% è suo allo stesso modo.
+⚠️ **Questa colorazione vale SOLO per over/under e GG/NG** (richiesta
+esplicita): gli altri numeri — attendibilità, VPM, resa, voto — hanno già i
+loro codici (il verde/rosso di VPM è l'accordo col mercato, non una soglia) e
+due grammatiche di colore sullo stesso schermo si leggono male.
+⚠️ **Niente colore non vuol dire "andrà male": vuol dire non lo sappiamo.**
+Colorare tutto di qualcosa equivale a dire che ogni partita ha un segnale.
+
 ⚠️ **Il metro giusto non è il mercato, è la costante.** Un modello che non
 batte "prevedi sempre la frequenza media" non sta dicendo niente sulla singola
 partita. `scripts/prova-gol.js` lo stampa sempre, e i pomelli `--base=` e

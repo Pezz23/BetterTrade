@@ -297,6 +297,24 @@ contro l'attendibilità, col metro della soglia sale pulito e monotòno.
 ⚠️ **Limiti dell'archivio**: 51 partite sopra attendibilità 80% in otto
 stagioni, 17 sopra voto 105%. Oltre lì non si misura niente.
 
+### Le dieci celle colorate — fatto il 12 ottobre 2026
+
+Il blocco ⚽ della scheda ha ora **due righe da cinque**: over 0,5/1,5/2,5/3,5 +
+GOAL sopra, under 0,5/1,5/2,5/3,5 + NOGOAL sotto. **Verde** sopra la soglia
+alta, **verde chiaro** sopra quella utile, **niente** quando il numero non dice
+più della media. Soglie in `SOGLIE_COLORE` (`lib/gol.js`), misurate su 33.141
+partite, con accanto quante volte l'esito è arrivato davvero.
+
+⚠️ **Ogni riga ha la sua scala**: over 1,5 verde dall'82% (83,6% contro una
+base del 75,4%), over 2,5 dal 62%, over 3,5 dal 40%, GG dal 60%, under 2,5 dal
+58%. Una soglia unica direbbe il falso su metà delle righe — sull'over 0,5 l'82%
+è un numero basso.
+⚠️ **Solo per over/under e GG/NG**, per richiesta di Mattia: gli altri numeri
+hanno già i loro codici di colore.
+⚠️ Provato che i due lati non si accendono mai insieme: partita aperta → riga
+over tutta verde e under spenta; partita chiusa → il contrario; partita media →
+quasi tutto spento.
+
 ### Il Goal/NoGoal — fatto il 12 ottobre 2026
 
 Chiesto da Mattia: *"un indicatore che mi dia visione, se la partita sarà da
