@@ -22,7 +22,7 @@ const BASE = (process.argv.find(x => x.startsWith('--base=')) || `--base=${BASE_
 const righe = await sql`
   select data, stagione, div, casa, trasferta, gol_casa, gol_trasferta,
          coalesce(tirip_casa,0) as tfc, coalesce(tirip_trasf,0) as tft,
-         avg_ap_over25, avg_ap_under25
+         avg_ap_over25, avg_ap_under25, b365_over25, b365_under25
   from partite
   where gol_casa is not null and gol_trasferta is not null
   order by data, div, casa`;
@@ -59,7 +59,9 @@ for (const r of righe) {
     const g = golAttesi(squadre, r.casa, r.trasferta, med.gol / med.partite, K, BASE,
       med.tiri ? med.tiri / med.partite : null);
     if (g) prove.push({
-      ...g, golVeri: r.gol_casa + r.gol_trasferta,
+      ...g, data: String(r.data).slice(0, 10), golVeri: r.gol_casa + r.gol_trasferta,
+      quotaOver25: r.b365_over25 ? Number(r.b365_over25) : null,
+      quotaUnder25: r.b365_under25 ? Number(r.b365_under25) : null,
       ggVero: r.gol_casa > 0 && r.gol_trasferta > 0,
       over25Mercato: r.avg_ap_over25 && r.avg_ap_under25
         ? (1 / Number(r.avg_ap_over25)) / (1 / Number(r.avg_ap_over25) + 1 / Number(r.avg_ap_under25)) : null,
@@ -144,5 +146,63 @@ for (const s of SOGLIE_OVER) {
 }
 const ggP = prove.reduce((a, p) => a + p.gg, 0) / prove.length;
 console.log(`  GG       previsto ${(ggP * 100).toFixed(1)}%   vero ${(prove.filter(p => p.ggVero).length / prove.length * 100).toFixed(1)}%`);
+
+// ── SE LO AVESSI GIOCATO — il risultato pratico ─────────────────────────────
+// ⚠️ È la domanda vera, e non è "è calibrato": è *prendendo ogni giorno le
+// partite che il modello mette in cima, quante volte l'over si è avverato, e
+// quanto sarebbe tornato in tasca*.
+const perGiorno = new Map();
+for (const p of prove) {
+  if (!perGiorno.has(p.data)) perGiorno.set(p.data, []);
+  perGiorno.get(p.data).push(p);
+}
+const prime = (lista, val, n) => [...lista].sort((a, b) => val(b) - val(a)).slice(0, n);
+const ultime = (lista, val, n) => [...lista].sort((a, b) => val(a) - val(b)).slice(0, n);
+
+console.log('\n══ SE LO AVESSI GIOCATO ══');
+for (const sg of SOGLIE_OVER) {
+  const base = prove.filter(p => p.golVeri > sg).length / prove.length;
+  console.log(`\n── OVER ${sg},5 · si avvera nel ${(base * 100).toFixed(1)}% di tutte le partite ──`);
+  for (const n of [9, 15]) {
+    let scelte = [];
+    for (const l of perGiorno.values()) scelte = scelte.concat(prime(l, p => p.over[sg], n));
+    const ok = scelte.filter(p => p.golVeri > sg).length / scelte.length;
+    console.log(`  le prime ${String(n).padStart(2)} del giorno  ${String(scelte.length).padStart(5)} giocate · avverato ${(ok * 100).toFixed(1)}%  (${ok >= base ? '+' : ''}${((ok - base) * 100).toFixed(1)} sulla base)`);
+  }
+  // e dall'altra parte: le ultime sono le partite da UNDER
+  let basse = [];
+  for (const l of perGiorno.values()) basse = basse.concat(ultime(l, p => p.over[sg], 9));
+  const okU = basse.filter(p => p.golVeri <= sg).length / basse.length;
+  console.log(`  le ultime  9 (under)  ${String(basse.length).padStart(5)} giocate · under avverato ${(okU * 100).toFixed(1)}%  (base ${((1 - base) * 100).toFixed(1)}%)`);
+}
+
+// ── E in soldi, dove la quota c'è: solo over 2,5 ────────────────────────────
+const conQ = prove.filter(p => p.quotaOver25);
+if (conQ.length > 500) {
+  const perG = new Map();
+  for (const p of conQ) { if (!perG.has(p.data)) perG.set(p.data, []); perG.get(p.data).push(p); }
+  console.log(`\n── over 2,5 in soldi, alla quota Bet365 di apertura · ${conQ.length} partite con quota ──`);
+  const resa = l => l.reduce((a, p) => a + (p.golVeri > 2 ? p.quotaOver25 : 0), 0) / l.length;
+  console.log(`  tutte le partite       ${String(conQ.length).padStart(5)} giocate · resa ${(resa(conQ) * 100).toFixed(1)}%   ← la base`);
+  for (const n of [9, 15]) {
+    let scelte = [];
+    for (const l of perG.values()) scelte = scelte.concat(prime(l, p => p.over[2], n));
+    console.log(`  le prime ${String(n).padStart(2)} del giorno  ${String(scelte.length).padStart(5)} giocate · resa ${(resa(scelte) * 100).toFixed(1)}%`);
+  }
+  // ⚠️ La quota under è quella VERA del book. Il primo giro la stimava
+  // dall'over come se l'under fosse senza margine, e usciva 106%: un numero
+  // inventato. Una quota stimata togliendo il margine non è una quota.
+  const conU = basse => basse.filter(p => p.quotaUnder25);
+  let basse = [];
+  for (const l of perG.values()) basse = basse.concat(ultime(l, p => p.over[2], 9));
+  const bu = conU(basse);
+  if (bu.length > 200) {
+    const resaU = bu.reduce((a, p) => a + (p.golVeri <= 2 ? p.quotaUnder25 : 0), 0) / bu.length;
+    const tutteU = conU(conQ);
+    const baseU = tutteU.reduce((a, p) => a + (p.golVeri <= 2 ? p.quotaUnder25 : 0), 0) / tutteU.length;
+    console.log(`  tutte, giocando under  ${String(tutteU.length).padStart(5)} giocate · resa ${(baseU * 100).toFixed(1)}%   ← la base under`);
+    console.log(`  le ultime  9 (under)   ${String(bu.length).padStart(5)} giocate · resa ${(resaU * 100).toFixed(1)}%`);
+  }
+}
 
 await sql.end();

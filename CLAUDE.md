@@ -367,6 +367,24 @@ batte "prevedi sempre la frequenza media" non sta dicendo niente sulla singola
 partita. `scripts/prova-gol.js` lo stampa sempre, e i pomelli `--base=` e
 `--k=` servono a rifare la misura invece di fidarsi di questi numeri.
 
+**Si può migliorare? Misurato il 12/10/2026** con
+`scripts/prova-gol-varianti.js`, su **34.434 partite** di otto stagioni. Cinque
+cambiamenti provati, **nessuno migliora**: media separata casa/fuori +0,0038 ·
+tiri totali +0,0038 · angoli +0,0021 · gol +0,0014 · la stagione scorsa come
+base a inizio campionato +0,0038, contro i **+0,0039** di quello in uso.
+⚠️ **Quanto spazio resta:** sulle stesse partite il mercato aggiunge **+0,0094**
+e noi **+0,0039** — **il modello cattura il 42% di quello che sa il book**. Il
+58% che manca è in buona parte informazione che **non abbiamo**: formazioni,
+infortuni, turnover. È esattamente il territorio che `btscout/CLAUDE.md`
+assegna al giudizio e non al calcolo.
+⚠️⚠️ **Ma migliorarlo non lo renderebbe redditizio, e questo chiude il
+discorso:** prendendo le prime 9 partite di ogni giorno **secondo il mercato
+stesso**, giocare l'over 2,5 rende **95,2%**. Nemmeno chi prezza quelle partite
+di mestiere ci guadagna, perché il margine sull'over/under è del 5-6%. Il
+nostro rende 94,7%. **Il tetto di questo mercato è una perdita**: l'indice dei
+gol serve a leggere la partita, e investirci altro tempo compra un colore più
+nitido, non dei soldi.
+
 #### Misurato il 12/10/2026 — quale indicatore sceglie meglio
 
 `btscout/scripts/prova-indicatori.js`, su **33.133 partite** di otto stagioni,
@@ -988,6 +1006,7 @@ node --env-file=.env scripts/misura-resa-favoriti.js   # la resa realizzata dei 
 node --env-file=.env scripts/misura-schedine.js --quota=5   # le schedine del weekend sull'archivio
 node --env-file=.env scripts/prova-gol.js                  # il modello dei gol contro i risultati veri
 node --env-file=.env scripts/prova-indicatori.js --stagioni=8   # quale indicatore sceglie meglio
+node --env-file=.env scripts/prova-gol-varianti.js         # si può migliorare l'indice dei gol? (no)
 #   pomelli: --base=gol|tiri|misto --k=20 --stagioni=3
 node --env-file=.env scripts/misura-valore.js --riferimento=media   # il criterio, a fine stagione
 node --env-file=.env scripts/import-storico.js --campionati=P1,N1   # solo alcuni campionati

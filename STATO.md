@@ -223,9 +223,24 @@ la partita, non a scommetterci sopra"*.
 ⚠️ **Il metro è la costante, non il mercato**: un modello che non batte
 "prevedi sempre la media" non dice niente. `prova-gol.js` lo stampa sempre.
 
-**Se un domani lo si vuole migliorare**, le strade misurabili sono: correggere
-l'indipendenza di Poisson (lo 0-0 è più frequente del previsto) e usare anche i
-tiri totali oltre a quelli in porta.
+**Si può migliorare? Provato il 12/10, risposta no** —
+`prova-gol-varianti.js`, 34.434 partite. Cinque cambiamenti, nessuno migliora:
+media separata casa/fuori, tiri totali, angoli, gol, la stagione scorsa come
+base a inizio campionato. Tutti fra +0,0014 e +0,0038 contro i +0,0039 attuali.
+
+⚠️ **Quanto spazio resta**: il mercato aggiunge +0,0094, noi +0,0039 — **il 42%
+di quello che sa il book**. Il 58% mancante è informazione che non abbiamo
+(formazioni, infortuni, turnover).
+
+⚠️⚠️ **E migliorarlo non lo renderebbe redditizio:** prendendo le prime 9 di
+ogni giorno **secondo il mercato stesso**, giocare l'over 2,5 rende **95,2%**.
+Nemmeno chi prezza quelle partite di mestiere ci guadagna: il margine
+sull'over/under è del 5-6%. **Il tetto di questo mercato è una perdita.**
+
+**Cosa resterebbe da provare, se un domani interessasse**: l'aggiustamento per
+la forza degli avversari affrontati (la stessa cosa che manca a VPM) e la
+correzione di Dixon-Coles sui punteggi bassi, che peserebbe più sul GG che
+sull'over.
 
 ---
 
