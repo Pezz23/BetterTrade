@@ -21,7 +21,8 @@ const righe = await sql`
          coalesce(tirip_casa,0) as tpc, coalesce(tirip_trasf,0) as tpt,
          coalesce(tiri_casa,0) as tc_, coalesce(tiri_trasf,0) as tt_,
          coalesce(angoli_casa,0) as ac, coalesce(angoli_trasf,0) as at_,
-         b365_over25, avg_ap_over25, avg_ap_under25
+         b365_over25, avg_ap_over25, avg_ap_under25,
+         avg_ap_1, avg_ap_x, avg_ap_2
   from partite
   where gol_casa is not null and tirip_casa is not null
   order by data, div, casa`;
@@ -75,7 +76,8 @@ function gira(V) {
           const med1 = (arr) => arr.reduce((a, x) => a + x[campo], 0) / arr.length;
           return (1 - pF - pR) * med1(l) + pF * med1(ult) + (ruo.length ? pR * med1(ruo) : 0);
         };
-        return { fatti: pesa(`${V.campo}f`), subiti: pesa(`${V.campo}s`), n: l.length };
+        return { fatti: pesa(`${V.campo}f`), subiti: pesa(`${V.campo}s`),
+                 golFatti: pesa('gof'), golSubiti: pesa('gos'), n: l.length };
       };
 
       const c = ritmo(r.casa, 'casa'), t = ritmo(r.trasferta, 'fuori');
@@ -86,8 +88,27 @@ function gira(V) {
         const lam = attC * difT * mediaC + attT * difC * mediaF;
         const pm = (r.avg_ap_over25 && r.avg_ap_under25)
           ? (1 / Number(r.avg_ap_over25)) / (1 / Number(r.avg_ap_over25) + 1 / Number(r.avg_ap_under25)) : null;
+        // ── L'INDICE DEL FAVORITO (idea di Mattia, 12/10/2026) ──────────
+        // "Quanti tiri e gol fa la squadra favorita, rispetto a quanti ne
+        // subisce la sfavorita." È l'accoppiata più netta della partita: il
+        // modello completo somma due stime, questa ne guarda una sola, e
+        // un'attesa in meno è anche un rumore in meno.
+        let favIdx = null, favTiri = null, favGol = null;
+        if (r.avg_ap_1 && r.avg_ap_x && r.avg_ap_2) {
+          const p1 = 1 / Number(r.avg_ap_1), p2 = 1 / Number(r.avg_ap_2);
+          const favCasa = p1 >= p2;
+          const F = favCasa ? c : t, S = favCasa ? t : c;           // favorita, sfavorita
+          const bF = favCasa ? baseC : baseF, bS = favCasa ? baseF : baseC;
+          const mF = favCasa ? mediaC : mediaF, mS = favCasa ? mediaF : mediaC;
+          // attacco della favorita × difesa (concessa) dalla sfavorita
+          favTiri = (F.fatti / bF) * (S.subiti / bF);
+          favGol = (F.golFatti / mF) * (S.golSubiti / mF);
+          favIdx = (favTiri + favGol) / 2;
+        }
         prove.push({ data: String(r.data).slice(0, 10), p: pOver2(lam), over: r.gol_casa + r.gol_trasferta > 2,
-                     q: r.b365_over25 ? Number(r.b365_over25) : null, pm });
+                     over15: r.gol_casa + r.gol_trasferta > 1,
+                     q: r.b365_over25 ? Number(r.b365_over25) : null, pm,
+                     favIdx, favTiri, favGol });
       }
     }
 
@@ -134,6 +155,46 @@ for (const V of VARIANTI) {
     `   ${(ok * 100).toFixed(1)}% (base ${(base * 100).toFixed(1)})` +
     `   ${resa ? (resa * 100).toFixed(1) + '%' : '—'}    ${V.nota}`);
 }
+// ⚠️ La resa senza il suo intervallo non si può leggere: a queste quote servono
+// decine di migliaia di giocate per distinguere due punti, e due numeri diversi
+// possono essere lo stesso numero.
+function soldiConIntervallo(l) {
+  const r = l.reduce((a, p) => a + (p.over ? p.q : 0), 0) / l.length;
+  const va = l.reduce((a, p) => a + Math.pow((p.over ? p.q : 0) - r, 2), 0) / l.length;
+  const es = Math.sqrt(va / l.length);
+  return `${(r * 100).toFixed(1)}% ±${(1.96 * es * 100).toFixed(1)}`;
+}
+
+// ── L'INDICE DEL FAVORITO, a confronto ──────────────────────────────────────
+{
+  const prove = gira(VARIANTI[0]).filter(p => p.favIdx != null);
+  const perG = new Map();
+  for (const p of prove) { if (!perG.has(p.data)) perG.set(p.data, []); perG.get(p.data).push(p) }
+  const base25 = prove.filter(p => p.over).length / prove.length;
+  const base15 = prove.filter(p => p.over15).length / prove.length;
+  console.log(`\n── l'indice del favorito: attacco della favorita × difesa concessa dalla sfavorita ──`);
+  console.log(`   ${prove.length} partite · base over 2,5 ${(base25 * 100).toFixed(1)}% · over 1,5 ${(base15 * 100).toFixed(1)}%\n`);
+  console.log(`${'indice'.padEnd(22)} over2,5 prime 9   over1,5 prime 9   in soldi (over 2,5)`);
+  const righeOut = [
+    ['solo tiri in porta', p => p.favTiri],
+    ['solo gol', p => p.favGol],
+    ['tiri + gol insieme', p => p.favIdx],
+    ['il modello completo', p => p.p],
+    ['il mercato', p => p.pm],
+  ];
+  for (const [nome, val] of righeOut) {
+    let top = [];
+    for (const l of perG.values()) top = top.concat([...l].filter(p => val(p) != null).sort((a, b) => val(b) - val(a)).slice(0, 9));
+    if (top.length < 500) continue;
+    const conQ = top.filter(p => p.q);
+    console.log(`${nome.padEnd(22)} ${(top.filter(p => p.over).length / top.length * 100).toFixed(1)}%` +
+      `  (${(top.filter(p => p.over).length / top.length * 100 - base25 * 100 >= 0 ? '+' : '')}${(top.filter(p => p.over).length / top.length * 100 - base25 * 100).toFixed(1)})` +
+      `       ${(top.filter(p => p.over15).length / top.length * 100).toFixed(1)}%` +
+      `  (${(top.filter(p => p.over15).length / top.length * 100 - base15 * 100 >= 0 ? '+' : '')}${(top.filter(p => p.over15).length / top.length * 100 - base15 * 100).toFixed(1)})` +
+      `        ${conQ.length ? soldiConIntervallo(conQ) : '—'}`);
+  }
+}
+
 // ── Il metro: quanto sa il mercato sulle stesse partite ─────────────────────
 // ⚠️ Serve a sapere **se c'è ancora spazio**. Se il mercato aggiunge il doppio
 // di noi, migliorare ha senso; se aggiunge quanto noi, il modello ha già preso

@@ -377,6 +377,16 @@ e noi **+0,0039** — **il modello cattura il 42% di quello che sa il book**. Il
 58% che manca è in buona parte informazione che **non abbiamo**: formazioni,
 infortuni, turnover. È esattamente il territorio che `btscout/CLAUDE.md`
 assegna al giudizio e non al calcolo.
+⚠️ **Provata anche "la VPM degli over"** (idea di Mattia, 12/10): invece di
+sommare i gol attesi delle due squadre, guardare **solo l'accoppiata che
+conta** — attacco della favorita contro difesa concessa dalla sfavorita.
+Misurata sulle stesse 34.426 partite: **over 2,5 nelle prime 9 del giorno
+53,6% contro il 54,6% del modello completo**, over 1,5 77,0% contro 78,0%, e
+in soldi 95,3% ±1,7 contro 94,7% ±1,7 — **intervalli sovrapposti, quindi
+stesso numero**. L'idea è sensata ma **il modello completo la contiene già**:
+`attacco(favorita) × difesa(sfavorita)` è uno dei suoi due termini, e buttare
+l'altro perde informazione senza togliere abbastanza rumore.
+
 ⚠️⚠️ **Ma migliorarlo non lo renderebbe redditizio, e questo chiude il
 discorso:** prendendo le prime 9 partite di ogni giorno **secondo il mercato
 stesso**, giocare l'over 2,5 rende **95,2%**. Nemmeno chi prezza quelle partite

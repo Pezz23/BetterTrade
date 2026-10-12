@@ -237,6 +237,14 @@ ogni giorno **secondo il mercato stesso**, giocare l'over 2,5 rende **95,2%**.
 Nemmeno chi prezza quelle partite di mestiere ci guadagna: il margine
 sull'over/under è del 5-6%. **Il tetto di questo mercato è una perdita.**
 
+**Provata anche "la VPM degli over"** (idea di Mattia): attacco della favorita
+contro difesa concessa dalla sfavorita, invece di sommare le due stime.
+**Prevede un po' meno** del modello completo — over 2,5 nelle prime 9 del
+giorno 53,6% contro 54,6%, over 1,5 77,0% contro 78,0% — e in soldi 95,3% ±1,7
+contro 94,7% ±1,7, cioè **lo stesso numero**. Il motivo: il modello completo
+quell'accoppiata **ce l'ha già dentro** come uno dei suoi due termini, e
+buttare l'altro perde informazione senza togliere abbastanza rumore.
+
 **Cosa resterebbe da provare, se un domani interessasse**: l'aggiustamento per
 la forza degli avversari affrontati (la stessa cosa che manca a VPM) e la
 correzione di Dixon-Coles sui punteggi bassi, che peserebbe più sul GG che
