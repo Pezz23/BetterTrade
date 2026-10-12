@@ -16,6 +16,7 @@
 // ⚠️ Niente di questo entra in `lib/gol.js` finché non vince qui.
 
 import { sql } from '../lib/db.js';
+import { giornoLocale } from '../lib/date.js';
 
 const arg = (n, d) => { const a = process.argv.find(x => x.startsWith(`--${n}=`)); return a ? Number(a.split('=')[1]) : d };
 const STAGIONI = arg('stagioni', 8);
@@ -75,7 +76,7 @@ function gira(PESO, STRINGI = true) {
         const pm = (r.avg_ap_over25 && r.avg_ap_under25)
           ? (1 / Number(r.avg_ap_over25)) / (1 / Number(r.avg_ap_over25) + 1 / Number(r.avg_ap_under25)) : null;
         if (stagioni.includes(r.stagione)) prove.push({
-          data: String(r.data).slice(0, 10), lam, nMin: Math.min(c.n, t.n),
+          data: giornoLocale(r.data), lam, nMin: Math.min(c.n, t.n),
           p25: pOver(lam, 2), p15: pOver(lam, 1),
           gol: r.gol_casa + r.gol_trasferta,
           over: r.gol_casa + r.gol_trasferta > 2,

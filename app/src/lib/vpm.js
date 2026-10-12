@@ -57,7 +57,6 @@ export const PESI = {
 // 59 colonne di `partite` lo contiene. `dominio` è il suo sostituto e dice una
 // cosa migliore: il possesso misura chi tiene la palla (il Barcellona ha il 70%
 // anche quando perde), il dominio misura **chi fa male**.
-export const INVERTITI = ['gs', 'tc']   // meno è meglio
 
 // ── I pesi dei tre strati ─────────────────────────────────────────────────────
 // I passi 1-2-3 dell'iter sono lo stesso calcolo su tre finestre.

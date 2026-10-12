@@ -13,29 +13,11 @@
 // giocata **per intero** è andata bene (per le combinate, over 1,5 compreso).
 
 import { sql } from './db.js';
+import { giornoLocale, weekendDi } from './date.js';
 import { parametri, forza, vpm, voto } from '../../app/src/lib/vpm.js';
 import { golAttesi } from '../../app/src/lib/gol.js';
 import { REGOLA_OVER, FATTORE_OVER } from '../../app/src/lib/attendibilita.js';
 import { PARTITE_FINESTRA } from '../../app/src/lib/vpm.js';
-
-/**
- * La data come `aaaa-mm-gg`, dai componenti **locali**.
- * ⚠️ Non usare `toISOString().slice(0,10)` (è UTC: fra mezzanotte e le due
- * italiane dà il giorno prima) né `String(data).slice(0,10)` su un oggetto
- * Date, che restituisce `"Mon Oct 05"` — il driver postgres consegna Date, non
- * stringhe, e lo slice taglia il testo inglese. Trovato il 12/10/2026.
- */
-export function giornoLocale(d) {
-  const x = new Date(d);
-  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
-}
-
-/** Il lunedì che chiude il weekend di una data, come nelle spin. */
-export function weekendDi(d) {
-  const x = new Date(d); x.setHours(12, 0, 0, 0);
-  x.setDate(x.getDate() + ((8 - x.getDay()) % 7));
-  return giornoLocale(x);
-}
 
 /**
  * @param {object} opzioni
@@ -109,6 +91,10 @@ export async function ricostruisci({ stagioni: quante = 3, daGiornata = 5 } = {}
         vpm: v?.punti ?? null, voto: voto(resa, v?.punti ?? null),
         golAttesi: gol?.totale ?? null, gg: gol?.gg ?? null,
         over: gol?.over ?? null,
+        // gli esiti veri dei gol, accanto alle previsioni: servono a chi misura
+        // over/under e Goal, e tenerli qui evita di rileggere le partite
+        golTotali: r.gol_casa + r.gol_trasferta,
+        ggVero: r.gol_casa > 0 && r.gol_trasferta > 0,
         accordoVpm: v ? (v.segno === '1' ? 'H' : 'A') === segno : null,
       });
     }

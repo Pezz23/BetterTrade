@@ -160,20 +160,66 @@ Prendendo le prime 9 di ogni giorno secondo ciascun indicatore:
 | | azzeccate | resa realizzata |
 |---|---|---|
 | tutte le partite (la base) | 50,8% | 95,5% |
-| **attendibilità** | **60,9%** | **97,8%** |
-| VPM | 56,7% | 96,2% |
-| voto | 55,9% | 97,0% |
-| resa | 51,2% | 96,3% |
+| **attendibilità** | **60,3%** | **97,5%** |
+| VPM | 56,3% | 96,0% |
+| voto | 55,7% | 96,9% |
+| resa | 51,2% | 96,1% |
 
 ⚠️ **L'attendibilità vince su entrambi i metri e nessuna combinazione la batte**
-(provati tutti e 15 i sottoinsiemi: da sola 61,2%, con VPM 60,1%, tutti e
+(provati tutti e 15 i sottoinsiemi: da sola 60,3%, con VPM 59,4%, tutti e
 quattro 55,8%). **La domanda "quando tutti e quattro ci azzeccano" ha risposta
 negativa: metterli insieme peggiora**, perché chiedere anche resa alta vuol
 dire chiedere quote più lunghe.
-⚠️ **Nessuno arriva a 100%**: il migliore rende 97,8%, cioè −2,2% a giocata.
+⚠️ **Nessuno arriva a 100%**: il migliore rende 97,5%, cioè −2,2% a giocata.
 ⚠️ **Due metri, non uno**: *azzeccate* per chi deve indovinare nove esiti,
 *resa realizzata* per chi gioca una singola. Giudicare la resa sulle azzeccate
 è come giudicare un difensore sui gol fatti.
+
+### Controllo completo del codice — 12 ottobre 2026
+
+Chiesto da Mattia: *"codice morto, dipendenze a vuoto, ottimizzazioni"*.
+
+⚠️⚠️ **La cosa grave l'ha trovata il controllo, non un errore.** In **cinque**
+script di misura la chiave del giorno era `String(r.data).slice(0, 10)`, che su
+un oggetto `Date` dà `"Mon Oct 05"` — **senza anno**. Le partite del 5 ottobre
+di stagioni diverse finivano nello stesso "giorno" e le prime 9 pescavano da un
+mucchio più grande del vero: **952 chiavi su 2.072 fondevano più anni**.
+✅ Corretto con `btscout/lib/date.js` (`giornoLocale`, `weekendDi`), usata da
+tutti. ⚠️ **I numeri "prime N del giorno" vanno letti di nuovo**: attendibilità
+60,9% → **60,3%**, VPM 56,7 → 56,3, voto 55,9 → 55,7, over 2,5 del modello
+54,6 → 54,3. Le conclusioni reggono tutte. ⚠️ **Le misure sopra una soglia non
+erano toccate** (non raggruppano per giorno): le soglie dei colori dei gol e la
+tabella delle soglie sono state riverificate e sono **identiche**.
+
+**Duplicazione chiusa:** `prova-indicatori.js` aveva ancora la sua copia della
+ricostruzione camminando nel tempo, estratta la mattina in `lib/ricostruisci.js`
+per `calcola-andamento.js` e mai ricollegata. Le due copie **erano già
+divergute** — la prova migliore che una sola serve.
+
+**Codice morto rimosso:** la dipendenza **`recharts`** (8,5 MB in node_modules,
+importata da zero file) · `INVERTITI` in `lib/vpm.js` · `nomeBook` +
+`NOMI_BOOK` in `lib/attendibilita.js` (serviva quando il book si mostrava a
+schermo) · nove import inutili in `prova-indicatori.js`.
+
+**Controllato e a posto:** nessun file orfano · nessuna funzione SQL mai
+chiamata (`mio_ruolo`, `mio_user_id`, `email_di`, `esigi_superadmin` sono usate
+**dentro** l'SQL, nelle policy e nelle altre funzioni) · zero `console.log`
+rimasti in `src/` · `react-dom` serve (`react-dom/client` in `main.jsx`).
+
+**Resta da valutare, non fatto:** `Input` e `Badge` in `components/ui.jsx` non
+li usa nessuno, mentre `UtentiPage` si scrive i propri `<input>` con `S.input` —
+o si adottano o si tolgono, ma un pezzo di libreria che nessuno usa mentre
+accanto se ne riscrive uno uguale è il modo di avere due stili. · Il chunk
+`App` pesa **391 kB (103 kB gzip)**: le pagine si potrebbero caricare a
+richiesta (`React.lazy`), e la più grossa è `DettaglioPartita.jsx` con 642
+righe. · Sette script del motore usano ancora `ps_*` (Pinnacle, vuote dalla
+26/27): quattro sono della vecchia fase e marcati, ma `import-storico.js`,
+`audit-archivio.js` e `verifica-storico.js` no.
+
+**Invarianti riprovati dopo le modifiche:** `prova-ordine` ✓ · `prova-scheda`
+(Σ pesi × parametri = forza, scarto 3,6·10⁻¹⁵) ✓ · `prova-vpm` (19/19 identiche
+fra partite grezze e `vpm_dati()`, bandierine 19/19) ✓ · `npm run lint` 0
+errori · build 1,5 s.
 
 ### 25. [x] Pagina "Andamento" — fatta il 12 ottobre 2026 (**1.14.00**)
 
@@ -304,7 +350,7 @@ senso giocarlo: se l'indicatore è sopra al tot%, succede X volte."*
 ⚠️ **"Non batte il mercato" e "non rende" non sono bocciature.** Avevo chiuso
 l'indice dei gol e poi il GG su quei criteri: nessuno dei due è il criterio di
 Mattia. La tabella sta in `prova-indicatori.js`, sezione *LA TABELLA DELLE
-SOGLIE*: 33.141 partite, 1.461 giorni, otto stagioni. Colonne obbligatorie:
+SOGLIE*: 33.141 partite, 1.636 giorni, otto stagioni. Colonne obbligatorie:
 **succede %** · **contro la base** · **a giornata** (una soglia che dà mezza
 partita a weekend ha ragione e non serve).
 

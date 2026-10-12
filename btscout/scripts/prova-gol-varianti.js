@@ -10,6 +10,7 @@
 // ⚠️ Niente di questo entra in `lib/gol.js` finché non vince qui.
 
 import { sql } from '../lib/db.js';
+import { giornoLocale } from '../lib/date.js';
 
 const arg = (n, d) => { const a = process.argv.find(x => x.startsWith(`--${n}=`)); return a ? Number(a.split('=')[1]) : d };
 const STAGIONI = arg('stagioni', 8);
@@ -105,7 +106,7 @@ function gira(V) {
           favGol = (F.golFatti / mF) * (S.golSubiti / mF);
           favIdx = (favTiri + favGol) / 2;
         }
-        prove.push({ data: String(r.data).slice(0, 10), p: pOver2(lam), over: r.gol_casa + r.gol_trasferta > 2,
+        prove.push({ data: giornoLocale(r.data), p: pOver2(lam), over: r.gol_casa + r.gol_trasferta > 2,
                      over15: r.gol_casa + r.gol_trasferta > 1,
                      q: r.b365_over25 ? Number(r.b365_over25) : null, pm,
                      favIdx, favTiri, favGol });

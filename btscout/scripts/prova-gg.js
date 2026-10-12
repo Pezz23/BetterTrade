@@ -20,6 +20,7 @@
 // Tutto camminando nel tempo: ogni partita è prevista con le sole precedenti.
 
 import { sql } from '../lib/db.js';
+import { giornoLocale } from '../lib/date.js';
 
 const arg = (n, d) => { const a = process.argv.find(x => x.startsWith(`--${n}=`)); return a ? Number(a.split('=')[1]) : d };
 const STAGIONI = arg('stagioni', 8);
@@ -137,7 +138,7 @@ function gira(M) {
       if (M.stretta != null) { const centro = M.centroFisso ?? ggMedio; gg = centro + (gg - centro) * M.stretta }
 
       if (stagioni.includes(r.stagione)) prove.push({
-        data: String(r.data).slice(0, 10), stagione: r.stagione, gg,
+        data: giornoLocale(r.data), stagione: r.stagione, gg,
         // il grezzo e l'indizio di mercato servono alla ritaratura più sotto
         grezzo: M.via === 'segna' ? ggSegna : M.via === 'misto' ? (ggPoisson + ggSegna) / 2 : ggPoisson,
         pm: (r.avg_ap_over25 && r.avg_ap_under25)

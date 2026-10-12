@@ -43,9 +43,6 @@ export function probabilita(q1, qx, q2) {
   return { p1: 1 / q1 / s, px: 1 / qx / s, p2: 1 / q2 / s }
 }
 
-// Il nome leggibile del bookmaker di riferimento, dalla chiave di The Odds API.
-const NOMI_BOOK = { codere_it: 'Codere', pinnacle: 'Pinnacle', williamhill: 'William Hill', unibet_eu: 'Unibet', betfair_ex_eu: 'Betfair' }
-export const nomeBook = chiave => NOMI_BOOK[chiave] || chiave || '—'
 
 /**
  * Arricchisce una riga di prossime_partite con attendibilità e giocata.

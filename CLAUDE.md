@@ -529,8 +529,8 @@ assegna al giudizio e non al calcolo.
 sommare i gol attesi delle due squadre, guardare **solo l'accoppiata che
 conta** — attacco della favorita contro difesa concessa dalla sfavorita.
 Misurata sulle stesse 34.426 partite: **over 2,5 nelle prime 9 del giorno
-53,6% contro il 54,6% del modello completo**, over 1,5 77,0% contro 78,0%, e
-in soldi 95,3% ±1,7 contro 94,7% ±1,7 — **intervalli sovrapposti, quindi
+53,4% contro il 54,3% del modello completo**, over 1,5 76,8% contro 77,7%, e
+in soldi 95,3% ±1,7 contro 94,4% ±1,6 — **intervalli sovrapposti, quindi
 stesso numero**. L'idea è sensata ma **il modello completo la contiene già**:
 `attacco(favorita) × difesa(sfavorita)` è uno dei suoi due termini, e buttare
 l'altro perde informazione senza togliere abbastanza rumore.
@@ -570,7 +570,7 @@ conviene, non cosa giocare** — esattamente come la quota.
 
 ⚠️⚠️ **Ma migliorarlo non lo renderebbe redditizio, e questo chiude il
 discorso:** prendendo le prime 9 partite di ogni giorno **secondo il mercato
-stesso**, giocare l'over 2,5 rende **95,2%**. Nemmeno chi prezza quelle partite
+stesso**, giocare l'over 2,5 rende **95,1%**. Nemmeno chi prezza quelle partite
 di mestiere ci guadagna, perché il margine sull'over/under è del 5-6%. Il
 nostro rende 94,7%. **Il tetto di questo mercato è una perdita**: l'indice dei
 gol serve a leggere la partita, e investirci altro tempo compra un colore più
@@ -591,7 +591,7 @@ Avevo chiuso due volte un indicatore su quei criteri (l'indice dei gol il
 quante partite, contro la frequenza generale.
 
 **La tabella la stampa `scripts/prova-indicatori.js`** (sezione *LA TABELLA
-DELLE SOGLIE*), su **33.141 partite in 1.461 giorni di gioco**, otto stagioni,
+DELLE SOGLIE*), su **33.141 partite in 1.636 giorni di gioco**, otto stagioni,
 dalla 5ª giornata. Tre colonne obbligatorie, e nessuna è facoltativa:
 **succede %** · **contro la base** (senza, non si distingue "la soglia
 seleziona" da "quell'esito è frequente") · **a giornata** (una soglia che dà
@@ -599,19 +599,19 @@ mezza partita a weekend ha ragione e non serve a niente).
 
 | indicatore | soglia | partite | a giornata | succede | contro la base |
 |---|---|---|---|---|---|
-| **attendibilità** → la giocata | 70% | 2.466 | 1,7 | **76,6%** | +25,8 ±1,7 |
-| | 75% | 674 | 0,5 | **81,6%** | +30,8 ±2,9 |
-| **VPM** → la giocata | 7,0 | 9.076 | 6,2 | 60,8% | +10,0 ±1,0 |
-| | 8,0 | 2.416 | 1,7 | **68,6%** | +17,8 ±1,9 |
-| | 8,5 | 958 | 0,7 | **71,4%** | +20,6 ±2,9 |
-| **voto** → la giocata | 95% | 20.123 | 13,8 | 53,6% | +2,8 ±0,7 |
-| | 100% | 2.312 | 1,6 | **67,3%** | +16,5 ±1,9 |
-| **resa** → la giocata | 95% | 7.216 | 4,9 | 52,7% | +1,9 ±1,2 |
-| **over 1,5** | 80% | 6.627 | 4,5 | **83,2%** | +7,8 ±0,9 |
-| **over 2,5** | 60% | 4.296 | 2,9 | 61,1% | +10,2 ±1,5 |
-| | 65% | 1.383 | 0,9 | **64,9%** | +14,0 ±2,5 |
-| **Goal** | 58% | 3.602 | 2,5 | 60,0% | +6,7 ±1,6 |
-| | 60% | 1.138 | 0,8 | **62,0%** | +8,7 ±2,8 |
+| **attendibilità** → la giocata | 70% | 2.466 | 1,5 | **76,6%** | +25,8 ±1,7 |
+| | 75% | 674 | 0,4 | **81,6%** | +30,8 ±2,9 |
+| **VPM** → la giocata | 7,0 | 9.076 | 5,5 | 60,8% | +10,0 ±1,0 |
+| | 8,0 | 2.416 | 1,5 | **68,6%** | +17,8 ±1,9 |
+| | 8,5 | 958 | 0,6 | **71,4%** | +20,6 ±2,9 |
+| **voto** → la giocata | 95% | 20.123 | 12,3 | 53,6% | +2,8 ±0,7 |
+| | 100% | 2.312 | 1,4 | **67,3%** | +16,5 ±1,9 |
+| **resa** → la giocata | 95% | 7.216 | 4,4 | 52,7% | +1,9 ±1,2 |
+| **over 1,5** | 80% | 6.627 | 4,1 | **83,2%** | +7,8 ±0,9 |
+| **over 2,5** | 60% | 4.296 | 2,6 | 61,1% | +10,2 ±1,5 |
+| | 65% | 1.383 | 0,8 | **64,9%** | +14,0 ±2,5 |
+| **Goal** | 58% | 3.602 | 2,2 | 60,0% | +6,7 ±1,6 |
+| | 60% | 1.138 | 0,7 | **62,0%** | +8,7 ±2,8 |
 
 ⚠️ **Con questo metro funzionano tutti**, e lo scarto è più grande del margine
 d'errore in ogni riga tranne due (voto ≥90% e resa ≥90%, che selezionano quasi
@@ -640,15 +640,20 @@ Prendendo le **prime 9 di ogni giorno** secondo ciascun indicatore:
 | | azzeccate | resa realizzata |
 |---|---|---|
 | tutte le partite (la base) | 50,8% | 95,5% |
-| **attendibilità** | **60,9%** | **97,8%** |
-| VPM | 56,7% | 96,2% |
-| voto | 55,9% | 97,0% |
-| resa | 51,2% | 96,3% |
+| **attendibilità** | **60,3%** | **97,5%** |
+| VPM | 56,3% | 96,0% |
+| voto | 55,7% | 96,9% |
+| resa | 51,2% | 96,1% |
 
 ⚠️ **L'attendibilità vince su entrambi i metri, e nessuna combinazione la
-batte.** Provati tutti e 15 i sottoinsiemi: attendibilità da sola **61,2%**,
-con VPM 60,1%, con il voto 59,7%, **tutti e quattro insieme 55,8%**. Ogni
+batte.** Provati tutti e 15 i sottoinsiemi: attendibilità da sola **60,3%**,
+con VPM 59,4%, con il voto 59,2%, **tutti e quattro insieme 55,8%**. Ogni
 indicatore aggiunto **abbassa**.
+⚠️⚠️ **Attenzione a non confondere questa misura con la tabella delle soglie**:
+qui si incrociano le **prime 9 di ciascuno** — una gara a chi arriva primo, e
+lì combinare peggiora. Sopra una **soglia** la risposta è l'opposta (45,7% →
+74,1% da zero a quattro indicatori d'accordo). Sono due domande diverse: vedi
+la pagina Andamento.
 ⚠️ Quindi la risposta alla domanda *"quando tutti e quattro ci azzeccano?"* è:
 **non succede, e metterli insieme peggiora.** Il motivo è che chiedere anche
 una resa alta significa chiedere quote più lunghe, cioè partite meno probabili.
@@ -746,8 +751,10 @@ fattibile, e un numero che cambia a seconda di quando apri la pagina non è una
 misura. La riempie `btscout/scripts/calcola-andamento.js` (prova a vuoto di
 default, `--esegui` scrive, `--stagioni=8` per il passato).
 ⚠️ **La ricostruzione camminando nel tempo sta in `btscout/lib/ricostruisci.js`**,
-estratta da `prova-indicatori.js` quando è servita a due script: **non
-duplicarla**. È il pezzo in cui si sbaglia più facilmente — basta aggiornare la
+e la usano sia `calcola-andamento.js` sia `prova-indicatori.js`: **non
+duplicarla**. ⚠️ Per un giorno le due copie sono esistite davvero, ed erano
+**già divergute**: quella di `prova-indicatori` aveva la chiave del giorno
+sbagliata. Le date stanno in `btscout/lib/date.js`. È il pezzo in cui si sbaglia più facilmente — basta aggiornare la
 storia di una squadra *prima* di valutare la partita e il modello conosce il
 futuro.
 ⚠️ **`andamento` non si scrive dall'app da nessun ruolo**: c'è la sola policy
@@ -1179,6 +1186,19 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   `revoke all ... from public`, `revoke all ... from anon`, poi il grant.
   Fatto per tutte le funzioni in `sql/19-permessi-funzioni.sql` (8/10/2026);
   vale per ogni funzione che si aggiungerà.
+- **`String(data).slice(0,10)` su un oggetto Date NON è una data.** Il driver
+  postgres consegna `Date`, e quello restituisce `"Mon Oct 05"` — il testo
+  inglese tagliato, **senza l'anno**. In cinque script di misura quella stringa
+  era la **chiave del giorno** per prendere "le prime 9 di ogni giorno": su otto
+  stagioni il 5 ottobre 2026 e il 5 ottobre 2020 finivano nello stesso gruppo,
+  **952 chiavi su 2.072 fondevano più anni**, e la classifica del giorno pescava
+  da un mucchio più grande del vero. Trovato il 12/10/2026 **dal controllo del
+  codice, non da un errore**: nessuno script si era mai lamentato.
+  ✅ Ora c'è `btscout/lib/date.js` (`giornoLocale`, `weekendDi`) e la usano
+  tutti. ⚠️ I numeri "prime N del giorno" di prima erano gonfiati di 0,2-0,6
+  punti: l'attendibilità faceva 60,9% e fa **60,3%**. Le conclusioni non
+  cambiano, i numeri sì — e quelli sopra una **soglia** non erano toccati,
+  perché non passano dal raggruppamento per giorno.
 - **PostgREST restituisce al massimo 1000 righe e non lo dice.** La pagina
   Andamento scaricava la tabella intera per contarla: con 1.212 righe ne
   riceveva **1000**, e il riassunto girava su cinque sesti dei dati senza un

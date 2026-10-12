@@ -11,6 +11,7 @@
 // quelle con 2,2, l'indicatore non serve a niente.
 
 import { sql } from '../lib/db.js';
+import { giornoLocale } from '../lib/date.js';
 import { golAttesi, SOGLIE_OVER, K_STRETTA, BASE_DEFAULT , intervalloGol } from '../../app/src/lib/gol.js';
 import { MIN_PARTITE, PARTITE_FINESTRA } from '../../app/src/lib/vpm.js';
 
@@ -59,7 +60,7 @@ for (const r of righe) {
     const g = golAttesi(squadre, r.casa, r.trasferta, med.gol / med.partite, K, BASE,
       med.tiri ? med.tiri / med.partite : null);
     if (g) prove.push({
-      ...g, data: String(r.data).slice(0, 10), golVeri: r.gol_casa + r.gol_trasferta,
+      ...g, data: giornoLocale(r.data), golVeri: r.gol_casa + r.gol_trasferta,
       quotaOver25: r.b365_over25 ? Number(r.b365_over25) : null,
       quotaUnder25: r.b365_under25 ? Number(r.b365_under25) : null,
       ggVero: r.gol_casa > 0 && r.gol_trasferta > 0,
