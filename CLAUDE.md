@@ -496,8 +496,16 @@ dietro c'era 0,9299, e il colore smentiva la cifra che aveva accanto.
 ⚠️ **Il fondo è acceso in proporzione alla fascia** (verde .16 · rosso .12 ·
 verdino .10 · giallo .05): dieci celle a tinta piena sono un semaforo
 illeggibile, e il giallo è il "niente di che" — deve restare sullo sfondo.
+⚠️ **GOAL e NOGOAL sono VIOLA** (`C.viola`, scelta di Mattia il 12/10/2026):
+contorno ed etichetta, non il numero. Sono una **domanda diversa** dagli
+over/under — *"segnano entrambe?"* invece di *"quanti gol?"* — e in blu si
+confondevano con la riga sopra. ⚠️ **La famiglia dice cosa stai guardando, la
+fascia come sta messa**: il gradiente resta sul numero anche nelle due celle
+viola. Gli over/under non hanno famiglia, seguono la fascia anche nel contorno,
+perché sono la scala principale.
 ⚠️ **La riga CONSIGLIO non usa il verde**: con dieci celle colorate accanto,
 un consiglio verde sarebbe l'undicesima tinta che significa un'altra cosa.
+Porta il **viola della sua famiglia**, perché il consiglio è sul Goal.
 ⚠️ **Questo gradiente vale SOLO per over/under e GG/NG** (richiesta esplicita
 di Mattia): gli altri numeri hanno già i loro codici — il verde/rosso di VPM è
 l'accordo col mercato, non una soglia.

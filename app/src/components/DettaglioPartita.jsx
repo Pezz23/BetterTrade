@@ -453,9 +453,17 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
             //    verdino sopra, verde ben sopra. Le soglie sono in
             //    `tagliGol()` e vengono dalle basi misurate.
             const TINTE = { verde: C.verde, verdino: C.menta, giallo: C.giallo, rosso: C.rosso }
-            const cella = (chiave, etichetta, p) => {
+            // ⚠️ `famiglia` è la tinta del contorno e dell'etichetta, non del
+            //    numero: serve a dire a quale gruppo appartiene la cella.
+            //    Goal/NoGoal sono **viola** (scelta di Mattia, 12/10/2026)
+            //    perché sono una domanda diversa dagli over/under — "segnano
+            //    entrambe?" invece di "quanti gol?" — e prima si confondevano
+            //    con la riga sopra. ⚠️ Il gradiente resta sul numero: la
+            //    famiglia dice *cosa* stai guardando, la fascia *come sta*.
+            const cella = (chiave, etichetta, p, famiglia) => {
               const f = fasciaGol(chiave, p)
               const colore = TINTE[f] || C.testo
+              const bordo = famiglia || colore
               // ⚠️ Il fondo è acceso in proporzione alla fascia: un rosso o un
               // verde pieni su dieci celle farebbero un semaforo illeggibile,
               // e il giallo è il "niente di che" — deve restare sullo sfondo.
@@ -463,24 +471,22 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
               return (
                 <div key={etichetta} style={{ textAlign: 'center', padding: '7px 2px', borderRadius: 0,
                   background: `linear-gradient(${alpha(colore, forza)},${alpha(colore, forza)}), ${C.card}`,
-                  border: `1px solid ${alpha(colore, f === 'giallo' ? 0.25 : 0.45)}` }}>
+                  border: `1px solid ${alpha(bordo, f === 'giallo' ? 0.3 : 0.45)}` }}>
                   <div style={{ fontSize: 15, fontWeight: 700, fontFamily: F.mono, color: colore, lineHeight: 1 }}>
                     {(p * 100).toFixed(0)}%
                   </div>
-                  <div style={{ fontSize: 8, fontFamily: F.mono, color: C.spento, letterSpacing: '0.08em', marginTop: 3 }}>{etichetta}</div>
+                  <div style={{ fontSize: 8, fontFamily: F.mono, color: famiglia || C.spento, letterSpacing: '0.08em', marginTop: 3 }}>{etichetta}</div>
                 </div>
               )
             }
             return (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4 }}>
-                {SOGLIE_OVER.map(sg => cella(`over${sg}`, `OVER ${sg},5`, g.over[sg], C.celestePieno))}
-                {/* ⚠️ Il fondo neutro è lo stesso per tutte e dieci. Prima GOAL e
-                    NOGOAL l'avevano verdino: innocuo finché il verde non voleva
-                    dire niente, fuorviante ora che è il risultato della misura —
-                    sembravano accese anche da spente. */}
-                {cella('gg', 'GOAL', g.gg, C.celestePieno)}
-                {SOGLIE_OVER.map(sg => cella(`under${sg}`, `UNDER ${sg},5`, 1 - g.over[sg], C.celestePieno))}
-                {cella('ng', 'NOGOAL', 1 - g.gg, C.celestePieno)}
+                {/* Gli over/under non hanno famiglia: contorno ed etichetta
+                    seguono la fascia, perché sono la scala principale. */}
+                {SOGLIE_OVER.map(sg => cella(`over${sg}`, `OVER ${sg},5`, g.over[sg]))}
+                {cella('gg', 'GOAL', g.gg, C.viola)}
+                {SOGLIE_OVER.map(sg => cella(`under${sg}`, `UNDER ${sg},5`, 1 - g.over[sg]))}
+                {cella('ng', 'NOGOAL', 1 - g.gg, C.viola)}
               </div>
             )
           })()}
@@ -497,9 +503,9 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
             // ⚠️ Niente verde qui: da quando il verde vuol dire "da questo
             // valore in su la giocata ha funzionato", un CONSIGLIO verde
             // accanto a una cella GOAL spenta direbbe due cose opposte. Il
-            // consiglio resta — dice quale lato preferisce il modello — ma in
-            // tinta neutra, perché al pavimento del 65% non ci arriva mai.
-            const tinta = C.celestePieno
+            // consiglio resta — dice quale lato preferisce il modello — nella
+            // tinta della sua famiglia, il viola di GOAL/NOGOAL.
+            const tinta = C.viola
             return (
               <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 padding: '8px 10px', minHeight: 36,
