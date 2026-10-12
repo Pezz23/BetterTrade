@@ -3,10 +3,15 @@
 > To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 12 ottobre 2026 · app alla versione **1.07.00**
-**In cima alla to-do c'è il blocco "PRIORITÀ OGGI"** (voci 24-27), deciso da
-Mattia il 12/10: Bet365 al posto di Codere, la pagina Andamento, e i due
-indicatori nuovi (Goal/NoGoal e Over/Under).
+**Ultimo aggiornamento:** 12 ottobre 2026, sera · app alla versione **1.15.03**
+
+**Le quattro priorità del 12/10 sono tutte chiuse** (voci 24-27): Bet365 al
+posto di Codere, la pagina **Andamento**, l'indicatore **Goal/NoGoal** e quello
+**Over/Under**. In coda alla giornata sono stati fatti **due controlli del
+codice**, che hanno trovato difetti veri — il più grave è che cinque script di
+misura usavano una chiave del giorno **senza anno**, e il backup paginava senza
+ordinamento. Entrambi i blocchi stanno più sotto; leggerli prima di fidarsi dei
+numeri scritti qui, perché alcuni sono stati corretti.
 
 ---
 
@@ -19,7 +24,7 @@ sono vecchi, non il codice**. In ordine:
 cd btscout
 node --env-file=.env scripts/aggiorna.js --esegui    # risultati + quote: recupera tutto da solo
 node --env-file=.env scripts/verifica-storico.js     # l'archivio è coerente?
-cd ../app && npm run lint && npm run dev             # 0 errori, poi la barra deve dire 1.07.00
+cd ../app && npm run lint && npm run dev             # 0 errori, poi la barra deve dire 1.15.03
 ```
 
 `aggiorna.js` guarda indietro e non perde niente: `riconcilia-prossime` chiude
@@ -33,9 +38,10 @@ Odds API si rigenerano ogni mese** (500), quindi dopo una pausa sono pieni.
 | ⚠️ **Le quote future** | `prossime_partite` è una fotografia: dopo una pausa è tutta scaduta. La riempie `aggiorna.js`. |
 | ⚠️ **A stagione nuova VPM non esiste per ~4 giornate.** | Serve un minimo di **3 partite giocate** per squadra (`MIN_PARTITE`): in agosto-settembre la colonna VPM fa `—` e il voto vale la resa. **Non è un difetto.** |
 | ⚠️ **Le ancore di VPM** | misurate su 24/25 e 25/26, **fisse di proposito**. Vanno rimisurate solo quando si vuole aggiungere una stagione — e allora cambiano *tutti* i VPM storici, quindi si fa una volta e si scrive la data. |
+| ⚠️ **La tabella `andamento`** | è **derivata**: si rifà con `calcola-andamento.js --stagioni=8 --esegui` (23 secondi) ogni volta che arrivano risultati nuovi. Non è un backup da conservare. |
 | ⚠️ **Le note "a ottobre…"** | in CLAUDE.md e qui ci sono frasi legate al momento (i tre strati di VPM che guardano quasi le stesse partite, le 1-3 partite in casa). **Da gennaio sono false**: la forma comincia a dire altro. |
 | ✅ **Il criterio, le soglie, i pesi** | non scadono: sono misurati sull'archivio, non sulla settimana. |
-| ✅ **sql/01-20, RLS, permessi** | applicati e verificati. `scripts/prova-permessi.js` lo riconferma in un minuto. |
+| ✅ **sql/01-24, RLS, permessi** | applicati e verificati. `scripts/prova-permessi.js` lo riconferma in un minuto. |
 
 **I numeri qui sotto con una data accanto sono fotografie, non verità**: se
 leggi "884 partite" o "440 crediti" e siamo a marzo, sono vecchi di mesi.
@@ -50,9 +56,12 @@ importa e le misura. Sicurezza chiusa, archivio dentro, numeri chiusi.
 
 Sopra ci sono: la pagina **Partite** con la card a cinque numeri
 (`quota · attendibilità · VPM · resa · voto`), la **scheda** che spiega da dove
-vengono, le **Spin provvisorie** che compilano la griglia da sole col blocco del
-weekend, la griglia **agganciata alle partite vere**, lo **storico**, la
-**gestione utenti** e il **rendiconto**.
+vengono — forma, **gol attesi** con le dieci celle a gradiente, classifica,
+scontri, VPM —, le **Spin provvisorie** che compilano la griglia da sole col
+blocco del weekend, la griglia **agganciata alle partite vere**, lo **storico**,
+la **gestione utenti**, il **rendiconto** e la pagina **Andamento**, che misura
+quanto sono attendibili i quattro indicatori su 101.237 giocate ricostruite
+nelle otto stagioni passate.
 
 **Dove eravamo arrivati col ragionamento** (10 ottobre): il **voto** riassume
 tutto in un numero (resa × fattore VPM, 100% = pareggio), e la **scala a
@@ -112,6 +121,42 @@ solo football-data, nel blocco imminente: `importa-prossime.js` lo riempirebbe.
 > Riscritta il **7 ottobre 2026**: solo quello che manca, numerato 1-13 e diviso
 > in lotti per file toccati. Quello che è stato fatto sta sotto, in "Fatto di
 > recente": serve a capire *perché* una cosa è com'è, non cosa resta.
+
+## ✅ COSA RESTA, dopo il 12 ottobre
+
+Le quattro priorità del 12/10 sono chiuse. Quello che è rimasto aperto, in
+ordine di quanto è pronto:
+
+**Tre decisioni di Mattia, già istruite** (basta un sì):
+- **`Input` e `Badge` in `components/ui.jsx` non li usa nessuno**, mentre
+  `UtentiPage` si scrive i propri `<input>` con `S.input`. O si adottano o si
+  tolgono: un pezzo di libreria inutilizzato accanto a uno riscritto a mano è
+  il modo di ritrovarsi con due stili.
+- **Il chunk `App` pesa 391 kB (103 gzip).** Le pagine si potrebbero caricare a
+  richiesta (`React.lazy`): chi apre la Dashboard non ha bisogno di Reporting,
+  Bilancio e Andamento.
+- **Tre script correnti usano ancora `ps_*`** (Pinnacle, colonne vuote dalla
+  26/27): `import-storico.js`, `audit-archivio.js`, `verifica-storico.js`.
+  Girano e perdono la stagione in corso **in silenzio**. Gli altri quattro sono
+  della vecchia fase e già marcati.
+
+**In attesa di qualcun altro:**
+- ⚠️ **I risultati dal 21/09 in poi non ci sono**, e non è colpa nostra:
+  football-data non li ha pubblicati (verificato il 12/10 scaricando il CSV a
+  mano — dice le stesse cose dell'archivio). **131 future giocate senza
+  risultato.** Al primo `aggiorna.js --esegui` che riesce si agganciano da
+  sole, poi va rilanciato `calcola-andamento.js --stagioni=8 --esegui`.
+  ⚠️ Nota operativa: in quel momento **solo l'apex rispondeva**
+  (`football-data.co.uk` sì, `www.` no); lo script prova entrambi.
+
+**Lavori veri non iniziati:** lotto Q (routing con URL veri, briefing valutato
+e risposta scritta in `briefing/risposte/`, mai partito) · lotto E (spin 5-8) ·
+lotto F (automazione 9-11) · lotto M (vecchi backtest su `ps_*`) · voce 4f
+(normalizzazione tipografica) · voce 16 (voto minimo per giocare) · punto C
+(verificare se The Odds API ha le quote GG/NG — 2 crediti; serve **solo** se un
+giorno si vuole giocare quel mercato, l'indicatore funziona senza).
+
+---
 
 ## 🔥 PRIORITÀ OGGI — deciso da Mattia il 12 ottobre 2026
 

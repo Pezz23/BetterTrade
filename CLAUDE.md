@@ -8,6 +8,14 @@ Due pezzi nello stesso repo, non ancora collegati:
 | `app/` | **L'app.** React + Vite + Supabase. Registra spin, giornate e bankroll di 6 persone. |
 | `btscout/` | **Il motore.** Node, nessun frontend: modelli, backtest, import. Le 53.796 partite di 15 campionati stanno in Supabase con il resto. |
 
+⚠️ **I due pezzi condividono il codice dei calcoli, non solo il database**: gli
+script del motore importano `app/src/lib/*.js` (VPM, gol attesi, attendibilità)
+invece di riscriverli, ed è il motivo per cui le librerie in `src/lib/`
+importano con l'estensione. La ricostruzione camminando nel tempo, che serve a
+entrambi, sta in `btscout/lib/ricostruisci.js`, e le date in
+`btscout/lib/date.js`. **Una misura e lo schermo devono dire lo stesso numero,
+e l'unico modo è che eseguano lo stesso codice.**
+
 ---
 
 ## ⚠️ PRIMA DI QUALSIASI COSA: leggi STATO.md
@@ -1379,7 +1387,7 @@ node --env-file=.env scripts/backup.js             # PRIMA di ogni modifica ai d
 node --env-file=.env scripts/saldi.js              # riepilogo saldi
 node --env-file=.env scripts/verifica-coerenza.js  # invariante del bankroll
 node --env-file=.env scripts/stato-migrazione.js   # stato della sicurezza
-node --env-file=.env scripts/prova-permessi.js Bermani <pw> MNM <pw>   # RLS, voti compresi
+node --env-file=.env scripts/prova-permessi.js Bermani <pw> MNM <pw>   # RLS, voti e tabella andamento
 
 node --env-file=.env scripts/confronta-utenti.js MarcoM Christian
 node --env-file=.env scripts/allinea-utenti.js  MarcoM Christian [--esegui]
