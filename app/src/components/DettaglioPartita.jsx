@@ -204,6 +204,168 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
             })}
           </div>
         </Blocco>
+      </>}
+
+      {/* ⚠️ I gol attesi stanno **subito sotto la forma** (spostati il
+          12/10/2026, scelta di Mattia): sono la lettura della partita, e si
+          leggono accanto a come stanno andando le squadre, non in fondo dopo
+          i numeri. ⚠️ Sta **fuori** dal gruppo `{forma && …}` di proposito:
+          dipende da `golAttesi`, non dalla forma, e dentro quel gruppo
+          sparirebbe mentre la forma carica o se la sua query fallisce. */}
+      {/* ── 3b. I gol attesi ───────────────────────────────────────────
+          Stesse finestre e stessi pesi di VPM, ma guarda i gol invece dei
+          risultati. ⚠️ **Non usa nessuna quota**: è una stima dalle squadre.
+          Calibrata (misurato su 10.059 partite: over 2,5 previsto 50,6% contro
+          52,5% vero) ma **debole** — misurato su 34.434 partite aggiunge il 42%
+          dell'informazione che ha il mercato. Si legge come un colore della
+          partita, non come una previsione da giocare. */}
+      {g && (
+        <Blocco titolo="⚽ Gol attesi" extra={`${g.totale.toFixed(2).replace('.', ',')} in tutto`} sottolinea>
+          {/* ⚠️ Prima qui c'erano i due numeri affiancati con "attesi" in mezzo, e
+              il totale ripetuto nel titolo. Mattia (12/10/2026): *"non si
+              capisce una mazza"* — aveva ragione due volte. Il totale era
+              scritto due volte, e due numeri con una parola in mezzo si leggono
+              come un intervallo, mentre sono **di due squadre diverse**.
+              Adesso: sopra di chi sono, sotto l'intervallo vero. */}
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
+            {[[p.casa, g.lambdaCasa], [p.trasferta, g.lambdaFuori]].map(([chi, lam], i) => (
+              <div key={chi} style={{ flex: 1, textAlign: i ? 'right' : 'left', minWidth: 0 }}>
+                <div style={{ fontSize: 9, fontFamily: F.mono, color: C.spento, letterSpacing: '0.06em',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{chi.toUpperCase()}</div>
+                <div style={{ fontSize: 22, fontWeight: 700, fontFamily: F.mono, color: C.testo, lineHeight: 1.1 }}>
+                  {lam.toFixed(2).replace('.', ',')}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* ⚠️ "3,01 in tutto" è una media, e una media di gol non si vede mai
+              in campo: non esistono partite da 3,01 gol. L'intervallo dice la
+              stessa cosa in risultati veri. ⚠️ La percentuale accanto è
+              **verificata**, non calcolata e basta: su 10.059 partite dichiara
+              67,9% e si avvera 67,9% (`btscout/scripts/prova-gol.js`). Senza
+              quel numero un intervallo non si può leggere. */}
+          {(() => {
+            const iv = intervalloGol(g.totale)
+            return (
+              <div style={{ textAlign: 'center', marginBottom: 12, fontSize: 11, fontFamily: F.mono, color: C.spento, letterSpacing: '0.04em' }}>
+                ATTESI <span style={{ color: C.testo, fontWeight: 700, fontSize: 13 }}>DA {iv.da} A {iv.a} GOL</span>
+                {' '}· {(iv.copertura * 100).toFixed(0)}% DELLE VOLTE
+              </div>
+            )
+          })()}
+
+          {/* ⚠️ IL COLORE È IL RISULTATO DELLA MISURA, non una decorazione.
+              Verde = sopra la soglia alta, verde chiaro = sopra quella utile,
+              niente colore = quel numero non dice più della media. Le soglie
+              sono in `SOGLIE_COLORE` e vengono dalla tabella misurata su
+              33.141 partite. ⚠️ Ogni riga ha la SUA scala: sull'over 1,5 il
+              verde parte dall'82%, sull'over 2,5 dal 62%, sul 3,5 dal 40% —
+              un'unica soglia direbbe il falso su metà delle righe.
+              ⚠️ Due righe, over e under, perché sono due letture della stessa
+              partita e Mattia le guarda entrambe: la cella spenta di una e
+              accesa dell'altra è l'informazione. */}
+          {(() => {
+            // ⚠️ Quattro fasce, non due: rosso sotto la base, giallo attorno,
+            //    verdino sopra, verde ben sopra. Le soglie sono in
+            //    `tagliGol()` e vengono dalle basi misurate.
+            const TINTE = { verde: C.verde, verdino: C.menta, giallo: C.giallo, rosso: C.rosso }
+            // ⚠️ `famiglia` è la tinta del contorno e dell'etichetta, non del
+            //    numero: serve a dire a quale gruppo appartiene la cella.
+            //    Goal/NoGoal sono **viola** (scelta di Mattia, 12/10/2026)
+            //    perché sono una domanda diversa dagli over/under — "segnano
+            //    entrambe?" invece di "quanti gol?" — e prima si confondevano
+            //    con la riga sopra. ⚠️ Il gradiente resta sul numero: la
+            //    famiglia dice *cosa* stai guardando, la fascia *come sta*.
+            const cella = (chiave, etichetta, p, famiglia) => {
+              const f = fasciaGol(chiave, p)
+              const colore = TINTE[f] || C.testo
+              const bordo = famiglia || colore
+              // ⚠️ Il fondo è acceso in proporzione alla fascia: un rosso o un
+              // verde pieni su dieci celle farebbero un semaforo illeggibile,
+              // e il giallo è il "niente di che" — deve restare sullo sfondo.
+              const forza = f === 'verde' ? 0.16 : f === 'rosso' ? 0.12 : f === 'verdino' ? 0.10 : 0.05
+              return (
+                <div key={etichetta} style={{ textAlign: 'center', padding: '7px 2px', borderRadius: 0,
+                  background: `linear-gradient(${alpha(colore, forza)},${alpha(colore, forza)}), ${C.card}`,
+                  border: `1px solid ${alpha(bordo, f === 'giallo' ? 0.3 : 0.45)}` }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, fontFamily: F.mono, color: colore, lineHeight: 1 }}>
+                    {(p * 100).toFixed(0)}%
+                  </div>
+                  <div style={{ fontSize: 8, fontFamily: F.mono, color: famiglia || C.spento, letterSpacing: '0.08em', marginTop: 3 }}>{etichetta}</div>
+                </div>
+              )
+            }
+            return (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4 }}>
+                {/* Gli over/under non hanno famiglia: contorno ed etichetta
+                    seguono la fascia, perché sono la scala principale. */}
+                {SOGLIE_OVER.map(sg => cella(`over${sg}`, `OVER ${sg},5`, g.over[sg]))}
+                {cella('gg', 'GOAL', g.gg, C.viola)}
+                {SOGLIE_OVER.map(sg => cella(`under${sg}`, `UNDER ${sg},5`, 1 - g.over[sg]))}
+                {cella('ng', 'NOGOAL', 1 - g.gg, C.viola)}
+              </div>
+            )
+          })()}
+
+          {/* ⚠️ IL CONSIGLIO SUL GOAL/NO GOAL, e il suo silenzio.
+              La percentuale sopra dice quanto è probabile; questa riga dice
+              **cosa aspettarsi**, che è la domanda di chi legge. ⚠️ Sotto il
+              55% di fiducia non c'è verdetto, ed è misurato: lì il consiglio
+              è giusto il 52,2% delle volte, cioè quanto dire sempre GOL.
+              Mostrare "in bilico" invece di un responso è il motivo per cui si
+              può credere al responso quando arriva (62,0% sopra il 60%). */}
+          {(() => {
+            const cg = consiglioGg(g.gg)
+            // ⚠️ Niente verde qui: da quando il verde vuol dire "da questo
+            // valore in su la giocata ha funzionato", un CONSIGLIO verde
+            // accanto a una cella GOAL spenta direbbe due cose opposte. Il
+            // consiglio resta — dice quale lato preferisce il modello — nella
+            // tinta della sua famiglia, il viola di GOAL/NOGOAL.
+            const tinta = C.viola
+            return (
+              <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                padding: '8px 10px', minHeight: 36,
+                background: `linear-gradient(${alpha(tinta, 0.07)},${alpha(tinta, 0.07)}), ${C.card}`,
+                border: `1px solid ${alpha(tinta, 0.25)}` }}>
+                <span style={{ fontSize: 8, fontFamily: F.mono, color: C.spento, letterSpacing: '0.08em' }}>CONSIGLIO</span>
+                <span style={{ fontSize: 15, fontWeight: 700, fontFamily: F.mono, color: C.testo, letterSpacing: '0.04em' }}>
+                  {cg.esito || 'IN BILICO'}
+                </span>
+                <span style={{ fontSize: 11, fontFamily: F.mono, color: C.spento }}>
+                  {cg.esito
+                    ? `fiducia ${(cg.fiducia * 100).toFixed(0)}%`
+                    : `fiducia ${(cg.fiducia * 100).toFixed(0)}%, serve ${(FIDUCIA_GG * 100).toFixed(0)}%`}
+                </span>
+              </div>
+            )
+          })()}
+
+          {/* Da dove viene il numero: attacco e difesa rispetto alla media del
+              campionato, dove 1,00 è "come tutti gli altri". */}
+          <div style={{ marginTop: 10, fontSize: 11, fontFamily: F.mono, color: C.spento, lineHeight: 1.6 }}>
+            attacco {g.attacco.casa.toFixed(2).replace('.', ',')} · {g.attacco.trasferta.toFixed(2).replace('.', ',')}
+            {'   '}difesa {g.difesa.casa.toFixed(2).replace('.', ',')} · {g.difesa.trasferta.toFixed(2).replace('.', ',')}
+            {'   '}<span style={{ color: C.fantasma }}>(1,00 = media del campionato, {g.media.toFixed(2).replace('.', ',')} gol)</span>
+          </div>
+          {/* ⚠️ Il colore senza la sua spiegazione è una decorazione: qui si dice
+              cosa è successo DAVVERO sopra quelle soglie, misurato. Il `title`
+              col mouse non esiste su telefono, quindi sta scritto. */}
+          <div style={{ marginTop: 6, fontSize: 10, fontFamily: F.sans, color: C.fantasma, lineHeight: 1.5 }}>
+            Il colore confronta il numero con quanto quell'esito arriva di solito:{' '}
+            <span style={{ color: C.rosso, fontWeight: 700 }}>rosso</span> sotto il normale,{' '}
+            <span style={{ color: C.giallo, fontWeight: 700 }}>giallo</span> attorno,{' '}
+            <span style={{ color: C.menta, fontWeight: 700 }}>verdino</span> sopra,{' '}
+            <span style={{ color: C.verde, fontWeight: 700 }}>verde</span> ben sopra — soglie dalle basi
+            misurate su 33.141 partite ({(tagliGol('over2').base * 100).toFixed(0)}% per l&apos;over 2,5,{' '}
+            {(tagliGol('gg').base * 100).toFixed(0)}% per il Goal). ⚠️ Verde vuol dire «più del solito», non
+            «giocata vincente»: l&apos;over 3,5 in verde arriva il 44% delle volte. Le uniche dove il verde
+            è anche una giocata che ha funzionato sopra il 70% sono over 0,5, over 1,5 e under 3,5.
+          </div>
+        </Blocco>
+      )}
+
+      {forma && <>
 
         {/* ── 4. La classifica ──────────────────────────────────────── */}
         <Blocco titolo="🏆 Classifica" extra={`su ${forma.classifica?.[p.casa]?.squadre ?? '—'} squadre`} sottolinea>
@@ -394,159 +556,6 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
           </Blocco>
         )
       })()}
-
-      {/* ── 6b. I gol attesi ───────────────────────────────────────────
-          Stesse finestre e stessi pesi di VPM, ma guarda i gol invece dei
-          risultati. ⚠️ **Non usa nessuna quota**: è una stima dalle squadre.
-          Calibrata (misurato su 10.059 partite: over 2,5 previsto 50,6% contro
-          52,5% vero) ma **debole** — misurato su 34.434 partite aggiunge il 42%
-          dell'informazione che ha il mercato. Si legge come un colore della
-          partita, non come una previsione da giocare. */}
-      {g && (
-        <Blocco titolo="⚽ Gol attesi" extra={`${g.totale.toFixed(2).replace('.', ',')} in tutto`} sottolinea>
-          {/* ⚠️ Prima qui c'erano i due numeri affiancati con "attesi" in mezzo, e
-              il totale ripetuto nel titolo. Mattia (12/10/2026): *"non si
-              capisce una mazza"* — aveva ragione due volte. Il totale era
-              scritto due volte, e due numeri con una parola in mezzo si leggono
-              come un intervallo, mentre sono **di due squadre diverse**.
-              Adesso: sopra di chi sono, sotto l'intervallo vero. */}
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
-            {[[p.casa, g.lambdaCasa], [p.trasferta, g.lambdaFuori]].map(([chi, lam], i) => (
-              <div key={chi} style={{ flex: 1, textAlign: i ? 'right' : 'left', minWidth: 0 }}>
-                <div style={{ fontSize: 9, fontFamily: F.mono, color: C.spento, letterSpacing: '0.06em',
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{chi.toUpperCase()}</div>
-                <div style={{ fontSize: 22, fontWeight: 700, fontFamily: F.mono, color: C.testo, lineHeight: 1.1 }}>
-                  {lam.toFixed(2).replace('.', ',')}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* ⚠️ "3,01 in tutto" è una media, e una media di gol non si vede mai
-              in campo: non esistono partite da 3,01 gol. L'intervallo dice la
-              stessa cosa in risultati veri. ⚠️ La percentuale accanto è
-              **verificata**, non calcolata e basta: su 10.059 partite dichiara
-              67,9% e si avvera 67,9% (`btscout/scripts/prova-gol.js`). Senza
-              quel numero un intervallo non si può leggere. */}
-          {(() => {
-            const iv = intervalloGol(g.totale)
-            return (
-              <div style={{ textAlign: 'center', marginBottom: 12, fontSize: 11, fontFamily: F.mono, color: C.spento, letterSpacing: '0.04em' }}>
-                ATTESI <span style={{ color: C.testo, fontWeight: 700, fontSize: 13 }}>DA {iv.da} A {iv.a} GOL</span>
-                {' '}· {(iv.copertura * 100).toFixed(0)}% DELLE VOLTE
-              </div>
-            )
-          })()}
-
-          {/* ⚠️ IL COLORE È IL RISULTATO DELLA MISURA, non una decorazione.
-              Verde = sopra la soglia alta, verde chiaro = sopra quella utile,
-              niente colore = quel numero non dice più della media. Le soglie
-              sono in `SOGLIE_COLORE` e vengono dalla tabella misurata su
-              33.141 partite. ⚠️ Ogni riga ha la SUA scala: sull'over 1,5 il
-              verde parte dall'82%, sull'over 2,5 dal 62%, sul 3,5 dal 40% —
-              un'unica soglia direbbe il falso su metà delle righe.
-              ⚠️ Due righe, over e under, perché sono due letture della stessa
-              partita e Mattia le guarda entrambe: la cella spenta di una e
-              accesa dell'altra è l'informazione. */}
-          {(() => {
-            // ⚠️ Quattro fasce, non due: rosso sotto la base, giallo attorno,
-            //    verdino sopra, verde ben sopra. Le soglie sono in
-            //    `tagliGol()` e vengono dalle basi misurate.
-            const TINTE = { verde: C.verde, verdino: C.menta, giallo: C.giallo, rosso: C.rosso }
-            // ⚠️ `famiglia` è la tinta del contorno e dell'etichetta, non del
-            //    numero: serve a dire a quale gruppo appartiene la cella.
-            //    Goal/NoGoal sono **viola** (scelta di Mattia, 12/10/2026)
-            //    perché sono una domanda diversa dagli over/under — "segnano
-            //    entrambe?" invece di "quanti gol?" — e prima si confondevano
-            //    con la riga sopra. ⚠️ Il gradiente resta sul numero: la
-            //    famiglia dice *cosa* stai guardando, la fascia *come sta*.
-            const cella = (chiave, etichetta, p, famiglia) => {
-              const f = fasciaGol(chiave, p)
-              const colore = TINTE[f] || C.testo
-              const bordo = famiglia || colore
-              // ⚠️ Il fondo è acceso in proporzione alla fascia: un rosso o un
-              // verde pieni su dieci celle farebbero un semaforo illeggibile,
-              // e il giallo è il "niente di che" — deve restare sullo sfondo.
-              const forza = f === 'verde' ? 0.16 : f === 'rosso' ? 0.12 : f === 'verdino' ? 0.10 : 0.05
-              return (
-                <div key={etichetta} style={{ textAlign: 'center', padding: '7px 2px', borderRadius: 0,
-                  background: `linear-gradient(${alpha(colore, forza)},${alpha(colore, forza)}), ${C.card}`,
-                  border: `1px solid ${alpha(bordo, f === 'giallo' ? 0.3 : 0.45)}` }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, fontFamily: F.mono, color: colore, lineHeight: 1 }}>
-                    {(p * 100).toFixed(0)}%
-                  </div>
-                  <div style={{ fontSize: 8, fontFamily: F.mono, color: famiglia || C.spento, letterSpacing: '0.08em', marginTop: 3 }}>{etichetta}</div>
-                </div>
-              )
-            }
-            return (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4 }}>
-                {/* Gli over/under non hanno famiglia: contorno ed etichetta
-                    seguono la fascia, perché sono la scala principale. */}
-                {SOGLIE_OVER.map(sg => cella(`over${sg}`, `OVER ${sg},5`, g.over[sg]))}
-                {cella('gg', 'GOAL', g.gg, C.viola)}
-                {SOGLIE_OVER.map(sg => cella(`under${sg}`, `UNDER ${sg},5`, 1 - g.over[sg]))}
-                {cella('ng', 'NOGOAL', 1 - g.gg, C.viola)}
-              </div>
-            )
-          })()}
-
-          {/* ⚠️ IL CONSIGLIO SUL GOAL/NO GOAL, e il suo silenzio.
-              La percentuale sopra dice quanto è probabile; questa riga dice
-              **cosa aspettarsi**, che è la domanda di chi legge. ⚠️ Sotto il
-              55% di fiducia non c'è verdetto, ed è misurato: lì il consiglio
-              è giusto il 52,2% delle volte, cioè quanto dire sempre GOL.
-              Mostrare "in bilico" invece di un responso è il motivo per cui si
-              può credere al responso quando arriva (62,0% sopra il 60%). */}
-          {(() => {
-            const cg = consiglioGg(g.gg)
-            // ⚠️ Niente verde qui: da quando il verde vuol dire "da questo
-            // valore in su la giocata ha funzionato", un CONSIGLIO verde
-            // accanto a una cella GOAL spenta direbbe due cose opposte. Il
-            // consiglio resta — dice quale lato preferisce il modello — nella
-            // tinta della sua famiglia, il viola di GOAL/NOGOAL.
-            const tinta = C.viola
-            return (
-              <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                padding: '8px 10px', minHeight: 36,
-                background: `linear-gradient(${alpha(tinta, 0.07)},${alpha(tinta, 0.07)}), ${C.card}`,
-                border: `1px solid ${alpha(tinta, 0.25)}` }}>
-                <span style={{ fontSize: 8, fontFamily: F.mono, color: C.spento, letterSpacing: '0.08em' }}>CONSIGLIO</span>
-                <span style={{ fontSize: 15, fontWeight: 700, fontFamily: F.mono, color: C.testo, letterSpacing: '0.04em' }}>
-                  {cg.esito || 'IN BILICO'}
-                </span>
-                <span style={{ fontSize: 11, fontFamily: F.mono, color: C.spento }}>
-                  {cg.esito
-                    ? `fiducia ${(cg.fiducia * 100).toFixed(0)}%`
-                    : `fiducia ${(cg.fiducia * 100).toFixed(0)}%, serve ${(FIDUCIA_GG * 100).toFixed(0)}%`}
-                </span>
-              </div>
-            )
-          })()}
-
-          {/* Da dove viene il numero: attacco e difesa rispetto alla media del
-              campionato, dove 1,00 è "come tutti gli altri". */}
-          <div style={{ marginTop: 10, fontSize: 11, fontFamily: F.mono, color: C.spento, lineHeight: 1.6 }}>
-            attacco {g.attacco.casa.toFixed(2).replace('.', ',')} · {g.attacco.trasferta.toFixed(2).replace('.', ',')}
-            {'   '}difesa {g.difesa.casa.toFixed(2).replace('.', ',')} · {g.difesa.trasferta.toFixed(2).replace('.', ',')}
-            {'   '}<span style={{ color: C.fantasma }}>(1,00 = media del campionato, {g.media.toFixed(2).replace('.', ',')} gol)</span>
-          </div>
-          {/* ⚠️ Il colore senza la sua spiegazione è una decorazione: qui si dice
-              cosa è successo DAVVERO sopra quelle soglie, misurato. Il `title`
-              col mouse non esiste su telefono, quindi sta scritto. */}
-          <div style={{ marginTop: 6, fontSize: 10, fontFamily: F.sans, color: C.fantasma, lineHeight: 1.5 }}>
-            Il colore confronta il numero con quanto quell'esito arriva di solito:{' '}
-            <span style={{ color: C.rosso, fontWeight: 700 }}>rosso</span> sotto il normale,{' '}
-            <span style={{ color: C.giallo, fontWeight: 700 }}>giallo</span> attorno,{' '}
-            <span style={{ color: C.menta, fontWeight: 700 }}>verdino</span> sopra,{' '}
-            <span style={{ color: C.verde, fontWeight: 700 }}>verde</span> ben sopra — soglie dalle basi
-            misurate su 33.141 partite ({(tagliGol('over2').base * 100).toFixed(0)}% per l&apos;over 2,5,{' '}
-            {(tagliGol('gg').base * 100).toFixed(0)}% per il Goal). ⚠️ Verde vuol dire «più del solito», non
-            «giocata vincente»: l&apos;over 3,5 in verde arriva il 44% delle volte. Le uniche dove il verde
-            è anche una giocata che ha funzionato sopra il 70% sono over 0,5, over 1,5 e under 3,5.
-          </div>
-        </Blocco>
-      )}
 
       {/* ── 7. Il consenso ──────────────────────────────────────────────
           Per ultimo, prima dei dettagli (scelta di Mattia, 9/10/2026): sono le

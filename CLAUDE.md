@@ -1114,8 +1114,14 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   **dentro lo stesso `useMemo` dei filtri**, dopo di loro, così vale sempre su
   quello che è rimasto visibile.
 - **L'ordine dei blocchi nella scheda** (`DettaglioPartita`) è una scelta di
-  Mattia, non un caso: evento e giocata · forma · classifica · scontri diretti ·
-  **VPM** · consenso di mercato · dettagli completi. Il consenso sta **per
+  Mattia, non un caso: evento e giocata · forma · **gol attesi** · classifica ·
+  scontri diretti · **VPM** · consenso di mercato · dettagli completi.
+  ⚠️ I **gol attesi** sono passati dal fondo a **subito sotto la forma** il
+  12/10/2026: sono la lettura della partita, e si leggono accanto a come stanno
+  andando le squadre, non in coda dopo i numeri. ⚠️ Il loro blocco sta **fuori**
+  dal gruppo `{forma && …}` di proposito — dipende da `golAttesi()`, non dalla
+  forma, e lì dentro sparirebbe mentre la forma carica o se la sua query
+  fallisce. Per questo il gruppo è spezzato in due. Il consenso sta **per
   ultimo** perché sono le quote crude, il materiale da cui nasce
   l'attendibilità, non una cosa da leggere per prima; e le tre quote
   `max · media · equo` **non stanno più in cima** (9/10/2026) — erano numeri da
