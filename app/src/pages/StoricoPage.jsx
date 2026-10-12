@@ -3,7 +3,7 @@ import { supabase } from '../supabase'
 import { C, F, alpha } from '../theme'
 import { Card, Etichetta } from '../components/ui'
 import { CATEGORIE, pct, giorno } from '../components/TestataPartita'
-import { valuta, categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
+import { valuta, categoria, SOGLIE_DEFAULT, oggiLocale } from '../lib/attendibilita'
 import { sigla } from '../lib/campionati'
 
 // Lo stato dell'archivio e come stanno andando le proposte.
@@ -56,7 +56,9 @@ export default function StoricoPage() {
 
   useEffect(() => {
     async function carica() {
-      const oggi = new Date().toISOString().slice(0, 10)
+      // ⚠️ `oggiLocale()` e non `toISOString()`: quello è UTC, e fra mezzanotte
+      // e le due italiane restituisce ieri.
+      const oggi = oggiLocale()
       // Il conteggio dell'archivio: solo numeri, niente righe.
       const totale = await supabase.from('partite').select('*', { count: 'exact', head: true })
       const ultimaGiocata = await supabase.from('partite').select('div, stagione, data').order('data', { ascending: false }).limit(1)

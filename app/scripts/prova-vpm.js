@@ -38,7 +38,11 @@ const stagione = ultima[0].stagione;
 
 const giocate = await tuttePagine((a, b) => admin.from('partite')
   .select('div,data,casa,trasferta,gol_casa,gol_trasferta,tirip_casa,tirip_trasf')
-  .eq('stagione', stagione).order('data').range(a, b));
+  // ⚠️ `.order('id')` come secondo criterio: `data` ha migliaia di pari merito
+  // e una stagione piena sono 5.214 partite, cioè sei pagine. Senza, fra una
+  // pagina e l'altra le righe ballano e se ne perdono — la stessa trappola che
+  // più sotto era già stata chiusa sugli scontri diretti.
+  .eq('stagione', stagione).order('data').order('id').range(a, b));
 
 // Per ogni squadra, le sue partite in ordine, viste da lei.
 const storia = {};

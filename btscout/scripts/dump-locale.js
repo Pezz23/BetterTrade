@@ -1,3 +1,9 @@
+// ⚠️ VECCHIA FASE (fino a settembre 2026) — non fa parte del criterio in uso.
+// Parla ancora di Neon: il database ora è Supabase, e `lib/db.js` ci punta già,
+// quindi gira ma misura una strada abbandonata. Marcato il 12/10/2026 dal
+// controllo del codice, che l'ha trovato fra gli script senza controllo sul
+// risultato vuoto — ed è il segno che nessuno lo lancia da mesi.
+
 // Scarica la tabella `partite` da Neon in una cache locale (.cache/partite.json).
 // I backtest di esplorazione leggono da qui invece che dalla rete: più veloce e
 // immune ai cali di connessione (es. il Mac che va in sleep). Da rilanciare dopo

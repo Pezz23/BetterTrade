@@ -33,11 +33,19 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSessi
 const TABELLE = ['users', 'movimenti', 'giornate', 'griglia', 'impostazioni', 'inserite'];
 
 // Supabase risponde al massimo 1000 righe per volta: si pagina con range().
+//
+// ⚠️⚠️ **L'ordinamento su `id` non è un vezzo, tiene in piedi il backup.**
+// Paginare senza `order` significa paginare su un ordine **non definito**: fra
+// una pagina e l'altra Postgres può restituire le righe in ordine diverso,
+// quindi alcune escono due volte e altre **spariscono** — e un backup che perde
+// righe in silenzio è peggio di nessun backup. È la stessa trappola che il
+// 9/10/2026 aveva fatto sparire due scontri diretti in `prova-vpm.js`; lì era
+// stata corretta, qui era rimasta (12/10/2026).
 async function scaricaTutto(tabella) {
   const PAGINA = 1000;
   const righe = [];
   for (let da = 0; ; da += PAGINA) {
-    const { data, error } = await supabase.from(tabella).select('*').range(da, da + PAGINA - 1);
+    const { data, error } = await supabase.from(tabella).select('*').order('id').range(da, da + PAGINA - 1);
     if (error) throw error;
     righe.push(...data);
     if (data.length < PAGINA) return righe;

@@ -59,6 +59,24 @@ export const sopra = (r, id, soglie) => {
   return v != null && v >= letto(id, soglie[id]) - 1e-9
 }
 
+// ⚠️ **Perché un'attesa prima di chiedere.** Le soglie si muovono a tocchi di
+// un punto, e ogni tocco farebbe partire tre interrogazioni da ~400 ms in tutto:
+// premendo `+` cinque volte di fila si lanciano quindici query per vedere solo
+// l'ultima. Con 250 ms di attesa parte una richiesta sola, e il ritardo non si
+// percepisce perché il numero sullo schermo cambia subito — cambiano solo i
+// conteggi accanto.
+const ATTESA = 250
+
+/** Il valore, ma solo dopo che è stato fermo per `ATTESA` millisecondi. */
+function usaFermo(valore) {
+  const [fermo, setFermo] = useState(valore)
+  useEffect(() => {
+    const t = setTimeout(() => setFermo(valore), ATTESA)
+    return () => clearTimeout(t)
+  }, [valore])
+  return fermo
+}
+
 /** I parametri delle funzioni SQL, nell'ordine in cui le aspettano. */
 const par = (soglie, stagione) => ({
   p_att: soglie.att, p_vpm: soglie.vpm, p_voto: soglie.voto, p_resa: soglie.resa,
@@ -76,13 +94,18 @@ export const quota = (r) => {
 export function usaRiassunto(soglie, stagione) {
   const [dati, setDati] = useState({ riassunto: null, accordo: null })
   const [errore, setErrore] = useState(null)
-  const chiave = JSON.stringify([soglie, stagione])
+  const chiave = usaFermo(JSON.stringify([soglie, stagione]))
   useEffect(() => {
-    if (stagione === null) return      // la stagione non è ancora stata scelta
+    if (JSON.parse(chiave)[1] === null) return   // stagione non ancora scelta
     let vivo = true
+    // ⚠️ I parametri si rileggono **dalla chiave ferma**, non dalle variabili
+    // correnti: altrimenti l'effetto partirebbe in ritardo ma con i valori
+    // nuovi, e i conteggi non corrisponderebbero più alla chiave che li ha
+    // chiesti — un disallineamento che non si vede ma falsa i numeri.
+    const [s2, st2] = JSON.parse(chiave)
     Promise.all([
-      supabase.rpc('andamento_riassunto', par(soglie, stagione)),
-      supabase.rpc('andamento_accordo', par(soglie, stagione)),
+      supabase.rpc('andamento_riassunto', par(s2, st2)),
+      supabase.rpc('andamento_accordo', par(s2, st2)),
     ]).then(([a, b]) => {
       if (!vivo) return
       if (a.error || b.error) return setErrore((a.error || b.error).message)
@@ -90,7 +113,9 @@ export function usaRiassunto(soglie, stagione) {
       setDati({ riassunto: a.data || [], accordo: b.data || [] })
     })
     return () => { vivo = false }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // ⚠️ La sola dipendenza è la chiave ferma, e dentro ci sono già soglie e
+    // stagione: niente deroghe al linter, che è anche la prova che l'effetto
+    // non legge nulla che non sia dichiarato.
   }, [chiave])
   return { ...dati, errore }
 }
@@ -98,14 +123,14 @@ export function usaRiassunto(soglie, stagione) {
 /** Le chiavi (giorni o weekend) del metodo scelto, col loro risultato. */
 export function usaChiavi(ambito, metodo, soglie, stagione) {
   const [chiavi, setChiavi] = useState(null)
-  const k = JSON.stringify([ambito, metodo, soglie, stagione])
+  const k = usaFermo(JSON.stringify([ambito, metodo, soglie, stagione]))
   useEffect(() => {
-    if (stagione === null) return
+    if (JSON.parse(k)[3] === null) return
     let vivo = true
-    supabase.rpc('andamento_chiavi', { p_ambito: ambito, p_metodo: metodo, ...par(soglie, stagione), p_limite: 400 })
+    const [a2, m2, s2, st2] = JSON.parse(k)
+    supabase.rpc('andamento_chiavi', { p_ambito: a2, p_metodo: m2, ...par(s2, st2), p_limite: 400 })
       .then(({ data }) => { if (vivo) setChiavi(data || []) })
     return () => { vivo = false }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [k])
   return chiavi
 }

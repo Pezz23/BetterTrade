@@ -1,3 +1,9 @@
+// ⚠️ VECCHIA FASE (fino a settembre 2026) — non fa parte del criterio in uso.
+// Parla ancora di Neon: il database ora è Supabase, e `lib/db.js` ci punta già,
+// quindi gira ma misura una strada abbandonata. Marcato il 12/10/2026 dal
+// controllo del codice, che l'ha trovato fra gli script senza controllo sul
+// risultato vuoto — ed è il segno che nessuno lo lancia da mesi.
+
 // Stima il modello Dixon-Coles su ogni campionato dai dati di Neon e stampa i
 // controlli di sanità. NON scrive niente e NON è il backtest: serve a vedere se
 // le forze stimate hanno senso (le squadre forti risultano forti? il fattore

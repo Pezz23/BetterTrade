@@ -106,6 +106,17 @@ password**. L'identificatore che Supabase Auth pretende è sintetico e invisibil
 costruito da `emailDi()` — che vive in `src/context/AuthContext.jsx`, in
 `scripts/_admin.js` **e**, in SQL, come `email_di()` (`sql/16`, la usa
 `crea_utente`). **Devono restare identiche**, o il login non trova l'account.
+⚠️ **Il 12/10/2026 si erano già allontanate**, e il controllo del codice l'ha
+trovato: le due JS fanno `toLowerCase()` **e poi** tolgono ciò che non è
+`[a-z0-9]`; l'SQL toglieva ciò che non è `[a-zA-Z0-9]` **e poi** abbassava.
+Identiche su ogni nome italiano, diverse su una lettera che diventa `a-z` solo
+dopo l'abbassamento (la `İ` turca): `irem@` da una parte, `rem@` dall'altra —
+cioè **account creato dall'app e login impossibile**. Allineate con `sql/24`,
+abbassando prima: togliere prima **butta** caratteri, e un identificatore che
+butta caratteri crea collisioni (`İrem` e `rem` diventerebbero lo stesso
+account). Verificato che nessuno degli 11 utenti cambi email.
+⚠️ **Non basta che le tre copie "si somiglino": l'ordine delle operazioni fa
+parte della definizione.**
 
 ### 3. Le password non tornano nel database
 
@@ -1055,6 +1066,12 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   nessun valore hardcoded — `alpha(C.oro, .12)`, mai `rgba(201,168,76,0.12)`.
   `index.css` ne tiene una copia per il poco CSS fuori da React: se cambi un
   colore lì, riportalo in `theme.js` e viceversa.
+  ⚠️ **La copia è stata ridotta al minimo il 12/10/2026**: delle quattordici
+  variabili CSS **otto non le usava nessuno**, e `--surface: #0f0f0f` non
+  corrispondeva a nessun colore del tema — stava fra `barra` (#0d0d0d) e
+  `pannello` (#111111). **Una copia che nessuno legge non si accorge di essere
+  sbagliata.** Restano `--bg`, `--border`, `--text`, `--sans` (più
+  `--barra-alta` e `--barra-bassa`, che sono misure e le usa il JSX).
 - **Navigazione**: 4 tasti in basso (Dashboard, Slot, Reporting, Bilancio) per
   l'uso quotidiano; il menu ☰ in alto a destra per il resto (`VOCI_MENU` in
   `App.jsx`): **Partite, Spin provvisorie, Partite votate, Storico, Utenti**.
@@ -1173,6 +1190,15 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
 - **`onAuthStateChange` non sopporta query al database dentro il callback.**
   supabase-js tiene un lock mentre lo esegue: una `supabase.from()` lì dentro
   blocca la login stessa. Si rimanda con `setTimeout(…, 0)`.
+- **Paginare senza `order` è paginare su un ordine non definito.** Non è solo
+  il caso dei pari merito: `backup.js` chiamava `.range()` **senza nessun
+  ordinamento**, quindi fra una pagina e l'altra Postgres poteva restituire le
+  righe in ordine diverso — righe doppie e righe **sparite**, in un backup, in
+  silenzio. Trovato il 12/10/2026 dal controllo del codice. ✅ Ora ordina su
+  `id`. ⚠️ Stessa cura in `prova-vpm.js`, dove una query paginava su `data`
+  (5.214 partite per stagione = sei pagine, migliaia di pari merito) mentre
+  l'altra query dello stesso file era già stata corretta nove giorni prima:
+  **una correzione applicata a metà è peggio di nessuna**, perché sembra fatta.
 - **Un backup con la chiave anon torna vuoto senza errore.** Con RLS attiva
   legge zero righe e dichiara successo. `backup.js` usa la `service_role` e
   fallisce se scarica zero righe: non togliere quel controllo.

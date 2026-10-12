@@ -7,22 +7,21 @@
 }
 
 /* Solo il minimo che sta fuori da React: body, scrollbar, reset.
-   I colori dell'interfaccia stanno in src/theme.js — questi qui sotto sono la
-   copia per il poco CSS che non passa da un componente. Se cambi un colore,
-   cambialo in theme.js e riporta qui il valore. */
+   I colori dell'interfaccia stanno in src/theme.js — qui sotto c'è la copia
+   del **solo** indispensabile a questo foglio. Se cambi uno di questi valori,
+   cambialo anche in theme.js.
+
+   ⚠️ Il 12/10/2026 le variabili erano quattordici e **otto non le usava
+   nessuno**: --surface, --card, --gold, --green, --red, --blue, --muted,
+   --mono. Una copia che nessuno legge non si accorge di essere sbagliata, e
+   infatti si era già allontanata — `--surface: #0f0f0f` non corrispondeva a
+   nessun colore del tema, stava fra `barra` (#0d0d0d) e `pannello` (#111111).
+   Si tengono solo quelle davvero usate: meno copia, meno disallineamento. */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg: #090909;
-  --surface: #0f0f0f;
-  --card: #141414;
-  --border: #1e1e1e;
-  --gold: #c9a84c;
-  --green: #22c55e;
-  --red: #ef4444;
-  --blue: #3b82f6;
-  --text: #e0d9d0;
-  --muted: #4a4540;
-  --mono: 'DM Mono', monospace;
+  --bg: #090909;      /* C.fondo */
+  --border: #1e1e1e;  /* C.bordo */
+  --text: #e0d9d0;    /* C.testo */
   --sans: 'Sora', sans-serif;
 }
 body {

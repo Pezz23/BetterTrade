@@ -175,6 +175,48 @@ dire chiedere quote più lunghe.
 *resa realizzata* per chi gioca una singola. Giudicare la resa sulle azzeccate
 è come giudicare un difensore sui gol fatti.
 
+### Secondo controllo, da analista — 12 ottobre 2026 (**1.15.03**)
+
+Passaggio più profondo dopo il primo: non codice morto ma **difetti di
+sostanza**. Cinque correzioni, tutte verificate.
+
+1. ⚠️⚠️ **`backup.js` paginava senza `order`.** Non pari merito: proprio
+   **nessun ordinamento**. Fra una pagina e l'altra Postgres può restituire le
+   righe in ordine diverso → righe doppie e righe **perse**, in un backup, in
+   silenzio. Ora ordina su `id`; backup rilanciato, 291 righe ✓.
+2. ⚠️ **`prova-vpm.js` paginava su `data`** (5.214 partite a stagione = sei
+   pagine, migliaia di pari merito) mentre **l'altra query dello stesso file
+   era già stata corretta** il 9/10. Una correzione applicata a metà è peggio
+   di nessuna: sembra fatta. Riprovato: 19/19 identiche ✓.
+3. ⚠️⚠️ **Le tre copie di `emailDi()` si erano allontanate.** Le due JS
+   abbassano **e poi** tolgono `[^a-z0-9]`; l'SQL toglieva `[^a-zA-Z0-9]` **e
+   poi** abbassava. Uguali su ogni nome italiano, diverse su una lettera che
+   diventa `a-z` solo dopo l'abbassamento (`İ`): `irem@` contro `rem@`, cioè
+   **account creato dall'app e login impossibile**. Allineate con `sql/24`
+   (abbassare prima conserva, togliere prima butta e crea collisioni);
+   verificato che **nessuno degli 11 utenti** cambi email.
+4. **`StoricoPage` usava la data UTC** per "oggi" (`toISOString()`): fra
+   mezzanotte e le due italiane mostrava il giorno prima. Ora `oggiLocale()`.
+   Verificato che `lunediProssimo`, `martediChiusura` e `oggiLocale` passano
+   già tutte da mezzogiorno.
+5. **Otto variabili CSS su quattordici non le usava nessuno**, e `--surface`
+   non corrispondeva a nessun colore del tema. Una copia che nessuno legge non
+   si accorge di essere sbagliata: ridotta alle quattro vive.
+
+**Migliorie:** la pagina Andamento **aspetta 250 ms** prima di interrogare
+(ogni tocco di `+` lanciava tre query da ~400 ms in tutto: cinque tocchi =
+quindici query per vedere l'ultima). ⚠️ Con l'attesa gli effetti dipendono
+**solo dalla chiave ferma**, quindi sono spariti anche i due
+`eslint-disable` — la prova che ora non leggono nulla di non dichiarato.
+`dump-locale.js` e `fit-modello.js` marcati come vecchia fase (parlavano ancora
+di Neon).
+
+**Guardato e a posto:** gli altri 8 avvisi `exhaustive-deps` sono tutti
+intenzionali — anche quello di `ScegliCasella`, dove la funzione mancante legge
+solo `votiDi`, che è già fra le dipendenze. Nessun `.range()` rimasto senza
+ordine univoco. `verifica-coerenza` ✓, `prova-ordine` ✓, `prova-scheda` ✓,
+lint 0 errori.
+
 ### Controllo completo del codice — 12 ottobre 2026
 
 Chiesto da Mattia: *"codice morto, dipendenze a vuoto, ottimizzazioni"*.
