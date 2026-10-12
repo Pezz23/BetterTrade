@@ -360,7 +360,63 @@ la riga sotto il blocco nella scheda.
 ⚠️ **Il limite noto**: Poisson assume i gol delle due squadre indipendenti,
 mentre nella realtà sono un po' correlati. Pesa più sul GG (moltiplica due
 probabilità) che sull'over (somma due medie). Non si corregge a sentimento: se
-si corregge, si misura.
+si corregge, si misura. ✅ **Corretto il 12/10/2026 sul GG** — vedi sotto.
+
+#### Il Goal/NoGoal — un consiglio che sa anche tacere
+
+**Chiesto da Mattia il 12/10/2026**: *"un indicatore che mi dia visione, se la
+partita sarà da Goal oppure no… un algoritmo di attendibilità che mi dia il
+consiglio preciso"*. Il numero c'era dal mattino; mancava il consiglio, e
+mancava la misura di quanto il consiglio valga. Fatto con
+`btscout/scripts/prova-gg.js` su **34.434 partite**, camminando nel tempo.
+⚠️ **Nessun soldo in questa misura, per scelta di Mattia**: le quote GG/NG non
+esistono in archivio e l'indicatore serve a dare visione. I metri sono tre:
+quanto aggiunge sul Brier · **quante volte il consiglio è giusto** · quanto è
+giusto quando è sicuro.
+
+⚠️⚠️ **Il confronto onesto non è il 50%, è "dico sempre GOL".** Il GG arriva il
+**53,2%** delle volte, quindi un indicatore che azzecca il 53% non sta dicendo
+niente. **Il nostro azzecca il 54,0%.**
+
+**La cura che l'ha migliorato: `STRETTA_GG = 0,55`.** Il prodotto di due
+Poisson indipendenti era **troppo sicuro di sé** — dichiarava 68% dove arrivava
+il 63%, 37% dove arrivava il 45%: ordine giusto, ampiezza più larga del vero,
+lo stesso difetto che `K_STRETTA` cura sui gol attesi e per la stessa causa (un
+prodotto di rapporti stimati su 5-10 partite moltiplica i rumori). Tirando la
+probabilità verso la frequenza media con fattore **0,55** si riproduce **tutta
+la tabella empirica entro 0,62 punti** su nove fasce — quindi **una costante,
+non una tabella**. Dopo la cura il numero non mente più: dichiara 46,2 → arriva
+46,3 · 51,4 → 51,6 · 56,4 → 55,9 · 61,3 → 62,1. Il Brier aggiunto passa da
++0,0005 a **+0,0015** (triplicato, ma vedi il tetto qui sotto).
+⚠️ **Il centro è fisso (`GG_MEDIO = 0,532`) e la misura lo impone**: col centro
+mobile — la frequenza del campionato in corso — l'indicatore prevede **peggio**
+(+0,0008), perché a ottobre quella frequenza è ancora rumore. Come le `ANCORE`
+di VPM si rimisura solo per aggiungere una stagione.
+
+**Il consiglio tace sotto il 55% di fiducia** (`FIDUCIA_GG = 0,55`,
+`consiglioGg()`), e il perché è misurato:
+
+| fiducia | il consiglio è giusto | partite |
+|---|---|---|
+| 50-55% | **52,2%** (= dire sempre GOL) | 22.343 |
+| 55-60% | 56,8% | 10.823 |
+| 60-65% | **62,0%** | 1.251 |
+
+Sotto il 55% la scheda mostra **IN BILICO**, non un verdetto. ⚠️ È la scelta che
+rende credibile il verdetto quando arriva: dare un responso dove non c'è
+informazione è il modo di non essere creduti dove ce n'è.
+
+⚠️⚠️ **E qui c'è il tetto, che chiude il discorso: il GG è quasi
+imprevedibile.** Non abbiamo quote GG/NG, ma la quota **over 2,5** è un indizio
+di mercato sullo stesso fenomeno: ritarata nello stesso modo, azzecca il
+**54,1%** contro il nostro 54,0%. **Non è il nostro modello a essere scarso —
+è il fenomeno.** Per confronto, sui segni l'attendibilità azzecca il 60,9%
+contro una base del 50,8%.
+⚠️ **Due strade provate e bocciate**: il modello diretto sull'evento *"ha
+segnato sì/no"* invece dei gol attesi (**−0,0052**, peggio del non dire niente:
+l'evento binario butta via l'informazione di quanti gol) e la **correzione di
+correlazione** imparata dalle stagioni chiuse (invariata: +0,0005). La
+correlazione fra le due squadre esiste ma è già dentro la stretta.
 
 ⚠️ **Il metro giusto non è il mercato, è la costante.** Un modello che non
 batte "prevedi sempre la frequenza media" non sta dicendo niente sulla singola
@@ -1051,6 +1107,7 @@ node --env-file=.env scripts/prova-gol.js                  # il modello dei gol 
 node --env-file=.env scripts/prova-indicatori.js --stagioni=8   # quale indicatore sceglie meglio
 node --env-file=.env scripts/prova-gol-varianti.js         # si può migliorare l'indice dei gol? (no)
 node --env-file=.env scripts/prova-gol-avversari.js        # e correggendo per gli avversari affrontati? (no)
+node --env-file=.env scripts/prova-gg.js                   # il Goal/NoGoal: quanto è giusto il consiglio
 #   pomelli: --base=gol|tiri|misto --k=20 --stagioni=3
 node --env-file=.env scripts/misura-valore.js --riferimento=media   # il criterio, a fine stagione
 node --env-file=.env scripts/import-storico.js --campionati=P1,N1   # solo alcuni campionati

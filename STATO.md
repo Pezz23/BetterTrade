@@ -273,6 +273,38 @@ mercato stesso. **Stesso difetto della resa sui segni** (51,2%, la peggiore):
 resa alta = quota alta = partita che il book ritiene poco probabile da over.
 **La resa dice se il prezzo conviene, non cosa giocare.**
 
+### Il Goal/NoGoal — fatto il 12 ottobre 2026
+
+Chiesto da Mattia: *"un indicatore che mi dia visione, se la partita sarà da
+Goal oppure no, e il consiglio preciso"*. Il numero esisteva già (lo stesso
+modello degli over); mancavano **il consiglio** e **la misura di quanto valga**.
+`prova-gg.js`, 34.434 partite, camminando nel tempo, **senza misurare soldi**
+(scelta di Mattia: non ci sono quote GG/NG in archivio, e serve visione).
+
+⚠️ **Il confronto giusto non è il 50%: è "dico sempre GOL".** Il GG arriva il
+**53,2%** delle volte. Il nostro consiglio azzecca il **54,0%**.
+
+**Migliorato con `STRETTA_GG = 0,55`** (in `lib/gol.js`). Il prodotto di due
+Poisson indipendenti era troppo sicuro di sé — 68% dichiarato dove arrivava il
+63%, 37% dove arrivava il 45%. Tirando verso la media con 0,55 si riproduce
+tutta la tabella empirica **entro 0,62 punti** su nove fasce: una costante, non
+una tabella. Brier aggiunto da +0,0005 a **+0,0015**, e la taratura diventa
+onesta (46,2→46,3 · 51,4→51,6 · 56,4→55,9 · 61,3→62,1).
+⚠️ Centro **fisso** (`GG_MEDIO = 0,532`): col centro mobile prevede peggio
+(+0,0008), perché a ottobre la frequenza del campionato è ancora rumore.
+
+**Il consiglio tace sotto il 55% di fiducia** (`FIDUCIA_GG`): la scheda mostra
+**IN BILICO**. Misurato — fiducia 50-55% → giusto 52,2% (quanto dire sempre
+GOL) · 55-60% → 56,8% · 60-65% → **62,0%** su 1.251 partite.
+
+⚠️⚠️ **Il tetto: il GG è quasi imprevedibile.** La quota over 2,5 come indizio
+di mercato, ritarata allo stesso modo, azzecca il **54,1%** contro il nostro
+54,0%. Non è il modello a essere scarso, è il fenomeno. (Sui segni
+l'attendibilità fa 60,9% contro una base del 50,8%.)
+⚠️ **Bocciate**: il modello diretto su "ha segnato sì/no" (−0,0052: l'evento
+binario butta l'informazione di quanti gol) e la correzione di correlazione
+imparata dalle stagioni chiuse (invariata).
+
 **Cosa resterebbe da provare, se un domani interessasse**: la correzione di
 Dixon-Coles sui punteggi bassi, che peserebbe più sul GG che sull'over.
 L'aggiustamento per gli avversari è **chiuso**: provato, non serve — e lo stesso

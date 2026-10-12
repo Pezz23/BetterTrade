@@ -9,7 +9,7 @@ import { tocco } from '../lib/schermo'
 import BarraPartita from './BarraPartita'
 import { usaVpm } from '../hooks/usaVpm'
 import { valutaPartita, vociPesate, verso, PESI, ETICHETTE, NOMI_STRATI, PESI_STRATI, VPM_NETTO } from '../lib/vpm'
-import { golAttesi, SOGLIE_OVER } from '../lib/gol'
+import { golAttesi, SOGLIE_OVER, consiglioGg, FIDUCIA_GG } from '../lib/gol'
 
 // La scheda di una partita: tutto quello che sappiamo, in blocchi.
 // Pensata prima per il telefono — una colonna, numeri grandi, niente muri di
@@ -399,9 +399,9 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
           Stesse finestre e stessi pesi di VPM, ma guarda i gol invece dei
           risultati. ⚠️ **Non usa nessuna quota**: è una stima dalle squadre.
           Calibrata (misurato su 10.059 partite: over 2,5 previsto 50,6% contro
-          52,5% vero) ma **debole** — aggiunge un quarto dell'informazione che
-          ha il mercato. Si legge come un colore della partita, non come una
-          previsione da giocare. */}
+          52,5% vero) ma **debole** — misurato su 34.434 partite aggiunge il 42%
+          dell'informazione che ha il mercato. Si legge come un colore della
+          partita, non come una previsione da giocare. */}
       {g && (
         <Blocco titolo="⚽ Gol attesi" extra={`${g.totale.toFixed(2).replace('.', ',')} in tutto`} sottolinea>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 10, marginBottom: 12 }}>
@@ -431,6 +431,34 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
             </div>
           </div>
 
+          {/* ⚠️ IL CONSIGLIO SUL GOAL/NO GOAL, e il suo silenzio.
+              La percentuale sopra dice quanto è probabile; questa riga dice
+              **cosa aspettarsi**, che è la domanda di chi legge. ⚠️ Sotto il
+              55% di fiducia non c'è verdetto, ed è misurato: lì il consiglio
+              è giusto il 52,2% delle volte, cioè quanto dire sempre GOL.
+              Mostrare "in bilico" invece di un responso è il motivo per cui si
+              può credere al responso quando arriva (62,0% sopra il 60%). */}
+          {(() => {
+            const cg = consiglioGg(g.gg)
+            const tinta = cg.esito === 'GOL' ? C.menta : cg.esito === 'NO GOL' ? C.rosso : C.spento
+            return (
+              <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                padding: '8px 10px', minHeight: 36,
+                background: `linear-gradient(${alpha(tinta, 0.09)},${alpha(tinta, 0.09)}), ${C.card}`,
+                border: `1px solid ${alpha(tinta, 0.3)}` }}>
+                <span style={{ fontSize: 8, fontFamily: F.mono, color: C.spento, letterSpacing: '0.08em' }}>CONSIGLIO</span>
+                <span style={{ fontSize: 15, fontWeight: 700, fontFamily: F.mono, color: tinta, letterSpacing: '0.04em' }}>
+                  {cg.esito || 'IN BILICO'}
+                </span>
+                <span style={{ fontSize: 11, fontFamily: F.mono, color: C.spento }}>
+                  {cg.esito
+                    ? `fiducia ${(cg.fiducia * 100).toFixed(0)}%`
+                    : `fiducia ${(cg.fiducia * 100).toFixed(0)}%, serve ${(FIDUCIA_GG * 100).toFixed(0)}%`}
+                </span>
+              </div>
+            )
+          })()}
+
           {/* Da dove viene il numero: attacco e difesa rispetto alla media del
               campionato, dove 1,00 è "come tutti gli altri". */}
           <div style={{ marginTop: 10, fontSize: 11, fontFamily: F.mono, color: C.spento, lineHeight: 1.6 }}>
@@ -440,7 +468,9 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
           </div>
           <div style={{ marginTop: 6, fontSize: 10, fontFamily: F.sans, color: C.fantasma, lineHeight: 1.5 }}>
             Stima dalle squadre, senza quote: calibrata sull'archivio ma più debole del mercato.
-            Serve a leggere la partita, non a scommetterci sopra.
+            Serve a leggere la partita, non a scommetterci sopra. Sul Goal/NoGoal il consiglio
+            è giusto il 54% delle volte contro il 53% di chi dice sempre GOL: è una partita
+            quasi imprevedibile, e nemmeno il mercato fa meglio (54%).
           </div>
         </Blocco>
       )}
