@@ -267,7 +267,17 @@ da 131 a 123.
 (il totale è 3.858). Se si interrompe, **si rilancia e basta**: salta quello
 che ha già.
 
-### 🔜 DA FARE: i backtest col possesso palla
+### ⛔ SOSPESO: i backtest col possesso palla
+
+⚠️⚠️ **Sospeso il 15/10/2026 per decisione di Mattia**: *"lasciamo stare il
+possesso, troveremo una fonte più veloce e affidabile"*. Il recupero storico da
+ESPN era arrivato a **2 stagioni su 8** di Serie A e costa **una richiesta per
+partita** (~34.000 per l'archivio intero): troppo lento per il valore che
+avrebbe. Quello che segue resta scritto perché **il piano è giusto e pronto**,
+non perché sia da fare adesso: se arriva una fonte che pubblica il possesso in
+blocco, si riprende da qui senza ripensarlo.
+⚠️ Le colonne restano, con 2.856 partite dentro, e l'import in avanti continua
+a riempirle: **non toglierle**.
 
 ⚠️ **Deciso il 12/10/2026: quando i dati ci sono, si misura.** Il possesso è
 raccolto ma **non entra in nessun indice** finché non si è dimostrato che
@@ -361,6 +371,24 @@ verifica: 16 crediti.
 Il giro di aggiornamento passa da 30 a **45 crediti** (~360 al mese su 500).
 Tabelle in CLAUDE.md.
 
+✅ **15/10/2026 — coda delle importazioni svuotata e possesso abbandonato.**
+Le 15 righe in attesa erano **tutte lo stesso problema**: un nome scritto
+diversamente da ESPN (`SPAL`→`Spal` ×12, `Royal Charleroi SC`, `Sint-Truidense`,
+`FC Famalicao`). Tre dei quattro casi si agganciavano **già** — le righe erano
+più vecchie della correzione, non la prova che mancasse — e l'unico alias vero
+da scrivere era `Sint-Truidense` → `St Truiden` (verificato sull'elenco delle 26
+squadre belghe, perché c'è anche `St. Gilloise`, che è un altro club: la
+trappola Paris). Le 15 sono state marcate **`rifiutata`**, non cancellate: una
+coda svuotata con un delete non sa più di essere stata svuotata. ⚠️ Le tre
+partite recenti ce le avevamo già con risultato e tiri da football-data: ESPN
+voleva solo aggiungere il **possesso**.
+⛔ **Il possesso palla è abbandonato** (decisione di Mattia, 15/10): il recupero
+storico era a 2 stagioni su 8 e costa una richiesta per partita. Si riprenderà
+*"quando troveremo una fonte più veloce e affidabile"*. ⚠️ Le colonne
+`possesso_casa` / `possesso_trasf` restano (2.856 partite di Serie A dentro) e
+l'import in avanti continua a riempirle quando ESPN gira: **non toglierle**, e
+non ricominciare il recupero storico senza che lo chieda lui.
+
 ✅ **15/10/2026 — il disaccordo fra i bookmaker è misurato e segnalato.**
 Sopra la soglia di dispersione l'attendibilità dichiarava 66,1% e manteneva
 **59,8%** (resa 84,6%) contro 68,3% → 71,8% (resa 99,1%) sotto. Marchio ambra
@@ -377,6 +405,8 @@ giocate). Rifarlo quando ce ne saranno un paio di migliaia.
 
 ⚠️ **Tre strade di lettura ancora aperte, in ordine di valore atteso** (dal
 ragionamento del 15/10):
+0. ~~Backtest del possesso palla~~ — **cadono**: il dato non si completa più
+   (vedi sopra). Restano le 2.856 partite di Serie A, se un giorno servissero.
 1. **Il Goal/NoGoal dal prezzo**: invertire la quota over 2,5 nei gol attesi del
    mercato e passarli alla formula del GG che già c'è. Gratis, 38.000 partite,
    dato presente su 189 future su 192. Il consiglio GG è al 57,5% ed è il più

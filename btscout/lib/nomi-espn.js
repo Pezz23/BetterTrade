@@ -108,6 +108,13 @@ export const ALIAS = {
   'KV Kortrijk': 'Kortrijk',
   'KV Mechelen': 'Mechelen',
   'Standard Liege': 'Standard',
+  // ⚠️ Sint-Truiden, il club di Sint-Truidense VV (STVV): in archivio è
+  // `St Truiden`. Verificato il 15/10/2026 guardando **tutte** le 26 squadre
+  // belghe dell'archivio, perché fra loro c'è anche `St. Gilloise` — che è
+  // l'Union Saint-Gilloise di Bruxelles, un altro club. Due nomi che
+  // cominciano per "St": è esattamente la trappola Paris FC / Paris SG, e si
+  // evita guardando l'elenco invece della somiglianza.
+  'Sint-Truidense': 'St Truiden',
   'Union St.-Gilloise': 'St. Gilloise',
   'Zulte-Waregem': 'Waregem',
 

@@ -1555,7 +1555,7 @@ sporca l'archivio e ogni misura che ci sta sopra.
 `coalesce`, quindi riempie i buchi (possesso, tiri) e lascia stare il
 risultato di football-data.
 
-**I nomi, 58 alias scritti a mano al 13/10/2026.** Due regole:
+**I nomi, 59 alias scritti a mano al 15/10/2026.** Due regole:
 ⚠️ **Gli accenti li toglie la macchina**: `Almería` → `Almeria` non è
 indovinare, è normalizzare — la stessa stringa in due codifiche. Ha risolto da
 solo una decina di casi spagnoli.
@@ -1567,6 +1567,14 @@ Sporting di **Lisbona** mentre in archivio c'è anche `Sp Braga`.
 ⚠️ Alcuni alias sono **vecchi nomi di club** che football-data non ha mai
 aggiornato: `Istanbul Basaksehir` → `Buyuksehyr`, `Waasland-Beveren` →
 `Beveren`, `Deportivo` → `La Coruna`.
+⚠️ **E il confronto ignora già maiuscole e accenti** (`nostroNome`, il passaggio
+su `_piatti`): `SPAL` trova `Spal` da sé, come `Almería` trova `Almeria`. Il
+15/10 stavo per "aggiungere" quella correzione e c'era già da tre giorni —
+**le 15 righe ferme in `importazioni` erano solo più vecchie della correzione**,
+non la prova che mancasse. ⚠️ **Niente ripassa la coda quando si aggiunge un
+alias**: una riga messa in attesa resta in attesa per sempre, anche se il motivo
+nel frattempo è sparito. Se un giorno dà fastidio, si rilancia l'import sulle
+stesse date invece di aspettare che si sblocchi da sola.
 
 **I nomi**: ESPN espone cinque nomi per squadra (`displayName`,
 `shortDisplayName`, `name`, `location`, `abbreviation`) e `shortDisplayName` è
