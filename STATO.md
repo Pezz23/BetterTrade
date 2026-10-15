@@ -422,14 +422,15 @@ Le quattro priorità del 12/10 sono chiuse. Quello che è rimasto aperto, in
 ordine di quanto è pronto:
 
 **Tre decisioni di Mattia, già istruite** (basta un sì):
-- **`Input` e `Badge` in `components/ui.jsx` non li usa nessuno** — confermato
-  il 15/10/2026 contando i riferimenti in tutto il repo: uno solo a testa, la
-  propria definizione. ⚠️ Non è codice morto per sbaglio: sono due primitive di
-  libreria **dichiarate disponibili in CLAUDE.md**, e un pezzo mai usato non fa
-  danno. Il difetto è l'altro — mentre
-  `UtentiPage` si scrive i propri `<input>` con `S.input`. O si adottano o si
-  tolgono: un pezzo di libreria inutilizzato accanto a uno riscritto a mano è
-  il modo di ritrovarsi con due stili.
+- ✅ **`Input` e `Badge`: adottati il 15/10/2026**, non togliere. Erano
+  dichiarati in `ui.jsx` e non li usava nessuno, mentre `UtentiPage` **e**
+  `LoginPage` si riscrivevano il campo di testo: **tre copie dello stesso stile**
+  con tre raggi, tre riempimenti e due corpi diversi. Ora il campo è definito in
+  un posto solo, e `Badge` ha preso un parametro `sfondo` perché il fondo non è
+  sempre la tinta del testo (il ruolo admin è `blu` su `bluPieno`): **un pezzo di
+  libreria che non copre il caso reale è il motivo per cui nasce la copia.**
+  ⚠️ `campo` in `PartitePage` e `cell()` nella Slot **non** sono `Input` e
+  restano dove sono: tondi, mono, piccoli, un'altra cosa.
 - **Il chunk `App` pesa 391 kB (103 gzip).** Le pagine si potrebbero caricare a
   richiesta (`React.lazy`): chi apre la Dashboard non ha bisogno di Reporting,
   Bilancio e Andamento.

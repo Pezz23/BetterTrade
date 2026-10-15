@@ -1855,6 +1855,24 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
 - **Pezzi ricorrenti** in `src/components/ui.jsx`: `Card`, `Etichetta`,
   `StatCard`, `Btn`, `Input`, `Badge`. Prima di riscrivere una card a mano,
   guarda se c'è già.
+  ⚠️ **`Input` e `Badge` erano dichiarati qui e non li usava nessuno**, mentre
+  `UtentiPage` e `LoginPage` si riscrivevano il proprio campo di testo: **tre
+  copie dello stesso stile con tre raggi, tre riempimenti e due corpi
+  diversi**. Adottati il 15/10/2026, le copie locali togliere. Il campo di
+  testo dell'app ora è definito **in un posto solo**.
+  ⚠️ `Badge` ha preso un parametro `sfondo`, perché **il fondo non è sempre la
+  tinta del testo**: il ruolo admin in `UtentiPage` è scritto in `blu` su un
+  fondo di `bluPieno`, e sono due token diversi di proposito. Senza quel
+  parametro quella pagina continuava a riscriversi la targhetta — e un pezzo di
+  libreria che non copre il caso reale è il motivo per cui nasce la copia.
+  ⚠️ **Cosa cambia a vedersi**: nei campi di `UtentiPage` un pixel di raggio e
+  uno di riempimento; nel login il corpo passa da 15 a 14 — **invisibile su
+  telefono**, dove `index.css` forza comunque i campi a 16px sotto
+  `@media (pointer: coarse)` per non far ingrandire la pagina a iOS. La
+  targhetta del ruolo è un filo più in grassetto (600 → 700).
+  ⚠️ **Non tutto quello che somiglia a un campo è un `Input`**: `campo` in
+  `PartitePage` (tondo, mono, 11px, largo 74) e `cell()` nella Slot sono altre
+  cose, e restano dove sono.
 - **`npm run lint` prima di dire che è fatto.** ESLint sta in `eslint.config.js`
   (configurazione piatta) e serve a **una** cosa: i nomi che non esistono
   (`no-undef`) e quelli rimasti inutilizzati — cioè la coda che resta quando si

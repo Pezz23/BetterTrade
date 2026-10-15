@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { C, F, alpha } from '../theme'
+// ⚠️ Il campo di testo è quello di `ui.jsx`: tre copie dello stesso stile con
+// tre misure diverse erano il modo di ritrovarsi con tre aspetti (15/10/2026).
+import { Input } from '../components/ui'
 
 const S = {
   root:  { minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', padding:24, background:C.fondo, position:'relative' },
@@ -13,7 +16,6 @@ const S = {
   form:  { display:'flex', flexDirection:'column', gap:18 },
   field: { display:'flex', flexDirection:'column', gap:6 },
   label: { fontSize:11, fontWeight:500, color:C.grigioFioco, textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:F.mono },
-  input: { background:C.pozzo, border:`1px solid ${C.bordo}`, borderRadius:8, padding:'11px 14px', color:C.testo, fontSize:15, fontFamily:F.sans, outline:'none', width:'100%' },
   err:   { background:alpha(C.rosso,0.08), border:`1px solid ${alpha(C.rosso,0.22)}`, borderRadius:8, padding:'10px 14px', fontSize:13, color:C.rosso, fontFamily:F.sans },
   btn:   { background:C.oro, border:'none', borderRadius:8, padding:'13px', color:C.fondo, fontSize:15, fontWeight:700, cursor:'pointer', fontFamily:F.sans, marginTop:4 },
   hint:  { marginTop:22, fontSize:12, color:C.fantasma, textAlign:'center', fontFamily:F.sans },
@@ -53,12 +55,12 @@ export default function LoginPage() {
         <form onSubmit={submit} style={S.form}>
           <div style={S.field}>
             <label style={S.label}>Username</label>
-            <input style={S.input} value={u} onChange={e=>setU(e.target.value)} placeholder="Il tuo username" required autoComplete="username" />
+            <Input value={u} onChange={e=>setU(e.target.value)} placeholder="Il tuo username" required autoComplete="username" />
           </div>
           <div style={S.field}>
             <label style={S.label}>Password</label>
             <div style={{ position:'relative' }}>
-              <input style={{ ...S.input, paddingRight:42 }} type={show?'text':'password'} value={p} onChange={e=>setP(e.target.value)} placeholder="••••••••" required autoComplete="current-password" />
+              <Input style={{ paddingRight:42 }} type={show?'text':'password'} value={p} onChange={e=>setP(e.target.value)} placeholder="••••••••" required autoComplete="current-password" />
               <button type="button" onClick={()=>setShow(v=>!v)} style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', fontSize:15, padding:2 }}>{show?'🙈':'👁️'}</button>
             </div>
           </div>

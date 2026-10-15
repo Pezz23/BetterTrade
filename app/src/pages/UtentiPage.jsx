@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { C, F, alpha } from '../theme'
+// ⚠️ `Input` e `Badge` vengono da qui e non più riscritti in questa pagina
+// (15/10/2026): erano tre copie dello stesso campo di testo — ui.jsx, qui e
+// LoginPage — con tre raggi e tre riempimenti diversi.
+import { Input, Badge } from '../components/ui'
 
 const S = {
   page:  { padding:'20px 16px', maxWidth:700, margin:'0 auto' },
@@ -11,7 +15,6 @@ const S = {
   grid:  { display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 },
   field: { display:'flex', flexDirection:'column', gap:5 },
   label: { fontSize:11, fontWeight:500, color:C.spento, textTransform:'uppercase', letterSpacing:'0.07em', fontFamily:F.mono },
-  input: { background:C.pozzo, border:`1px solid ${C.bordo}`, borderRadius:7, padding:'9px 12px', color:C.testo, fontSize:14, fontFamily:F.sans, outline:'none', width:'100%' },
   err:   { background:alpha(C.rosso,0.08), border:`1px solid ${alpha(C.rosso,0.2)}`, borderRadius:7, padding:'9px 12px', fontSize:13, color:C.rosso, fontFamily:F.sans },
   ok:    { background:alpha(C.verde,0.08), border:`1px solid ${alpha(C.verde,0.2)}`, borderRadius:7, padding:'9px 12px', fontSize:13, color:C.verde, fontFamily:F.sans, marginBottom:12 },
   saveBtn:{ background:C.oro, border:'none', borderRadius:7, padding:'10px 22px', color:C.fondo, fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:F.sans, marginTop:12 },
@@ -20,7 +23,6 @@ const S = {
   avatar:{ width:36, height:36, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:700, flexShrink:0, fontFamily:F.mono },
   rname: { fontSize:14, fontWeight:600, color:C.testo, fontFamily:F.sans, marginBottom:2 },
   rsub:  { fontSize:11, color:C.fioco, fontFamily:F.mono },
-  badge: { fontSize:10, fontWeight:600, padding:'3px 9px', borderRadius:20, fontFamily:F.mono, letterSpacing:'0.05em' },
   bkWrap:{ display:'flex', alignItems:'center', background:C.pozzo, border:`1px solid ${C.bordo}`, borderRadius:6, height:30, overflow:'hidden' },
   bkEur: { padding:'0 8px', fontSize:11, color:C.spento, borderRight:`1px solid ${C.bordo}`, fontFamily:F.mono },
   bkInp: { background:'transparent', border:'none', outline:'none', color:C.oro, fontSize:13, fontFamily:F.mono, width:75, padding:'0 8px', fontWeight:500 },
@@ -115,7 +117,7 @@ export default function UtentiPage() {
         <div style={S.formCard}>
           <div style={S.field}>
             <label style={S.label}>Nuova password (minimo 6 caratteri)</label>
-            <input style={S.input} type="text" value={miaPw} autoFocus
+            <Input type="text" value={miaPw} autoFocus
               onChange={e=>setMiaPw(e.target.value)} placeholder="Nuova password" />
           </div>
           {err && <div style={{...S.err, marginTop:12}}>⚠️ {err}</div>}
@@ -130,17 +132,17 @@ export default function UtentiPage() {
           <div style={S.grid}>
             <div style={S.field}>
               <label style={S.label}>Username (lettere e cifre)</label>
-              <input style={S.input} value={nuovo.username} autoFocus placeholder="mario"
+              <Input value={nuovo.username} autoFocus placeholder="mario"
                 onChange={e=>campo('username', e.target.value)} />
             </div>
             <div style={S.field}>
               <label style={S.label}>Nome visualizzato</label>
-              <input style={S.input} value={nuovo.nome} placeholder="Mario Rossi"
+              <Input value={nuovo.nome} placeholder="Mario Rossi"
                 onChange={e=>campo('nome', e.target.value)} />
             </div>
             <div style={S.field}>
               <label style={S.label}>Password (la scegli tu, minimo 6)</label>
-              <input style={S.input} value={nuovo.password} placeholder="fuoco-530"
+              <Input value={nuovo.password} placeholder="fuoco-530"
                 onChange={e=>campo('password', e.target.value)} />
             </div>
             <div style={S.field}>
@@ -153,7 +155,7 @@ export default function UtentiPage() {
             </div>
             <div style={S.field}>
               <label style={S.label}>Bankroll iniziale</label>
-              <input style={S.input} value={nuovo.bankroll} placeholder="0" inputMode="decimal"
+              <Input value={nuovo.bankroll} placeholder="0" inputMode="decimal"
                 onChange={e=>campo('bankroll', e.target.value)} />
             </div>
           </div>
@@ -183,7 +185,7 @@ export default function UtentiPage() {
                 </div>
               </div>
               <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
-                <span style={{ ...S.badge, background:rs.bg, color:rs.color }}>{u.role}</span>
+                <Badge colore={rs.color} sfondo={rs.bg}>{u.role}</Badge>
                 <div style={{background:C.pozzo,border:`1px solid ${C.bordo}`,borderRadius:6,padding:'5px 12px',display:'flex',alignItems:'center',gap:4,minWidth:90}}>
                   <span style={{fontSize:11,color:C.spento,fontFamily:F.mono}}>€</span>
                   <span style={{fontSize:13,color:C.oro,fontFamily:F.mono,fontWeight:500}}>
@@ -201,7 +203,7 @@ export default function UtentiPage() {
             </div>
             {cambio?.username === u.username && (
               <div style={{ padding:'0 18px 14px', display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
-                <input style={{ ...S.input, width:200 }} autoFocus value={cambio.password}
+                <Input style={{ width:200 }} autoFocus value={cambio.password}
                   placeholder="Nuova password" onChange={e=>setCambio({ ...cambio, password:e.target.value })} />
                 <button style={{ ...S.saveBtn, marginTop:0, padding:'9px 16px', fontSize:13 }}
                   disabled={busy || cambio.password.length < 6} onClick={()=>salvaPasswordDi(u)}>

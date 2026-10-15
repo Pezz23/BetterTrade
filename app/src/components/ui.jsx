@@ -99,14 +99,24 @@ export function Input({ style, ...resto }) {
 }
 
 // Pillola colorata: tipo di schedina, ruolo utente, stato.
-export function Badge({ children, colore = C.oro, style }) {
+/**
+ * La targhetta tonda: un'etichetta corta su fondo tinto.
+ *
+ * ⚠️ `sfondo` esiste perché **il fondo non è sempre la stessa tinta del
+ * testo**: in `UtentiPage` il ruolo admin è scritto in `blu` su un fondo di
+ * `bluPieno`, e sono due token diversi di proposito (`rgba()` e `#hex` dello
+ * stesso nome sono tinte diverse — vedi le convenzioni in CLAUDE.md). Senza
+ * questo parametro quella pagina si riscriveva la targhetta da sé, ed è
+ * esattamente il modo di ritrovarsi con due stili per la stessa cosa.
+ */
+export function Badge({ children, colore = C.oro, sfondo, style }) {
   return (
     <span style={{
       fontSize: 10,
       fontWeight: 700,
       padding: '3px 9px',
       borderRadius: 20,
-      background: alpha(colore, 0.12),
+      background: sfondo || alpha(colore, 0.12),
       color: colore,
       fontFamily: F.mono,
       letterSpacing: '0.05em',
