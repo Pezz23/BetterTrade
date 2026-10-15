@@ -344,9 +344,16 @@ torna, una delle due è stata toccata senza l'altra.
 indicatore Goal/NoGoal"*. Un modello solo li produce entrambi — `lib/gol.js`,
 visibile nel blocco **⚽ Gol attesi** della scheda.
 
-⚠️ **Non usa nessuna quota, ed è voluto** (Mattia: *"non mi interessa un match
-con le quote"*). Per l'over 2,5 il mercato ci sarebbe; per il GG/NG **no** —
-nessuna colonna in nessuna delle due tabelle, football-data non le pubblica.
+⚠️ **Il MODELLO non usa nessuna quota, ed è voluto** (Mattia: *"non mi
+interessa un match con le quote"*): resta la lettura della partita dalle
+squadre, ed è quello che il blocco ⚽ mostra col gradiente.
+⚠️⚠️ **Il CONSIGLIO invece sì, dal 15/10/2026, e la differenza non è
+formale**: sulla riga 2,5 la probabilità arriva dalle quote quando ci sono
+(`mercatoOver25()`), e il consiglio passa dal **64,8% al 71,2%** di volte
+giuste. Vedi *Il consiglio ancorato al prezzo* più sotto.
+⚠️ Per il GG/NG le quote **non ci sono** in nessuna delle due tabelle:
+football-data non le pubblica, e The Odds API le ha solo a 1 credito per
+partita (verificato il 15/10).
 
 Il modello classico: `λcasa = attacco(casa) × difesa(ospite) × media del
 campionato`, con le **stesse tre finestre e gli stessi pesi di VPM** (stagione
@@ -436,6 +443,155 @@ segnato sì/no"* invece dei gol attesi (**−0,0052**, peggio del non dire nient
 l'evento binario butta via l'informazione di quanti gol) e la **correzione di
 correlazione** imparata dalle stagioni chiuse (invariata: +0,0005). La
 correlazione fra le due squadre esiste ma è già dentro la stretta.
+
+#### I due consigli sotto la giocata — 15 ottobre 2026
+
+**Chiesti da Mattia**: *"sotto giocata un consigliatore di over/under e Goal /
+no goal, al centro, in bianco"*. Nella scheda, sotto il pronostico e la sua
+barra, due righe: `OVER 1,5` e `GOL`.
+
+⚠️ **Stanno lì perché sono dello stesso genere della giocata** — *cosa farei* —
+mentre il blocco ⚽ più sotto dice *com'è messa la partita*. Il bianco li lega
+fra loro e li separa dal colore della categoria, che sulla giocata vuol dire
+un'altra cosa (centro, giallo, blu).
+⚠️ **La testata non calcola niente**: i gol attesi arrivano da fuori (`gol`), e
+nella riga della lista quella proprietà non c'è — quindi lì le due righe non
+compaiono. In lista i gol attesi non sono caricati, e inventarli per riempire
+uno spazio sarebbe peggio di lasciarlo vuoto.
+
+⚠️⚠️ **La regola: la riga più AMBIZIOSA che regge, non la più probabile.**
+Il modello produce **otto** probabilità (over e under × 4 soglie) e
+`p(over 1,5) > p(over 2,5) > p(over 3,5)` **sempre**, per costruzione: scegliendo
+la più probabile vincerebbe eternamente l'over 1,5 — e la più probabile in
+assoluto è over 0,5 al 92,9%, cioè *"giocati che si segna un gol"*, che non è un
+consiglio. Ambiziosa = **base più bassa** (`BASI_GOL`): l'over 2,5 arriva da solo
+il 51,0% delle volte contro il 75,4% dell'1,5, quindi dirlo è dire di più.
+⚠️ **Un pavimento per riga** (`PAVIMENTI_OVER`), non uno per tutte: over 1,5 e
+under 3,5 al **70%** — la soglia che diede Mattia il 12/10 per accendere il verde
+(*"70% per gli OVER e UNDER e 65% per il goal"*), e un consiglio e un colore che
+si accendono a soglie diverse direbbero due cose diverse sulla stessa partita —
+mentre il 2,5 ha pavimento **65%**, perché al 70% verrebbe consigliato 221 volte
+su 33.284, cioè mai.
+⚠️ **Lo 0,5 resta fuori**, e lo scarto dalla base vive nel **colore della
+cella**, che è il posto suo: il 12/10 il verde sull'over 3,5 al 35% era
+esattamente l'errore di confondere *sorprendente* con *probabile*.
+
+⚠️⚠️ **3,5 e under 1,5 NON si consigliano, ed è una misura.** Provati tutti i
+pavimenti: con 45% l'over 3,5 viene consigliato 813 volte e si avvera il **45%**;
+al 50% sono 188 volte col **49%**; al 55% quaranta volte in otto stagioni.
+L'under 1,5 fa **36%**. **Non esiste un pavimento dove quelle righe siano
+insieme consigliabili e frequenti**: quando avrebbe senso dirlo non succede mai,
+e quando succede è una monetina. Un consiglio che si avvera meno di metà delle
+volte non è un consiglio. Per riaccenderle basta dare loro un pavimento.
+
+**Misurato su 33.284 partite** di otto stagioni, camminando nel tempo
+(`btscout/scripts/prova-consiglio-gol.js`). ⚠️ Il metro **non è il 50%**: è
+*"dico sempre la stessa cosa"*, perché over 1,5 arriva da solo nel 75,4% dei
+casi.
+
+| | volte | ha ragione | la stessa riga, sempre |
+|---|---|---|---|
+| **tutto il consiglio** | 33.284 | **75,6%** | 70,8% → **+4,8 ±0,5** |
+| UNDER 3,5 | 18.576 | 74,8% | 71,3% (+3,5) |
+| OVER 1,5 | 11.712 | 80,0% | 75,4% (+4,6) |
+| UNDER 2,5 | 1.592 | 62,2% | 49,0% (**+13,2**) |
+| OVER 2,5 | 1.404 | 64,8% | 51,0% (**+13,8**) |
+| Goal/NoGoal | 11.643 | 57,5% | 53,2% (+4,3) |
+
+⚠️ **+4,8 punti con un margine di ±0,5 è uno dei pochi risultati solidi di
+questo progetto** — la selezione dei segni si muove dentro il rumore, questo no.
+⚠️ **Il 2,5 costa in percentuale e paga in informazione**: con lui il consiglio
+passa da 77,4% a **75,6%** di volte giuste, perché su ~3.000 partite dice 2,5
+invece di 1,5 e lì ha ragione il 62-65%. Ma su quelle righe lo **scarto** è
++13, il triplo delle altre: il modello non è peggiorato, sta dicendo una cosa
+più difficile. **Guardare la percentuale e non lo scarto porta alla conclusione
+opposta a quella giusta.**
+⚠️⚠️ **Non è un consiglio selettivo: parla il 100% delle volte.** Con λ attorno
+a 2,6 più righe stanno sopra il loro pavimento, quindi il consiglio è una
+lettura della *direzione* della partita, non una selezione di partite da
+giocare. **IN BILICO sull'over non si vede mai** (sul Goal sì: lì tace nel 65%
+dei casi).
+⚠️ **E il 75% non è bravura**: le righe più consigliate hanno basi del 71% e del
+75%, sono esiti frequenti.
+
+#### ⚠️⚠️ Il consiglio ancorato al prezzo — 15 ottobre 2026
+
+**Il risultato più grande della giornata, e nasce da una cosa che avevamo in
+casa senza saperlo.** Le colonne `avg_ap_over25` / `avg_ap_under25` stanno in
+`partite` **e** in `prossime_partite` dal primo import — football-data le
+pubblica da sempre — e il modello dei gol era stato costruito e misurato
+*senza quote*, per scelta. La misura ha detto quanto costava quella scelta:
+
+| sull'over 2,5 | quanto sbaglia (Brier) | il consiglio sul 2,5 |
+|---|---|---|
+| la costante (51,0% sempre) | 0,2499 | — |
+| **il nostro modello** | 0,2460 | 1.403 volte · **64,8%** |
+| **il mercato** | **0,2406** | 1.994 volte · **71,2%** |
+| metà e metà | 0,2422 | 1.234 volte · 72,1% |
+
+⚠️ **Il mercato sbaglia due volte e mezzo meno di noi** (+0,0093 contro +0,0039
+sulla costante), e il consiglio sul 2,5 guadagna **6,4 punti** su **più**
+partite. Con la quota in uso il consiglio completo fa **76,2%** (+5,2 ±0,5)
+contro 75,6% (+4,8), e soprattutto:
+
+| | volte | giusto | da sola | scarto |
+|---|---|---|---|---|
+| OVER 2,5 **con la quota** | 1.994 | **71,2%** | 51,0% | **+20,2** |
+| UNDER 2,5 **con la quota** | 690 | **70,1%** | 49,0% | **+21,1** |
+| OVER 2,5 col solo modello | 1.403 | 64,8% | 51,0% | +13,8 |
+
+**+20 punti su un evento che accade il 51% delle volte è il numero migliore di
+questo progetto.** Per confronto: la selezione dei segni si muove dentro il
+rumore.
+
+⚠️ **Perché il mercato e non la media fra i due.** Metà e metà dà 72,1%
+sull'OVER ma su 1.234 partite invece di 1.994, e sull'UNDER *peggiora* (66,6%
+contro 70,1%). Più semplice e migliore: si prende il prezzo.
+⚠️ **Si normalizza sempre**: `1/over` e `1/under` sommano a ~1,05, e
+confrontare una probabilità implicita non normalizzata col modello è l'errore
+che `btscout/CLAUDE.md` chiama *"misurare la commissione del banco"*.
+⚠️ **Solo la riga 2,5**: il mercato delle altre soglie non l'abbiamo. Sulle
+righe 1,5 e 3,5 parla il modello, come prima.
+⚠️⚠️ **E chi ha parlato si scrive a schermo** — `O/U · quote` in oro accanto
+all'etichetta. Un consiglio al 71% e uno al 64% non valgono lo stesso, e far
+credere il contrario è peggio che non avere il consiglio. È la stessa regola
+della colonna QUOTA, che dice sempre `BET365` o `MEDIA`.
+⚠️ **Le altre tre strade sono state provate e misurate prima di questa**: sette
+regole di scelta diverse (per scarto, per ambizione, col silenzio sotto una
+soglia minima) stanno **tutte** a +5 di scarto. Non era la regola a mancare,
+era l'informazione. **Quando sette varianti danno lo stesso numero, il limite
+non è nel come si sceglie.**
+
+⚠️ **Da dove arriva la quota sulle future** (15/10/2026): The Odds API, mercato
+`totals`, **1 credito per campionato** — il giro passa da 30 a **45 crediti**,
+~360 al mese sui 500 gratuiti. Verificato su 172 partite di 14 campionati:
+**copertura 172 su 172**, 11-15 bookmaker ciascuna. Primo giro vero: **189
+future su 192**, 9 book in media (mancano F1 e T1 in quel momento).
+⚠️⚠️ **Si tiene solo chi quota ESATTAMENTE la linea 2,5.** Ogni bookmaker
+pubblica la *sua* linea principale: su 2.227 quote era 2,5 nel 67% dei casi,
+3,5 nel 23%, il resto sparso. Un over 2,75 **è un altro evento**, non una
+versione imprecisa dello stesso, e mediarli darebbe il prezzo di niente. Sotto
+tre book che quotano il 2,5 la partita resta senza.
+⚠️ **E quelle quattro colonne si scrivono con `coalesce`**: possono essere null,
+e football-data invece le riempie sempre per il blocco imminente — senza
+`coalesce` un giro di The Odds API **cancellerebbe un dato buono con un vuoto**.
+Stessa ragione per cui `b365_*` non è nella lista delle colonne scritte.
+⚠️ **La seconda chiamata non può far perdere la prima**: l'over/under sta in un
+`try` suo, e se cade le partite entrano comunque con l'1X2.
+
+⚠️ **Il GG/NG resta senza prezzo, e adesso si sa perché.** Il mercato `btts`
+esiste (sondato: Pinnacle 1,39 / 3,13) ma **solo sull'endpoint per singolo
+evento, 1 credito per partita** — 170 crediti per weekend, fuori dal piano
+gratuito. Stessa cosa per `alternate_totals`, che darebbe la riga 2,5 di tutti
+i book. **È la risposta al "punto C" di STATO.md: il mercato c'è, non è
+accessibile.** Costo della verifica: 16 crediti.
+
+⚠️ **Ogni riga porta il nome della sua domanda** — `O/U` e `GG/NG` davanti al
+verdetto (Mattia, 15/10: *"in bilico da solo non si capisce"*). Aveva ragione:
+`IN BILICO` da solo non dice **su cosa**, e il Goal tace nel 65% dei casi — cioè
+nella maggior parte delle partite quella riga era una parola senza soggetto.
+L'etichetta resta spenta e il verdetto bianco: il nome della domanda è contesto,
+la risposta è il dato.
 
 #### La testa del blocco: di chi sono i gol, e quanti aspettarsene
 
@@ -1929,6 +2085,7 @@ node --env-file=.env scripts/calcola-andamento.js --esegui      # riempie la tab
 node --env-file=.env scripts/prova-gol-varianti.js         # si può migliorare l'indice dei gol? (no)
 node --env-file=.env scripts/prova-gol-avversari.js        # e correggendo per gli avversari affrontati? (no)
 node --env-file=.env scripts/prova-gg.js                   # il Goal/NoGoal: quanto è giusto il consiglio
+node --env-file=.env scripts/prova-consiglio-gol.js --stagioni=8   # i due consigli sotto la giocata
 #   pomelli: --base=gol|tiri|misto --k=20 --stagioni=3
 node --env-file=.env scripts/misura-valore.js --riferimento=media   # il criterio, a fine stagione
 node --env-file=.env scripts/import-storico.js --campionati=P1,N1   # solo alcuni campionati

@@ -330,6 +330,18 @@ ordine di quanto è pronto:
   quelle date l'Athletic giocava altro — **rinvii** che The Odds API ci aveva
   dato come programmati. `riconcilia-prossime.js` le segnala a ogni giro.
 
+✅ **Punto C chiuso il 15/10/2026** (le quote GG/NG su The Odds API): **il
+mercato esiste ma costa 1 credito per partita** — solo endpoint per singolo
+evento, ~170 crediti per weekend, fuori dal piano gratuito. Costo della
+verifica: 16 crediti.
+✅ **E nella stessa verifica è uscita la cosa grossa**: le quote **over/under
+2,5** le avevamo in archivio dal primo import (`avg_ap_over25`), e il mercato
+`totals` di The Odds API costa **1 credito per campionato** — copertura 172 su
+172 partite. Ora il consiglio over usa il prezzo sulla riga 2,5 e passa dal
+64,8% al **71,2%** di volte giuste, con scarto **+20 punti** sulla base.
+Il giro di aggiornamento passa da 30 a **45 crediti** (~360 al mese su 500).
+Tabelle in CLAUDE.md.
+
 **Lavori veri non iniziati:** lotto Q (routing con URL veri, briefing valutato
 e risposta scritta in `briefing/risposte/`, mai partito) · lotto E (spin 5-8) ·
 lotto F (automazione 9-11) · lotto M (vecchi backtest su `ps_*`) · voce 4f

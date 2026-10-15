@@ -2,6 +2,7 @@ import { C, F, alpha } from '../theme'
 import { pronosticoDa } from '../lib/spin'
 import { Etichetta } from './ui'
 import { usaClassifiche, postoDi, fasciaDi } from '../hooks/usaClassifiche'
+import { consiglioOver, consiglioGg, mercatoOver25, BASI_GOL } from '../lib/gol'
 
 // La testata di una partita: squadra sinistra — attendibilità — squadra destra,
 // con data e ora sotto. La usano sia la riga della lista (compatta) sia la
@@ -77,7 +78,7 @@ export function Stella({ voti, mio, puoVotare, onVota }) {
   )
 }
 
-export default function TestataPartita({ p, cat, compatta = false }) {
+export default function TestataPartita({ p, cat, compatta = false, gol = null }) {
   const c = CATEGORIE[cat]
   const classifiche = usaClassifiche()
   return (
@@ -97,6 +98,74 @@ export default function TestataPartita({ p, cat, compatta = false }) {
                 <Etichetta style={{ fontSize: 9, letterSpacing: '0.12em', marginBottom: 4 }}>giocata</Etichetta>
                 <div style={{ fontSize: compatta ? 19 : 24, fontWeight: 800, fontFamily: F.mono, color: c.colore, lineHeight: 1.1 }}>{pronosticoDa(p.giocata)}</div>
                 <div style={{ marginTop: compatta ? 5 : 7 }}><Barra frazione={p.probGiocata} colore={c.colore} altezza={compatta ? 5 : 6} /></div>
+                {/* ⚠️ **I due consigli sotto la giocata, in bianco** (scelta di
+                    Mattia, 15/10/2026). Stanno qui perché sono dello stesso
+                    genere della giocata — *cosa farei* — mentre il blocco ⚽
+                    più in basso dice *com'è messa la partita*. Il bianco li
+                    lega fra loro e li separa dal colore della categoria, che
+                    sulla giocata vuol dire un'altra cosa (centro, giallo, blu).
+                    ⚠️ Arrivano da **fuori** (`gol`): la testata non calcola
+                    niente, e nella riga della lista quella proprietà non c'è —
+                    quindi lì le due righe non compaiono. È voluto: in lista i
+                    gol attesi non sono caricati, e inventarli per riempire uno
+                    spazio sarebbe peggio di lasciarlo vuoto. */}
+                {gol && (
+                  <div style={{ marginTop: 9, display: 'flex', flexDirection: 'column', gap: 7 }}>
+                    {/* ⚠️ **Ogni riga porta il nome della domanda** (Mattia,
+                        15/10/2026: *"in bilico da solo non si capisce"*). Aveva
+                        ragione: `IN BILICO` da solo non dice **su cosa** sia in
+                        bilico, e il Goal tace nel 65% dei casi — cioè nella
+                        maggior parte delle partite quella riga era una parola
+                        senza soggetto. L'etichetta resta spenta e il verdetto
+                        bianco: il nome della domanda è contesto, la risposta è
+                        il dato. */}
+                    {[['O/U', consiglioOver(gol.over, mercatoOver25(p))], ['GG/NG', consiglioGg(gol.gg)]].map(([et, cons]) => {
+                      // ⚠️⚠️ **Lo scarto dalla base è il numero che rende
+                      // leggibile il consiglio**, e senza di lui una parola
+                      // sola mente per omissione: `UNDER 3,5` si avvera il 75%
+                      // delle volte ma **da solo** arriva il 71%, mentre
+                      // `OVER 2,5` al 66% vale +15. Misurato, lo scarto del
+                      // consiglio sta fra +3 e +15 a seconda della riga: la
+                      // percentuale nuda fa sembrare forte il consiglio debole
+                      // e debole quello forte.
+                      const base = cons?.chiave ? BASI_GOL[cons.chiave] : null
+                      const scarto = cons?.p != null && base != null ? cons.p - base : null
+                      // verde solo dove lo scarto è grande davvero: sotto i 5
+                      // punti il consiglio sta ripetendo quello che è già vero
+                      const tinta = scarto == null ? C.fioco
+                        : scarto >= 0.10 ? C.verde : scarto >= 0.05 ? C.testo : C.spento
+                      return (
+                        <div key={et} style={{ lineHeight: 1.25 }}>
+                          {/* ⚠️ **Chi ha parlato va scritto**: sul 2,5 il
+                              consiglio può venire dalle quote (71% di volte
+                              giuste) o dal nostro modello (63%), e sono due
+                              cose di valore diverso. È la stessa regola della
+                              colonna QUOTA, che dice sempre `BET365` o
+                              `MEDIA`: un numero senza la sua fonte non si può
+                              pesare. */}
+                          <Etichetta style={{ fontSize: compatta ? 7 : 8, letterSpacing: '0.1em' }}>
+                            {et}{cons?.fonte === 'mercato' && <span style={{ color: C.oroChiaro }}> · quote</span>}
+                          </Etichetta>
+                          <div style={{
+                            fontFamily: F.mono, fontWeight: 700, fontSize: compatta ? 11 : 12, letterSpacing: '0.03em',
+                            whiteSpace: 'nowrap',
+                            // ⚠️ IN BILICO resta spento: un consiglio che non
+                            // c'è non deve avere lo stesso peso di uno che c'è.
+                            color: cons?.esito ? C.bianco : C.fioco,
+                          }}>{cons?.esito || 'IN BILICO'}</div>
+                          {cons?.esito && scarto != null && (
+                            <div style={{ fontFamily: F.mono, fontSize: compatta ? 9 : 10, whiteSpace: 'nowrap', color: C.spento }}>
+                              {(cons.p * 100).toFixed(0)}%{' '}
+                              <span style={{ color: tinta, fontWeight: 700 }}>
+                                {scarto >= 0 ? '+' : ''}{(scarto * 100).toFixed(0)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             )}
             {/* ⚠️ **Il tondo sta a DESTRA del nome, non sopra** (scelta di

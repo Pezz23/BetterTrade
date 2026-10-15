@@ -22,7 +22,7 @@ export function usaProssime() {
       const oggi = oggiLocale()
       const { data, error } = await supabase
         .from('prossime_partite')
-        .select('id, div, campionato, data, ora, casa, trasferta, scaricato_il, fonte, book, book_1, book_x, book_2, b365_1, b365_x, b365_2, b365_over25, avg_ap_1, avg_ap_x, avg_ap_2, max_ap_1, max_ap_x, max_ap_2')
+        .select('id, div, campionato, data, ora, casa, trasferta, scaricato_il, fonte, book, book_1, book_x, book_2, b365_1, b365_x, b365_2, b365_over25, b365_under25, avg_ap_over25, avg_ap_under25, avg_ap_1, avg_ap_x, avg_ap_2, max_ap_1, max_ap_x, max_ap_2')
         .gte('data', oggi).order('data').order('ora')
       if (error) setErrore(error.message)
       else setRighe((data || []).map(valuta).filter(r => r.prob !== null))

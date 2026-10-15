@@ -9,6 +9,12 @@
 //              licenza italiana fra quelli presenti (scelto il 16/09/2026).
 //              Configurabile con ODDS_BOOK in .env. Il nome del book è salvato
 //              nella colonna `book`: se cambia, non c'è niente da rinominare.
+//   avg_ap_over25 / under25, max_ap_*  il consenso sull'over/under **2,5**
+//              (15/10/2026). ⚠️ Solo dai bookmaker che quotano **proprio la
+//              linea 2,5**: ognuno pubblica la sua linea principale, e mettere
+//              insieme un 2,5 e un 3,25 darebbe una media che non è il prezzo
+//              di niente. Se meno di tre book quotano il 2,5 la partita resta
+//              senza, come per l'1X2.
 //   b365_*     NIENTE: The Odds API non ha Bet365. Se la riga esiste già da
 //              football-data, Bet365 resta com'era. Non si sovrascrive con null.
 //
@@ -18,15 +24,16 @@
 //
 // Gli orari si salvano in ora del Regno Unito, come fa football-data.
 //
-// Costo: 2 crediti per campionato (regioni eu+uk), 30 per giro. Con 4 giri al
-// mese, 120 dei 500 gratuiti.
+// Costo: 3 crediti per campionato — 2 per l'1X2 (eu+uk) e 1 per l'over/under
+// (eu) — cioè 45 per giro, ~360 al mese con due giri a settimana sui 500
+// gratuiti.
 //
 // Uso:
 //   node --env-file=.env scripts/importa-prossime-odds.js            # prova a vuoto (costa comunque 30 crediti)
 //   node --env-file=.env scripts/importa-prossime-odds.js --esegui
 
 import { sql, chiudi } from '../lib/db.js';
-import { quote, SPORT } from '../lib/odds-api.js';
+import { quote, totali, SPORT } from '../lib/odds-api.js';
 import { traduci } from '../lib/nomi-squadre.js';
 import { CAMPIONATI } from './import-storico.js';
 
@@ -64,11 +71,19 @@ if (SOLO) {
 }
 
 for (const div of daFare) {
-  let dati;
+  let dati, ou = new Map();
   try {
     const r = await quote(div);
     dati = r.dati; creditiUsati += r.crediti.usati; creditiRimasti = r.crediti.rimasti;
   } catch (e) { console.error(`✗ ${div}: ${e.message}`); continue; }
+  // ⚠️ L'over/under è una **seconda** chiamata e un credito a parte: se cade,
+  // le partite entrano comunque con l'1X2. Un mercato in più non deve poter
+  // far perdere quello che era già buono.
+  try {
+    const r = await totali(div);
+    creditiUsati += r.crediti.usati; creditiRimasti = r.crediti.rimasti;
+    for (const ev of r.dati) ou.set(ev.id, ev);
+  } catch (e) { console.error(`  ⚠️ ${div}: over/under non preso (${e.message.slice(0, 80)})`); }
 
   let prese = 0, saltate = 0;
   for (const ev of dati) {
@@ -93,6 +108,18 @@ for (const div of daFare) {
     }
     if (q1.length < 3) { saltate++; continue; }   // troppo pochi book per un consenso
 
+    // ── il consenso sull'over/under 2,5, solo da chi quota quella linea ──
+    const qo = [], qu = [];
+    for (const b of ou.get(ev.id)?.bookmakers || []) {
+      const m = b.markets.find(m => m.key === 'totals'); if (!m) continue;
+      // ⚠️ `point === 2.5` e non "la linea più vicina al 2,5": un over 2,75 è
+      // un altro evento, non una versione imprecisa dello stesso.
+      const o = m.outcomes.find(x => x.name === 'Over' && Number(x.point) === 2.5);
+      const u = m.outcomes.find(x => x.name === 'Under' && Number(x.point) === 2.5);
+      if (o?.price > 1 && u?.price > 1) { qo.push(o.price); qu.push(u.price); }
+    }
+    const abbastanza = qo.length >= 3;
+
     const { data, ora } = dataOraUK(ev.commence_time);
     righe.push({
       div, campionato: CAMPIONATI[div], data, ora, casa, trasferta, fonte: 'odds-api',
@@ -101,7 +128,11 @@ for (const div of daFare) {
       bfe_ap_1: bfe?.[0] ?? null, bfe_ap_x: bfe?.[1] ?? null, bfe_ap_2: bfe?.[2] ?? null,
       book: book ? BOOK : null,
       book_1: book?.[0] ?? null, book_x: book?.[1] ?? null, book_2: book?.[2] ?? null,
-      _book: q1.length,
+      avg_ap_over25: abbastanza ? media(qo) : null,
+      avg_ap_under25: abbastanza ? media(qu) : null,
+      max_ap_over25: abbastanza ? massimo(qo) : null,
+      max_ap_under25: abbastanza ? massimo(qu) : null,
+      _book: q1.length, _ou: qo.length,
     });
     prese++;
   }
@@ -116,6 +147,10 @@ if (righe.length) {
   console.log(`  periodo        ${date[0]} → ${date[date.length - 1]}`);
   console.log(`  bookmaker per partita: min ${Math.min(...righe.map(r => r._book))} · media ${media(righe.map(r => r._book)).toFixed(0)}`);
   console.log(`  con exchange   ${righe.filter(r => r.bfe_ap_1).length}`);
+  const conOu = righe.filter(r => r.avg_ap_over25).length;
+  console.log(`  con over/under 2,5  ${conOu}/${righe.length}` +
+    (conOu ? `  (${media(righe.filter(r => r._ou).map(r => r._ou)).toFixed(0)} book in media)` : '') +
+    (conOu < righe.length ? `  ⚠️ manca su: ${[...new Set(righe.filter(r => !r.avg_ap_over25).map(r => r.div))].join(' ')}` : ''));
   const conBook = righe.filter(r => r.book_1).length;
   console.log(`  con ${BOOK.padEnd(11)} ${conBook}/${righe.length}${conBook < righe.length ? '  ⚠️ manca su: ' + [...new Set(righe.filter(r => !r.book_1).map(r => r.div))].join(' ') : ''}`);
 }
@@ -128,14 +163,23 @@ if (!ESEGUI || !righe.length) { await chiudi(); process.exit(sconosciute.size ? 
 
 const COL = ['div', 'campionato', 'data', 'ora', 'casa', 'trasferta', 'fonte',
   'avg_ap_1', 'avg_ap_x', 'avg_ap_2', 'max_ap_1', 'max_ap_x', 'max_ap_2', 'bfe_ap_1', 'bfe_ap_x', 'bfe_ap_2',
-  'book', 'book_1', 'book_x', 'book_2'];
+  'book', 'book_1', 'book_x', 'book_2',
+  'avg_ap_over25', 'avg_ap_under25', 'max_ap_over25', 'max_ap_under25'];
+// ⚠️ Queste quattro possono essere **null** quando meno di tre book quotano il
+// 2,5, e football-data invece le riempie sempre per il blocco imminente: senza
+// `coalesce` un giro di The Odds API cancellerebbe un dato buono con un vuoto.
+// È la stessa ragione per cui `b365_*` non è in questa lista.
+const NON_CANCELLARE = new Set(['avg_ap_over25', 'avg_ap_under25', 'max_ap_over25', 'max_ap_under25']);
 const daAggiornare = COL.filter(c => !['div', 'data', 'casa', 'trasferta'].includes(c));
 const pulite = righe.map(r => Object.fromEntries(COL.map(c => [c, r[c]])));
 
 await sql`
   insert into prossime_partite ${sql(pulite, ...COL)}
   on conflict (div, data, casa, trasferta) do update set
-    ${sql(daAggiornare.reduce((acc, c) => ({ ...acc, [c]: sql`excluded.${sql(c)}` }), {}))},
+    ${sql(daAggiornare.reduce((acc, c) => ({ ...acc,
+      [c]: NON_CANCELLARE.has(c)
+        ? sql`coalesce(excluded.${sql(c)}, prossime_partite.${sql(c)})`
+        : sql`excluded.${sql(c)}` }), {}))},
     scaricato_il = now()
 `;
 const [{ tot, future }] = await sql`select count(*)::int as tot, count(*) filter (where data >= current_date)::int as future from prossime_partite`;

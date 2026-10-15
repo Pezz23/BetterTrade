@@ -94,9 +94,16 @@ export const FIDUCIA_GG = 0.55
 export function consiglioGg(gg) {
   if (gg == null) return null
   const fiducia = Math.max(gg, 1 - gg)
+  const gol = gg >= 0.5
   return {
-    esito: fiducia < FIDUCIA_GG ? null : (gg >= 0.5 ? 'GOL' : 'NO GOL'),
-    p: gg,
+    esito: fiducia < FIDUCIA_GG ? null : (gol ? 'GOL' : 'NO GOL'),
+    // ⚠️ `p` è la probabilità **del lato consigliato**, non quella del GG: su
+    // NO GOL sono due numeri diversi (58% e 42%), e mostrare il secondo
+    // accanto alla parola NO GOL direbbe il contrario di quello che si vuole.
+    p: fiducia,
+    // la riga di `BASI_GOL` a cui confrontarsi, perché il consiglio porti con
+    // sé il suo metro invece di farlo cercare a chi legge
+    chiave: gol ? 'gg' : 'ng',
     fiducia,
   }
 }
@@ -196,6 +203,100 @@ export function intervalloGol(lambdaTotale, quota = 0.25) {
 
 export const BASE_DEFAULT = 'tiri'
 export const SOGLIE_OVER = [0, 1, 2, 3]   // over 0,5 · 1,5 · 2,5 · 3,5
+
+/**
+ * ⚠️⚠️ **Un pavimento per riga, non uno per tutte** (15/10/2026, su richiesta
+ * di Mattia: *"se il 2,5 supera una certa % vorrei consigliasse over 2,5"*).
+ *
+ * Il 70% dell'over 1,5 è **la soglia che diede Mattia il 12/10** per accendere
+ * il verde (*"70% per gli OVER e UNDER e 65% per il goal"*), e resta. Ma sul
+ * 2,5 il 70% è quasi inarrivabile — succede 221 volte su 33.284 — quindi quella
+ * riga non verrebbe mai consigliata: il suo pavimento è **65%**.
+ *
+ * ⚠️⚠️ **3,5 e under 1,5 NON si consigliano, ed è una misura, non una
+ * dimenticanza.** Provati tutti i pavimenti: con 45% l'over 3,5 viene
+ * consigliato 813 volte e si avvera il **45%**; alzandolo al 50% scende a 188
+ * volte col **49%**; al 55% sono 40 volte in otto stagioni. L'under 1,5 fa
+ * **36%**. Non esiste un pavimento dove quelle righe siano *insieme*
+ * consigliabili e frequenti: quando avrebbe senso dirlo non succede mai, e
+ * quando succede è una monetina. **Un consiglio che si avvera meno di metà
+ * delle volte non è un consiglio.** Per riaccenderle basta aggiungerle qui.
+ */
+export const PAVIMENTI_OVER = {
+  over1: 0.70, under1: null,
+  over2: 0.65, under2: 0.65,
+  over3: null,  under3: 0.70,
+}
+
+/**
+ * La probabilità dell'over 2,5 **secondo il mercato**, dalle quote di una riga.
+ * `null` quando quelle due quote non ci sono.
+ *
+ * ⚠️⚠️ **Questo numero esisteva in archivio da sempre e non lo usavamo.** Le
+ * colonne `*_over25` stanno in `partite` e `prossime_partite` dal primo import
+ * (football-data le pubblica), e il modello dei gol è stato costruito e
+ * misurato *senza quote* per scelta di Mattia (12/10/2026). Il 15/10 la misura
+ * ha detto quanto costava quella scelta: sul Brier dell'over 2,5 il mercato
+ * aggiunge **+0,0093** contro i nostri **+0,0039**, e il consiglio sul 2,5
+ * passa dal **63%** al **71%** di volte giuste. Il modello resta la *lettura*
+ * della partita; il prezzo è un'informazione che non possiamo rifiutare.
+ *
+ * ⚠️ **Si normalizza**, perché le due quote contengono il margine del banco:
+ * `1/over` e `1/under` sommano a ~1,05. Confrontare una probabilità implicita
+ * non normalizzata col nostro modello è l'errore che `btscout/CLAUDE.md`
+ * chiama "misurare la commissione del banco".
+ * ⚠️ Si usano le quote di **apertura** (`avg_ap_*`): sono quelle che esistono
+ * quando si decide. In `partite` le `avg_*` senza `_ap` sono di chiusura.
+ */
+export function mercatoOver25(r) {
+  const o = Number(r?.avg_ap_over25), u = Number(r?.avg_ap_under25)
+  if (!(o > 1) || !(u > 1)) return null
+  return (1 / o) / (1 / o + 1 / u)
+}
+
+/**
+ * Il consiglio su over/under: `{ esito, p, chiave, fonte }`, `esito: null`
+ * quando nessuna riga passa il suo pavimento.
+ *
+ * ⚠️ `pMercato` è la probabilità dell'over 2,5 secondo le quote: quando c'è
+ * **prende il posto della nostra** sulle righe 2,5, e solo su quelle — sulle
+ * altre soglie il mercato non ce l'abbiamo (football-data pubblica il 2,5 e
+ * nient'altro). `fonte` dice chi ha parlato, e va mostrato: un consiglio del
+ * mercato e uno nostro non valgono lo stesso, e far credere il contrario è
+ * peggio che non averlo.
+ *
+ * ⚠️⚠️ **La regola è "la più AMBIZIOSA che regge", non "la più probabile".**
+ * È il cambio del 15/10/2026 e senza di lui l'over 2,5 non sarebbe mai
+ * consigliabile: `p(over 1,5) > p(over 2,5) > p(over 3,5)` **sempre**, per
+ * costruzione, quindi scegliendo la più probabile vince eternamente l'1,5.
+ * Ambiziosa = **base più bassa** (`BASI_GOL`): l'over 2,5 arriva da solo il
+ * 51,0% delle volte contro il 75,4% dell'1,5, quindi dirlo è dire di più.
+ *
+ * ⚠️ **Cosa costa, misurato su 33.284 partite** (otto stagioni, camminando nel
+ * tempo, `btscout/scripts/prova-consiglio-gol.js`): il consiglio passa da
+ * **77,4% a 75,5%** di volte giuste, perché su ~2.800 partite dice 2,5 invece
+ * di 1,5 e lì ha ragione il 62-64%. **Lo scarto sulla riga consigliata resta
+ * +4,8 ±0,5** — il modello non è peggiorato, sta dicendo una cosa più difficile.
+ * ⚠️ Lo 0,5 resta fuori: over 0,5 arriva il 92,9% delle volte da solo, e
+ * "giocati che si segna un gol" non è un consiglio.
+ */
+export function consiglioOver(over, pMercato = null) {
+  if (!over) return null
+  let meglio = null
+  for (const s of SOGLIE_OVER) {
+    const daMercato = s === 2 && pMercato != null
+    const p = daMercato ? pMercato : over[s]
+    if (p == null) continue
+    for (const [verso, prob] of [['over', p], ['under', 1 - p]]) {
+      const chiave = `${verso}${s}`
+      const pavimento = PAVIMENTI_OVER[chiave]
+      if (pavimento == null || prob < pavimento) continue
+      if (!meglio || BASI_GOL[chiave] < BASI_GOL[meglio.chiave])
+        meglio = { esito: `${verso.toUpperCase()} ${s},5`, p: prob, chiave, fonte: daMercato ? 'mercato' : 'modello' }
+    }
+  }
+  return meglio || { esito: null, p: null, chiave: null, fonte: null }
+}
 
 /**
  * Le medie di un campionato per squadra per partita: gol e tiri in porta.

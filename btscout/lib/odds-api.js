@@ -3,8 +3,9 @@
 // che pubblica solo il prossimo blocco.
 //
 // Piano gratuito: 500 crediti al mese. /events non costa niente; /odds costa
-// 1 credito per regione. Con eu+uk sono 2 crediti per campionato, 30 per giro,
-// ~260 al mese con due giri a settimana.
+// 1 credito **per mercato per regione**. Il giro costa 45 crediti: 30 per l'1X2
+// (eu+uk × h2h) e 15 per l'over/under (eu × totals), cioè ~360 al mese con due
+// giri a settimana.
 //
 // ⚠️ Bet365 NON c'è (verificato 16/09/2026, né in eu né in uk). Il consenso si
 // calcola dai bookmaker presenti; la quota Bet365 la porta football-data.
@@ -58,3 +59,21 @@ export const eventi = div => chiama(`/sports/${SPORT[div]}/events/`);
 
 /** Le partite con le quote 1X2 di tutti i bookmaker eu+uk. 2 crediti. */
 export const quote = div => chiama(`/sports/${SPORT[div]}/odds/`, { regions: 'eu,uk', markets: 'h2h', oddsFormat: 'decimal' });
+
+/**
+ * Le partite col mercato over/under. **1 credito** (una regione sola).
+ *
+ * ⚠️ **Una regione e non due**: il costo è mercati × regioni, e con `eu` i
+ * bookmaker sono già 11-15 per partita — verificato il 15/10/2026 su 172
+ * partite di 14 campionati, **copertura 172 su 172**. Raddoppiare la spesa per
+ * qualche book in più non cambia una media.
+ * ⚠️ **Ogni bookmaker quota la SUA linea principale**, non la 2,5: su 2.227
+ * quote la linea era 2,5 nel 67% dei casi, 3,5 nel 23%, il resto sparso. Chi
+ * legge questi dati deve filtrare sul `point`, **non** dare per scontato il 2,5.
+ * ⚠️ La linea 2,5 esatta per tutti i book esisterebbe (`alternate_totals`) ma
+ * **solo sull'endpoint per singolo evento, a 1 credito per partita**: 170
+ * crediti per weekend, fuori dal piano gratuito. Stessa cosa per il
+ * **Goal/NoGoal** (`btts`), che esiste e costa uguale — ed è la risposta al
+ * "punto C" di STATO.md: il mercato c'è, non è accessibile.
+ */
+export const totali = div => chiama(`/sports/${SPORT[div]}/odds/`, { regions: 'eu', markets: 'totals', oddsFormat: 'decimal' });
