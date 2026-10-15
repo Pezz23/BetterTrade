@@ -34,6 +34,78 @@ numeri scritti qui, perché alcuni sono stati corretti.
 
 ---
 
+# ▶️ DA DOVE RIPARTIRE — scritto il 15 ottobre 2026
+
+**Lo stato vero, misurato alla chiusura della sessione:**
+
+| | |
+|---|---|
+| app | **1.26.00**, commit `c1bba17`, albero pulito, lint 0 errori (8 avvisi noti) |
+| archivio | **54.125** partite con risultato, l'ultima del **14/10** |
+| future | **192** da giocare · **189** con la quota over 2,5 · **0 con Bet365** |
+| pagina Andamento | **99.683** righe, aggiornata fino al **14/10** |
+| importazioni in attesa | **nessuna** |
+| crediti The Odds API | **322** su 500 · il giro ora costa **45** (era 30) |
+
+### Le tre cose da sapere prima di toccare qualcosa
+
+1. ⚠️ **Bet365 è a zero sulle 192 future**, e non è un guasto: quella quota
+   arriva da football-data, il cui `fixtures.csv` è fermo a martedì 13 e
+   contiene solo partite già giocate. **Il blocco del weekend arriva il venerdì
+   dopo le 18.** Fino a quel momento resa e voto sono grigi su tutte le partite
+   (`quotaDaConsenso`), ed è giusto così.
+2. ⚠️ **`www.football-data.co.uk` non risolve più** nel DNS — provato su tre
+   resolver. L'apex `football-data.co.uk` sì, e `lib/rete.js` prova entrambi, per
+   questo non si è accorto di niente. **Se un giorno cade anche l'apex, è lì che
+   si guarda**, non nel codice.
+3. ⚠️ **Restano 2 partite fantasma dell'Ath Bilbao** (`Levante` 16/09,
+   `Vallecano` 10/10): sono in `prossime_partite` ma in quelle date l'Athletic
+   giocava altro — rinvii che The Odds API ci aveva dato come programmati.
+   `riconcilia-prossime.js` le segnala a ogni giro e **non è un errore nostro**.
+
+### I primi tre comandi di una sessione normale
+
+```bash
+cd btscout
+node --env-file=.env scripts/aggiorna.js --esegui     # 45 crediti · 5 passi, l'ultimo ricalcola Andamento
+node --env-file=.env scripts/controlla-dati.js        # cosa è passato in silenzio (gira già dentro aggiorna)
+cd ../app && npm run dev
+```
+
+⚠️ **`aggiorna.js` ora ha cinque passi** e il quinto (la pagina Andamento) **non
+ferma la routine se fallisce**: è una tabella derivata, nessun altro passo
+dipende da lei, e un suo errore non deve impedire i controlli sui dati veri.
+
+### Cosa NON rifare, e perché
+
+- ⛔ **Il recupero storico del possesso palla**: sospeso da Mattia il 15/10, una
+  richiesta per partita. Le colonne restano, l'import in avanti le riempie.
+- ⛔ **Il modello dei gol**: cinque varianti misurate, nessuna migliora.
+- ⛔ **L'exchange sull'over**: 10.679 partite in archivio ma **zero** sulle
+  future — Betfair non quota quel mercato nell'endpoint che paghiamo.
+- ⛔ **Alzare il marchio ambra `ATTEND. ~`**: è discreto per decisione di Mattia,
+  non per dimenticanza. Vedi il blocco sul disaccordo fra i bookmaker.
+- ⛔ **Rilanciare `sql/28` nella forma vecchia**: conteneva quattro funzioni con
+  una firma che `sql/29` ha sostituito, e riapplicarlo avrebbe creato un doppione
+  ambiguo (*function is not unique*). ✅ Disinnescata il 15/10: ora **28 e 29 si
+  rilanciano entrambe senza danno**, provato.
+
+### Da dove ripartire col lavoro, in ordine di valore atteso
+
+1. **Il Goal/NoGoal dal prezzo** — invertire la quota over 2,5 nei gol attesi
+   del mercato e passarli alla formula del GG. Gratis, 38.000 partite, dato
+   presente su 189 future su 192. Il consiglio GG è al 57,5%, il più debole che
+   abbiamo. **È la continuazione diretta di quello che oggi ha pagato +20 punti.**
+2. **I gol del primo tempo** — 38.082 partite in archivio, mai aperte. Non una
+   previsione migliore: una dimensione nuova, *quando* arrivano i gol.
+3. **I cartellini rossi come contesto della forma** — un 0-3 con un rosso al 20°
+   non è un 0-3, e oggi li mostriamo identici.
+4. **Rimisurare la soglia di dispersione su The Odds API** quando ci saranno
+   un paio di migliaia di partite giocate con le loro massime (oggi ~300): il 10%
+   è trasposto per percentile, non misurato.
+
+---
+
 # 🔄 RIPARTIRE DOPO UNA PAUSA
 
 Se fra l'ultimo aggiornamento e oggi sono passate settimane o mesi, **i dati
@@ -43,12 +115,14 @@ sono vecchi, non il codice**. In ordine:
 cd btscout
 node --env-file=.env scripts/aggiorna.js --esegui    # risultati + quote: recupera tutto da solo
 node --env-file=.env scripts/verifica-storico.js     # l'archivio è coerente?
-cd ../app && npm run lint && npm run dev             # 0 errori, poi la barra deve dire 1.20.01
+cd ../app && npm run lint && npm run dev             # 0 errori, poi la barra deve dire 1.26.00
 ```
 
 `aggiorna.js` guarda indietro e non perde niente: `riconcilia-prossime` chiude
 le future diventate partite anche se sono di tre mesi fa. **I crediti di The
 Odds API si rigenerano ogni mese** (500), quindi dopo una pausa sono pieni.
+⚠️ **Dal 15/10/2026 un giro costa 45 crediti, non 30**: si è aggiunto il mercato
+over/under (1 per campionato). Due giri a settimana fanno ~360 su 500.
 
 **Cosa sarà sicuramente da rifare, e cosa invece regge:**
 
@@ -60,7 +134,7 @@ Odds API si rigenerano ogni mese** (500), quindi dopo una pausa sono pieni.
 | ⚠️ **La tabella `andamento`** | è **derivata**: la stagione in corso si rifà **da sola** a ogni importazione (dal 15/10/2026), l'archivio intero con `calcola-andamento.js --stagioni=8 --esegui` (23 secondi). Non è un backup da conservare. |
 | ⚠️ **Le note "a ottobre…"** | in CLAUDE.md e qui ci sono frasi legate al momento (i tre strati di VPM che guardano quasi le stesse partite, le 1-3 partite in casa). **Da gennaio sono false**: la forma comincia a dire altro. |
 | ✅ **Il criterio, le soglie, i pesi** | non scadono: sono misurati sull'archivio, non sulla settimana. |
-| ✅ **sql/01-27, RLS, permessi** | applicati e verificati. `scripts/prova-permessi.js` lo riconferma in un minuto. |
+| ✅ **sql/01-29, RLS, permessi** | applicati e verificati. `scripts/prova-permessi.js` lo riconferma in un minuto. |
 
 **I numeri qui sotto con una data accanto sono fotografie, non verità**: se
 leggi "884 partite" o "440 crediti" e siamo a marzo, sono vecchi di mesi.

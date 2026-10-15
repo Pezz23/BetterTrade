@@ -1743,7 +1743,7 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   sbagliata.** Restano `--bg`, `--border`, `--text`, `--sans` (più
   `--barra-alta` e `--barra-bassa`, che sono misure e le usa il JSX).
 - **Navigazione**, rifatta il 12/10/2026 (scelta di Mattia): in basso
-  (`TABS_BASE`) **Dashboard · Partite · Slot · Spin**, cioè il giro
+  (`TABS_BASE`) **Dashboard · Slot · Spin · Partite**, cioè il giro
   settimanale — si guardano le partite, si compila la spin, si gioca. Nel menu
   ☰ (`VOCI_MENU`) il resto: **Partite votate, Storico, Andamento, Reporting,
   Bilancio, Utenti**. ⚠️ **Reporting e Bilancio sono scesi dalla barra al
