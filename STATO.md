@@ -38,7 +38,7 @@ Odds API si rigenerano ogni mese** (500), quindi dopo una pausa sono pieni.
 | ⚠️ **Le quote future** | `prossime_partite` è una fotografia: dopo una pausa è tutta scaduta. La riempie `aggiorna.js`. |
 | ⚠️ **A stagione nuova VPM non esiste per ~4 giornate.** | Serve un minimo di **3 partite giocate** per squadra (`MIN_PARTITE`): in agosto-settembre la colonna VPM fa `—` e il voto vale la resa. **Non è un difetto.** |
 | ⚠️ **Le ancore di VPM** | misurate su 24/25 e 25/26, **fisse di proposito**. Vanno rimisurate solo quando si vuole aggiungere una stagione — e allora cambiano *tutti* i VPM storici, quindi si fa una volta e si scrive la data. |
-| ⚠️ **La tabella `andamento`** | è **derivata**: si rifà con `calcola-andamento.js --stagioni=8 --esegui` (23 secondi) ogni volta che arrivano risultati nuovi. Non è un backup da conservare. |
+| ⚠️ **La tabella `andamento`** | è **derivata**: la stagione in corso si rifà **da sola** a ogni importazione (dal 15/10/2026), l'archivio intero con `calcola-andamento.js --stagioni=8 --esegui` (23 secondi). Non è un backup da conservare. |
 | ⚠️ **Le note "a ottobre…"** | in CLAUDE.md e qui ci sono frasi legate al momento (i tre strati di VPM che guardano quasi le stesse partite, le 1-3 partite in casa). **Da gennaio sono false**: la forma comincia a dire altro. |
 | ✅ **Il criterio, le soglie, i pesi** | non scadono: sono misurati sull'archivio, non sulla settimana. |
 | ✅ **sql/01-27, RLS, permessi** | applicati e verificati. `scripts/prova-permessi.js` lo riconferma in un minuto. |
@@ -178,6 +178,9 @@ entrerebbe due volte, e costa — 95,6% contro 97,8%.
 ⚠️ La resa resta nei dettagli della scheda e dentro il voto.
 ⚠️ **Da fare:** la pagina Andamento misura ancora `resa` fra i quattro
 indicatori; al prossimo `calcola-andamento.js` conviene aggiungere `scelta`.
+⚠️ **Il ricalcolo non si lancia più a mano** (15/10/2026): è il 5° passo di
+`aggiorna.js` ed è in coda a `importa-espn.js`, sulla sola stagione in corso.
+Era l'unico pezzo della catena che restava indietro in silenzio.
 
 ### Il voto 200%: quando le due fonti litigano — 12 ottobre 2026 (**1.19.00**)
 
@@ -299,13 +302,20 @@ ordine di quanto è pronto:
   della vecchia fase e già marcati.
 
 **In attesa di qualcun altro:**
-- ⚠️ **I risultati dal 21/09 in poi non ci sono**, e non è colpa nostra:
-  football-data non li ha pubblicati (verificato il 12/10 scaricando il CSV a
-  mano — dice le stesse cose dell'archivio). **131 future giocate senza
-  risultato.** Al primo `aggiorna.js --esegui` che riesce si agganciano da
-  sole, poi va rilanciato `calcola-andamento.js --stagioni=8 --esegui`.
-  ⚠️ Nota operativa: in quel momento **solo l'apex rispondeva**
-  (`football-data.co.uk` sì, `www.` no); lo script prova entrambi.
+- ✅ **football-data si è sbloccato il 15/10/2026**: era fermo al 20 settembre,
+  ora pubblica fino al 12 ottobre. Importate 1.036 partite della stagione in
+  corso, 18 future collegate con le quote fedeli.
+  ⚠️ **Il nome `www.` non risolve più** — tre resolver pubblici, nessuna
+  risposta; l'apex `football-data.co.uk` sì. `lib/rete.js` prova entrambi e il
+  giro è passato senza accorgersene. **Se un giorno cade anche l'apex, è lì
+  che si guarda.**
+  ⚠️ `fixtures.csv` resta fermo a martedì 13 e contiene solo partite **già
+  giocate**: il blocco del weekend con Bet365 arriva il venerdì dopo le 18, e
+  importarlo prima vorrebbe dire mettere partite finite in `prossime_partite`.
+- ⚠️ Restano **due partite fantasma dell'Ath Bilbao** (`Levante` 16/09,
+  `Vallecano` 10/10): sono in `prossime_partite` ma nell'archivio spagnolo in
+  quelle date l'Athletic giocava altro — **rinvii** che The Odds API ci aveva
+  dato come programmati. `riconcilia-prossime.js` le segnala a ogni giro.
 
 **Lavori veri non iniziati:** lotto Q (routing con URL veri, briefing valutato
 e risposta scritta in `briefing/risposte/`, mai partito) · lotto E (spin 5-8) ·

@@ -769,6 +769,20 @@ Ricostruire VPM e i gol attesi di ogni giornata passata dal browser non è
 fattibile, e un numero che cambia a seconda di quando apri la pagina non è una
 misura. La riempie `btscout/scripts/calcola-andamento.js` (prova a vuoto di
 default, `--esegui` scrive, `--stagioni=8` per il passato).
+⚠️ **Si ricalcola da sé a ogni importazione dal 15/10/2026**: è l'ultimo passo
+di `aggiorna.js` ed è in coda a `importa-espn.js` (solo se ha portato risultati
+nuovi), sempre sulla **sola stagione in corso** — il passato non cambia, e
+rifarlo tutto vorrebbe dire riscrivere 101.000 righe identiche ogni volta.
+⚠️ **Ed è l'unico passo che non ferma la routine se fallisce**, perché
+`andamento` è **derivata** da `partite`: nessun altro passo dipende da lei, e
+un suo errore non deve impedire i controlli sui dati veri. Fallisce
+rumorosamente e l'aggiornamento continua, dicendo in fondo che la pagina è
+rimasta indietro.
+⚠️ **Il motivo per cui esiste questo automatismo**: dal 12 al 15/10 la pagina
+è rimasta ferma al 4 ottobre e sembrava rotta. Non lo era — lo script era
+girato quando football-data era fermo da tre settimane, e aveva scritto
+fedelmente tutto quello che c'era. **Una tabella derivata che si aggiorna solo
+a mano mente ogni volta che la fonte cambia, e lo fa in silenzio.**
 ⚠️ **La ricostruzione camminando nel tempo sta in `btscout/lib/ricostruisci.js`**,
 e la usano sia `calcola-andamento.js` sia `prova-indicatori.js`: **non
 duplicarla**. ⚠️ Per un giorno le due copie sono esistite davvero, ed erano
@@ -1659,6 +1673,7 @@ node --env-file=.env scripts/aggiorna.js --esegui                   # LA ROUTINE
 node --env-file=.env scripts/importa-espn.js --campionati=I1 --giorni=30 --esegui   # la seconda fonte: risultati e possesso
 node --env-file=.env scripts/controlla-dati.js     # cosa è passato in silenzio (gira già dentro aggiorna.js)
 #   = import-storico --stagioni=2627 → riconcilia-prossime → importa-prossime
+#     → importa-prossime-odds → calcola-andamento --stagioni=1
 node --env-file=.env scripts/prova-vpm.js           # VPM sul weekend: dove campo e mercato litigano
 node --env-file=.env scripts/prova-ordine.js        # i tre ordini della lista, casi limite compresi
 node --env-file=.env scripts/prova-scheda.js --squadra=Lens   # il blocco VPM della scheda, e l'identità dei pesi

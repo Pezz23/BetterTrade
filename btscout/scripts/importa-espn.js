@@ -19,6 +19,9 @@ import { sql } from '../lib/db.js';
 import { CAMPIONATI, partiteDelGiorno, statistiche } from '../lib/espn.js';
 import { nostroNome } from '../lib/nomi-espn.js';
 import { giornoLocale } from '../lib/date.js';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 
 const arg = (n, d) => { const a = process.argv.find(x => x.startsWith(`--${n}=`)); return a ? a.split('=')[1] : d };
 const ESEGUI = process.argv.includes('--esegui');
@@ -220,3 +223,19 @@ if (dubbie.length) {
 }
 if (!ESEGUI) console.log('\nprova a vuoto: non ho scritto niente. Aggiungi --esegui.');
 await sql.end();
+
+// ⚠️ `andamento` è derivata da `partite`: se questo import ha portato risultati
+// nuovi, la pagina Andamento resta indietro finché qualcuno non la ricalcola a
+// mano — ed è esattamente quello che non succedeva (ferma al 4/10 per tre
+// giorni). Si ricalcola solo la stagione in corso, e un suo errore non tocca i
+// dati appena importati: sono già scritti.
+if (ESEGUI && conto.create + conto.completate > 0) {
+  console.log('\n── pagina Andamento ──');
+  try {
+    execFileSync(process.execPath,
+      ['--env-file=.env', join(dirname(fileURLToPath(import.meta.url)), 'calcola-andamento.js'), '--stagioni=1', '--esegui'],
+      { stdio: 'inherit', cwd: join(dirname(fileURLToPath(import.meta.url)), '..') });
+  } catch (e) {
+    console.error(`⚠️ ricalcolo fallito (codice ${e.status}): i dati sono a posto, la pagina Andamento resta indietro.`);
+  }
+}
