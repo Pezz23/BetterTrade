@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { C, F, alpha } from '../theme'
 import { Card, Etichetta } from '../components/ui'
 import {
-  METODI, scrivi, sopra, quota,
+  METODI, SOGLIE_BASE, conSoglie, scrivi, sopra, quota,
   usaRiassunto, usaChiavi, usaStagioni, partiteDi, partiteVerdi,
 } from '../hooks/usaAndamento'
 
@@ -132,7 +132,12 @@ export default function AndamentoPage() {
   const [metodo, setMetodo] = useState('att')
   const [stagione, setStagione] = useState(null)        // null = non ancora scelta, '' = tutte
   const [aperta, setAperta] = useState(null)
-  const [soglie, setSoglie] = useState(Object.fromEntries(METODI.map(m => [m.id, m.soglia])))
+  // ⚠️ `conSoglie` riempie le chiavi che mancano: lo stato di React sopravvive
+  // al ricaricamento a caldo, quindi dopo un cambio dei metodi qui dentro
+  // possono restare quelle vecchie — e una soglia mancante diventava NaN al
+  // primo tocco di `+`.
+  const [soglieGrezze, setSoglie] = useState(SOGLIE_BASE)
+  const soglie = conSoglie(soglieGrezze)
   const [verdi, setVerdi] = useState(false)
   const [righeVerdi, setRigheVerdi] = useState(null)
 
@@ -154,7 +159,8 @@ export default function AndamentoPage() {
     return () => { vivo = false }
   }, [verdi, soglie, stagione])
 
-  const muovi = (id, verso) => setSoglie(s => {
+  const muovi = (id, verso) => setSoglie(g => {
+    const s = conSoglie(g)
     const M = METODI.find(m => m.id === id)
     // ⚠️ Si arrotonda al passo, non a due cifre fisse: con passo 0,0025 un
     // arrotondamento a 0,01 riporterebbe il valore indietro a ogni scatto.
@@ -163,8 +169,7 @@ export default function AndamentoPage() {
   })
 
   const rig = (metodoId, ambitoId) => quota(riassunto?.find(r => r.metodo === metodoId && r.ambito === ambitoId))
-  const acc = (n) => quota(accordo?.find(a => Number(a.quanti) === n))
-  const tutteLeVerdi = acc(4)
+  const tutteLeVerdi = quota(accordo?.find(a => Number(a.quanti) === METODI.length))
   const sotto = (() => {
     if (!accordo) return { giocate: 0, ok: 0, perc: null }
     const tot = accordo.reduce((a, x) => ({ giocate: a.giocate + Number(x.giocate), ok: a.ok + Number(x.azzeccate) }), { giocate: 0, ok: 0 })
@@ -200,100 +205,102 @@ export default function AndamentoPage() {
       {/* ── Le soglie ─────────────────────────────────────────────────────── */}
       <Card style={{ marginBottom: 12 }}>
         <Etichetta>SOGLIE MINIME</Etichetta>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto auto', gap: '3px 6px', alignItems: 'center', marginTop: 6 }}>
-          {METODI.map(M => {
-            const c = rig(M.id, 'giorno')
-            return (
-              <div key={M.id} style={{ display: 'contents' }}>
-                <div style={{ fontSize: 12, fontFamily: F.mono, color: C.testo }}>{M.label}</div>
-                <Tasto onClick={() => muovi(M.id, -1)} colore={C.spento} style={{ padding: '2px 8px' }}>−</Tasto>
-                <div style={{ fontFamily: F.mono, fontSize: 13, fontWeight: 700, color: C.oro, minWidth: 62, textAlign: 'center' }}>
-                  {scrivi(M.id, soglie[M.id])}
-                </div>
-                <Tasto onClick={() => muovi(M.id, +1)} colore={C.spento} style={{ padding: '2px 8px' }}>+</Tasto>
-                {/* quanto rende quella soglia, mentre la muovi: è il numero che
-                    la rende una scelta e non un'opinione */}
-                <div style={{ fontFamily: F.mono, fontSize: 10, color: C.spento, textAlign: 'right', minWidth: 86 }}>
-                  {c.giocate ? `${(c.perc * 100).toFixed(1)}% su ${c.giocate}` : 'nessuna'}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </Card>
-
-      {/* ── Il riassunto ──────────────────────────────────────────────────── */}
-      <Card style={{ marginBottom: 12 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '4px 10px', alignItems: 'center' }}>
-          <Etichetta>RIASSUNTO · sopra soglia</Etichetta>
-          {AMBITI.map(a => (
-            <div key={a.id} style={{ fontSize: 8, fontFamily: F.mono, color: C.spento, letterSpacing: '0.08em', textAlign: 'right' }}>PRIME {a.quante}</div>
-          ))}
+        {/* ⚠️ Qui ci sono **solo i comandi**: il risultato di ogni soglia sta
+            nella sua card, subito sotto. Prima era scritto anche qui, e lo
+            stesso numero in due posti è il difetto che prima o poi li fa
+            divergere — lo stesso motivo per cui il Grado è stato togliere
+            dalla barra. */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: '3px 6px', alignItems: 'center', marginTop: 6 }}>
           {METODI.map(M => (
             <div key={M.id} style={{ display: 'contents' }}>
               <div style={{ fontSize: 12, fontFamily: F.mono, color: C.testo }}>{M.label}</div>
-              {AMBITI.map(a => {
-                const c = rig(M.id, a.id)
-                return (
-                  <div key={a.id} style={{ textAlign: 'right', fontFamily: F.mono }}>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: c.perc == null ? C.spento : c.perc >= 0.6 ? C.verde : c.perc >= 0.5 ? C.testo : C.rosso }}>
-                      {c.perc == null ? '—' : (c.perc * 100).toFixed(1) + '%'}
-                    </span>
-                    <span style={{ fontSize: 9, color: C.spento, marginLeft: 5 }}>{c.ok}/{c.giocate}</span>
-                  </div>
-                )
-              })}
+              <Tasto onClick={() => muovi(M.id, -1)} colore={C.spento} style={{ padding: '2px 8px' }}>−</Tasto>
+              <div style={{ fontFamily: F.mono, fontSize: 13, fontWeight: 700, color: C.oro, minWidth: 62, textAlign: 'center' }}>
+                {scrivi(M.id, soglie[M.id])}
+              </div>
+              <Tasto onClick={() => muovi(M.id, +1)} colore={C.spento} style={{ padding: '2px 8px' }}>+</Tasto>
             </div>
           ))}
         </div>
       </Card>
 
-      {/* ── L'accordo fra i quattro ───────────────────────────────────────── */}
-      {/* ⚠️ La domanda di Mattia: *"esiste un punto in comune per questi 4
-          valori?"*. Qui si vede sulle partite vere, e la riga per riga dice
-          anche **quanto** l'accordo conta: se 2 e 4 danno lo stesso numero,
-          chiedere l'accordo di tutti è solo un modo di avere meno partite.
-          ⚠️ Pesca solo fra le partite che almeno un metodo ha messo nelle sue
-          prime 15: una che nessuno ha scelto non è in tabella. */}
-      <Card style={{ marginBottom: 12, borderColor: alpha(C.verde, 0.35) }}>
-        <div onClick={() => setVerdi(v => !v)} style={{ cursor: 'pointer' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Etichetta colore={C.verde}>QUANTI INDICATORI SOPRA SOGLIA</Etichetta>
-            <span style={{ fontSize: 9, fontFamily: F.mono, color: C.spento }}>{verdi ? 'chiudi l’elenco' : 'tocca per le 4 verdi'}</span>
+      {/* ── Le quattro card: un indicatore per card ──────────────────────── */}
+      {/* ⚠️ **Sono anche il selettore**, e non per risparmiare spazio: la
+          domanda della pagina è *"quante volte ha ragione questo indicatore
+          sopra la sua soglia"*, quindi il numero e il tasto che apre le sue
+          partite sono la stessa cosa. Prima erano due file separate — una di
+          percentuali e una di tasti — e bisognava tenere a mente quale riga
+          corrispondeva a quale tasto.
+          ⚠️ **Via la card "quanti indicatori sopra soglia"** (15/10/2026):
+          Mattia *"non capisco a cosa serva, e non posso cliccare le altre"*.
+          Mostrava cinque percentuali di cui una sola apribile — l'unico tocco
+          possibile era quello che sembrava meno cliccabile. La domanda che
+          rispondeva (*"esiste un punto in comune fra i quattro?"*) resta, in
+          una riga sola qui sotto. */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+        {AMBITI.map(a => (
+          <Tasto key={a.id} attivo={ambito === a.id} onClick={() => { setAmbito(a.id); setAperta(null) }}>
+            {a.label} · prime {a.quante}
+          </Tasto>
+        ))}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 6, marginBottom: 10 }}>
+        {METODI.map(M => {
+          const c = rig(M.id, ambito)
+          const scelto = metodo === M.id
+          // ⚠️ Il colore dice **com'è andata**, il bordo **quale sto
+          // guardando**: due informazioni diverse, e con una tinta sola si
+          // leggerebbe "l'indicatore scelto è quello buono".
+          const tinta = c.perc == null ? C.spento : c.perc >= 0.6 ? C.verde : c.perc >= 0.5 ? C.testo : C.rosso
+          return (
+            <button key={M.id} onClick={() => { setMetodo(M.id); setAperta(null) }} style={{
+              textAlign: 'left', cursor: 'pointer', padding: '9px 10px', color: C.testo,
+              background: scelto ? `linear-gradient(${alpha(C.celestePieno, 0.08)},${alpha(C.celestePieno, 0.08)}), ${C.card}` : C.card,
+              border: `1px solid ${alpha(scelto ? C.celestePieno : C.testo, scelto ? 0.5 : 0.1)}`,
+            }}>
+              <div style={{ fontSize: 10, fontFamily: F.mono, letterSpacing: '0.08em',
+                color: scelto ? C.celestePieno : C.spento, marginBottom: 2 }}>
+                {M.label.toUpperCase()}
+              </div>
+              <div style={{ fontFamily: F.mono, fontSize: 26, fontWeight: 700, color: tinta, lineHeight: 1.05 }}>
+                {c.perc == null ? '—' : (c.perc * 100).toFixed(1) + '%'}
+              </div>
+              {/* le partite sotto la percentuale: una percentuale su 40 partite
+                  e una su 9.349 non si leggono allo stesso modo */}
+              <div style={{ fontFamily: F.mono, fontSize: 10, color: C.spento, marginTop: 3 }}>
+                {c.giocate ? `${c.ok} su ${c.giocate} partite` : 'nessuna partita sopra soglia'}
+              </div>
+              <div style={{ fontFamily: F.mono, fontSize: 9, color: C.spento, marginTop: 1 }}>
+                sopra {scrivi(M.id, soglie[M.id])}
+              </div>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* ── I quattro d'accordo, in una riga ──────────────────────────────── */}
+      {/* ⚠️ Risponde alla domanda di Mattia del 12/10 (*"esiste un punto in
+          comune per questi 4 valori?"*) e la risposta misurata è: sale, ma il
+          guadagno sull'attendibilità da sola **non è dimostrabile** — 74,1%
+          ±2,6 su 1.118 partite contro 71,6% ±1,1 su 6.257. Per questo è una
+          riga e non una card: è un controllo, non un metodo di scelta. */}
+      <Card style={{ marginBottom: 12, borderColor: alpha(C.verde, 0.3), cursor: 'pointer' }}>
+        <div onClick={() => setVerdi(v => !v)}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+            <Etichetta colore={C.verde}>TUTTI E QUATTRO SOPRA SOGLIA</Etichetta>
+            <span style={{ fontFamily: F.mono, fontSize: 13, fontWeight: 700, color: tutteLeVerdi.perc == null ? C.spento : C.verde }}>
+              {tutteLeVerdi.perc == null ? '—' : (tutteLeVerdi.perc * 100).toFixed(1) + '%'}
+            </span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4, marginTop: 8 }}>
-            {[0, 1, 2, 3, 4].map(n => {
-              const c = acc(n)
-              const tinta = n === 4 ? C.verde : C.testo
-              return (
-                <div key={n} style={{ textAlign: 'center', padding: '6px 2px',
-                  background: `linear-gradient(${alpha(tinta, n === 4 ? 0.12 : 0.04)},${alpha(tinta, n === 4 ? 0.12 : 0.04)}), ${C.card}`,
-                  border: `1px solid ${alpha(tinta, n === 4 ? 0.45 : 0.15)}` }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, fontFamily: F.mono, color: c.perc == null ? C.spento : tinta, lineHeight: 1 }}>
-                    {c.perc == null ? '—' : (c.perc * 100).toFixed(0) + '%'}
-                  </div>
-                  <div style={{ fontSize: 8, fontFamily: F.mono, color: C.spento, marginTop: 3 }}>{n} · {c.giocate}</div>
-                </div>
-              )
-            })}
-          </div>
-          <div style={{ fontSize: 10, fontFamily: F.mono, color: C.spento, marginTop: 6 }}>
-            tutte e quattro: {tutteLeVerdi.perc == null ? '—' : (tutteLeVerdi.perc * 100).toFixed(1) + '%'} su {tutteLeVerdi.giocate}
-            {' '}· tutte le altre: {sotto.perc == null ? '—' : (sotto.perc * 100).toFixed(1) + '%'} su {sotto.giocate}
+          <div style={{ fontSize: 10, fontFamily: F.mono, color: C.spento, marginTop: 4 }}>
+            {tutteLeVerdi.giocate} partite · tutte le altre {sotto.perc == null ? '—' : (sotto.perc * 100).toFixed(1) + '%'} su {sotto.giocate}
+            {' · '}{verdi ? 'chiudi' : 'tocca per vederle'}
           </div>
         </div>
         {verdi && (righeVerdi === null
           ? <div style={{ fontSize: 11, fontFamily: F.mono, color: C.spento, paddingTop: 8 }}>carico…</div>
           : <Elenco righe={righeVerdi} metodo={metodo} soglie={soglie} evidenzia={false} titolo="LE QUATTRO SPUNTE VERDI" />)}
       </Card>
-
-      {/* ── I tasti e le tendine ──────────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-        {AMBITI.map(a => <Tasto key={a.id} attivo={ambito === a.id} onClick={() => { setAmbito(a.id); setAperta(null) }}>{a.label}</Tasto>)}
-      </div>
-      <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
-        {METODI.map(M => <Tasto key={M.id} attivo={metodo === M.id} onClick={() => { setMetodo(M.id); setAperta(null) }} colore={C.celestePieno}>{M.breve}</Tasto>)}
-      </div>
 
       {gruppi === null && <div style={{ fontSize: 11, fontFamily: F.mono, color: C.spento }}>carico…</div>}
       {/* ⚠️ Un elenco tagliato va detto. È la stessa lezione del troncamento a

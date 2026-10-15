@@ -14,7 +14,7 @@
 
 import { sql } from './db.js';
 import { giornoLocale, weekendDi } from './date.js';
-import { parametri, forza, vpm, voto } from '../../app/src/lib/vpm.js';
+import { parametri, forza, vpm, voto, scelta } from '../../app/src/lib/vpm.js';
 import { golAttesi } from '../../app/src/lib/gol.js';
 import { REGOLA_OVER, FATTORE_OVER } from '../../app/src/lib/attendibilita.js';
 import { PARTITE_FINESTRA } from '../../app/src/lib/vpm.js';
@@ -81,6 +81,11 @@ export async function ricostruisci({ stagioni: quante = 3, daGiornata = 5 } = {}
       // ⚠️ azzeccata = la giocata PER INTERO: il segno, e se è combinata anche l'over 1,5
       const segnoGiusto = r.esito === segno;
       const vinta = segnoGiusto && (!combinata || r.gol_casa + r.gol_trasferta >= 2);
+      // ⚠️ L'accordo si misura **sul segno**, non sul valore: la giocata può
+      // essere "1 + over 1,5" e lì conta solo l'1. Si calcola una volta e lo
+      // usano sia `scelta` sia `accordoVpm`, che altrimenti potrebbero
+      // divergere sulla stessa domanda.
+      const accordoVpm = v ? (v.segno === '1' ? 'H' : 'A') === segno : null;
 
       valutate.push({
         id: r.id, data: giornoLocale(r.data), weekend: weekendDi(r.data),
@@ -89,13 +94,16 @@ export async function ricostruisci({ stagioni: quante = 3, daGiornata = 5 } = {}
         giocata: `${segno === 'H' ? '1' : '2'}${combinata ? ' + over 1,5' : ''}`,
         quota, quotaResa, att: probGiocata, resa,
         vpm: v?.punti ?? null, voto: voto(resa, v?.punti ?? null),
+        // ⚠️ `scelta` è **null** quando il campo contraddice il mercato: non è
+        // un dato che manca, è la formula che dice "questa non si sceglie".
+        scelta: scelta(probGiocata, { punti: v?.punti ?? null, accordo: accordoVpm }),
         golAttesi: gol?.totale ?? null, gg: gol?.gg ?? null,
         over: gol?.over ?? null,
         // gli esiti veri dei gol, accanto alle previsioni: servono a chi misura
         // over/under e Goal, e tenerli qui evita di rileggere le partite
         golTotali: r.gol_casa + r.gol_trasferta,
         ggVero: r.gol_casa > 0 && r.gol_trasferta > 0,
-        accordoVpm: v ? (v.segno === '1' ? 'H' : 'A') === segno : null,
+        accordoVpm,
         // ⚠️ Serve a chiedersi **chi ha ragione quando campo e mercato
         // litigano**: senza l'esito vero e le due probabilità grezze si può
         // solo sapere se ha vinto il favorito del mercato, non se ha vinto il

@@ -27,7 +27,11 @@ const METODI = [
   { id: 'att',  val: x => x.att },
   { id: 'vpm',  val: x => x.vpm },
   { id: 'voto', val: x => x.voto },
-  { id: 'resa', val: x => x.resa },
+  // ⚠️ La **scelta** ha preso il posto della resa il 15/10/2026, come già in
+  // barra: la resa ordina per quota, quindi mette in cima le partite meno
+  // probabili (51,2% di azzeccate contro il 60,3% dell'attendibilità). La sua
+  // colonna resta su ogni riga, non le righe che avrebbe scelto lei.
+  { id: 'scelta', val: x => x.scelta },
 ];
 
 const { valutate, stagioni } = await ricostruisci({ stagioni: STAGIONI, daGiornata: DA_GIORNATA });
@@ -57,7 +61,7 @@ for (const M of METODI) {
       // ⚠️ Tutti e quattro i valori su ogni riga, non solo quello del metodo
       // che l'ha scelta: serve a vedere "quali indicatori mi avrebbero
       // allertato" e al gruppo delle quattro spunte verdi.
-      att: x.att, vpm: x.vpm, voto: x.voto, resa: x.resa,
+      att: x.att, vpm: x.vpm, voto: x.voto, resa: x.resa, scelta: x.scelta,
       azzeccata: x.vinta,
     }));
   for (const [wk, l] of raggruppa(valutate, x => x.weekend))
@@ -65,7 +69,7 @@ for (const M of METODI) {
       stagione: x.stagione, ambito: 'weekend', data: null, weekend: wk,
       metodo: M.id, posizione: i + 1, partita_id: x.id, div: x.div, casa: x.casa,
       trasferta: x.trasferta, giocata: x.giocata, quota: x.quota,
-      att: x.att, vpm: x.vpm, voto: x.voto, resa: x.resa,
+      att: x.att, vpm: x.vpm, voto: x.voto, resa: x.resa, scelta: x.scelta,
       azzeccata: x.vinta,
     }));
 }

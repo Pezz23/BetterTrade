@@ -176,8 +176,13 @@ per stagione +0,2, positiva in 5 su 8. Il +0,9 della taratura era gonfiato.
 ⚠️ **Il voto NON è cambiato**: continua a usare la resa. Con la scelta VPM
 entrerebbe due volte, e costa — 95,6% contro 97,8%.
 ⚠️ La resa resta nei dettagli della scheda e dentro il voto.
-⚠️ **Da fare:** la pagina Andamento misura ancora `resa` fra i quattro
-indicatori; al prossimo `calcola-andamento.js` conviene aggiungere `scelta`.
+✅ **Fatto il 15/10/2026:** la pagina Andamento misura la **scelta** al posto
+della resa (`sql/28`), in quattro card — VPM · Attendibilità · Scelta · Voto.
+Ricostruite tutte le otto stagioni: 99.683 righe, 33.292 partite valutate.
+**La scelta è il miglior selettore sulle prime 15 di un giorno** (59,3% contro
+57,8% dell'attendibilità) perché scarta i disaccordi col mercato, ma **sopra
+una soglia non la batte** (70,8% su 6.708 contro 71,7% su 6.212 a pari volume).
+Due domande diverse, come sempre su questa pagina.
 ⚠️ **Il ricalcolo non si lancia più a mano** (15/10/2026): è il 5° passo di
 `aggiorna.js` ed è in coda a `importa-espn.js`, sulla sola stagione in corso.
 Era l'unico pezzo della catena che restava indietro in silenzio.

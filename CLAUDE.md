@@ -700,7 +700,7 @@ vedo tutto, ma non mi interessa: devo studiare l'attendibilità dei nostri
 indicatori. Attendibilità 37% non la voglio neanche vedere, è rumore"*. Perciò
 le **soglie minime sono accese di default** e tolgono le partite **anche dal
 riassunto**, non solo dall'elenco. Partenza (dalla tabella misurata): att 60% ·
-VPM 7,0 · voto 100% · resa 95%. Si muovono dalla pagina — servono a **cercare**
+VPM 7,0 · voto 100% · scelta 62%. Si muovono dalla pagina — servono a **cercare**
 la soglia buona, non a dichiararla trovata.
 ⚠️ **I passi sono scelti da Mattia e non sono uguali fra loro**: attendibilità
 **1 punto** (decide le spin, 75/72/65), VPM **0,10**, voto **0,25 punti**, resa
@@ -715,6 +715,30 @@ ci sono 1.098 partite.
 l'ha scelta (sql/22): *"quando clicco Voto vorrei vedere gli altri 3, per
 capire quali indicatori mi avrebbero allertato"*. Verde quelli sopra la loro
 soglia.
+
+#### Le quattro card — 15 ottobre 2026
+
+**Un indicatore per card**, nell'ordine chiesto da Mattia: **VPM ·
+Attendibilità · Scelta · Voto**. Titolo, la percentuale in grande, sotto le
+partite (`70 su 92`) e la soglia che le ha selezionate.
+⚠️⚠️ **Le card SONO il selettore**, e non per risparmiare spazio: la domanda
+della pagina è *"quante volte ha ragione questo indicatore sopra la sua
+soglia"*, quindi il numero e il tasto che apre le sue partite devono essere la
+stessa cosa. Prima erano due file separate — una di percentuali e una di tasti
+`ATT VPM VOTO RESA` — e bisognava tenere a mente quale riga corrispondeva a
+quale tasto.
+⚠️ **Il colore dice com'è andata, il bordo quale stai guardando**: con una
+tinta sola si leggerebbe "l'indicatore selezionato è quello buono".
+⚠️ **La card delle soglie ora ha solo i comandi**, niente percentuali: il
+risultato di ogni soglia sta nella sua card tre centimetri sotto, e lo stesso
+numero in due posti è il difetto che prima o poi li fa divergere.
+⚠️⚠️ **Togliere la card "QUANTI INDICATORI SOPRA SOGLIA"** (Mattia: *"non
+capisco a cosa serva, e non posso cliccare le altre"*). Mostrava cinque
+percentuali — 0,1,2,3,4 indicatori d'accordo — di cui **una sola apribile**, e
+il tocco stava sul contenitore: l'unica cosa cliccabile era quella che sembrava
+meno cliccabile. La domanda che rispondeva resta, in **una riga sola**, perché
+la misura dice che è un controllo e non un metodo di scelta: il guadagno
+sull'attendibilità da sola non è dimostrabile.
 
 **I giorni sono tendine**, uno sull'altro e raggruppati per weekend: un tocco
 apre, il secondo richiude. Sul tasto c'è già il risultato del giorno (`9/14`),
@@ -980,9 +1004,25 @@ lunghe. Confronto completo sul 10% migliore:
 `scelta da sola 99,2% · attendibilità 99,1% · voto 97,8% · scelta × quota
 96,4% · scelta × quota × fattore 95,6%`.
 
-⚠️ **La pagina Andamento misura ancora `resa` fra i quattro indicatori**, non
-la scelta: è giusto così finché le misure storiche parlano di resa, ma quando
-si rifà `calcola-andamento.js` conviene aggiungerla.
+✅ **La pagina Andamento misura la scelta dal 15/10/2026** (`sql/28`), al posto
+della resa: le righe `metodo = 'resa'` sono state cancellate e le quattro
+funzioni ricreate con `p_scelta`. La **colonna** `resa` resta su ogni riga —
+ogni riga porta tutti i valori della partita, serve a "quale indicatore mi
+avrebbe allertato" — spariscono solo le partite **scelte dalla resa**.
+⚠️ **E qui la scelta si comporta in due modi opposti, che vanno letti
+insieme:**
+- **Prendendo le prime 15 di un giorno** è il miglior selettore che abbiamo:
+  **59,3%** contro 57,8% dell'attendibilità (e 66,1% contro 65,8% sul weekend),
+  su 33.292 partite di otto stagioni. Il merito è che **scarta i disaccordi**:
+  dove il campo contraddice il mercato `scelta` è `null`, quindi quelle partite
+  non entrano in classifica.
+- **Sopra una soglia, invece, non batte l'attendibilità**: a parità di volume
+  `scelta ≥ 62%` fa **70,8% su 6.708** contro **71,7% su 6.212** di `att ≥ 60%`.
+  Non è una contraddizione, sono le due domande di sempre — *chi arriva primo*
+  e *chi sta sopra la soglia* — e la seconda non premia il bonus del campo.
+⚠️ **La soglia di partenza della scelta è 62% e non 60% per forza**:
+`scelta = att + fino a 0,10`, quindi a pari soglia selezionerebbe molte più
+partite e le due card non si potrebbero confrontare.
 
 ⚠️ **I nomi, da non scambiare:** *attendibilità* = la probabilità secondo il
 mercato · *resa* = quota × attendibilità, 100% è il pareggio · **VPM** = quale
@@ -1608,6 +1648,22 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   (9/10/2026). **Ogni query paginata vuole un secondo criterio univoco**
   (`.order('data').order('id')`). L'ha scoperto il confronto fra le due strade,
   non un errore: senza quel confronto sarebbe passato.
+- **Lo stato di React sopravvive al ricaricamento a caldo, le costanti no.**
+  Il 15/10/2026 `resa` è diventata `scelta` fra i quattro metodi di Andamento:
+  Vite ha ricaricato il modulo, ma `useState(…)` era già girato, quindi le
+  soglie in memoria avevano ancora le **chiavi vecchie** e non quella nuova.
+  Da lì **due guasti in fila, entrambi silenziosi**: `p_scelta: undefined`
+  **spariva** dal JSON della chiamata e l'SQL usava il suo predefinito **0**
+  (la soglia sembrava partire da zero e non filtrava niente); poi al primo
+  tocco di `+`, `undefined + passo` fa **NaN** — e `JSON.stringify(NaN)` è
+  **`null`**, quindi la funzione riceveva null, `null >= null` in SQL è null, e
+  **tutti i conteggi diventavano zero senza un errore**. A schermo: `NaN%` e la
+  soglia bloccata. ✅ Ora `conSoglie()` in `hooks/usaAndamento.js` riempie le
+  chiavi mancanti **e scarta i valori non finiti** — un NaN già finito nello
+  stato sopravviverebbe allo spread e la pagina resterebbe inchiodata.
+  ⚠️ Vale ogni volta che si aggiunge o si rinomina una chiave dentro uno stato
+  iniziale: **un valore che manca non dà errore, dà il predefinito di qualcun
+  altro.**
 - **In una griglia `1fr` NON scende sotto il contenuto: serve `minmax(0,1fr)`.**
   Un elemento di griglia ha `min-width:auto`, quindi una colonna `1fr` si
   allarga fino a contenere il testo più lungo e **spinge fuori schermo** tutte

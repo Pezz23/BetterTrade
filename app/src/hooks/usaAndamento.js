@@ -19,7 +19,11 @@ export const METODI = [
   // studiare l'attendibilità dei nostri indicatori, non il rumore"*.
   // I valori di partenza vengono dalla tabella misurata su 33.141 partite:
   // sopra di essi la giocata è arrivata 71,7% (att 60%), 61,7% (VPM 7,0),
-  // 67,3% (voto 100%), 52,6% (resa 95%), contro una base del 50,8%.
+  // 67,3% (voto 100%), 70,8% (scelta 62%), contro una base del 50,8%.
+  // ⚠️ La soglia della **scelta** parte a 62% e non a 60% per una ragione
+  // misurata: `scelta = att + fino a 0,10`, quindi a pari soglia selezionerebbe
+  // molte più partite di `att` e i due numeri non si potrebbero confrontare.
+  // A 62% le partite sono 6.708 contro le 6.212 di att 60%.
   // ⚠️ `decimali` non è estetica: il confronto si fa **sul numero arrotondato
   // come si vede**, quindi un valore mostrato con meno cifre della soglia
   // darebbe celle non verdi accanto a cifre identiche.
@@ -27,11 +31,43 @@ export const METODI = [
   // l'attendibilità di 1 punto perché è la soglia che decide le spin
   // (75/72/65); il voto di 0,25 perché è il più ripido — fra 100% e 101% ci
   // sono 1.098 partite e con passo da un punto si saltava da 2.312 a 1.214.
-  { id: 'att',  label: 'Attendibilità', breve: 'ATT',  soglia: 0.60, passo: 0.01,   tipo: '%', decimali: 0 },
   { id: 'vpm',  label: 'VPM',           breve: 'VPM',  soglia: 7.0,  passo: 0.10,   tipo: 'n', decimali: 1 },
+  { id: 'att',  label: 'Attendibilità', breve: 'ATT',  soglia: 0.60, passo: 0.01,   tipo: '%', decimali: 0 },
+  // ⚠️ La **scelta** ha preso il posto della resa il 15/10/2026, come già in
+  // barra il 12/10. La resa ordina per quota, quindi mette in cima le partite
+  // meno probabili: 51,2% di azzeccate contro il 60,3% dell'attendibilità.
+  { id: 'scelta', label: 'Scelta',      breve: 'SCELTA', soglia: 0.62, passo: 0.01, tipo: '%', decimali: 0 },
   { id: 'voto', label: 'Voto',          breve: 'VOTO', soglia: 1.00, passo: 0.0025, tipo: '%', decimali: 2 },
-  { id: 'resa', label: 'Resa',          breve: 'RESA', soglia: 0.95, passo: 0.01,   tipo: '%', decimali: 0 },
 ]
+
+/** Le soglie di partenza, una per metodo. */
+export const SOGLIE_BASE = Object.fromEntries(METODI.map(m => [m.id, m.soglia]))
+
+/**
+ * Le soglie, con le mancanti riempite dal valore di partenza.
+ *
+ * ⚠️⚠️ **Non è una cintura di sicurezza teorica: è già succeduto.** Il
+ * 15/10/2026 `resa` è diventata `scelta` fra i quattro metodi, e con il
+ * ricaricamento a caldo di Vite **lo stato di React sopravvive al cambio del
+ * modulo**: la pagina si è ritrovata con le chiavi vecchie e **senza** quella
+ * nuova. Da lì due guasti in fila, entrambi silenziosi:
+ *   - `p_scelta: undefined` **spariva** dal JSON della chiamata, quindi l'SQL
+ *     usava il suo valore predefinito **0** — la soglia sembrava partire da
+ *     zero e nessuna partita veniva filtrata;
+ *   - premendo `+`, `undefined + passo` fa **NaN**, e `JSON.stringify(NaN)` è
+ *     **`null`**: la funzione riceveva null, `null >= null` in SQL è null,
+ *     quindi *tutti* i conteggi diventavano zero senza un errore.
+ * ⚠️ Vale ogni volta che si aggiunge o si rinomina un metodo, non solo quella
+ * volta — e **un conteggio sbagliato in silenzio è peggio di un errore**.
+ */
+export const conSoglie = (soglie) => ({
+  ...SOGLIE_BASE,
+  // ⚠️ Si scartano anche i valori **non finiti**, non solo quelli assenti: un
+  // NaN già finito nello stato sopravvivrebbe allo spread, e la pagina
+  // resterebbe bloccata su "NaN%" senza modo di tornare indietro — che è
+  // esattamente come l'ha trovata Mattia.
+  ...Object.fromEntries(Object.entries(soglie || {}).filter(([, v]) => Number.isFinite(v))),
+})
 
 /** Il valore come lo si legge: è anche quello su cui si decide il verde. */
 export function letto(id, v) {
@@ -78,10 +114,11 @@ function usaFermo(valore) {
 }
 
 /** I parametri delle funzioni SQL, nell'ordine in cui le aspettano. */
-const par = (soglie, stagione) => ({
-  p_att: soglie.att, p_vpm: soglie.vpm, p_voto: soglie.voto, p_resa: soglie.resa,
-  p_stagione: stagione || null,
-})
+const par = (soglie, stagione) => {
+  const s = conSoglie(soglie)
+  return { p_att: s.att, p_vpm: s.vpm, p_voto: s.voto, p_scelta: s.scelta,
+           p_stagione: stagione || null }
+}
 
 /** Giocate, azzeccate e percentuale, da una riga aggregata del database. */
 export const quota = (r) => {
