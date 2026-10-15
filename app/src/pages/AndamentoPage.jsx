@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { C, F, alpha } from '../theme'
 import { Card, Etichetta } from '../components/ui'
 import {
-  METODI, SOGLIE_BASE, conSoglie, scrivi, sopra, quota,
+  METODI, SOGLIE_BASE, FASCE_QUOTA, FASCIA_BASE, QUOTA_MIN, QUOTA_MAX, PASSO_QUOTA,
+  conSoglie, scrivi, sopra, quota,
   usaRiassunto, usaChiavi, usaStagioni, partiteDi, partiteVerdi,
 } from '../hooks/usaAndamento'
 
@@ -38,12 +39,70 @@ function Tasto({ attivo, onClick, children, colore = C.oro, style }) {
   )
 }
 
+// ⚠️ **Il tasto che si ripete finché lo tieni premuto** (chiesto da Mattia il
+// 15/10/2026: *"vorrei tenere premuto il tasto più per alzare i valori"*).
+// Serve perché il voto si muove di 0,25 punti per volta: andare da 100% a 105%
+// erano venti tocchi.
+//
+// ⚠️ **Perché una catena di `setTimeout` e non un `setInterval`**: il ritmo
+// accelera — il primo scatto è immediato, poi si aspetta mezzo secondo (così
+// un tocco singolo resta un tocco singolo), poi 120 ms che scendono a 40.
+// Senza l'attesa iniziale un tocco normale ne farebbe due.
+//
+// ⚠️ **Pointer e non mouse/touch separati**: un solo giro di eventi copre dito,
+// mouse e penna. Si ferma anche su `pointercancel` e `pointerleave`, perché su
+// telefono il dito che scivola fuori dal tasto non manda `pointerup`, e un
+// contatore che continua da solo è il difetto peggiore di un tasto così.
+const ATTESA_PRIMA = 500, RITMO_DA = 120, RITMO_A = 40
+
+function TastoRipeti({ onScatto, colore = C.spento, children, style }) {
+  const timer = useRef(null)
+  const scatto = useRef(onScatto)
+  scatto.current = onScatto
+
+  const ferma = () => { clearTimeout(timer.current); timer.current = null }
+  const parti = () => {
+    ferma()
+    scatto.current()
+    let ritmo = RITMO_DA
+    const giro = (attesa) => {
+      timer.current = setTimeout(() => {
+        scatto.current()
+        ritmo = Math.max(RITMO_A, ritmo - 10)
+        giro(ritmo)
+      }, attesa)
+    }
+    giro(ATTESA_PRIMA)
+  }
+  // ⚠️ Smontare la pagina mentre il dito è giù lascerebbe il timer vivo.
+  useEffect(() => ferma, [])
+
+  return (
+    <button
+      onPointerDown={e => { e.preventDefault(); parti() }}
+      onPointerUp={ferma} onPointerCancel={ferma} onPointerLeave={ferma}
+      onContextMenu={e => e.preventDefault()}
+      style={{
+        padding: '4px 12px', fontSize: 13, fontFamily: F.mono, cursor: 'pointer',
+        color: colore, background: C.card, border: `1px solid ${alpha(colore, 0.3)}`,
+        // ⚠️ Tenere premuto su iOS seleziona il testo e apre il menù: queste
+        // due righe sono quello che rende il gesto possibile su telefono.
+        userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'manipulation',
+        ...style,
+      }}>{children}</button>
+  )
+}
+
 const gg = (d) => d ? String(d).slice(8, 10) + '/' + String(d).slice(5, 7) : '—'
 
 /** L'elenco delle partite, coi quattro valori su ogni riga. */
 function Elenco({ righe, metodo, soglie, titolo, evidenzia = true }) {
   const ok = righe.filter(r => r.azzeccata).length
-  const griglia = '1fr 34px 42px 48px 34px 14px'
+  // ⚠️ Le larghezze seguono **quanto scrive ogni indicatore**, non una misura
+  // uguale per tutti: VPM è "7,3" (3 caratteri) e il voto "100,25%" (7). Con
+  // le colonne vecchie — pensate per l'ordine ATT VPM VOTO RESA — il voto
+  // finito in ultima posizione aveva 34px per 7 cifre e sbordava.
+  const griglia = '1fr 26px 32px 32px 52px 14px'
   return (
     <div style={{ padding: '2px 0 6px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
@@ -73,7 +132,16 @@ function Elenco({ righe, metodo, soglie, titolo, evidenzia = true }) {
               {r.casa} — {r.trasferta}
             </div>
             <div style={{ fontSize: 9, fontFamily: F.mono, color: C.spento }}>
-              {gg(r.data || r.weekend)} · {r.div} · {r.giocata} · {Number(r.quota).toFixed(2).replace('.', ',')}
+              {gg(r.data || r.weekend)} · {r.div} · {r.giocata} ·{' '}
+              {/* ⚠️ **La quota in bianco pieno, e nient'altro** (scelta di
+                  Mattia, 15/10/2026): stessa misura e stesso peso del resto
+                  della riga, cambia solo la tinta. È l'unico numero che si
+                  cerca con l'occhio — giorno, campionato e segno si leggono di
+                  passaggio — e dentro una riga spenta il contrasto da solo
+                  basta a renderlo trovabile. Ingrandirlo era di troppo. */}
+              <span style={{ color: C.bianco }}>
+                {Number(r.quota).toFixed(2).replace('.', ',')}
+              </span>
             </div>
           </div>
           {/* ⚠️ Tutti e quattro i valori, non solo quello che ha scelto la
@@ -81,7 +149,10 @@ function Elenco({ righe, metodo, soglie, titolo, evidenzia = true }) {
               "quali indicatori mi avrebbero allertato". */}
           {METODI.map(M => (
             <div key={M.id} style={{
-              fontFamily: F.mono, fontSize: 10, textAlign: 'right',
+              // ⚠️ 11 e non 10 (richiesta di Mattia): sono i numeri che si
+              // confrontano fra loro. **Le tinte non cambiano** — verde sopra
+              // soglia, spento sotto: dicono un'altra cosa.
+              fontFamily: F.mono, fontSize: 11, textAlign: 'right',
               color: sopra(r, M.id, soglie) ? C.verde : C.spento,
               fontWeight: evidenzia && M.id === metodo ? 700 : 400,
             }}>{scrivi(M.id, r[M.id])}</div>
@@ -95,15 +166,64 @@ function Elenco({ righe, metodo, soglie, titolo, evidenzia = true }) {
   )
 }
 
+/**
+ * Una card che si apre e si chiude.
+ *
+ * ⚠️⚠️ **Chiusa deve dire comunque il suo stato** (`riassunto`), e non è un
+ * vezzo: le soglie e la fascia di quota **decidono tutti i numeri della
+ * pagina**. Una card chiusa che non dice "da 1,00 a 1,45" lascia davanti agli
+ * occhi quattro percentuali senza il filtro che le ha prodotte — cioè numeri
+ * che sembrano assoluti e non lo sono. Un comando si può nascondere; il suo
+ * valore no.
+ *
+ * ⚠️ Il riassunto sta **sotto** il titolo e non accanto: le quattro soglie
+ * scritte di fila sono 44 caratteri, e accanto a un titolo su un telefono
+ * finirebbero fuori o verrebbero tagliate.
+ */
+function CardPiega({ titolo, colore = C.oro, riassunto, aperta, onTocca, children, style }) {
+  return (
+    <Card style={{ marginBottom: 10, ...style }}>
+      <div onClick={onTocca} style={{ cursor: 'pointer' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+          <Etichetta colore={colore}>{titolo}</Etichetta>
+          <span style={{ fontFamily: F.mono, fontSize: 11, color: C.spento }}>{aperta ? '▾' : '▸'}</span>
+        </div>
+        {riassunto != null && (
+          <div style={{ fontFamily: F.mono, fontSize: 11, color: C.testo, marginTop: 5, lineHeight: 1.45 }}>
+            {riassunto}
+          </div>
+        )}
+      </div>
+      {aperta && <div style={{ marginTop: 10 }}>{children}</div>}
+    </Card>
+  )
+}
+
+/**
+ * I tre stati di una lettura, tenuti distinti: **sto caricando** (`null`),
+ * **è andata male** (una stringa) e **ecco le partite** (un elenco).
+ * ⚠️ Prima erano due, e un errore si mostrava come un caricamento infinito:
+ * chi guarda non ha modo di capire se deve aspettare o chiamare qualcuno.
+ */
+function Risultato({ righe, ...resto }) {
+  if (righe === null)
+    return <div style={{ fontSize: 11, fontFamily: F.mono, color: C.spento, padding: '8px 0' }}>carico…</div>
+  if (typeof righe === 'string')
+    return <div style={{ fontSize: 11, fontFamily: F.mono, color: C.rosso, padding: '8px 0' }}>non riesco a leggere le partite: {righe}</div>
+  return <Elenco righe={righe} {...resto} />
+}
+
 /** Una tendina: il tasto col risultato, e sotto le partite quando è aperta. */
-function Tendina({ etichetta, conteggio, aperta, onTocca, ambito, metodo, chiave, soglie, titolo }) {
+function Tendina({ etichetta, conteggio, aperta, onTocca, ambito, metodo, chiave, soglie, fascia, titolo }) {
   const [righe, setRighe] = useState(null)
   useEffect(() => {
     if (!aperta) return
     let vivo = true
-    partiteDi(ambito, metodo, chiave).then(r => { if (vivo) setRighe(r) })
+    partiteDi(ambito, metodo, chiave, fascia)
+      .then(r => { if (vivo) setRighe(r) })
+      .catch(e => { if (vivo) setRighe(String(e.message || e)) })
     return () => { vivo = false }
-  }, [aperta, ambito, metodo, chiave])
+  }, [aperta, ambito, metodo, chiave, fascia])
   const c = quota(conteggio)
   return (
     <div>
@@ -118,9 +238,7 @@ function Tendina({ etichetta, conteggio, aperta, onTocca, ambito, metodo, chiave
       </Tasto>
       {aperta && (
         <Card style={{ marginTop: 3 }}>
-          {righe === null
-            ? <div style={{ fontSize: 11, fontFamily: F.mono, color: C.spento, padding: '6px 0' }}>carico…</div>
-            : <Elenco righe={righe} metodo={metodo} soglie={soglie} titolo={titolo} />}
+          <Risultato righe={righe} metodo={metodo} soglie={soglie} titolo={titolo} />
         </Card>
       )}
     </div>
@@ -137,8 +255,28 @@ export default function AndamentoPage() {
   // possono restare quelle vecchie — e una soglia mancante diventava NaN al
   // primo tocco di `+`.
   const [soglieGrezze, setSoglie] = useState(SOGLIE_BASE)
-  const soglie = conSoglie(soglieGrezze)
-  const [verdi, setVerdi] = useState(false)
+  // ⚠️⚠️ **`useMemo` qui non è un'ottimizzazione, è la correzione di un
+  // difetto.** `conSoglie` costruisce un oggetto nuovo, quindi senza memoria
+  // `soglie` cambiava **identità a ogni ridisegno**: l'effetto che scarica le
+  // partite delle quattro spunte verdi ce l'ha fra le dipendenze, e girava
+  // all'infinito — scarica, arriva la risposta, il ridisegno fa un oggetto
+  // nuovo, l'effetto riparte e riazzera a `null`. A schermo: "carico…" per
+  // sempre, e una richiesta al database per ogni giro. Trovato da Mattia il
+  // 15/10/2026, introdotto da me il giorno prima insieme a `conSoglie`.
+  // ⚠️ Gli altri due hook non ne soffrivano perché confrontano la **chiave
+  // scritta** (`JSON.stringify`), non l'identità dell'oggetto — ed è il motivo
+  // per cui il difetto si vedeva in un punto solo.
+  const soglie = useMemo(() => conSoglie(soglieGrezze), [soglieGrezze])
+  // ⚠️ La fascia **sono due numeri**, e le scorciatoie ci scrivono dentro:
+  // tenere anche un "quale fascia è selezionata" sarebbe un secondo stato
+  // sulla stessa cosa, e i due divergono al primo tocco su un numero.
+  const [fascia, setFascia] = useState(FASCIA_BASE)
+  // ⚠️ Le tre card partono **chiuse**: sono comandi e un approfondimento, e
+  // quello che si guarda ogni volta sono le quattro percentuali. Il loro stato
+  // resta visibile nel riassunto della card chiusa.
+  const [apri, setApri] = useState({})
+  const piega = (id) => setApri(a => ({ ...a, [id]: !a[id] }))
+  const verdi = !!apri.accordo
   const [righeVerdi, setRigheVerdi] = useState(null)
 
   const stagioni = usaStagioni()
@@ -148,16 +286,30 @@ export default function AndamentoPage() {
   useEffect(() => {
     if (stagione === null && stagioni?.length) setStagione(stagioni[0].stagione)
   }, [stagioni, stagione])
-  const { riassunto, accordo, errore } = usaRiassunto(soglie, stagione)
-  const chiavi = usaChiavi(ambito, metodo, soglie, stagione)
+  const { riassunto, accordo, base, errore } = usaRiassunto(soglie, stagione, fascia, ambito)
+  const chiavi = usaChiavi(ambito, metodo, soglie, stagione, fascia)
 
   useEffect(() => {
     if (!verdi) return
     let vivo = true
     setRigheVerdi(null)
-    partiteVerdi(soglie, stagione).then(r => { if (vivo) setRigheVerdi(r) })
+    partiteVerdi(soglie, stagione, fascia)
+      .then(r => { if (vivo) setRigheVerdi(r) })
+      // ⚠️ Senza questo, una lettura fallita resta "carico…" per sempre: un
+      // caricamento che non finisce e un errore si leggono allo stesso modo,
+      // e sono due cose da fare diverse (aspettare, o chiamare qualcuno).
+      .catch(e => { if (vivo) setRigheVerdi(String(e.message || e)) })
     return () => { vivo = false }
-  }, [verdi, soglie, stagione])
+  }, [verdi, soglie, stagione, fascia])
+
+  // ⚠️ Il minimo non supera il massimo e viceversa: si fermano a un passo di
+  // distanza invece di scavalcarsi, perché un intervallo vuoto a schermo si
+  // legge come un guasto e non come una scelta.
+  const muoviQuota = (quale, verso) => { setAperta(null); setFascia(f => {
+    const v = Math.round((f[quale] + verso * PASSO_QUOTA) * 100) / 100
+    if (quale === 'min') return { ...f, min: Math.min(Math.max(QUOTA_MIN, v), f.max - PASSO_QUOTA) }
+    return { ...f, max: Math.max(Math.min(QUOTA_MAX, v), f.min + PASSO_QUOTA) }
+  }) }
 
   const muovi = (id, verso) => setSoglie(g => {
     const s = conSoglie(g)
@@ -203,8 +355,8 @@ export default function AndamentoPage() {
       </div>
 
       {/* ── Le soglie ─────────────────────────────────────────────────────── */}
-      <Card style={{ marginBottom: 12 }}>
-        <Etichetta>SOGLIE MINIME</Etichetta>
+      <CardPiega titolo="SOGLIE MINIME" aperta={apri.soglie} onTocca={() => piega('soglie')}
+        riassunto={METODI.map(M => `${M.breve} ${scrivi(M.id, soglie[M.id])}`).join(' · ')}>
         {/* ⚠️ Qui ci sono **solo i comandi**: il risultato di ogni soglia sta
             nella sua card, subito sotto. Prima era scritto anche qui, e lo
             stesso numero in due posti è il difetto che prima o poi li fa
@@ -214,15 +366,15 @@ export default function AndamentoPage() {
           {METODI.map(M => (
             <div key={M.id} style={{ display: 'contents' }}>
               <div style={{ fontSize: 12, fontFamily: F.mono, color: C.testo }}>{M.label}</div>
-              <Tasto onClick={() => muovi(M.id, -1)} colore={C.spento} style={{ padding: '2px 8px' }}>−</Tasto>
+              <TastoRipeti onScatto={() => muovi(M.id, -1)}>−</TastoRipeti>
               <div style={{ fontFamily: F.mono, fontSize: 13, fontWeight: 700, color: C.oro, minWidth: 62, textAlign: 'center' }}>
                 {scrivi(M.id, soglie[M.id])}
               </div>
-              <Tasto onClick={() => muovi(M.id, +1)} colore={C.spento} style={{ padding: '2px 8px' }}>+</Tasto>
+              <TastoRipeti onScatto={() => muovi(M.id, +1)}>+</TastoRipeti>
             </div>
           ))}
         </div>
-      </Card>
+      </CardPiega>
 
       {/* ── Le quattro card: un indicatore per card ──────────────────────── */}
       {/* ⚠️ **Sono anche il selettore**, e non per risparmiare spazio: la
@@ -237,6 +389,83 @@ export default function AndamentoPage() {
           possibile era quello che sembrava meno cliccabile. La domanda che
           rispondeva (*"esiste un punto in comune fra i quattro?"*) resta, in
           una riga sola qui sotto. */}
+      {/* ── La fascia di quota ───────────────────────────────────────────── */}
+      {/* ⚠️⚠️ **È il filtro più importante della pagina, e il motivo va
+          tenuto vivo: l'attendibilità alta È la quota bassa.** Sono lo stesso
+          fatto detto in due modi, quindi senza fissare il prezzo "questo
+          indicatore azzecca più spesso" può voler dire soltanto "questo
+          indicatore sceglie favoriti più corti". Dentro una fascia il
+          confronto è alla pari. Chiesto da Mattia il 15/10/2026: *"voglio
+          capire con quel filtro e quella quota quale indicatore è più
+          preciso"*. */}
+      <CardPiega titolo="FASCIA DI QUOTA" aperta={apri.quota} onTocca={() => piega('quota')}
+        riassunto={<>da {fascia.min.toFixed(2).replace('.', ',')} a {fascia.max.toFixed(2).replace('.', ',')}
+          {base && Number(base.giocate)
+            ? <span style={{ color: C.spento }}> · base {(base.azzeccate / base.giocate * 100).toFixed(1)}% su {base.giocate} partite</span>
+            : <span style={{ color: C.spento }}> · nessuna partita</span>}</>}>
+        {/* i due limiti, scelti a mano: il filtro vero */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'auto auto 1fr auto auto auto 1fr auto', gap: 5, alignItems: 'center', marginTop: 7 }}>
+          {[['min', 'DA'], ['max', 'A']].map(([q, et]) => (
+            <div key={q} style={{ display: 'contents' }}>
+              {/* ⚠️ Le stesse misure di SOGLIE MINIME (12 l'etichetta, 13 il
+                  valore): sono due comandi della stessa natura a due
+                  centimetri di distanza, e due scale diverse li fanno sembrare
+                  due cose diverse. */}
+              <div style={{ fontSize: 12, fontFamily: F.mono, color: C.testo }}>{et}</div>
+              <TastoRipeti onScatto={() => muoviQuota(q, -1)}>−</TastoRipeti>
+              <div style={{ fontFamily: F.mono, fontSize: 13, fontWeight: 700, color: C.oro, textAlign: 'center' }}>
+                {fascia[q].toFixed(2).replace('.', ',')}
+              </div>
+              <TastoRipeti onScatto={() => muoviQuota(q, +1)}>+</TastoRipeti>
+            </div>
+          ))}
+        </div>
+        {/* ⚠️ Le fasce già misurate restano come **scorciatoie**, non come uno
+            stato a parte: scrivono nei due numeri qui sopra. Sono accese quando
+            i numeri combaciano, così si vede quando ti sei spostato da una
+            fascia nota. */}
+        {/* ⚠️ **Tutte e quattro su una riga anche su un telefono** (richiesta
+            di Mattia): `flex: 1` con `minWidth: 0` e il testo che non va a
+            capo. Senza `minWidth: 0` un elemento flessibile non scende sotto
+            il suo contenuto — la stessa trappola della griglia della Slot — e
+            la quarta scorciatoia finirebbe sotto. A 375px restano ~76px per
+            tasto, quindi il testo sta a 10px e il riempimento è stretto.
+            ⚠️ E `letterSpacing: normal`: l'interlettera di `Tasto` vale 0,4px
+            per carattere, cioè ~4px su "1,90-2,20" — abbastanza da far uscire
+            la quarta su uno schermo da 320px. */}
+        <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
+          {FASCE_QUOTA.map(f => (
+            <Tasto key={f.id} colore={C.oro}
+              attivo={fascia.min === f.min && fascia.max === f.max}
+              onClick={() => { setFascia({ min: f.min, max: f.max }); setAperta(null) }}
+              style={{ flex: 1, minWidth: 0, padding: '6px 1px', fontSize: 10,
+                textAlign: 'center', letterSpacing: 'normal', overflow: 'hidden' }}>
+              {f.label}
+            </Tasto>
+          ))}
+        </div>
+        {/* ⚠️ **La base della fascia, e non è un ornamento**: senza, un
+            indicatore al 74,7% sembra bravo, mentre fra le quote corte il
+            74,7% lo fa anche prendendo le partite a caso.
+            ⚠️ **La frase definisce la parola `base`**, che poi torna sotto ogni
+            card come "+6,8 punti sulla base". Prima diceva *"tutte le partite
+            fanno 55,2% su 317"* — "fanno" cosa, e 317 di che? Mattia:
+            *"incomprensibile"*. Un numero di confronto ha bisogno di **tre
+            cose**: come è stato ottenuto (prendendo tutte le partite, senza
+            guardare nessun indicatore), cosa misura (quante volte la giocata è
+            arrivata) e a cosa serve (è il livello da battere). */}
+        <div style={{ fontSize: 11, fontFamily: F.mono, color: C.spento, marginTop: 8, lineHeight: 1.5 }}>
+          {base && Number(base.giocate)
+            ? <>
+                <b style={{ color: C.testo }}>base {(base.azzeccate / base.giocate * 100).toFixed(1)}%</b>
+                {' '}— prendendo <b style={{ color: C.testo }}>tutte</b> le {base.giocate} partite di questa
+                fascia, senza guardare nessun indicatore, la giocata è arrivata così.
+                È il livello che un indicatore deve battere per servire a qualcosa.
+              </>
+            : 'nessuna partita in questa fascia di quota'}
+        </div>
+      </CardPiega>
+
       <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
         {AMBITI.map(a => (
           <Tasto key={a.id} attivo={ambito === a.id} onClick={() => { setAmbito(a.id); setAperta(null) }}>
@@ -244,6 +473,7 @@ export default function AndamentoPage() {
           </Tasto>
         ))}
       </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 6, marginBottom: 10 }}>
         {METODI.map(M => {
           const c = rig(M.id, ambito)
@@ -252,6 +482,8 @@ export default function AndamentoPage() {
           // guardando**: due informazioni diverse, e con una tinta sola si
           // leggerebbe "l'indicatore scelto è quello buono".
           const tinta = c.perc == null ? C.spento : c.perc >= 0.6 ? C.verde : c.perc >= 0.5 ? C.testo : C.rosso
+          const basePerc = base && Number(base.giocate) ? Number(base.azzeccate) / Number(base.giocate) : null
+          const scarto = c.perc == null || basePerc == null ? null : c.perc - basePerc
           return (
             <button key={M.id} onClick={() => { setMetodo(M.id); setAperta(null) }} style={{
               textAlign: 'left', cursor: 'pointer', padding: '9px 10px', color: C.testo,
@@ -267,9 +499,20 @@ export default function AndamentoPage() {
               </div>
               {/* le partite sotto la percentuale: una percentuale su 40 partite
                   e una su 9.349 non si leggono allo stesso modo */}
-              <div style={{ fontFamily: F.mono, fontSize: 10, color: C.spento, marginTop: 3 }}>
-                {c.giocate ? `${c.ok} su ${c.giocate} partite` : 'nessuna partita sopra soglia'}
+              <div style={{ fontFamily: F.mono, fontSize: 10, color: C.spento, marginTop: 3, lineHeight: 1.35 }}>
+                {c.giocate
+                  ? <>{c.ok} azzeccate<br />su {c.giocate} scelte</>
+                  : 'nessuna partita sopra soglia'}
               </div>
+              {/* ⚠️ Lo **scarto dalla base**, che è la risposta vera a "quale
+                  indicatore è più preciso": dentro una fascia di quota il
+                  valore assoluto lo decide il prezzo, non l'indicatore. */}
+              {scarto != null && (
+                <div style={{ fontFamily: F.mono, fontSize: 10, marginTop: 2,
+                  color: scarto > 0.005 ? C.verde : scarto < -0.005 ? C.rosso : C.spento }}>
+                  {scarto > 0 ? '+' : ''}{(scarto * 100).toFixed(1)} punti sulla base
+                </div>
+              )}
               <div style={{ fontFamily: F.mono, fontSize: 9, color: C.spento, marginTop: 1 }}>
                 sopra {scrivi(M.id, soglie[M.id])}
               </div>
@@ -278,29 +521,42 @@ export default function AndamentoPage() {
         })}
       </div>
 
-      {/* ── I quattro d'accordo, in una riga ──────────────────────────────── */}
+      {/* ── I quattro d'accordo ───────────────────────────────────────────── */}
       {/* ⚠️ Risponde alla domanda di Mattia del 12/10 (*"esiste un punto in
           comune per questi 4 valori?"*) e la risposta misurata è: sale, ma il
           guadagno sull'attendibilità da sola **non è dimostrabile** — 74,1%
-          ±2,6 su 1.118 partite contro 71,6% ±1,1 su 6.257. Per questo è una
-          riga e non una card: è un controllo, non un metodo di scelta. */}
-      <Card style={{ marginBottom: 12, borderColor: alpha(C.verde, 0.3), cursor: 'pointer' }}>
-        <div onClick={() => setVerdi(v => !v)}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
-            <Etichetta colore={C.verde}>TUTTI E QUATTRO SOPRA SOGLIA</Etichetta>
-            <span style={{ fontFamily: F.mono, fontSize: 13, fontWeight: 700, color: tutteLeVerdi.perc == null ? C.spento : C.verde }}>
-              {tutteLeVerdi.perc == null ? '—' : (tutteLeVerdi.perc * 100).toFixed(1) + '%'}
-            </span>
-          </div>
-          <div style={{ fontSize: 10, fontFamily: F.mono, color: C.spento, marginTop: 4 }}>
-            {tutteLeVerdi.giocate} partite · tutte le altre {sotto.perc == null ? '—' : (sotto.perc * 100).toFixed(1) + '%'} su {sotto.giocate}
-            {' · '}{verdi ? 'chiudi' : 'tocca per vederle'}
-          </div>
+          ±2,6 su 1.118 partite contro 71,6% ±1,1 su 6.257. Per questo è
+          l'ultima card e parte chiusa: è un controllo, non un metodo di scelta.
+          ⚠️ **Aprire la card E caricare le partite sono lo stesso gesto**
+          (15/10/2026): prima erano due tocchi diversi sullo stesso posto, uno
+          per la frase e uno per l'elenco. */}
+      <CardPiega titolo="QUANDO SONO D&apos;ACCORDO TUTTI E QUATTRO" colore={C.verde}
+        style={{ marginBottom: 12, borderColor: alpha(C.verde, 0.3) }}
+        aperta={apri.accordo} onTocca={() => piega('accordo')}
+        riassunto={<>{tutteLeVerdi.perc == null ? '—' : (tutteLeVerdi.perc * 100).toFixed(1) + '%'}
+          <span style={{ color: C.spento }}> su {tutteLeVerdi.giocate} partite</span></>}>
+        {/* ⚠️ **Una percentuale senza la sua frase non si legge.** Mattia
+            (15/10/2026): *"a destra c'è una % — cosa indica?"*. Era un numero
+            appoggiato all'etichetta, e poteva voler dire tre cose diverse:
+            quante partite sono, quante ne azzecca, quanto guadagna. Ora la
+            frase dice il soggetto (le partite dove tutti e quattro stanno
+            sopra la loro soglia), il verbo (azzeccate) e il confronto (tutte
+            le altre), che è l'unico modo di sapere se quel numero è alto. */}
+        <div style={{ fontSize: 11, fontFamily: F.mono, color: C.spento, lineHeight: 1.5 }}>
+          nelle <b style={{ color: C.testo }}>{tutteLeVerdi.giocate}</b> partite dove VPM, attendibilità,
+          scelta e voto stanno <b style={{ color: C.testo }}>tutti</b> sopra la loro soglia, la giocata è
+          arrivata{' '}
+          <b style={{ color: tutteLeVerdi.perc == null ? C.spento : C.verde, fontSize: 13 }}>
+            {tutteLeVerdi.perc == null ? '—' : (tutteLeVerdi.perc * 100).toFixed(1) + '%'}
+          </b>
+          {' '}delle volte.
         </div>
-        {verdi && (righeVerdi === null
-          ? <div style={{ fontSize: 11, fontFamily: F.mono, color: C.spento, paddingTop: 8 }}>carico…</div>
-          : <Elenco righe={righeVerdi} metodo={metodo} soglie={soglie} evidenzia={false} titolo="LE QUATTRO SPUNTE VERDI" />)}
-      </Card>
+        <div style={{ fontSize: 10, fontFamily: F.mono, color: C.spento, marginTop: 4 }}>
+          in tutte le altre: {sotto.perc == null ? '—' : (sotto.perc * 100).toFixed(1) + '%'} su {sotto.giocate}
+        </div>
+        <Risultato righe={righeVerdi} metodo={metodo} soglie={soglie} evidenzia={false}
+          titolo="LE PARTITE CON TUTTI E QUATTRO SOPRA SOGLIA" />
+      </CardPiega>
 
       {gruppi === null && <div style={{ fontSize: 11, fontFamily: F.mono, color: C.spento }}>carico…</div>}
       {/* ⚠️ Un elenco tagliato va detto. È la stessa lezione del troncamento a
@@ -319,7 +575,7 @@ export default function AndamentoPage() {
           )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {lista.map(k => (
-              <Tendina key={String(k.chiave)} ambito={ambito} metodo={metodo} chiave={k.chiave} soglie={soglie}
+              <Tendina key={String(k.chiave)} ambito={ambito} metodo={metodo} chiave={k.chiave} soglie={soglie} fascia={fascia}
                 etichetta={ambito === 'giorno' ? gg(k.chiave) : `weekend del ${gg(k.chiave)}`}
                 conteggio={k} aperta={aperta === String(k.chiave)}
                 onTocca={() => setAperta(a => a === String(k.chiave) ? null : String(k.chiave))}

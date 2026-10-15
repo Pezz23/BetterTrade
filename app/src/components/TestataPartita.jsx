@@ -17,31 +17,40 @@ export const CATEGORIE = {
 export const pct = v => (v * 100).toFixed(0) + '%'
 export const giorno = d => new Date(d + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit' })
 
-// Nel tondo va la **posizione in classifica**, colorata: verde il primo terzo,
-// giallo il secondo, rosso l'ultimo (vedi `fasciaDi` in hooks/usaClassifiche).
-// Se la posizione non la sappiamo — nome nuovo, campionato senza partite
-// giocate — restano le iniziali, che almeno dicono di chi si parla.
+// ⚠️ **La posizione in classifica è una targhetta `1/20`, non un tondo**
+// (15/10/2026, dopo tre proposte: tondo bocciato da Mattia).
+//
+// ⚠️⚠️ **Il difetto che risolve non è estetico.** Nel tondo stava la sola
+// posizione, e *"su quante squadre"* viveva nel `title` — che **su telefono non
+// esiste**, ed è una regola già scritta in questo progetto: il `title` non è
+// mai l'unico posto dove mettere un'informazione. Senza il denominatore la
+// cifra non si può leggere: **12° è metà classifica in un campionato da 24
+// squadre e ultimo in uno da 12**, e i nostri vanno da 12 a 24. È la stessa
+// ragione per cui `fasciaDi` colora **a terzi** e non a soglie fisse.
+//
+// Il colore resta quello della fascia: verde il primo terzo, giallo il secondo,
+// rosso l'ultimo. Se la posizione non la sappiamo — nome nuovo, campionato
+// senza partite giocate — restano le iniziali, che almeno dicono di chi si
+// parla.
 const COLORE_FASCIA = { alta: C.verde, media: C.giallo, bassa: C.rosso }
 
-export function Scudetto({ nome, colore, dim = 44, posto }) {
-  const fascia = fasciaDi(posto)
-  const tinta = COLORE_FASCIA[fascia] || colore
+export function Posizione({ nome, colore, posto, compatta = false }) {
+  const tinta = COLORE_FASCIA[fasciaDi(posto)] || colore
   const iniziali = nome.split(/[\s-]+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase()
   return (
     <div title={posto ? `${posto.posizione}° su ${posto.squadre} · ${posto.punti} punti in ${posto.giocate}` : nome}
       style={{
-        width: dim, height: dim, borderRadius: '50%', flexShrink: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0, borderRadius: 5, padding: compatta ? '2px 5px' : '3px 7px',
         background: alpha(tinta, 0.12), border: `1px solid ${alpha(tinta, 0.4)}`,
-        color: tinta, fontFamily: F.mono, fontWeight: 700,
+        color: tinta, fontFamily: F.mono, fontWeight: 700, lineHeight: 1.2,
+        fontSize: compatta ? 10 : 13, whiteSpace: 'nowrap',
       }}>
-      {/* `verticalAlign: super` e non un flex con `baseline`: in un flex il
-          cerchietto finiva a metà altezza invece che in alto, come nei gradi. */}
-      {posto ? (
-        <span style={{ fontSize: Math.round(dim * 0.42), lineHeight: 1 }}>
-          {posto.posizione}<span style={{ fontSize: '0.5em', verticalAlign: 'super' }}>°</span>
-        </span>
-      ) : <span style={{ fontSize: Math.round(dim * 0.3), lineHeight: 1 }}>{iniziali}</span>}
+      {/* ⚠️ Il denominatore è più piccolo e più tenue: la posizione è il dato,
+          "su quante" è il contesto che la rende leggibile. Alla stessa misura
+          sarebbero due numeri in gara fra loro. */}
+      {posto
+        ? <>{posto.posizione}<span style={{ fontSize: '0.78em', fontWeight: 400, opacity: 0.65 }}>/{posto.squadre}</span></>
+        : iniziali}
     </div>
   )
 }
@@ -71,10 +80,12 @@ export function Stella({ voti, mio, puoVotare, onVota }) {
 export default function TestataPartita({ p, cat, compatta = false }) {
   const c = CATEGORIE[cat]
   const classifiche = usaClassifiche()
-  const dim = compatta ? 34 : 52
   return (
     <>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'start', gap: 8 }}>
+      {/* ⚠️ `center` e non più `start`: con il tondo sopra il nome le due
+          colonne andavano allineate in alto, ora che è in linea col nome
+          vanno allineate al centro, come il blocco della giocata in mezzo. */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 8 }}>
         {[[p.casa, '1'], [p.trasferta, '2']].map(([sq, segno], i) => (
           <div key={sq} style={{ display: 'contents' }}>
             {/* ⚠️ In mezzo alle squadre sta **la giocata** (10/10/2026, scelta di
@@ -88,17 +99,29 @@ export default function TestataPartita({ p, cat, compatta = false }) {
                 <div style={{ marginTop: compatta ? 5 : 7 }}><Barra frazione={p.probGiocata} colore={c.colore} altezza={compatta ? 5 : 6} /></div>
               </div>
             )}
-            <div style={{ textAlign: 'center', minWidth: 0 }}>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: compatta ? 6 : 8 }}>
-                <Scudetto nome={sq} colore={p.segno === segno ? c.colore : C.grigioFioco} dim={dim}
-                  posto={postoDi(classifiche, p.div, sq)} />
-              </div>
+            {/* ⚠️ **Il tondo sta a DESTRA del nome, non sopra** (scelta di
+                Mattia, 15/10/2026). Due conseguenze volute:
+                - la riga guadagna in altezza quello che perde in larghezza —
+                  spariscono i 34-52px che il tondo prendeva sopra il nome, e
+                  il nome può andare su due righe senza allungare la card;
+                - il nome ha ~40px in meno, per questo il carattere scende di
+                  due punti: era già `clamp()` e resta `clamp()`, perché su un
+                  telefono da 320px e su uno da 430px lo spazio non è lo stesso.
+                ⚠️ Il tondo è a destra per **entrambe** le squadre, quindi i due
+                blocchi non sono più specchiati. È quello che è stato chiesto:
+                "a destra del nome" vale per il nome, non per il lato della
+                card. */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
+              gap: compatta ? 6 : 9, minWidth: 0 }}>
               <div style={{
-                fontSize: compatta ? 'clamp(13px, 4vw, 16px)' : 'clamp(15px, 5.2vw, 22px)',
+                fontSize: compatta ? 'clamp(11px, 3.4vw, 14px)' : 'clamp(13px, 4.4vw, 19px)',
                 fontWeight: 800, fontFamily: F.sans, letterSpacing: '0.02em',
                 textTransform: 'uppercase', lineHeight: 1.15, overflowWrap: 'anywhere',
+                textAlign: 'center', minWidth: 0,
                 color: p.segno === segno ? C.testo : C.spento,
               }}>{sq}</div>
+              <Posizione nome={sq} colore={p.segno === segno ? c.colore : C.grigioFioco} compatta={compatta}
+                posto={postoDi(classifiche, p.div, sq)} />
             </div>
           </div>
         ))}

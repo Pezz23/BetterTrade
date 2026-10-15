@@ -711,10 +711,63 @@ ci sono 1.098 partite.
 `100,25%` accanto a una soglia `100,25%` resta spenta perché sotto c'è
 100,2449. Stessa trappola delle caselle dei gol.
 
+⚠️ **Le diciture sono state rifatte il 15/10/2026**, perché i numeri non si
+leggevano. Mattia: *"le card dicono x su y partite, ma da dove arriva Y?"* e
+*"sotto 'tutti e quattro sopra soglia' c'è una % — cosa indica?"*. Due regole
+che valgono oltre questa pagina:
+- **Un denominatore va spiegato dove non è ovvio.** `Y` non è "le partite
+  giocate" né "quelle in archivio": è **quante ne ha scelte quell'indicatore**,
+  cioè quante volte è comparso nelle prime 15 del giorno stando sopra la sua
+  soglia e dentro la fascia di quota. Ogni card ha quindi un Y **diverso**, e
+  senza dirlo sembra un errore di conto. Spiegato **una volta**, in una riga
+  sopra le quattro card, invece che in ognuna.
+- **Un numero di confronto ha bisogno di tre cose, non di una.** La riga della
+  base diceva *"in questa fascia tutte le partite fanno 55,2% su 317 — un
+  indicatore vale solo quanto sta sopra questo"*, e Mattia: *"incomprensibile"*.
+  Aveva ragione: *fanno* cosa, e 317 di che? Adesso dice **come è stato
+  ottenuto** (prendendo tutte le partite della fascia, senza guardare nessun
+  indicatore), **cosa misura** (quante volte la giocata è arrivata) e **a cosa
+  serve** (è il livello da battere). ⚠️ E la frase **definisce la parola
+  `base`**, che torna sotto ogni card come *"+6,8 punti sulla base"*: la
+  definizione sta in **un posto solo** — ripeterla sopra le card voleva dire
+  due testi da tenere d'accordo, e il nome resta **uno** (`base`, come
+  `andamento_base`) perché due nomi per la stessa cosa sono il difetto peggiore.
+- **Una percentuale senza la sua frase non si legge.** Quel numero appoggiato
+  all'etichetta poteva voler dire tre cose: quante partite sono, quante ne
+  azzecca, quanto rende. Adesso c'è il soggetto (*nelle 15 partite dove tutti e
+  quattro stanno sopra la loro soglia*), il verbo (*la giocata è arrivata*) e
+  **il confronto** (*in tutte le altre: 53,2%*), che è l'unica cosa che dice se
+  quel numero è alto.
+
 **Ogni riga porta tutti e quattro i valori**, non solo quello del metodo che
 l'ha scelta (sql/22): *"quando clicco Voto vorrei vedere gli altri 3, per
 capire quali indicatori mi avrebbero allertato"*. Verde quelli sopra la loro
 soglia.
+
+#### Le tre card a scomparsa — 15 ottobre 2026
+
+**SOGLIE MINIME · FASCIA DI QUOTA · QUANDO SONO D'ACCORDO TUTTI E QUATTRO** si
+aprono e si chiudono, e **partono chiuse** (scelta di Mattia): sono due comandi
+e un approfondimento, mentre quello che si guarda ogni volta sono le quattro
+percentuali.
+
+⚠️⚠️ **Chiusa, una card deve dire comunque il suo stato**, e qui non è un vezzo:
+le soglie e la fascia **decidono tutti i numeri della pagina**. Una card chiusa
+che non dice "da 1,00 a 1,45" lascia davanti agli occhi quattro percentuali
+senza il filtro che le ha prodotte — numeri che sembrano assoluti e non lo sono.
+**Un comando si può nascondere, il suo valore no.** Perciò il riassunto porta le
+quattro soglie scritte, i due limiti di quota con la base, e la percentuale
+dell'accordo.
+⚠️ Il riassunto sta **sotto** il titolo e non accanto: le quattro soglie di fila
+sono 44 caratteri, e accanto a un titolo su un telefono verrebbero tagliate.
+⚠️ **Aprire la card dell'accordo E caricare le sue partite sono lo stesso
+gesto**: prima erano due tocchi diversi nello stesso posto, uno per la frase e
+uno per l'elenco.
+⚠️ **Togliere la riga che spiegava `scelte`** sotto i tasti per giorno/weekend
+(richiesta di Mattia, 15/10): la parola resta nelle card (*"su 8.372 scelte"*)
+senza la sua definizione a schermo. È una scelta sua — la pagina la usa lui — e
+la definizione resta qui: *quante volte quell'indicatore l'ha messa fra le prime
+15 del giorno, stando sopra la sua soglia e dentro la fascia di quota*.
 
 #### Le quattro card — 15 ottobre 2026
 
@@ -769,6 +822,103 @@ quattro **74,1% ±2,6** su 1.118 contro **71,6% ±1,1** su 6.257 — +2,5 punti 
 5,6 volte meno partite, dentro il rumore. Quasi tutto il merito è
 dell'attendibilità: le altre tre sopra soglia **senza** di lei fanno **44,7%**,
 sotto la base.
+
+#### ⚠️⚠️ La fascia di quota — e cosa succede quando si fissa il prezzo
+
+**Chiesta da Mattia il 15/10/2026**: *"vorrei una ricerca anche per quota:
+voglio capire con quel filtro e quella quota quale indicatore è più preciso"*.
+È la domanda giusta, e la risposta ribalta la lettura di tutta la pagina.
+
+⚠️ **Il motivo per cui serve: l'attendibilità alta È la quota bassa.** Sono lo
+stesso fatto detto in due modi. Quindi "questo indicatore azzecca più spesso"
+può voler dire soltanto *"questo indicatore sceglie favoriti più corti"* — e
+misurato è **quasi tutta lì** la sua precisione. Dentro una fascia il confronto
+è alla pari, perché tutti partono dalla stessa probabilità.
+
+Misurato su 33.292 partite, otto stagioni, soglie di partenza. `base` = **tutte
+le partite della fascia** scelte da almeno un metodo; accanto, lo scarto:
+
+| fascia | base | VPM | attendibilità | scelta | voto |
+|---|---|---|---|---|---|
+| tutte | 54,9% | +6,8 | **+16,8** | +15,9 | +12,4 |
+| ≤ 1,45 | 74,7% | +0,4 | **−0,0** | +0,1 | **+2,0** |
+| 1,45-1,70 | 62,7% | +1,4 | +2,5 | +1,5 | **+3,8** |
+| 1,70-2,20 | 50,0% | −0,9 | — | −8,8 | −4,2 |
+| > 2,20 | 39,6% | −0,3 | — | — | −2,8 |
+
+⚠️⚠️ **Dentro una fascia nessun indicatore batte la fascia in modo
+dimostrabile.** L'attendibilità passa da **+16,8 a −0,0**: il suo vantaggio
+*era* il prezzo. Quello che resta in piedi è il **voto** (+2,0 e +3,8), e ha
+senso che sia lui — `voto = resa × fattore` confronta la probabilità **col
+prezzo**, quindi è l'unico che a prezzo fisso non sta ripetendo il prezzo.
+⚠️ **Ma sono scarti dentro il rumore**: +2,0 **±2,5** su 1.456 partite e +3,8
+**±5,1** su 355. **La direzione regge, la grandezza no** — la stessa frase
+della scelta, e per la stessa ragione (a queste quote servono migliaia di
+scommesse per vedere due punti).
+⚠️ **Sopra 1,70 tutti vanno sotto la base**, e l'attendibilità **non esiste**:
+sopra il 60% implica una quota sotto 1,67, quindi in quella fascia ha **una
+partita in tutto**. Soglia e fascia lì sono lo stesso filtro.
+⚠️ **Cosa misura davvero il filtro**: le liste sono le prime 15 di ogni giorno
+calcolate **prima** del filtro di quota, quindi la risposta è *"fra quelle che
+ha scelto, le partite di questa fascia sono andate così"* — non *"cosa avrebbe
+scelto restringendosi a questa fascia"*. La seconda domanda vuole un ricalcolo
+in `calcola-andamento.js`.
+⚠️ **La fascia SONO due numeri scelti a mano** — `DA` e `A`, passo 0,05
+(richiesta di Mattia il 15/10: *"devo poter scegliere io la quota"*). Le cinque
+fasce misurate restano come **scorciatoie che scrivono nei due numeri**, e si
+accendono quando combaciano: un secondo stato "quale fascia è selezionata"
+divergerebbe dai numeri al primo tocco.
+⚠️ **Il comando va da 1,00 a 10,00**, e di partenza sta su tutto l'intervallo.
+Nei dati di oggi la quota più alta è **3,60** — la giocata è sempre il favorito
+del mercato, quindi oltre non si va — ma **il limite del comando non deve
+essere il limite dell'archivio di adesso**: un tetto a 4 nasconderebbe una
+quota più lunga *senza dirlo*, che è il difetto di famiglia di questo progetto.
+⚠️ Le quattro scorciatoie (`tutte · 1,35-1,50 · 1,50-1,90 · 1,90-2,20`) stanno
+**su una riga sola anche su un telefono**: `flex: 1` con `minWidth: 0` — senza
+quello un elemento flessibile non scende sotto il suo contenuto, la stessa
+trappola della griglia della Slot — testo a 10px e **interlettera annullata**,
+perché gli 0,4px per carattere di `Tasto` fanno 4px su "1,90-2,20" e bastano a
+far uscire la quarta su uno schermo da 320px.
+⚠️ **I caratteri di `DA`/`A` sono gli stessi di SOGLIE MINIME** (12 l'etichetta,
+13 il valore): sono due comandi della stessa natura a due centimetri di
+distanza, e due scale diverse li fanno sembrare due cose diverse.
+⚠️ **I due limiti non si scavalcano, si fermano a un passo di distanza**: un
+intervallo vuoto a schermo si legge come un guasto, non come una scelta.
+
+⚠️ **I tasti `−` e `+` si tengono premuti** (`TastoRipeti` in `AndamentoPage`),
+e servono: il voto si muove di 0,25 punti per volta, quindi da 100% a 105%
+erano venti tocchi. Tre cose non sono estetiche —
+**la catena di `setTimeout` invece di un `setInterval`** (il ritmo accelera:
+subito il primo scatto, poi mezzo secondo di attesa perché un tocco singolo
+resti un tocco singolo, poi 120 ms che scendono a 40);
+**i `pointer*` invece di mouse e touch separati**, con lo stop anche su
+`pointercancel` e `pointerleave` — su telefono il dito che scivola fuori dal
+tasto **non manda `pointerup`**, e un contatore che continua da solo è il
+difetto peggiore di un tasto così;
+**`userSelect: none` e `touch-action: manipulation`**, senza cui tenere premuto
+su iOS seleziona il testo e apre il menù contestuale invece di ripetere.
+⚠️ Il timer si ferma anche allo smontaggio della pagina: il dito giù mentre si
+cambia schermata lascerebbe il giro vivo.
+⚠️ **La base segue l'ambito** (`p_ambito` in `andamento_base`): le prime 15 di
+un giorno e le prime 36 di un weekend pescano da insiemi diversi, e confrontare
+la percentuale del weekend con la base del giorno sarebbe un confronto fra due
+universi.
+
+⚠️⚠️ **Lezione di migrazione, pagata due volte in un giorno** (`sql/29`):
+- **Aggiungere** un parametro con un valore predefinito è retrocompatibile,
+  **rinominarlo** no. PostgREST chiama **per nome**: l'app pubblicata che passa
+  i nomi di prima continua a funzionare perché i nuovi prendono il default. Il
+  15/10, rinominando `p_resa` in `p_scelta` (`sql/28`), l'app in produzione è
+  rimasta rotta fino al deploy — *"Could not find the function… in the schema
+  cache"*. **Prima il frontend, poi la rinomina; o si aggiunge e si toglie
+  dopo.** Ma la vecchia firma **va cancellata**: con entrambe vive, una chiamata
+  che nomina i vecchi parametri ne trova due candidate e Postgres risponde
+  *function is not unique*.
+- **`create or replace`, mai `create` secco.** I `drop` in testa togliono le
+  firme *vecchie*: al secondo giro la creazione trova la propria già lì, va in
+  errore e **annulla tutta la transazione**. È succeduto: metà migrazione
+  applicata, metà no, e il database a metà strada senza che nulla lo dicesse.
+  **Una migrazione che non si può rilanciare non si può nemmeno correggere.**
 
 #### Come sono fatti i dati
 
@@ -1398,9 +1548,23 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   **Lista e scheda sono finite** (lotti A-D, 2-5 ottobre 2026): niente è
   rimasto con l'aspetto vecchio.
   **Le classifiche** arrivano tutte insieme da `classifiche()` (sql/18) via
-  `hooks/usaClassifiche.js`, che le chiede **una volta per sessione**: nel tondo
-  accanto a ogni squadra c'è la sua posizione, colorata **a terzi** del
-  campionato (`fasciaDi`) — non a soglie fisse, perché si va da 12 squadre a 24.
+  `hooks/usaClassifiche.js`, che le chiede **una volta per sessione**: accanto a
+  ogni squadra c'è la sua posizione, colorata **a terzi** del campionato
+  (`fasciaDi`) — non a soglie fisse, perché si va da 12 squadre a 24.
+  ⚠️ **Dal 15/10/2026 è una targhetta `1/20`, a destra del nome, non più un
+  tondo col solo `3°` sopra il nome** (il tondo bocciato da Mattia; proposte
+  tre strade, scelta la targhetta). ⚠️⚠️ **E il guadagno non è estetico**: nel
+  tondo stava la sola posizione e *"su quante squadre"* viveva nel `title`, che
+  **su telefono non esiste** — regola già scritta qui sotto fra le trappole.
+  Senza il denominatore la cifra non si legge: **12° è metà classifica in un
+  campionato da 24 squadre e ultimo in uno da 12**. È la stessa ragione per cui
+  il colore va a terzi.
+  ⚠️ Il denominatore è **più piccolo e più tenue** del numeratore: la posizione
+  è il dato, "su quante" è il contesto che la rende leggibile — alla stessa
+  misura sarebbero due numeri in gara fra loro.
+  ⚠️ Il nome squadra è scesO di due punti (`clamp(11-14px)` in lista,
+  `clamp(13-19px)` in scheda) **perché la targhetta gli toglie ~40px di
+  larghezza**: le due cose sono una sola modifica, non due.
   Le sigle dei campionati a schermo (ITA1, ENG1…) stanno in `lib/campionati.js`
   e **non toccano il database**: `div` resta quella di football-data.
 - **Le librerie in `src/lib/` importano con l'estensione** (`'./attendibilita.js'`):
@@ -1648,6 +1812,26 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   (9/10/2026). **Ogni query paginata vuole un secondo criterio univoco**
   (`.order('data').order('id')`). L'ha scoperto il confronto fra le due strade,
   non un errore: senza quel confronto sarebbe passato.
+- **Un oggetto ricostruito a ogni ridisegno dentro le dipendenze di un
+  `useEffect` è un ciclo infinito.** Il 15/10/2026 la correzione del NaN delle
+  soglie ha introdotto `const soglie = conSoglie(soglieGrezze)`: un oggetto
+  **nuovo a ogni render**, e l'effetto che scarica le partite delle quattro
+  spunte verdi lo aveva fra le dipendenze. Il giro: scarica → arriva la
+  risposta → il ridisegno fabbrica un oggetto nuovo → l'effetto riparte e
+  riazzera a `null`. A schermo **"carico…" per sempre**, e una richiesta al
+  database per ogni giro — nessun errore, niente in console, solo una cosa che
+  non finisce mai. ✅ `useMemo` sulle soglie.
+  ⚠️ **Gli altri due hook non ne soffrivano**, e il perché dice dove guardare:
+  confrontano la **chiave scritta** (`JSON.stringify`), non l'identità
+  dell'oggetto. Un difetto che si vede in un punto solo mentre tre punti fanno
+  la stessa cosa **non è un caso**: è il punto che la fa in modo diverso.
+  ⚠️ **E un caricamento che non finisce non deve poter essere un errore
+  travestito.** Le due letture di Andamento scartavano l'errore di PostgREST
+  (`const { data } = await …`) e tornavano un elenco vuoto: a schermo
+  *"nessuna partita"*, cioè **una risposta sbagliata presentata come giusta**.
+  Ora l'errore si solleva e la pagina ha **tre stati distinti** — carico, non
+  riesco a leggere, ecco le partite (`Risultato` in `AndamentoPage`): aspettare
+  e chiamare qualcuno sono due azioni diverse.
 - **Lo stato di React sopravvive al ricaricamento a caldo, le costanti no.**
   Il 15/10/2026 `resa` è diventata `scelta` fra i quattro metodi di Andamento:
   Vite ha ricaricato il modulo, ma `useState(…)` era già girato, quindi le

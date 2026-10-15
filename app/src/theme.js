@@ -45,7 +45,7 @@ export const C = {
   menta:  '#4ade80',  // ruolo user
   oroChiaro: '#f0d060',
   acciaio:   '#9aa3ab',  // argento spento
-  bianco:    '#ffffff',  // le linee interne della slot, l'unico bianco puro
+  bianco:    '#ffffff',  // le linee interne della slot e la quota in Andamento
   celeste:   '#7dd3fc',
 
   // Tinte usate solo come sfondo trasparente. Sono più sature delle

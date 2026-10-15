@@ -176,6 +176,14 @@ per stagione +0,2, positiva in 5 su 8. Il +0,9 della taratura era gonfiato.
 ⚠️ **Il voto NON è cambiato**: continua a usare la resa. Con la scelta VPM
 entrerebbe due volte, e costa — 95,6% contro 97,8%.
 ⚠️ La resa resta nei dettagli della scheda e dentro il voto.
+✅ **Fatto il 15/10/2026 (2):** la pagina Andamento filtra per **fascia di
+quota** (`sql/29`), con la **base della fascia** scritta accanto. Il risultato
+va saputo prima di leggerla: **fissato il prezzo, nessun indicatore batte la
+fascia in modo dimostrabile** — l'attendibilità passa da +16,8 punti sulla base
+a **−0,0** fra le quote ≤1,45, perché il suo vantaggio *era* il prezzo. Resta
+in piedi il **voto** (+2,0 ±2,5 e +3,8 ±5,1), che è l'unico a confrontare
+probabilità e prezzo. Tabella intera in CLAUDE.md.
+
 ✅ **Fatto il 15/10/2026:** la pagina Andamento misura la **scelta** al posto
 della resa (`sql/28`), in quattro card — VPM · Attendibilità · Scelta · Voto.
 Ricostruite tutte le otto stagioni: 99.683 righe, 33.292 partite valutate.

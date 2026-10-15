@@ -40,6 +40,36 @@ export const METODI = [
   { id: 'voto', label: 'Voto',          breve: 'VOTO', soglia: 1.00, passo: 0.0025, tipo: '%', decimali: 2 },
 ]
 
+// ⚠️⚠️ **Le fasce di quota, e perché sono il filtro più importante della
+// pagina.** L'attendibilità alta **È** la quota bassa: sono lo stesso fatto
+// detto in due modi. Senza fissare il prezzo, "questo indicatore azzecca più
+// spesso" può voler dire soltanto "questo indicatore sceglie favoriti più
+// corti" — e misurato è quasi tutta lì la sua precisione. Dentro una fascia il
+// confronto è alla pari, perché tutti partono dalla stessa probabilità.
+//
+// ⚠️ **I confini vengono dai dati, non dall'estetica**: la giocata è sempre il
+// favorito del mercato, quindi in tabella le quote vanno da 1,03 a 2,90 e oltre
+// 2,20 ci sono mille partite in tutto. Una fascia "oltre 3" sarebbe vuota.
+// ⚠️ **Il massimo è escluso** e il minimo incluso: con fasce contigue una
+// partita a 1,70 esatta starebbe altrimenti in due fasce.
+// ⚠️ **Il tetto è 10,00 e il fondo 1,00** (scelta di Mattia, 15/10/2026). Nei
+// dati di oggi la quota più alta è **3,60** — la giocata è sempre il favorito
+// del mercato, quindi oltre non si va — ma il limite del comando non deve
+// essere il limite dell'archivio di adesso: se un giorno entrasse una quota
+// più lunga, un tetto a 4 la nasconderebbe **senza dirlo**.
+export const QUOTA_MIN = 1, QUOTA_MAX = 10, PASSO_QUOTA = 0.05
+export const FASCIA_BASE = { min: 1, max: 10 }
+
+// Le fasce già misurate, come scorciatoie: scrivono nei due numeri, non sono
+// uno stato a parte. ⚠️ Due stati per la stessa cosa è il difetto che prima o
+// poi li fa divergere — qui la verità sono **sempre** min e max.
+export const FASCE_QUOTA = [
+  { id: 'tutte',  label: 'tutte',     min: 1,    max: 10 },
+  { id: 'corte',  label: '1,35-1,50', min: 1.35, max: 1.50 },
+  { id: 'medie',  label: '1,50-1,90', min: 1.50, max: 1.90 },
+  { id: 'lunghe', label: '1,90-2,20', min: 1.90, max: 2.20 },
+]
+
 /** Le soglie di partenza, una per metodo. */
 export const SOGLIE_BASE = Object.fromEntries(METODI.map(m => [m.id, m.soglia]))
 
@@ -114,10 +144,20 @@ function usaFermo(valore) {
 }
 
 /** I parametri delle funzioni SQL, nell'ordine in cui le aspettano. */
-const par = (soglie, stagione) => {
+/** La fascia con i due limiti sempre validi e nell'ordine giusto. */
+export const fasciaValida = (f) => {
+  const min = Number.isFinite(f?.min) ? f.min : FASCIA_BASE.min
+  const max = Number.isFinite(f?.max) ? f.max : FASCIA_BASE.max
+  // ⚠️ Se i due si scavalcano non si restituisce un intervallo vuoto: la
+  // pagina mostrerebbe zero partite e sembrerebbe un guasto, non una scelta.
+  return max > min ? { min, max } : { min: max, max: min + PASSO_QUOTA }
+}
+
+const par = (soglie, stagione, fascia) => {
   const s = conSoglie(soglie)
+  const f = fasciaValida(fascia)
   return { p_att: s.att, p_vpm: s.vpm, p_voto: s.voto, p_scelta: s.scelta,
-           p_stagione: stagione || null }
+           p_stagione: stagione || null, p_quota_min: f.min, p_quota_max: f.max }
 }
 
 /** Giocate, azzeccate e percentuale, da una riga aggregata del database. */
@@ -128,10 +168,10 @@ export const quota = (r) => {
 }
 
 /** Il riassunto e l'accordo, che dipendono solo da soglie e stagione. */
-export function usaRiassunto(soglie, stagione) {
-  const [dati, setDati] = useState({ riassunto: null, accordo: null })
+export function usaRiassunto(soglie, stagione, fascia, ambito) {
+  const [dati, setDati] = useState({ riassunto: null, accordo: null, base: null })
   const [errore, setErrore] = useState(null)
-  const chiave = usaFermo(JSON.stringify([soglie, stagione]))
+  const chiave = usaFermo(JSON.stringify([soglie, stagione, fascia, ambito]))
   useEffect(() => {
     if (JSON.parse(chiave)[1] === null) return   // stagione non ancora scelta
     let vivo = true
@@ -139,15 +179,20 @@ export function usaRiassunto(soglie, stagione) {
     // correnti: altrimenti l'effetto partirebbe in ritardo ma con i valori
     // nuovi, e i conteggi non corrisponderebbero più alla chiave che li ha
     // chiesti — un disallineamento che non si vede ma falsa i numeri.
-    const [s2, st2] = JSON.parse(chiave)
+    const [s2, st2, f2, a2] = JSON.parse(chiave)
+    const f = fasciaValida(f2)
     Promise.all([
-      supabase.rpc('andamento_riassunto', par(s2, st2)),
-      supabase.rpc('andamento_accordo', par(s2, st2)),
-    ]).then(([a, b]) => {
+      supabase.rpc('andamento_riassunto', par(s2, st2, f2)),
+      supabase.rpc('andamento_accordo', par(s2, st2, f2)),
+      // ⚠️ La **base** della fascia, e non è un extra: senza di lei "att
+      // azzecca il 74,7% fra le quote corte" sembra un merito, mentre in quella
+      // fascia **tutte** le partite fanno il 74,7%.
+      supabase.rpc('andamento_base', { p_stagione: st2 || null, p_quota_min: f.min, p_quota_max: f.max, p_ambito: a2 }),
+    ]).then(([a, b, c]) => {
       if (!vivo) return
-      if (a.error || b.error) return setErrore((a.error || b.error).message)
+      if (a.error || b.error || c.error) return setErrore((a.error || b.error || c.error).message)
       setErrore(null)
-      setDati({ riassunto: a.data || [], accordo: b.data || [] })
+      setDati({ riassunto: a.data || [], accordo: b.data || [], base: (c.data || [])[0] || null })
     })
     return () => { vivo = false }
     // ⚠️ La sola dipendenza è la chiave ferma, e dentro ci sono già soglie e
@@ -158,14 +203,14 @@ export function usaRiassunto(soglie, stagione) {
 }
 
 /** Le chiavi (giorni o weekend) del metodo scelto, col loro risultato. */
-export function usaChiavi(ambito, metodo, soglie, stagione) {
+export function usaChiavi(ambito, metodo, soglie, stagione, fascia) {
   const [chiavi, setChiavi] = useState(null)
-  const k = usaFermo(JSON.stringify([ambito, metodo, soglie, stagione]))
+  const k = usaFermo(JSON.stringify([ambito, metodo, soglie, stagione, fascia]))
   useEffect(() => {
     if (JSON.parse(k)[3] === null) return
     let vivo = true
-    const [a2, m2, s2, st2] = JSON.parse(k)
-    supabase.rpc('andamento_chiavi', { p_ambito: a2, p_metodo: m2, ...par(s2, st2), p_limite: 400 })
+    const [a2, m2, s2, st2, f2] = JSON.parse(k)
+    supabase.rpc('andamento_chiavi', { p_ambito: a2, p_metodo: m2, ...par(s2, st2, f2), p_limite: 400 })
       .then(({ data }) => { if (vivo) setChiavi(data || []) })
     return () => { vivo = false }
   }, [k])
@@ -184,16 +229,25 @@ export function usaStagioni() {
 }
 
 /** Le partite di un giorno (o weekend): al massimo 15 o 36 righe. */
-export async function partiteDi(ambito, metodo, chiave) {
+export async function partiteDi(ambito, metodo, chiave, fascia) {
   const campo = ambito === 'giorno' ? 'data' : 'weekend'
-  const { data } = await supabase.from('andamento').select('*')
+  const f = fasciaValida(fascia)
+  // ⚠️ La stessa fascia dei conteggi: il tasto dice `9/14`, e se l'elenco
+  // mostrasse anche le partite fuori fascia il conto non tornerebbe.
+  const { data, error } = await supabase.from('andamento').select('*')
     .eq('ambito', ambito).eq('metodo', metodo).eq(campo, chiave)
+    .gte('quota', f.min).lt('quota', f.max)
     .order('posizione')
+  // ⚠️ L'errore si **solleva**, non si scarta: scartandolo l'elenco tornava
+  // vuoto e la pagina diceva "nessuna partita" — una risposta sbagliata
+  // presentata come una risposta giusta.
+  if (error) throw new Error(error.message)
   return data || []
 }
 
 /** Le partite con tutti e quattro gli indicatori sopra soglia. */
-export async function partiteVerdi(soglie, stagione) {
-  const { data } = await supabase.rpc('andamento_verdi', { ...par(soglie, stagione), p_limite: 300 })
+export async function partiteVerdi(soglie, stagione, fascia) {
+  const { data, error } = await supabase.rpc('andamento_verdi', { ...par(soglie, stagione, fascia), p_limite: 300 })
+  if (error) throw new Error(error.message)
   return data || []
 }

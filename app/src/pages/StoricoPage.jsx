@@ -41,10 +41,13 @@ const vinta = (giocata, r) => {
   return giocata.includes('over') ? r.gol_casa + r.gol_trasferta > 1.5 : true
 }
 
-// Quante se ne vedono subito e quante al massimo dopo il tocco.
+// Quante se ne vedono subito; dopo il tocco si vedono **tutte**.
+// ⚠️ Il tetto a 30 è stato togliere il 15/10/2026 (scelta di Mattia): erano
+// *"mostra tutte le partite scelte"*, e un elenco che si ferma a trenta senza
+// dirlo nasconde quello che esiste — il difetto di famiglia di questo progetto.
+// Le proposte sopra soglia sono qualche decina, non migliaia: si possono
+// mostrare tutte.
 const VISIBILI = 10
-const MASSIME = 30
-const OLTRE = MASSIME - VISIBILI
 
 export default function StoricoPage() {
   const [archivio, setArchivio] = useState(null)
@@ -52,7 +55,7 @@ export default function StoricoPage() {
   const [future, setFuture] = useState([])
   const [errore, setErrore] = useState(null)
   const [caricamento, setCaricamento] = useState(true)
-  const [tutte, setTutte] = useState(false)   // le ultime chiuse: 10 o 30
+  const [tutte, setTutte] = useState(false)   // le ultime chiuse: 10 o tutte
 
   useEffect(() => {
     async function carica() {
@@ -158,9 +161,12 @@ export default function StoricoPage() {
           </>}
       </Sezione>
 
-      <Sezione titolo="📋 Le ultime chiuse" extra={`${Math.min(ultime.length, VISIBILI + (tutte ? OLTRE : 0))} di ${sopra.length}`}>
+      {/* ⚠️ Niente `extra` col conteggio (richiesta di Mattia, 15/10/2026):
+          diceva "10 di 42" e quei due numeri li dice già il tasto in fondo
+          all'elenco, dove servono — accanto al titolo erano un doppione. */}
+      <Sezione titolo="📋 Le ultime chiuse">
         <Card style={{ padding: '6px 12px' }}>
-          {ultime.slice(0, tutte ? MASSIME : VISIBILI).map((r, i, arr) => {
+          {(tutte ? ultime : ultime.slice(0, VISIBILI)).map((r, i, arr) => {
             const ok = vinta(r.giocata, r)
             const cat = categoria(r.probGiocata, SOGLIE_DEFAULT)
             return (
@@ -188,8 +194,8 @@ export default function StoricoPage() {
               color: C.spento, fontFamily: F.mono, fontSize: 11, letterSpacing: '0.08em', cursor: 'pointer',
             }}>
               {tutte
-                ? '⌃ mostra solo le ultime ' + VISIBILI
-                : `⌄ altre ${Math.min(ultime.length, MASSIME) - VISIBILI} · in tutto ${Math.min(ultime.length, MASSIME)}`}
+                ? `⌃ mostra solo le ultime ${VISIBILI}`
+                : `⌄ altre ${ultime.length - VISIBILI} · in tutto ${ultime.length}`}
             </button>
           )}
         </Card>
