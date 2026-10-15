@@ -2135,6 +2135,14 @@ cd app
 node --env-file=.env scripts/importa-partite.js    # archivio → Supabase (prova a vuoto)
 node --env-file=.env scripts/verifica-partite.js   # confronto con la sorgente
 
+# ⚠️ Questi quattro stanno in app/scripts, NON in btscout: importano src/lib/*
+# con un percorso relativo e da btscout non partono (MODULE_NOT_FOUND). Erano
+# elencati nel blocco sbagliato fino al 15/10/2026.
+node --env-file=.env scripts/prova-vpm.js          # VPM sul weekend: dove campo e mercato litigano
+node --env-file=.env scripts/prova-ordine.js       # i criteri della lista, casi limite compresi
+node --env-file=.env scripts/prova-scheda.js --squadra=Lens    # il blocco VPM della scheda, e l'identità dei pesi
+node --env-file=.env scripts/schedina-weekend.js --quota=5     # la schedina del weekend dalle partite vere
+
 cd btscout && npm install
 node --env-file=.env scripts/verifica-storico.js   # coerenza dell'archivio (settimanale)
 node --env-file=.env scripts/audit-archivio.js     # controllo completo (dopo ogni campionato nuovo)
@@ -2143,10 +2151,6 @@ node --env-file=.env scripts/importa-espn.js --campionati=I1 --giorni=30 --esegu
 node --env-file=.env scripts/controlla-dati.js     # cosa è passato in silenzio (gira già dentro aggiorna.js)
 #   = import-storico --stagioni=2627 → riconcilia-prossime → importa-prossime
 #     → importa-prossime-odds → calcola-andamento --stagioni=1
-node --env-file=.env scripts/prova-vpm.js           # VPM sul weekend: dove campo e mercato litigano
-node --env-file=.env scripts/prova-ordine.js        # i tre ordini della lista, casi limite compresi
-node --env-file=.env scripts/prova-scheda.js --squadra=Lens   # il blocco VPM della scheda, e l'identità dei pesi
-node --env-file=.env scripts/schedina-weekend.js --quota=5    # la schedina del weekend dalle partite vere
 node --env-file=.env scripts/rendiconto.js          # IL RENDICONTO: calibrazione + resa delle proposte
 node --env-file=.env scripts/backtest-scala.js --basepct=10 --scelta=resa   # il metodo di giocata su 8 stagioni
 #   altri pomelli: --passi=6 --banda=1.35,1.45 --bankroll=200 --scelta=att|resa|vpm

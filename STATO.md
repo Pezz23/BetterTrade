@@ -90,6 +90,23 @@ dipende da lei, e un suo errore non deve impedire i controlli sui dati veri.
   ambiguo (*function is not unique*). ✅ Disinnescata il 15/10: ora **28 e 29 si
   rilanciano entrambe senza danno**, provato.
 
+### Le verifiche passate il 15/10 — non rifarle a freddo
+
+Controllo di coerenza completo alla chiusura della sessione. **Tutto verde**,
+quindi se qualcosa non torna alla prossima sessione è successo *dopo*:
+
+| controllo | esito |
+|---|---|
+| le **costanti** dichiarate in CLAUDE.md contro il codice | tutte corrispondono (K_STRETTA, STRETTA_GG, GG_MEDIO, BASI_GOL, PESI, PESI_STRATI, FATTORE_OVER, soglie 75/72/65, PESO_CAMPO, MIN_PARTITE…) |
+| `prova-vpm.js` — la funzione SQL contro la libreria JS | **125/125 identiche**, bandierine comprese |
+| `prova-scheda.js` — `Σ pesi × parametri = forza` | 250 squadre-partita, scarto massimo 1,8·10⁻¹⁵ |
+| `prova-ordine.js` — i criteri della lista | decrescente ✓ · vuoti in fondo ✓ · stabile ✓ · inverso ✓ |
+| `verifica-coerenza.js` — l'invariante del bankroll | tutti coerenti |
+| le **tre copie di `emailDi()`** (app, script, SQL) | stesso identificatore su 7 nomi, compresa la `İ` turca |
+| le **migrazioni si possono rilanciare** | `02`, `28` e `29` riapplicate davvero: una firma per funzione, 22 policy attive |
+| `controlla-dati.js` | importazioni ✓ · doppioni ✓ · resta Burgos-Granada (noto) e le 2 fantasma dell'Ath Bilbao |
+| **export mai usati** | solo `Input` e `Badge` in `ui.jsx`, ed è una scelta aperta, non una dimenticanza |
+
 ### Da dove ripartire col lavoro, in ordine di valore atteso
 
 1. **Il Goal/NoGoal dal prezzo** — invertire la quota over 2,5 nei gol attesi
@@ -405,17 +422,30 @@ Le quattro priorità del 12/10 sono chiuse. Quello che è rimasto aperto, in
 ordine di quanto è pronto:
 
 **Tre decisioni di Mattia, già istruite** (basta un sì):
-- **`Input` e `Badge` in `components/ui.jsx` non li usa nessuno**, mentre
+- **`Input` e `Badge` in `components/ui.jsx` non li usa nessuno** — confermato
+  il 15/10/2026 contando i riferimenti in tutto il repo: uno solo a testa, la
+  propria definizione. ⚠️ Non è codice morto per sbaglio: sono due primitive di
+  libreria **dichiarate disponibili in CLAUDE.md**, e un pezzo mai usato non fa
+  danno. Il difetto è l'altro — mentre
   `UtentiPage` si scrive i propri `<input>` con `S.input`. O si adottano o si
   tolgono: un pezzo di libreria inutilizzato accanto a uno riscritto a mano è
   il modo di ritrovarsi con due stili.
 - **Il chunk `App` pesa 391 kB (103 gzip).** Le pagine si potrebbero caricare a
   richiesta (`React.lazy`): chi apre la Dashboard non ha bisogno di Reporting,
   Bilancio e Andamento.
-- **Tre script correnti usano ancora `ps_*`** (Pinnacle, colonne vuote dalla
-  26/27): `import-storico.js`, `audit-archivio.js`, `verifica-storico.js`.
-  Girano e perdono la stagione in corso **in silenzio**. Gli altri quattro sono
-  della vecchia fase e già marcati.
+- ✅ **`ps_*`: ricontrollato il 15/10/2026, e la voce era allarmista.** I file
+  che le toccano sono **cinque**, non tre (`import-storico.js`,
+  `importa-partite.js`, `audit-archivio.js`, `verifica-storico.js`,
+  `verifica-partite.js`), ma **sono tutti import o diagnostica**: le due
+  importazioni mappano una colonna che oggi arriva vuota (scrivono null, e va
+  bene così), `verifica-storico` filtra già `where ps_1 is not null`,
+  `audit-archivio` la elenca fra le colonne di cui riporta la copertura — che
+  per la 26/27 sarà 0%, ed è un'informazione, non un errore. **Nessuno di questi
+  cinque perde la stagione in corso in silenzio.**
+  ⚠️ Il rischio vero resta solo sui **quattro della vecchia fase** —
+  `backtest.js`, `s2`, `s5`, `s6` — che **misurano** e quindi perdono davvero la
+  26/27 senza dirlo. Sono già marcati in testa al file. **Se un giorno si
+  riprendono i backtest vecchi, si parte da lì e non da questi cinque.**
 
 **In attesa di qualcun altro:**
 - ✅ **football-data si è sbloccato il 15/10/2026**: era fermo al 20 settembre,
