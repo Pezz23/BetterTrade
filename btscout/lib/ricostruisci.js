@@ -30,7 +30,8 @@ export async function ricostruisci({ stagioni: quante = 3, daGiornata = 5 } = {}
   const righe = await sql`
     select id, data, stagione, div, casa, trasferta, esito, gol_casa, gol_trasferta,
            coalesce(tirip_casa,0) as tfc, coalesce(tirip_trasf,0) as tft,
-           b365_1, b365_2, avg_ap_1, avg_ap_x, avg_ap_2
+           b365_1, b365_2, avg_ap_1, avg_ap_x, avg_ap_2,
+           max_ap_1, max_ap_2
     from partite
     where esito is not null and gol_casa is not null
     order by data, div, casa, id`;
@@ -93,6 +94,19 @@ export async function ricostruisci({ stagioni: quante = 3, daGiornata = 5 } = {}
         segno, combinata, vinta, segnoGiusto,
         giocata: `${segno === 'H' ? '1' : '2'}${combinata ? ' + over 1,5' : ''}`,
         quota, quotaResa, att: probGiocata, resa,
+        // ⚠️ **Quanto i bookmaker sono d'accordo fra loro**, sul segno giocato:
+        // la distanza fra la quota più generosa delle 34 e la media. Non è il
+        // margine del banco (quello è la somma delle implicite) ma la
+        // **dispersione**: con i book allineati la media è un consenso, con i
+        // book sparsi è una media di opinioni diverse — e l'attendibilità, che
+        // *è* quella media, non vale lo stesso nei due casi.
+        // ⚠️ Si misura **sul segno che si gioca**, non sulla terna: su una
+        // partita si gioca l'1 o il 2, e il disaccordo sulla X non ci riguarda.
+        scartoBook: (() => {
+          const m = Number(segno === 'H' ? r.max_ap_1 : r.max_ap_2)
+          const a = Number(segno === 'H' ? r.avg_ap_1 : r.avg_ap_2)
+          return m > 1 && a > 1 ? m / a - 1 : null
+        })(),
         vpm: v?.punti ?? null, voto: voto(resa, v?.punti ?? null),
         // ⚠️ `scelta` è **null** quando il campo contraddice il mercato: non è
         // un dato che manca, è la formula che dice "questa non si sceglie".

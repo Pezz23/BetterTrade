@@ -1405,6 +1405,71 @@ Dettagli, tabelle e limiti in STATO.md.
 
 ---
 
+### ⚠️⚠️ Quando i bookmaker non sono d'accordo fra loro — 15 ottobre 2026
+
+**L'attendibilità *è* la media di mercato.** Ma una media di 34 opinioni
+allineate e una media di 34 opinioni sparse non sono lo stesso numero, e fino
+al 15/10 le mostravamo identiche. `DISPERSIONE` e `dispersioneBook()` in
+`lib/attendibilita.js` misurano la distanza fra la quota **più generosa** e la
+**media**, sul segno favorito.
+
+**Misurato su 8 stagioni e 38.084 partite** (`btscout/scripts/prova-dispersione.js`),
+fra quelle con attendibilità ≥ 60% e a livello dichiarato quasi identico:
+
+| disaccordo sopra | partite | dichiarato → avverato | resa |
+|---|---|---|---|
+| 4,2% | 521 | 66,2% → 67,4% (+1,1) | 95,1% |
+| 5,0% | 234 | 65,5% → 63,2% (−2,2) | 90,0% |
+| **6,0%** | **97** | **66,1% → 59,8% (−6,3)** | **84,6%** |
+| 8,0% | 26 | 64,6% → 53,8% (−10,8) | 78,6% |
+| *sotto 6,0%* | *6.191* | *68,3% → 71,8% (+3,5)* | *99,1%* |
+
+⚠️ **Quello che rende credibile la misura non è un numero, è che scende in modo
+monotòno su quattro tagli.** Il singolo gruppo ha ±9,8 di errore; quattro
+gruppi che peggiorano in fila nello stesso verso no.
+⚠️ **È un avviso, non un'esclusione**: 97 partite su 6.288, l'1,5%.
+`SCARTO_FONTI` esclude dalle spin perché là il **dato è rotto**; qui il dato è
+buono e dice che il mercato è incerto.
+⚠️ **A schermo: il marchio ambra `ATTEND. ~` in barra**, e il numero per esteso
+nei dettagli completi. Sta su ATTEND. perché è quel numero a valerne meno. **Non**
+una riga rossa sopra la barra: due avvisi con lo stesso peso rendono illeggibile
+quello grave.
+⚠️⚠️ **È discreto di proposito, e la decisione è stata confermata dopo una
+prova.** Il 15/10 Mattia non l'ha trovato — *"non vedo la scritta"* — e sono
+dieci partite su 192, quindi il più delle volte non c'è niente da vedere. Gli
+ho proposto una riga ambra nella scheda o un glifo più forte in barra:
+**"lascia così"**. ⚠️ Quindi **non va alzato credendo di correggere una
+dimenticanza**: la ragione per tenerlo basso è che l'avviso rosso delle quote in
+conflitto deve restare l'unica cosa che grida. Se un giorno si vuole cambiare,
+si cambia quello sapendo di spendere l'attenzione che oggi va al dato rotto.
+
+⚠️⚠️ **IL TRANELLO, e c'è mancato poco: le due fonti non hanno la stessa
+scala.** Stessa definizione, stesso segno — football-data mediana **2,9%** e 98°
+percentile **7,1%**; The Odds API mediana **4,0%** e 98° percentile **10,4%**.
+Il motivo è meccanico: la massima è il migliore fra **34** book invece che fra i
+pochi che football-data segue, e **il massimo di un insieme più grande è più
+estremo**. Applicare il 6% misurato alle righe di The Odds API segnalerebbe
+**187 partite su 192** invece di dieci.
+⚠️ Quindi la soglia dipende dalla fonte: **6% è MISURATO** (football-data),
+**10% è TRASPOSTO per percentile e NON misurato** — di storia con le massime di
+The Odds API non ne abbiamo (oggi ~300 partite già giocate, troppo poche). **Va
+rimisurato quando ce ne sarà.** Con queste soglie, 10 future su 192 sono
+segnalate.
+⚠️ **E `prossime_partite.fonte` dice chi ha scritto per ultimo**, non chi ha
+portato ogni colonna: The Odds API gira dopo football-data e sovrascrive
+`max_ap_*`, quindi `fonte = 'odds-api'` vuol dire *questa massima è di 34 book*.
+È per questo che la soglia si sceglie su quella colonna.
+
+⚠️⚠️ **E attenzione a una misura che sembra enorme e non lo è.** Prendendo le
+prime 9 di ogni giorno per attendibilità, i soli "book allineati" fanno
+**61,7%** e i soli "sparsi" **52,1%**: dieci punti, che è il numero più grande
+dell'intera misura. **È un artefatto.** Il disaccordo correla con la quota —
+dove i book litigano le quote sono più lunghe — quindi il gruppo "sparsi" ha
+attendibilità media 43,9% contro 55,7%: si sta misurando la quota, non il
+disaccordo. Il confronto onesto tiene l'attendibilità **fissa**, e lì l'effetto
+è 4-6 punti nel solo quartile estremo. **Quando una differenza è troppo bella,
+cercare cos'altro è cambiato fra i due gruppi.**
+
 ### ⚠️⚠️ Quando le due fonti si contraddicono, non si gioca
 
 **Trovato da Mattia il 12/10/2026 guardando una card**: voto **200%**, con
@@ -2086,6 +2151,8 @@ node --env-file=.env scripts/prova-gol-varianti.js         # si può migliorare 
 node --env-file=.env scripts/prova-gol-avversari.js        # e correggendo per gli avversari affrontati? (no)
 node --env-file=.env scripts/prova-gg.js                   # il Goal/NoGoal: quanto è giusto il consiglio
 node --env-file=.env scripts/prova-consiglio-gol.js --stagioni=8   # i due consigli sotto la giocata
+#   con --mercato la riga 2,5 usa la quota invece del modello
+node --env-file=.env scripts/prova-dispersione.js --stagioni=8    # l'attendibilità vale meno se i book litigano?
 #   pomelli: --base=gol|tiri|misto --k=20 --stagioni=3
 node --env-file=.env scripts/misura-valore.js --riferimento=media   # il criterio, a fine stagione
 node --env-file=.env scripts/import-storico.js --campionati=P1,N1   # solo alcuni campionati

@@ -67,6 +67,54 @@ export function probabilita(q1, qx, q2) {
 // con entrambe le quote, **una sola** supera questa soglia — il costo di questo
 // controllo è una partita, il costo di non averlo era un voto del 200% preso
 // per buono.
+/**
+ * ⚠️⚠️ **Quando i bookmaker non sono d'accordo fra loro, l'attendibilità vale
+ * meno** — e le due soglie qui sotto **non** sono la stessa cosa misurata due
+ * volte, sono due scale diverse.
+ *
+ * La misura (15/10/2026, `btscout/scripts/prova-dispersione.js`, 8 stagioni e
+ * 38.084 partite): fra le partite con attendibilità ≥ 60%, tenendo il livello
+ * dichiarato quasi identico (66,1% contro 68,3%), il taglio sulla dispersione
+ * separa due mondi — e **scende in modo monotòno su quattro tagli**, che è
+ * quello che lo rende credibile più del singolo numero:
+ *
+ * | disaccordo sopra | partite | dichiarato → avverato | resa |
+ * |---|---|---|---|
+ * | 4,2% | 521 | 66,2% → 67,4% (+1,1) | 95,1% |
+ * | 5,0% | 234 | 65,5% → 63,2% (−2,2) | 90,0% |
+ * | **6,0%** | **97** | **66,1% → 59,8% (−6,3)** | **84,6%** |
+ * | 8,0% | 26 | 64,6% → 53,8% (−10,8) | 78,6% |
+ * | *sotto 6,0%* | *6.191* | *68,3% → 71,8% (+3,5)* | *99,1%* |
+ *
+ * ⚠️ **È un avviso, non un'esclusione.** Sono 97 partite su 6.288 (1,5%) e
+ * l'errore sul tasso è ±9,8: la direzione regge su quattro tagli, la grandezza
+ * no. `SCARTO_FONTI` esclude dalle spin perché là il **dato è rotto**; qui il
+ * dato è buono e dice che il mercato è incerto.
+ *
+ * ⚠️⚠️ **E le due fonti NON hanno la stessa scala, questo era il tranello.**
+ * Stessa definizione, stesso segno: football-data ha mediana 2,9% e 98°
+ * percentile 7,1%, The Odds API mediana 4,0% e 98° percentile 10,4% — perché la
+ * massima è il migliore fra **34** book invece che fra i pochi che
+ * football-data segue, e il massimo di un insieme più grande è più estremo.
+ * Applicare il 6% misurato alle righe di The Odds API segnalerebbe **187 partite
+ * su 192** invece di due o tre.
+ * ⚠️ Quindi: **6% è MISURATO** (football-data), **10% è TRASPOSTO per
+ * percentile e non misurato** — di storia con le massime di The Odds API non ne
+ * abbiamo. Va rimisurato quando ce ne sarà: oggi sono ~300 partite già giocate,
+ * troppo poche.
+ * ⚠️ Si guarda il **segno favorito**, non la terna: su una partita si gioca l'1
+ * o il 2, e il disaccordo sulla X non ci riguarda.
+ */
+export const DISPERSIONE = { 'football-data': 0.06, 'odds-api': 0.10 }
+
+/** Quanto la quota più generosa supera la media, sul segno favorito. */
+export function dispersioneBook(r) {
+  const casa = Number(r.avg_ap_1) <= Number(r.avg_ap_2)
+  const m = Number(casa ? r.max_ap_1 : r.max_ap_2)
+  const a = Number(casa ? r.avg_ap_1 : r.avg_ap_2)
+  return m > 1 && a > 1 ? m / a - 1 : null
+}
+
 export const SCARTO_FONTI = 0.15
 
 /**
@@ -145,9 +193,12 @@ export function valuta(r) {
   // ⚠️ Le due fonti litigano troppo: uno dei due prezzi è sbagliato e non
   // sappiamo quale. La partita resta visibile — nasconderla sarebbe peggio,
   // perché nessuno andrebbe a cercare il difetto — ma **non si propone**.
+  const dispersione = dispersioneBook(r)
+  const bookSparsi = dispersione != null && dispersione > (DISPERSIONE[r.fonte] ?? DISPERSIONE['football-data'])
   const scartoQuote = scartoFonti(r)
   const quoteIncoerenti = scartoQuote != null && scartoQuote > SCARTO_FONTI
   return { ...r, p, segno, prob, quota, quotaFonte, quotaDaConsenso, quoteIncoerenti, scartoQuote,
+    dispersione, bookSparsi,
            q1, qx, q2, equo, scarto, giocata, quotaGiocata, nota, probGiocata, quotaStimata, resa }
 }
 

@@ -3,11 +3,30 @@
 > To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 13 ottobre 2026 · app alla versione **1.20.01**
+**Ultimo aggiornamento:** 15 ottobre 2026 · app alla versione **1.26.00**
+
+## La giornata del 15 ottobre, in una riga: il limite non era il calcolo
+
+**Tre cose misurate, e una vale più delle altre due.** Il consiglio over/under
+è passato dal **64,8% al 71,2%** di volte giuste non perché abbiamo trovato una
+regola migliore — **sette regole diverse danno tutte lo stesso +5** — ma perché
+abbiamo iniziato a usare **le quote over 2,5 che erano in archivio dal primo
+import**. Scarto **+20 punti** su un evento che accade il 51% delle volte: il
+numero migliore che questo progetto abbia prodotto.
+
+Le altre due: la pagina **Andamento** ha preso il filtro per **fascia di
+quota**, e la risposta è scomoda — *fissato il prezzo, nessun indicatore batte
+la sua fascia in modo dimostrabile*, l'attendibilità passa da +16,8 punti a
+−0,0. E il **disaccordo fra i bookmaker** è misurato e segnalato in barra.
+
+⚠️ **La morale operativa, da tenere a mente la prossima volta che un indicatore
+sembra fermo:** prima di cercare una formula migliore, contare cosa c'è in
+archivio e non si guarda. Oggi erano le quote dell'over; restano **i gol del
+primo tempo** (38.082 partite) e **i cartellini** (38.082), mai aperti.
 
 **Le quattro priorità del 12/10 sono tutte chiuse** (voci 24-27): Bet365 al
 posto di Codere, la pagina **Andamento**, l'indicatore **Goal/NoGoal** e quello
-**Over/Under**. In coda alla giornata sono stati fatti **due controlli del
+**Over/Under**. In coda a quella giornata sono stati fatti **due controlli del
 codice**, che hanno trovato difetti veri — il più grave è che cinque script di
 misura usavano una chiave del giorno **senza anno**, e il backup paginava senza
 ordinamento. Entrambi i blocchi stanno più sotto; leggerli prima di fidarsi dei
@@ -341,6 +360,35 @@ verifica: 16 crediti.
 64,8% al **71,2%** di volte giuste, con scarto **+20 punti** sulla base.
 Il giro di aggiornamento passa da 30 a **45 crediti** (~360 al mese su 500).
 Tabelle in CLAUDE.md.
+
+✅ **15/10/2026 — il disaccordo fra i bookmaker è misurato e segnalato.**
+Sopra la soglia di dispersione l'attendibilità dichiarava 66,1% e manteneva
+**59,8%** (resa 84,6%) contro 68,3% → 71,8% (resa 99,1%) sotto. Marchio ambra
+`ATTEND. ~` in barra, numero nei dettagli.
+⚠️ **Resta discreto per decisione di Mattia** (15/10), dopo che lui stesso non
+l'aveva notato: gli ho proposto una riga ambra nella scheda o un glifo più
+forte, e la risposta è stata *"lascia così"*. **Non "alzarlo" alla prossima
+sessione credendo di correggere una dimenticanza**: è una scelta, e la ragione
+per tenerlo basso è che l'avviso rosso delle **quote in conflitto** deve restare
+l'unica cosa che grida. ⚠️ **Da rimisurare**: il 6% è
+misurato su football-data, il 10% delle righe The Odds API è **trasposto per
+percentile**, perché di storia con le loro massime non ne abbiamo (~300 partite
+giocate). Rifarlo quando ce ne saranno un paio di migliaia.
+
+⚠️ **Tre strade di lettura ancora aperte, in ordine di valore atteso** (dal
+ragionamento del 15/10):
+1. **Il Goal/NoGoal dal prezzo**: invertire la quota over 2,5 nei gol attesi del
+   mercato e passarli alla formula del GG che già c'è. Gratis, 38.000 partite,
+   dato presente su 189 future su 192. Il consiglio GG è al 57,5% ed è il più
+   debole che abbiamo.
+2. **I gol del primo tempo**: 38.082 partite in archivio, **mai aperte**. Non è
+   una previsione migliore, è una dimensione nuova — *quando* arrivano i gol.
+3. **I cartellini rossi come contesto della forma**: un 0-3 con un rosso al 20°
+   non è un 0-3, e oggi li mostriamo identici. Dato completo su 38.082 partite.
+⚠️ **Da NON fare**: toccare il modello dei gol (5 varianti misurate, nessuna
+migliora) e inseguire l'exchange sull'over (10.679 partite in archivio ma
+**zero** sulle future — Betfair non quota quel mercato nell'endpoint che
+paghiamo: serve da metro, non da fonte).
 
 **Lavori veri non iniziati:** lotto Q (routing con URL veri, briefing valutato
 e risposta scritta in `briefing/risposte/`, mai partito) · lotto E (spin 5-8) ·

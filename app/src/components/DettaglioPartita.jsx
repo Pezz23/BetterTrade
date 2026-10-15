@@ -614,6 +614,21 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
                 <span style={{ color: v[0] ? C.testo : C.fantasma, flexShrink: 0 }}>{v.map(x => q(x)).join(' / ')}</span>
               </div>
             ))}
+            {/* ⚠️ **Quanto i book sono d'accordo fra loro**, scritto per esteso
+                qui dentro mentre in barra c'è solo il marchio ambra su
+                ATTEND.: sopra una card serve sapere *che* il mercato è
+                incerto, il numero serve a chi vuole verificarlo. Il taglio
+                dipende dalla fonte della massima — 6% su football-data
+                (misurato), 10% su The Odds API (trasposto per percentile,
+                perché la massima di 34 book è più estrema). */}
+            {p.dispersione != null && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontFamily: F.mono, fontSize: 10, borderBottom: `1px solid ${C.bordoTenue}` }}>
+                <span style={{ color: C.spento }}>disaccordo fra i book (massima / media)</span>
+                <span style={{ color: p.bookSparsi ? C.ambra : C.testo }}>
+                  +{(p.dispersione * 100).toFixed(1)}%{p.bookSparsi ? ' · sparsi' : ''}
+                </span>
+              </div>
+            )}
             {p.b365_over25 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontFamily: F.mono, fontSize: 10, borderBottom: `1px solid ${C.bordoTenue}` }}>
                 <span style={{ color: C.spento }}>over / under 2,5 (Bet365)</span>

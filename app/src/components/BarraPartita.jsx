@@ -81,7 +81,20 @@ export default function BarraPartita({ p, cat, vpm = null, colore }) {
         etichetta={!quota ? 'QUOTA'
           : `${(p.quotaFonte || 'quota').toUpperCase()}${!p.quotaGiocata && p.quota ? ` ${p.segno}` : ''}`} />
 
-      <Colonna divisore={c} colore={c} valore={pct1(p.probGiocata)} etichetta="ATTEND." />
+      {/* ⚠️⚠️ **L'ambra sull'etichetta dice che i book non sono d'accordo fra
+          loro**, e sta su ATTEND. perché è quel numero a valerne meno:
+          l'attendibilità **è** la media di mercato, e una media di opinioni
+          sparse non è un consenso. Misurato su 8 stagioni: sopra la soglia di
+          dispersione l'attendibilità dichiarava 66,1% e manteneva **59,8%**
+          (resa 84,6%), mentre sotto dichiarava 68,3% e manteneva 71,8% (resa
+          99,1%).
+          ⚠️ **Marchio sull'etichetta e non sul valore, e nessuna riga rossa
+          sopra**: non è un dato rotto come le quote in conflitto — è un dato
+          buono che dice *il mercato è incerto*. Due avvisi con lo stesso peso
+          renderebbero illeggibile quello grave. */}
+      <Colonna divisore={c} colore={c} valore={pct1(p.probGiocata)}
+        coloreEtichetta={p.bookSparsi ? C.ambra : undefined}
+        etichetta={p.bookSparsi ? 'ATTEND. ~' : 'ATTEND.'} />
 
       <Colonna divisore={c} colore={COLORE_VPM[vs] || C.fantasma}
         coloreEtichetta={vs && vs !== 'incerto' ? COLORE_VPM[vs] : undefined}
