@@ -1786,9 +1786,10 @@ numero**: senza niente da disfare non c'è niente da vietare.
 ⚠️ **Ma alla chiusura si congelano**, una volta sola (`chiudi(bankrollFinale,
 { cassa, accumulo })`): una scalata chiusa non si ricalcola più, e senza quel
 passaggio l'archivio dichiarava *"100 → 131 · accumulo € 0,00"* — un guadagno
-senza nessun posto da cui fosse arrivato. Le scalate chiuse **prima** di quella
-correzione hanno accumulo zero, e la card lo **omette** invece di scrivere una
-cifra falsa.
+senza nessun posto da cui fosse arrivato. L'unica scalata chiusa prima di quella
+correzione era un collaudo e Mattia l'ha azzerata il 19/10, quindi **in archivio
+non ce n'è nessuna con accumulo zero**: la card lo omette comunque quando è
+zero, perché una cifra mancante si nota e una cifra falsa no.
 ⚠️ **La puntata di ogni passo è la cassa che arriva fin lì**, ricalcolata dalla
 stessa catena: quella salvata al momento del piano non sa quale percentuale
 scegliererai.

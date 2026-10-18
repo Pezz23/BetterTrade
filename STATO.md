@@ -70,7 +70,7 @@ numeri scritti qui, perché alcuni sono stati corretti.
 | | |
 |---|---|
 | app | **1.28.07**, commit `f3384b8`, lint 0 errori (8 avvisi noti), build ok |
-| Road to weekend | in piedi · **1 scalata chiusa** nel registro (100 → 131), 8 passi, 19 gambe |
+| Road to weekend | in piedi · **registro vuoto**: la #16 era un collaudo, azzerata da Mattia col tasto il 19/10 |
 | archivio | **54.125** partite con risultato, l'ultima del **14/10** |
 | future | **192** da giocare · **189** con la quota over 2,5 · **0 con Bet365** |
 | pagina Andamento | **99.683** righe, aggiornata fino al **14/10** |
@@ -149,18 +149,19 @@ quindi se qualcosa non torna alla prossima sessione è successo *dopo*:
    aggiunto, uno spostato col `+`, un esito segnato e annullato, uno stop — e
    contare le righe, non cercare un errore. Finché non è fatto, "funziona" è una
    previsione.
-   ⚠️ La scalata #16 nel registro è nata **col codice di prima**: non è una prova
-   che il nuovo cammini.
+   ⚠️ La scalata #16 era nata **col codice di prima** e **non era una giocata**:
+   Mattia l'ha azzerata col tasto il 19/10. Il registro comincia dalla prima
+   scalata vera, quindi **ogni riga che c'è dentro è una giocata** — ed è la
+   condizione perché possa decidere qualcosa.
+   ⚠️⚠️ **E quel tasto è già il primo collaudo**: `azzeraTutto()` è una
+   cancellazione che passa da RLS con l'utente vero. Se le scalate restano lì,
+   la policy ha rifiutato in silenzio — **non si cerca un errore, si guarda se
+   le righe sono spariste.**
 1. **Il dettaglio nell'archivio**: toccare una scalata chiusa e rivederne i
    passi. Oggi la card dice solo il risultato, e le gambe salvate — coi quattro
    numeri della selezione — non si possono rileggere da nessuna parte. **È
    quello per cui il registro esiste.**
-2. **L'accumulo della scalata #16 è a zero** nel database (dovrebbe essere
-   **26,96**, verificato ricostruendo la catena: 131,96 → chiusa a 131). La card
-   adesso **omette** la cifra invece di scriverne una falsa, ma il dato vero si
-   può scrivere con una correzione una volta sola. **Da decidere con Mattia**:
-   è l'unica riga del registro nata prima della correzione.
-3. **Il riepilogo con le tre domande** — quanto in accumulo · quante hanno
+2. **Il riepilogo con le tre domande** — quanto in accumulo · quante hanno
    rientrato la puntata · le gambe scelte a mano hanno reso più del 98% — quando
    ci saranno dieci o venti scalate. Prima direbbe rumore.
 4. **La modalità "colpo"** a quota 5 o più: la colonna `modalita` c'è in
