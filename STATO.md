@@ -139,6 +139,18 @@ quindi se qualcosa non torna alla prossima sessione è successo *dopo*:
 
 ### Road to weekend — cosa resta
 
+0. ⚠️⚠️ **IL GIRO VERO NON È MAI STATO ESEGUITO DAL BROWSER.** Le scritture
+   riscritte il 18/10 — `apri()` in tre colpi, `spostaGamba()`, `chiudi()` che
+   congela le casse — sono state verificate **in lettura** e con la
+   **service_role**, che **scavalca RLS**: non dicono niente su cosa fa l'utente
+   di Mattia. ⚠️ È la trappola che il progetto documenta già: *una `update` che
+   nessuna policy permette cambia zero righe e non solleva nulla*. **La prima
+   cosa da fare in sessione è aprire una scalata vera dal telefono** — un passo
+   aggiunto, uno spostato col `+`, un esito segnato e annullato, uno stop — e
+   contare le righe, non cercare un errore. Finché non è fatto, "funziona" è una
+   previsione.
+   ⚠️ La scalata #16 nel registro è nata **col codice di prima**: non è una prova
+   che il nuovo cammini.
 1. **Il dettaglio nell'archivio**: toccare una scalata chiusa e rivederne i
    passi. Oggi la card dice solo il risultato, e le gambe salvate — coi quattro
    numeri della selezione — non si possono rileggere da nessuna parte. **È
