@@ -3,7 +3,36 @@
 > To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 15 ottobre 2026 · app alla versione **1.26.00**
+**Ultimo aggiornamento:** 18 ottobre 2026 · app alla versione **1.28.07**
+
+## La giornata del 18 ottobre, in una riga: non vietare, togliere il secondo numero
+
+**ROAD TO WEEKEND è in piedi e committata** (`f3384b8`, dieci file, cinque nati
+oggi): la pagina per pianificare la scalata del weekend, con le tre casse, le
+quote a mano, l'archivio e il registro che renderà falsificabile l'esperimento.
+
+**La lezione della giornata non è una misura, è un errore di disegno mio.**
+Tenevo `cassa` e `accumulo` memorizzati e aggiornati a ogni esito: così ogni
+modifica successiva avrebbe dovuto *disfare* l'aggiornamento precedente, e per
+non sbagliare avevo **vietato le modifiche** — niente togliere gambe, niente
+annullare un esito. Mattia: *"non ci siamo, tutto troppo vincolante"*. La cura
+non era togliere i divieti uno per uno: era **smettere di tenere un secondo
+numero**. Le casse ora si ricalcolano camminando sulla catena (`casseDi`), e
+senza niente da disfare non c'è niente da vietare. **È la regola 1 del progetto
+— il bankroll è calcolato, non memorizzato — applicata a un posto dove l'avevo
+violata.**
+
+**E il tagliando ha detto che la lentezza non era nei calcoli, erano i giri**:
+aprire una scalata faceva **12 richieste** al database, il tasto `+` altre 12.
+Ora sono 5 e 3. Una scalata ha quattro passi e una decina di gambe: **si conta
+il numero di richieste, non i kilobyte.**
+
+⚠️ **Due difetti sono stati trovati dal primo registro vero di Mattia, non da
+un errore**: i numeri dei passi **hanno dei buchi** (1, 3, 4…) perché svuotare
+un passo lo cancella — e la card leggeva la colonna mentre le casse contavano le
+posizioni, cioè due consigli diversi sullo stesso passo; e l'archivio dichiarava
+*"100 → 131 · accumulo € 0,00"*, perché da quando le casse sono derivate nessuno
+le congelava alla chiusura.
 
 ## La giornata del 15 ottobre, in una riga: il limite non era il calcolo
 
@@ -34,13 +63,14 @@ numeri scritti qui, perché alcuni sono stati corretti.
 
 ---
 
-# ▶️ DA DOVE RIPARTIRE — scritto il 15 ottobre 2026
+# ▶️ DA DOVE RIPARTIRE — scritto il 18 ottobre 2026
 
 **Lo stato vero, misurato alla chiusura della sessione:**
 
 | | |
 |---|---|
-| app | **1.26.00**, commit `c1bba17`, albero pulito, lint 0 errori (8 avvisi noti) |
+| app | **1.28.07**, commit `f3384b8`, lint 0 errori (8 avvisi noti), build ok |
+| Road to weekend | in piedi · **1 scalata chiusa** nel registro (100 → 131), 8 passi, 19 gambe |
 | archivio | **54.125** partite con risultato, l'ultima del **14/10** |
 | future | **192** da giocare · **189** con la quota over 2,5 · **0 con Bet365** |
 | pagina Andamento | **99.683** righe, aggiornata fino al **14/10** |
@@ -106,6 +136,23 @@ quindi se qualcosa non torna alla prossima sessione è successo *dopo*:
 | le **migrazioni si possono rilanciare** | `02`, `28` e `29` riapplicate davvero: una firma per funzione, 22 policy attive |
 | `controlla-dati.js` | importazioni ✓ · doppioni ✓ · resta Burgos-Granada (noto) e le 2 fantasma dell'Ath Bilbao |
 | **export mai usati** | solo `Input` e `Badge` in `ui.jsx`, ed è una scelta aperta, non una dimenticanza |
+
+### Road to weekend — cosa resta
+
+1. **Il dettaglio nell'archivio**: toccare una scalata chiusa e rivederne i
+   passi. Oggi la card dice solo il risultato, e le gambe salvate — coi quattro
+   numeri della selezione — non si possono rileggere da nessuna parte. **È
+   quello per cui il registro esiste.**
+2. **L'accumulo della scalata #16 è a zero** nel database (dovrebbe essere
+   **26,96**, verificato ricostruendo la catena: 131,96 → chiusa a 131). La card
+   adesso **omette** la cifra invece di scriverne una falsa, ma il dato vero si
+   può scrivere con una correzione una volta sola. **Da decidere con Mattia**:
+   è l'unica riga del registro nata prima della correzione.
+3. **Il riepilogo con le tre domande** — quanto in accumulo · quante hanno
+   rientrato la puntata · le gambe scelte a mano hanno reso più del 98% — quando
+   ci saranno dieci o venti scalate. Prima direbbe rumore.
+4. **La modalità "colpo"** a quota 5 o più: la colonna `modalita` c'è in
+   `scalate`, la pagina non la usa.
 
 ### Da dove ripartire col lavoro, in ordine di valore atteso
 
@@ -475,6 +522,24 @@ verifica: 16 crediti.
 64,8% al **71,2%** di volte giuste, con scarto **+20 punti** sulla base.
 Il giro di aggiornamento passa da 30 a **45 crediti** (~360 al mese su 500).
 Tabelle in CLAUDE.md.
+
+🚧 **15/10/2026 — ROAD TO WEEKEND, prima metà in piedi.** Pagina nel menu ☰
+(🪜, solo admin): soglie di attendibilità **e** scelta, quota minima della
+schedina, bankroll, le due regole di incasso, la scaletta in fasce (stesso
+giorno, orari entro 3 ore), **quota di ogni gamba modificabile**, percentuale
+da mettere via **consigliata e scavalcabile**, le tre casse e il tasto stop.
+Provata sui dati veri: con att ≥ 60% escono 20 candidate e 10 passi, con
+att ≥ 67% sei candidate e cinque passi quasi tutti da una gamba sola.
+⚠️⚠️ **MANCA LA PERSISTENZA, ed è la metà che conta**: le tabelle `sql/30`
+esistono e le policy sono verificate, ma la pagina tiene tutto in stato locale
+— quindi **chiudendola si perde il piano, e senza registro l'esperimento non è
+falsificabile**. È il prossimo pezzo, prima di giocarci davvero.
+⚠️ Da fare dopo: l'account dedicato col suo bankroll, e il rientro
+dell'accumulo come **movimento** (il bankroll è calcolato, regola 1).
+⚠️ **Il backtest dice che la scalata meccanica perde** (mediana 70-73 su 100,
+una stagione in utile su otto) e Mattia ha deciso di provarla con la selezione
+a mano: la decisione è sua, presa due volte, e il registro la giudicherà.
+Tabelle e misure in CLAUDE.md.
 
 ✅ **15/10/2026 — coda delle importazioni svuotata e possesso abbandonato.**
 Le 15 righe in attesa erano **tutte lo stesso problema**: un nome scritto
