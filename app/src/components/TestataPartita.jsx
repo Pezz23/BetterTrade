@@ -35,7 +35,16 @@ export const giorno = d => new Date(d + 'T12:00:00').toLocaleDateString('it-IT',
 // parla.
 const COLORE_FASCIA = { alta: C.verde, media: C.giallo, bassa: C.rosso }
 
-export function Posizione({ nome, colore, posto, compatta = false }) {
+/**
+ * ⚠️ `style` **si accetta e si sovrascrive in fondo.** Il 18/10/2026 la pagina
+ * Road to weekend passava uno `style` per rimpicciolire la targhetta e il
+ * componente **non aveva quella prop**: l'override veniva ignorato in silenzio
+ * e la targhetta restava a corpo 13 — due giri di "ho rimpicciolito" che non
+ * avevano cambiato un pixel. **Un oggetto passato a una prop che non esiste
+ * non dà errore**, e un conto aritmetico sull'altezza non lo scopre: bisogna
+ * guardare la firma.
+ */
+export function Posizione({ nome, colore, posto, compatta = false, style }) {
   const tinta = COLORE_FASCIA[fasciaDi(posto)] || colore
   const iniziali = nome.split(/[\s-]+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase()
   return (
@@ -45,6 +54,7 @@ export function Posizione({ nome, colore, posto, compatta = false }) {
         background: alpha(tinta, 0.12), border: `1px solid ${alpha(tinta, 0.4)}`,
         color: tinta, fontFamily: F.mono, fontWeight: 700, lineHeight: 1.2,
         fontSize: compatta ? 10 : 13, whiteSpace: 'nowrap',
+        ...style,
       }}>
       {/* ⚠️ Il denominatore è più piccolo e più tenue: la posizione è il dato,
           "su quante" è il contesto che la rende leggibile. Alla stessa misura

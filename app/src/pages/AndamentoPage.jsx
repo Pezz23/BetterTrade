@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { C, F, alpha } from '../theme'
-import { Card, Etichetta } from '../components/ui'
+import { Card, Etichetta, TastoRipeti } from '../components/ui'
 import {
   METODI, SOGLIE_BASE, FASCE_QUOTA, FASCIA_BASE, QUOTA_MIN, QUOTA_MAX, PASSO_QUOTA,
   conSoglie, scrivi, sopra, quota,
@@ -36,60 +36,6 @@ function Tasto({ attivo, onClick, children, colore = C.oro, style }) {
       background: attivo ? `linear-gradient(${alpha(colore, 0.14)},${alpha(colore, 0.14)}), ${C.card}` : C.card,
       border: `1px solid ${alpha(colore, attivo ? 0.5 : 0.18)}`, ...style,
     }}>{children}</button>
-  )
-}
-
-// ⚠️ **Il tasto che si ripete finché lo tieni premuto** (chiesto da Mattia il
-// 15/10/2026: *"vorrei tenere premuto il tasto più per alzare i valori"*).
-// Serve perché il voto si muove di 0,25 punti per volta: andare da 100% a 105%
-// erano venti tocchi.
-//
-// ⚠️ **Perché una catena di `setTimeout` e non un `setInterval`**: il ritmo
-// accelera — il primo scatto è immediato, poi si aspetta mezzo secondo (così
-// un tocco singolo resta un tocco singolo), poi 120 ms che scendono a 40.
-// Senza l'attesa iniziale un tocco normale ne farebbe due.
-//
-// ⚠️ **Pointer e non mouse/touch separati**: un solo giro di eventi copre dito,
-// mouse e penna. Si ferma anche su `pointercancel` e `pointerleave`, perché su
-// telefono il dito che scivola fuori dal tasto non manda `pointerup`, e un
-// contatore che continua da solo è il difetto peggiore di un tasto così.
-const ATTESA_PRIMA = 500, RITMO_DA = 120, RITMO_A = 40
-
-function TastoRipeti({ onScatto, colore = C.spento, children, style }) {
-  const timer = useRef(null)
-  const scatto = useRef(onScatto)
-  scatto.current = onScatto
-
-  const ferma = () => { clearTimeout(timer.current); timer.current = null }
-  const parti = () => {
-    ferma()
-    scatto.current()
-    let ritmo = RITMO_DA
-    const giro = (attesa) => {
-      timer.current = setTimeout(() => {
-        scatto.current()
-        ritmo = Math.max(RITMO_A, ritmo - 10)
-        giro(ritmo)
-      }, attesa)
-    }
-    giro(ATTESA_PRIMA)
-  }
-  // ⚠️ Smontare la pagina mentre il dito è giù lascerebbe il timer vivo.
-  useEffect(() => ferma, [])
-
-  return (
-    <button
-      onPointerDown={e => { e.preventDefault(); parti() }}
-      onPointerUp={ferma} onPointerCancel={ferma} onPointerLeave={ferma}
-      onContextMenu={e => e.preventDefault()}
-      style={{
-        padding: '4px 12px', fontSize: 13, fontFamily: F.mono, cursor: 'pointer',
-        color: colore, background: C.card, border: `1px solid ${alpha(colore, 0.3)}`,
-        // ⚠️ Tenere premuto su iOS seleziona il testo e apre il menù: queste
-        // due righe sono quello che rende il gesto possibile su telefono.
-        userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'manipulation',
-        ...style,
-      }}>{children}</button>
   )
 }
 

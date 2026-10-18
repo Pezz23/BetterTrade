@@ -14,6 +14,7 @@ import AndamentoPage from './pages/AndamentoPage'
 import ImportazioniPage from './pages/ImportazioniPage'
 import { C, F, alpha } from './theme'
 import { VERSIONE } from './versione'
+import ScalataPage from './pages/ScalataPage'
 
 // ── Tab bar bottom ────────────────────────────────────────────────────────────
 // ⚠️ **Rifatta il 12/10/2026, scelta di Mattia**: in basso stanno le pagine del
@@ -38,6 +39,9 @@ const VOCI_MENU = [
   { id:'reporting',   label:'Reporting',        icon:'◫', desc:'Le giornate registrate, per persona e per settimana' },
   { id:'bilancio',    label:'Bilancio',         icon:'◉', desc:'Saldi, movimenti e bankroll del gruppo' },
   { id:'importazioni',label:'Importazioni',     icon:'📥', desc:'Partite da ESPN che non si agganciano da sole' },
+  // ⚠️ Nel menu e non fra i tasti in basso: una pagina nuova va nel menu, e
+  // questa è un esperimento con un bankroll suo, non il giro settimanale.
+  { id:'scalata',     label:'Road to weekend',  icon:'🪜', desc:'La road map del weekend: scaletta, quote a mano, accumulo', soloAdmin:true },
   { id:'utenti',      label:'Utenti',           icon:'◎', desc:'Gestione utenti e password', soloAdmin:true },
 ]
 
@@ -204,6 +208,7 @@ function AppShell() {
       case 'storico':   return <StoricoPage />
       case 'andamento': return <AndamentoPage />
       case 'importazioni': return <ImportazioniPage />
+      case 'scalata': return <ScalataPage />
       case 'utenti':    return <UtentiPage />
       default:          return <DashboardPage />
     }
