@@ -103,7 +103,7 @@ export default function DashboardPage() {
 
   return (
     <div style={{ padding:'16px' }}>
-      <div style={{ fontSize:S.micro, color:C.oro, fontFamily:F.mono, letterSpacing:4, marginBottom:4 }}>DASHBOARD</div>
+      <div style={{ fontSize:S.micro, color:C.oro, fontFamily:F.sans, letterSpacing:4, marginBottom:4 }}>DASHBOARD</div>
       <div style={{ fontSize:S.evidenza, fontWeight:700, color:C.testo, fontFamily:F.sans, marginBottom:4 }}>
         Andamento giornata
       </div>
@@ -136,13 +136,13 @@ export default function DashboardPage() {
           della pagina, e 24px in verticale sono una scelta, non una distrazione.
           Il raggio invece passa a quello di `Card` — era 12 per caso. */}
       <div style={stileCard({ padding:'24px 16px', marginBottom:16, display:'flex', flexDirection:'column', alignItems:'center', gap:6 })}>
-            <div style={{ fontSize:S.micro, color:C.spento, fontFamily:F.mono, letterSpacing:4, textTransform:'uppercase' }}>
+            <div style={{ fontSize:S.micro, color:C.spento, fontFamily:F.sans, letterSpacing:4, textTransform:'uppercase' }}>
               {isSuperAdmin ? 'Andamento aggregato' : `Andamento · ${currentUser?.display_name||currentUser?.username}`}
             </div>
             <div style={{ fontSize:S.mega, fontWeight:700, fontFamily:F.mono, color: totPct >= 0 ? C.verde : C.rosso, lineHeight:1, transition:'color 0.3s' }}>
               {totPct > 0 ? '+' : ''}{totPct.toFixed(1)}%
             </div>
-            <div style={{ fontSize:S.media, color:C.spento, fontFamily:F.mono }}>
+            <div style={{ fontSize:S.media, color:C.spento, fontFamily:F.sans }}>
               {totSaldo >= 0 ? '+' : ''}€{Math.abs(totSaldo).toFixed(2)} sulla giornata
             </div>
           </div>
@@ -156,14 +156,14 @@ export default function DashboardPage() {
               { label:'Saldo %',    val: `${totPct>0?'+':''}${totPct.toFixed(1)}%`, color: pctColor(totPct) },
             ].map(({label,val,color}) => (
               <div key={label} style={stileCard()}>
-                <div style={{ fontSize:S.micro, color:C.spento, fontFamily:F.mono, textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:6 }}>{label}</div>
+                <div style={{ fontSize:S.micro, color:C.spento, fontFamily:F.sans, textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:6 }}>{label}</div>
                 <div style={{ fontSize:S.evidenza, fontWeight:700, color, fontFamily:F.mono }}>{val}</div>
               </div>
             ))}
           </div>
 
           {/* Dettaglio per spin */}
-          <div style={{ fontSize:S.micro, color:C.spento, fontFamily:F.mono, textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:8 }}>
+          <div style={{ fontSize:S.micro, color:C.spento, fontFamily:F.sans, textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:8 }}>
             Dettaglio spin
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
@@ -180,11 +180,11 @@ export default function DashboardPage() {
                 <div>
                   <div style={{ fontSize:S.media, fontWeight:600, color:C.testo, fontFamily:F.sans }}>Spin {i+1}</div>
                   {r ? (
-                    <div style={{ fontSize:S.base, color:C.fioco, fontFamily:F.mono, marginTop:2 }}>
+                    <div style={{ fontSize:S.base, color:C.fioco, fontFamily:F.sans, marginTop:2 }}>
                       Inv: {fmt(r.investito)} · Inc: {fmt(r.incasso)}
                     </div>
                   ) : (
-                    <div style={{ fontSize:S.base, color:C.fantasma, fontFamily:F.mono, marginTop:2 }}>Nessuna partita</div>
+                    <div style={{ fontSize:S.base, color:C.fantasma, fontFamily:F.sans, marginTop:2 }}>Nessuna partita</div>
                   )}
                 </div>
                 {r && (

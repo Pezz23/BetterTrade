@@ -21,7 +21,7 @@ const Riquadro = ({ label, valore, sub, colore }) => (
   <Card style={{ padding: '12px 14px' }}>
     <Etichetta style={{ marginBottom: 6 }}>{label}</Etichetta>
     <div style={{ fontSize: S.evidenza, fontWeight: 700, fontFamily: F.mono, color: colore || C.testo, lineHeight: 1 }}>{valore}</div>
-    {sub && <div style={{ fontSize: S.minuta, color: C.spento, fontFamily: F.mono, marginTop: 5 }}>{sub}</div>}
+    {sub && <div style={{ fontSize: S.minuta, color: C.spento, fontFamily: F.sans, marginTop: 5 }}>{sub}</div>}
   </Card>
 )
 
@@ -200,7 +200,7 @@ export default function StoricoPage() {
             <button onClick={() => setTutte(v => !v)} style={{
               width: '100%', marginTop: 4, padding: '9px 0', background: 'transparent',
               border: 'none', borderTop: `1px solid ${C.bordoChiaro}`,
-              color: C.spento, fontFamily: F.mono, fontSize: S.base, letterSpacing: '0.08em', cursor: 'pointer',
+              color: C.spento, fontFamily: F.sans, fontSize: S.base, letterSpacing: '0.08em', cursor: 'pointer',
             }}>
               {tutte
                 ? `⌃ mostra solo le ultime ${VISIBILI}`

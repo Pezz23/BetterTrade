@@ -132,14 +132,14 @@ export default function BilancioPage() {
 
   return (
     <div style={{padding:'16px'}}>
-      <div style={{fontSize:S.micro,color:C.oro,fontFamily:F.mono,letterSpacing:4,marginBottom:4}}>BILANCIO</div>
+      <div style={{fontSize:S.micro,color:C.oro,fontFamily:F.sans,letterSpacing:4,marginBottom:4}}>BILANCIO</div>
       <div style={{fontSize:S.evidenza,fontWeight:700,color:C.testo,fontFamily:F.sans,marginBottom:20}}>
         {isSuperAdmin?'Vista SuperAdmin':currentUser?.display_name||currentUser?.username}
       </div>
 
       {/* ── Selettore % ── */}
       <div style={stileCard({marginBottom:12})}>
-        <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.mono,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:10}}>
+        <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:10}}>
           % Bankroll da giocare {!isAdmin&&<span style={{color:C.fantasma}}> · impostato da SuperAdmin</span>}
         </div>
         <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
@@ -154,12 +154,12 @@ export default function BilancioPage() {
             }}>{p}%</button>
           ))}
         </div>
-        {savingPct&&<div style={{fontSize:S.minuta,color:C.spento,fontFamily:F.mono,marginTop:6}}>Salvataggio…</div>}
+        {savingPct&&<div style={{fontSize:S.minuta,color:C.spento,fontFamily:F.sans,marginTop:6}}>Salvataggio…</div>}
       </div>
 
       {/* ── Selettore slot ── */}
       <div style={stileCard({marginBottom:16})}>
-        <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.mono,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:10}}>
+        <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:10}}>
           Slot da giocare {!isAdmin&&<span style={{color:C.fantasma}}> · impostato da SuperAdmin</span>}
         </div>
         <div style={{display:'flex',gap:8}}>
@@ -174,8 +174,8 @@ export default function BilancioPage() {
             }}>{n}</button>
           ))}
         </div>
-        {savingSlot&&<div style={{fontSize:S.minuta,color:C.spento,fontFamily:F.mono,marginTop:6}}>Salvataggio…</div>}
-        <div style={{fontSize:S.minuta,color:C.fioco,fontFamily:F.mono,marginTop:8}}>
+        {savingSlot&&<div style={{fontSize:S.minuta,color:C.spento,fontFamily:F.sans,marginTop:6}}>Salvataggio…</div>}
+        <div style={{fontSize:S.minuta,color:C.fioco,fontFamily:F.sans,marginTop:8}}>
           Base per slot: {isSuperAdmin?fmt(totalBase):fmt(myBase)}
         </div>
       </div>
@@ -185,9 +185,9 @@ export default function BilancioPage() {
         <>
           {/* Bankroll aggregato — sola lettura */}
           <div style={stileCard({padding:'16px',marginBottom:12}, C.oro)}>
-            <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.mono,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:6}}>Bankroll totale aggregato</div>
+            <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:6}}>Bankroll totale aggregato</div>
             <div style={{fontSize:S.cifra,fontWeight:700,color:C.oro,fontFamily:F.mono}}>{fmt(totalBk)}</div>
-            <div style={{fontSize:S.minuta,color:C.fioco,fontFamily:F.mono,marginTop:4}}>Somma automatica di tutti gli utenti · sola lettura</div>
+            <div style={{fontSize:S.minuta,color:C.fioco,fontFamily:F.sans,marginTop:4}}>Somma automatica di tutti gli utenti · sola lettura</div>
           </div>
 
           {/* Puntate aggregate */}
@@ -200,7 +200,7 @@ export default function BilancioPage() {
           </div>
 
           {/* Tabella utenti */}
-          <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.mono,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:8}}>Settore ospiti</div>
+          <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:8}}>Settore ospiti</div>
           <div style={stileCard({overflow:'hidden',marginBottom:16})}>
             {users.filter(u=>u.role!=='superadmin').map((u,i,arr)=>{
               const uBase=((u.bankroll||0)*(pct/100))/numSlot
@@ -222,13 +222,13 @@ export default function BilancioPage() {
 
           {/* Sezione Laboratorio */}
           <div style={stileCard({padding:'16px',marginBottom:12})}>
-            <div style={{fontSize:S.micro,color:C.oro,fontFamily:F.mono,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:12}}>Trasferimento a Laboratorio</div>
+            <div style={{fontSize:S.micro,color:C.oro,fontFamily:F.sans,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:12}}>Trasferimento a Laboratorio</div>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,padding:'10px 12px',background:C.barra,borderRadius:8,border:`1px solid ${C.bordoRiga}`}}>
-              <span style={{fontSize:S.corpo,color:C.spento,fontFamily:F.mono}}>Totale aggregato app</span>
+              <span style={{fontSize:S.corpo,color:C.spento,fontFamily:F.sans}}>Totale aggregato app</span>
               <span style={{fontSize:S.titolo,fontWeight:700,color:C.oro,fontFamily:F.mono}}>{fmt(totalBk)}</span>
             </div>
             <div style={{marginBottom:10}}>
-              <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.mono,marginBottom:4}}>SALDO REALE CONTO €</div>
+              <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,marginBottom:4}}>SALDO REALE CONTO €</div>
               <input type="number" step="0.01" placeholder="0.00"
                 value={saldoReale} onChange={e=>{setSaldoReale(e.target.value);setEsitoDiff(null)}}
                 style={{width:'100%',background:C.pozzo,border:`1px solid ${C.bordo}`,borderRadius:7,padding:'9px 12px',color:C.testo,fontSize:S.titolo,fontFamily:F.mono,outline:'none'}}/>
@@ -239,7 +239,7 @@ export default function BilancioPage() {
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 12px',borderRadius:8,marginBottom:12,
                   background:diff>0?alpha(C.verde,0.08):diff<0?alpha(C.rosso,0.08):alpha(C.grigioMedio,0.08),
                   border:`1px solid ${diff>0?alpha(C.verde,0.25):diff<0?alpha(C.rosso,0.25):C.bordo}`}}>
-                  <span style={{fontSize:S.corpo,color:C.grigio,fontFamily:F.mono}}>Differenza → Laboratorio</span>
+                  <span style={{fontSize:S.corpo,color:C.grigio,fontFamily:F.sans}}>Differenza → Laboratorio</span>
                   <span style={{fontSize:S.titolo,fontWeight:700,color:diff>0?C.verde:diff<0?C.rosso:C.spento,fontFamily:F.mono}}>
                     {diff>0?'+':''}{fmt(diff)}
                   </span>
@@ -259,7 +259,7 @@ export default function BilancioPage() {
 
           {/* Movimenti di tutti — SuperAdmin */}
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-            <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.mono,textTransform:'uppercase',letterSpacing:'0.07em'}}>Movimenti utenti</div>
+            <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,textTransform:'uppercase',letterSpacing:'0.07em'}}>Movimenti utenti</div>
             <button onClick={()=>setShowAllMov(v=>!v)} style={{fontSize:S.base,padding:'4px 10px',borderRadius:6,cursor:'pointer',fontFamily:F.sans,background:'transparent',border:`1px solid ${C.bordo}`,color:C.spento}}>
               {showAllMov?'Nascondi':'Mostra'}
             </button>
@@ -321,13 +321,13 @@ export default function BilancioPage() {
               <div style={{fontSize:S.media,fontWeight:600,color:C.testo,fontFamily:F.sans,marginBottom:14,textTransform:'capitalize'}}>{movForm.tipo}</div>
               <div style={{display:'flex',flexDirection:'column',gap:10}}>
                 <div>
-                  <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.mono,marginBottom:4}}>IMPORTO €</div>
+                  <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,marginBottom:4}}>IMPORTO €</div>
                   <input type="number" step="0.01" min="0" placeholder="0.00"
                     value={movForm.importo} onChange={e=>setMovForm(p=>({...p,importo:e.target.value}))}
                     style={{width:'100%',background:C.pozzo,border:`1px solid ${C.bordo}`,borderRadius:7,padding:'9px 12px',color:C.oro,fontSize:S.titolo,fontFamily:F.mono,outline:'none'}}/>
                 </div>
                 <div>
-                  <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.mono,marginBottom:4}}>NOTA (opzionale)</div>
+                  <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,marginBottom:4}}>NOTA (opzionale)</div>
                   <input placeholder="es. versamento iniziale"
                     value={movForm.nota} onChange={e=>setMovForm(p=>({...p,nota:e.target.value}))}
                     style={{width:'100%',background:C.pozzo,border:`1px solid ${C.bordo}`,borderRadius:7,padding:'9px 12px',color:C.testo,fontSize:S.media,fontFamily:F.sans,outline:'none'}}/>
@@ -348,7 +348,7 @@ export default function BilancioPage() {
           {/* Storico movimenti personali */}
           {movimenti.length>0&&(
             <>
-              <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.mono,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:8}}>Movimenti</div>
+              <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:8}}>Movimenti</div>
               <div style={stileCard({overflow:'hidden',marginBottom:16})}>
                 {movimenti.map(m=>(
                   <div key={m.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 16px',borderBottom:`1px solid ${C.bordoTenue}`}}>
@@ -377,7 +377,7 @@ function StoricoPagina({storico}) {
   const myTot = storico.reduce((s,g)=>s+(g.tot_saldo||0),0)
   return (
     <>
-      <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.mono,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:8}}>Storico giornate</div>
+      <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:8}}>Storico giornate</div>
       {storico.length===0?(
         <div style={stileCard({padding:30,textAlign:'center',color:C.fantasma,fontSize:S.media,fontFamily:F.sans})}>
           Nessuna giornata registrata
@@ -385,7 +385,7 @@ function StoricoPagina({storico}) {
       ):(
         <div style={stileCard({overflow:'hidden'})}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 16px',borderBottom:`1px solid ${C.bordoRiga}`,background:C.pannello}}>
-            <span style={{fontSize:S.corpo,fontWeight:600,color:C.grigio,fontFamily:F.mono}}>TOTALE STAGIONE</span>
+            <span style={{fontSize:S.corpo,fontWeight:600,color:C.grigio,fontFamily:F.sans}}>TOTALE STAGIONE</span>
             <span style={{fontSize:S.titolo,fontWeight:700,color:myTot>=0?C.verde:C.rosso,fontFamily:F.mono}}>
               {myTot>=0?'+':''}€{Math.abs(myTot).toFixed(2)}
             </span>

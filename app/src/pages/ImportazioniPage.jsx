@@ -64,7 +64,7 @@ export default function ImportazioniPage() {
 
   return (
     <div style={{ padding: '12px 12px 90px' }}>
-      <h2 style={{ fontSize: S.titolo, fontFamily: F.mono, letterSpacing: '0.1em', color: C.testo, margin: '4px 0 4px' }}>
+      <h2 style={{ fontSize: S.titolo, fontFamily: F.sans, letterSpacing: '0.1em', color: C.testo, margin: '4px 0 4px' }}>
         IMPORTAZIONI
       </h2>
       <div style={{ fontSize: S.base, fontFamily: F.sans, color: C.spento, marginBottom: 12, lineHeight: 1.5 }}>
@@ -75,7 +75,7 @@ export default function ImportazioniPage() {
       <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
         {STATI.map(s => (
           <button key={s.id} onClick={() => { setStato(s.id); setRighe(null) }} style={{
-            flex: 1, padding: '7px 4px', fontSize: S.minuta, fontFamily: F.mono, letterSpacing: '0.04em',
+            flex: 1, padding: '7px 4px', fontSize: S.minuta, fontFamily: F.sans, letterSpacing: '0.04em',
             cursor: 'pointer', color: stato === s.id ? s.colore : C.spento,
             background: stato === s.id ? `linear-gradient(${alpha(s.colore, 0.12)},${alpha(s.colore, 0.12)}), ${C.card}` : C.card,
             border: `1px solid ${alpha(s.colore, stato === s.id ? 0.45 : 0.18)}`,
@@ -98,12 +98,12 @@ export default function ImportazioniPage() {
         <Card key={r.id} style={{ marginBottom: 8 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
             <Etichetta>{sigla(r.div) || r.div} · {gg(r.data)}</Etichetta>
-            <span style={{ fontSize: S.micro, fontFamily: F.mono, color: C.ambra }}>{r.motivo}</span>
+            <span style={{ fontSize: S.micro, fontFamily: F.sans, color: C.ambra }}>{r.motivo}</span>
           </div>
           <div style={{ fontSize: S.grande, color: C.testo, fontFamily: F.sans, marginBottom: 2 }}>
             {r.casa_fonte} <strong style={{ fontFamily: F.mono }}>{r.gol_casa}-{r.gol_trasferta}</strong> {r.trasferta_fonte}
           </div>
-          <div style={{ fontSize: S.minuta, fontFamily: F.mono, color: C.spento, marginBottom: 8 }}>
+          <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.spento, marginBottom: 8 }}>
             tiri in porta {r.tirip_casa ?? '—'}-{r.tirip_trasf ?? '—'} · possesso {r.possesso_casa ?? '—'}-{r.possesso_trasf ?? '—'}
           </div>
 
@@ -112,7 +112,7 @@ export default function ImportazioniPage() {
               dire "sì, è quella" invece di fidarsi. */}
           {(r.candidati || []).length > 0 && (
             <div style={{ marginBottom: 8 }}>
-              <div style={{ fontSize: S.micro, fontFamily: F.mono, color: C.spento, marginBottom: 3 }}>
+              <div style={{ fontSize: S.micro, fontFamily: F.sans, color: C.spento, marginBottom: 3 }}>
                 NOSTRE PARTITE CHE POTREBBERO ESSERE QUESTA
               </div>
               {r.candidati.map(c => (
@@ -120,7 +120,7 @@ export default function ImportazioniPage() {
                   <span style={{ fontSize: S.corpo, color: C.testo }}>{c.data} · {c.casa} — {c.trasferta}</span>
                   {isAdmin && stato === 'da_verificare' && (
                     <button onClick={() => decidi(r.id, true, c.id)} disabled={inCorso === r.id} style={{
-                      padding: '4px 10px', fontSize: S.minuta, fontFamily: F.mono, cursor: 'pointer',
+                      padding: '4px 10px', fontSize: S.minuta, fontFamily: F.sans, cursor: 'pointer',
                       color: C.verde, background: 'transparent', border: `1px solid ${alpha(C.verde, 0.45)}`,
                     }}>È QUESTA</button>
                   )}
@@ -134,17 +134,17 @@ export default function ImportazioniPage() {
               {/* ⚠️ "Crea nuova" compare sempre, anche con dei candidati: può
                   darsi che nessuno sia quello giusto. */}
               <button onClick={() => decidi(r.id, true, null)} disabled={inCorso === r.id} style={{
-                flex: 1, padding: '7px', fontSize: S.base, fontFamily: F.mono, cursor: 'pointer',
+                flex: 1, padding: '7px', fontSize: S.base, fontFamily: F.sans, cursor: 'pointer',
                 color: C.oro, background: 'transparent', border: `1px solid ${alpha(C.oro, 0.4)}`,
               }}>CREA PARTITA NUOVA</button>
               <button onClick={() => decidi(r.id, false)} disabled={inCorso === r.id} style={{
-                flex: 1, padding: '7px', fontSize: S.base, fontFamily: F.mono, cursor: 'pointer',
+                flex: 1, padding: '7px', fontSize: S.base, fontFamily: F.sans, cursor: 'pointer',
                 color: C.rosso, background: 'transparent', border: `1px solid ${alpha(C.rosso, 0.35)}`,
               }}>SCARTA</button>
             </div>
           )}
           {!isAdmin && stato === 'da_verificare' && (
-            <div style={{ fontSize: S.minuta, fontFamily: F.mono, color: C.spento }}>decide un admin</div>
+            <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.spento }}>decide un admin</div>
           )}
         </Card>
       ))}

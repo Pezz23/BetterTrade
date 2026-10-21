@@ -30,7 +30,7 @@ const AMBITI = [
 function Tasto({ attivo, onClick, children, colore = C.oro, style }) {
   return (
     <button onClick={onClick} style={{
-      padding: '6px 10px', fontSize: S.base, fontFamily: F.mono, letterSpacing: '0.04em',
+      padding: '6px 10px', fontSize: S.base, fontFamily: F.sans, letterSpacing: '0.04em',
       cursor: 'pointer', whiteSpace: 'nowrap',
       // ⚠️ `color` esplicito: un <button> non eredita il colore del testo.
       color: attivo ? colore : C.spento,
@@ -57,7 +57,7 @@ function Elenco({ righe, metodo, soglie, titolo, evidenzia = true }) {
           {ok}/{righe.length}{righe.length > 0 && ` · ${(ok / righe.length * 100).toFixed(0)}%`}
         </div>
       </div>
-      {!righe.length && <div style={{ fontSize: S.base, color: C.spento, fontFamily: F.mono, padding: '6px 0' }}>nessuna partita sopra soglia qui.</div>}
+      {!righe.length && <div style={{ fontSize: S.base, color: C.spento, fontFamily: F.sans, padding: '6px 0' }}>nessuna partita sopra soglia qui.</div>}
       {!!righe.length && (
         <div style={{ display: 'grid', gridTemplateColumns: griglia, gap: 4, padding: '0 0 3px' }}>
           <div />
@@ -135,7 +135,7 @@ function CardPiega({ titolo, colore = C.oro, riassunto, aperta, onTocca, childre
           <span style={{ fontFamily: F.mono, fontSize: S.base, color: C.spento }}>{aperta ? '▾' : '▸'}</span>
         </div>
         {riassunto != null && (
-          <div style={{ fontFamily: F.mono, fontSize: S.base, color: C.testo, marginTop: 5, lineHeight: 1.45 }}>
+          <div style={{ fontFamily: F.sans, fontSize: S.base, color: C.testo, marginTop: 5, lineHeight: 1.45 }}>
             {riassunto}
           </div>
         )}
@@ -155,7 +155,7 @@ function Risultato({ righe, ...resto }) {
   if (righe === null)
     return <Attesa style={{ padding: `${SP.m}px 0` }} />
   if (typeof righe === 'string')
-    return <div style={{ fontSize: S.base, fontFamily: F.mono, color: C.rosso, padding: '8px 0' }}>non riesco a leggere le partite: {righe}</div>
+    return <div style={{ fontSize: S.base, fontFamily: F.sans, color: C.rosso, padding: '8px 0' }}>non riesco a leggere le partite: {righe}</div>
   return <Elenco righe={righe} {...resto} />
 }
 
@@ -289,7 +289,7 @@ export default function AndamentoPage() {
   return (
     <div style={{ padding: '12px 12px 90px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '4px 0 10px' }}>
-        <h2 style={{ fontSize: S.titolo, fontFamily: F.mono, letterSpacing: '0.1em', color: C.testo, margin: 0 }}>ANDAMENTO</h2>
+        <h2 style={{ fontSize: S.titolo, fontFamily: F.sans, letterSpacing: '0.1em', color: C.testo, margin: 0 }}>ANDAMENTO</h2>
         <select value={stagione ?? ''} onChange={e => { setStagione(e.target.value); setAperta(null) }}
           style={{ background: C.card, color: C.testo, border: `1px solid ${alpha(C.oro, 0.3)}`,
             fontFamily: F.mono, fontSize: S.corpo, padding: '4px 6px' }}>
@@ -311,7 +311,7 @@ export default function AndamentoPage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: '3px 6px', alignItems: 'center', marginTop: 6 }}>
           {METODI.map(M => (
             <div key={M.id} style={{ display: 'contents' }}>
-              <div style={{ fontSize: S.corpo, fontFamily: F.mono, color: C.testo }}>{M.label}</div>
+              <div style={{ fontSize: S.corpo, fontFamily: F.sans, color: C.testo }}>{M.label}</div>
               <TastoRipeti onScatto={() => muovi(M.id, -1)}>−</TastoRipeti>
               <div style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700, color: C.oro, minWidth: 62, textAlign: 'center' }}>
                 {scrivi(M.id, soglie[M.id])}
@@ -357,7 +357,7 @@ export default function AndamentoPage() {
                   valore): sono due comandi della stessa natura a due
                   centimetri di distanza, e due scale diverse li fanno sembrare
                   due cose diverse. */}
-              <div style={{ fontSize: S.corpo, fontFamily: F.mono, color: C.testo }}>{et}</div>
+              <div style={{ fontSize: S.corpo, fontFamily: F.sans, color: C.testo }}>{et}</div>
               <TastoRipeti onScatto={() => muoviQuota(q, -1)}>−</TastoRipeti>
               <div style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700, color: C.oro, textAlign: 'center' }}>
                 {fascia[q].toFixed(2).replace('.', ',')}
@@ -400,7 +400,7 @@ export default function AndamentoPage() {
             cose**: come è stato ottenuto (prendendo tutte le partite, senza
             guardare nessun indicatore), cosa misura (quante volte la giocata è
             arrivata) e a cosa serve (è il livello da battere). */}
-        <div style={{ fontSize: S.base, fontFamily: F.mono, color: C.spento, marginTop: 8, lineHeight: 1.5 }}>
+        <div style={{ fontSize: S.base, fontFamily: F.sans, color: C.spento, marginTop: 8, lineHeight: 1.5 }}>
           {base && Number(base.giocate)
             ? <>
                 <b style={{ color: C.testo }}>base {(base.azzeccate / base.giocate * 100).toFixed(1)}%</b>
@@ -436,7 +436,7 @@ export default function AndamentoPage() {
               background: scelto ? `linear-gradient(${alpha(C.celestePieno, 0.08)},${alpha(C.celestePieno, 0.08)}), ${C.card}` : C.card,
               border: `1px solid ${alpha(scelto ? C.celestePieno : C.testo, scelto ? 0.5 : 0.1)}`,
             }}>
-              <div style={{ fontSize: S.minuta, fontFamily: F.mono, letterSpacing: '0.08em',
+              <div style={{ fontSize: S.minuta, fontFamily: F.sans, letterSpacing: '0.08em',
                 color: scelto ? C.celestePieno : C.spento, marginBottom: 2 }}>
                 {M.label.toUpperCase()}
               </div>
@@ -445,7 +445,7 @@ export default function AndamentoPage() {
               </div>
               {/* le partite sotto la percentuale: una percentuale su 40 partite
                   e una su 9.349 non si leggono allo stesso modo */}
-              <div style={{ fontFamily: F.mono, fontSize: S.minuta, color: C.spento, marginTop: 3, lineHeight: 1.35 }}>
+              <div style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.spento, marginTop: 3, lineHeight: 1.35 }}>
                 {c.giocate
                   ? <>{c.ok} azzeccate<br />su {c.giocate} scelte</>
                   : 'nessuna partita sopra soglia'}
@@ -454,12 +454,12 @@ export default function AndamentoPage() {
                   indicatore è più preciso": dentro una fascia di quota il
                   valore assoluto lo decide il prezzo, non l'indicatore. */}
               {scarto != null && (
-                <div style={{ fontFamily: F.mono, fontSize: S.minuta, marginTop: 2,
+                <div style={{ fontFamily: F.sans, fontSize: S.minuta, marginTop: 2,
                   color: scarto > 0.005 ? C.verde : scarto < -0.005 ? C.rosso : C.spento }}>
                   {scarto > 0 ? '+' : ''}{(scarto * 100).toFixed(1)} punti sulla base
                 </div>
               )}
-              <div style={{ fontFamily: F.mono, fontSize: S.micro, color: C.spento, marginTop: 1 }}>
+              <div style={{ fontFamily: F.sans, fontSize: S.micro, color: C.spento, marginTop: 1 }}>
                 sopra {scrivi(M.id, soglie[M.id])}
               </div>
             </button>
@@ -488,7 +488,7 @@ export default function AndamentoPage() {
             frase dice il soggetto (le partite dove tutti e quattro stanno
             sopra la loro soglia), il verbo (azzeccate) e il confronto (tutte
             le altre), che è l'unico modo di sapere se quel numero è alto. */}
-        <div style={{ fontSize: S.base, fontFamily: F.mono, color: C.spento, lineHeight: 1.5 }}>
+        <div style={{ fontSize: S.base, fontFamily: F.sans, color: C.spento, lineHeight: 1.5 }}>
           nelle <b style={{ color: C.testo }}>{tutteLeVerdi.giocate}</b> partite dove VPM, attendibilità,
           scelta e voto stanno <b style={{ color: C.testo }}>tutti</b> sopra la loro soglia, la giocata è
           arrivata{' '}
@@ -497,7 +497,7 @@ export default function AndamentoPage() {
           </b>
           {' '}delle volte.
         </div>
-        <div style={{ fontSize: S.minuta, fontFamily: F.mono, color: C.spento, marginTop: 4 }}>
+        <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.spento, marginTop: 4 }}>
           in tutte le altre: {sotto.perc == null ? '—' : (sotto.perc * 100).toFixed(1) + '%'} su {sotto.giocate}
         </div>
         <Risultato righe={righeVerdi} metodo={metodo} soglie={soglie} evidenzia={false}
@@ -508,14 +508,14 @@ export default function AndamentoPage() {
       {/* ⚠️ Un elenco tagliato va detto. È la stessa lezione del troncamento a
           1000: un limite che non si vede fa credere di guardare tutto. */}
       {chiavi?.length === 400 && (
-        <div style={{ fontSize: S.minuta, fontFamily: F.mono, color: C.ambra, marginBottom: 8 }}>
+        <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.ambra, marginBottom: 8 }}>
           mostro i 400 {ambito === 'giorno' ? 'giorni' : 'weekend'} più recenti — scegli una stagione per vederli tutti
         </div>
       )}
       {gruppi?.map(([wk, lista]) => (
         <div key={wk || 'tutti'} style={{ marginBottom: 10 }}>
           {wk && (
-            <div style={{ fontSize: S.micro, fontFamily: F.mono, color: C.spento, letterSpacing: '0.08em', marginBottom: 3 }}>
+            <div style={{ fontSize: S.micro, fontFamily: F.sans, color: C.spento, letterSpacing: '0.08em', marginBottom: 3 }}>
               WEEKEND DEL {gg(wk)}
             </div>
           )}

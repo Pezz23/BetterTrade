@@ -115,7 +115,7 @@ function TabellaGriglia({tiles,isAdmin,onUpdate,onCambia,onReset,syncing,libera,
   }
   return (
     <div>
-      {syncing&&<div style={{fontSize:S.minuta,color:C.spento,fontFamily:F.mono,marginBottom:8,textAlign:'right'}}>⟳ Sincronizzazione…</div>}
+      {syncing&&<div style={{fontSize:S.minuta,color:C.spento,fontFamily:F.sans,marginBottom:8,textAlign:'right'}}>⟳ Sincronizzazione…</div>}
       {(()=>{const a=ampiezzaSpin(tiles);return a&&(
         <div /* ⚠️ Il fondo resta la tinta su fondo opaco: una tinta semitrasparente da
              sola si illuminerebbe su sfondo chiaro (trappola gia' pagata). */
@@ -130,7 +130,7 @@ function TabellaGriglia({tiles,isAdmin,onUpdate,onCambia,onReset,syncing,libera,
       {!isAdmin&&<div style={{background:alpha(C.bluPieno,0.08),border:`1px solid ${alpha(C.bluPieno,0.2)}`,borderRadius:8,padding:'9px 12px',fontSize:S.corpo,color:C.blu,fontFamily:F.sans,marginBottom:12}}>Modalità lettura</div>}
       <div style={{display:'grid',gridTemplateColumns:COLS,gap:4,padding:'0 2px',marginBottom:4}}>
         {(libera?['Pron.','Casa','','Ospite','Quota','Data','Ris.']:['Pron.','Partita','Quota','Data','Ris.']).map((h,i)=>(
-          <div key={`col-${i}`} style={{fontSize:S.micro,color:C.spento,fontFamily:F.mono,textTransform:'uppercase',letterSpacing:'0.07em',textAlign:'center',padding:'4px 0'}}>{h}</div>
+          <div key={`col-${i}`} style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,textTransform:'uppercase',letterSpacing:'0.07em',textAlign:'center',padding:'4px 0'}}>{h}</div>
         ))}
       </div>
       <div style={{display:'flex',flexDirection:'column',gap:4}}>
@@ -204,7 +204,7 @@ function SlotVisiva({tiles}) {
   const winCombos=COMBOS.filter(c=>comboStatus(tiles,c.pos)==='win')
   return (
     <div style={{marginTop:20,paddingTop:16,borderTop:`1px solid ${C.bordoRiga}`}}>
-      <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.mono,letterSpacing:4,textTransform:'uppercase',marginBottom:12,textAlign:'center'}}>Slot</div>
+      <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,letterSpacing:4,textTransform:'uppercase',marginBottom:12,textAlign:'center'}}>Slot</div>
       {/* Nove caselle attaccate: il bordo esterno è spesso, le righe interne
           sono solo lo sfondo che passa fra le celle (gap di 1px). */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:1,width:'100%',
@@ -235,7 +235,7 @@ function SlotVisiva({tiles}) {
           pagina sotto le dita. */}
       <div style={{marginTop:14,minHeight:22,display:'flex',flexWrap:'wrap',gap:6,justifyContent:'center'}}>
         {winCombos.map(c=>(
-          <div key={c.id} style={{fontSize:S.minuta,fontWeight:600,padding:'3px 10px',borderRadius:20,background:TIPO_BG[c.tipo],color:TIPO_COLOR[c.tipo],border:`1px solid ${alpha(TIPO_COLOR[c.tipo],0.33)}`,fontFamily:F.mono,boxShadow:`0 0 8px ${alpha(TIPO_COLOR[c.tipo],0.27)}`}}>
+          <div key={c.id} style={{fontSize:S.minuta,fontWeight:600,padding:'3px 10px',borderRadius:20,background:TIPO_BG[c.tipo],color:TIPO_COLOR[c.tipo],border:`1px solid ${alpha(TIPO_COLOR[c.tipo],0.33)}`,fontFamily:F.sans,boxShadow:`0 0 8px ${alpha(TIPO_COLOR[c.tipo],0.27)}`}}>
             ✓ {c.nome}
           </div>
         ))}
@@ -287,7 +287,7 @@ function Schedine({tiles,isAdmin,sched,isWip,spinIdx}) {
           {label:'Tot. inv.',val:isWip?'WIP':`€${sched.totale}`,color:C.testo},
         ].map(({label,val,color})=>(
           <div key={label} style={stileCard({flex:1,minWidth:70,padding:'8px 10px'})}>
-            <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.mono,marginBottom:3}}>{label}</div>
+            <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,marginBottom:3}}>{label}</div>
             <div style={{fontSize:S.grande,fontWeight:700,color,fontFamily:F.mono}}>{val}</div>
           </div>
         ))}
@@ -299,11 +299,11 @@ function Schedine({tiles,isAdmin,sched,isWip,spinIdx}) {
           <div key={c.id} style={{background:isW?alpha(C.verde,0.06):isL?alpha(C.rosso,0.06):C.card,border:`1px solid ${isW?alpha(C.verde,0.25):isL?alpha(C.rosso,0.25):C.bordo}`,borderRadius:12,padding:'12px 14px',opacity:ins?0.75:1}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
               <div style={{display:'flex',alignItems:'center',gap:8}}>
-                <span style={{fontSize:S.minuta,fontWeight:700,padding:'2px 8px',borderRadius:20,background:TIPO_BG[c.tipo],color:TIPO_COLOR[c.tipo],fontFamily:F.mono}}>{c.tipo.toUpperCase()}</span>
+                <span style={{fontSize:S.minuta,fontWeight:700,padding:'2px 8px',borderRadius:20,background:TIPO_BG[c.tipo],color:TIPO_COLOR[c.tipo],fontFamily:F.sans}}>{c.tipo.toUpperCase()}</span>
                 <span style={{fontSize:S.media,fontWeight:600,color:C.testo,fontFamily:F.sans}}>{c.nome}</span>
               </div>
               <div style={{display:'flex',alignItems:'center',gap:8}}>
-                {isWip?<span style={{fontSize:S.corpo,color:C.ambra,background:alpha(C.ambra,0.1),border:`1px solid ${alpha(C.ambra,0.2)}`,borderRadius:20,padding:'2px 10px',fontFamily:F.mono}}>WIP</span>
+                {isWip?<span style={{fontSize:S.corpo,color:C.ambra,background:alpha(C.ambra,0.1),border:`1px solid ${alpha(C.ambra,0.2)}`,borderRadius:20,padding:'2px 10px',fontFamily:F.sans}}>WIP</span>
                 :<span style={{fontSize:S.titolo,fontWeight:700,color:TIPO_COLOR[c.tipo],fontFamily:F.mono}}>€{punt}</span>}
                 {isAdmin&&<button onClick={()=>toggle(c.id)} style={{fontSize:S.base,padding:'4px 10px',borderRadius:6,cursor:'pointer',fontFamily:F.sans,border:`1px solid ${ins?alpha(C.verde,0.3):C.bordo}`,background:ins?alpha(C.verde,0.12):'transparent',color:ins?C.verde:C.spento}}>{ins?'✓ Inserita':'Inserisci'}</button>}
                 {!isAdmin&&ins&&<span style={{fontSize:S.base,color:C.verde}}>✓ Inserita</span>}
@@ -374,7 +374,7 @@ function BottoneGiocata({attiva, isAdmin, onCambia, piena}) {
           {attiva ? '✓' : ''}
         </button>
         <div style={{minWidth:0}}>
-          <div style={{fontFamily:F.mono,fontSize:S.media,fontWeight:700,letterSpacing:1,color:attiva?C.verde:C.testo}}>
+          <div style={{fontFamily:F.sans,fontSize:S.media,fontWeight:700,letterSpacing:1,color:attiva?C.verde:C.testo}}>
             GIOCATA
           </div>
           <div style={{fontSize:S.base,fontFamily:F.sans,color:C.spento,lineHeight:1.4,marginTop:2}}>
@@ -489,7 +489,7 @@ export default function SlotPage() {
     <div style={{padding:'16px'}}>
       <div style={{display:'flex',gap:6,marginBottom:14}}>
         {SPIN_LABELS.map((label,i)=>(
-          <button key={label} onClick={()=>setActiveSpin(i)} style={{flex:1,padding:'8px 4px',borderRadius:8,cursor:'pointer',fontFamily:F.mono,fontSize:S.base,fontWeight:600,letterSpacing:1,
+          <button key={label} onClick={()=>setActiveSpin(i)} style={{flex:1,padding:'8px 4px',borderRadius:8,cursor:'pointer',fontFamily:F.sans,fontSize:S.base,fontWeight:600,letterSpacing:1,
             background:activeSpin===i?alpha(C.oro,0.12):'transparent',
             border:`1px solid ${activeSpin===i?alpha(C.oro,0.4):C.bordo}`,
             color:activeSpin===i?C.oro:C.inattivo}}>{label.toUpperCase()}</button>

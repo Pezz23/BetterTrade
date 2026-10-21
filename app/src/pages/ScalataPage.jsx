@@ -166,7 +166,7 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, regola, quotaMinima, co
       {prossima && (
         <button onClick={onAggiunge} style={{ width: '100%', marginTop: 6, padding: '6px 8px',
           background: 'transparent', border: `1px dashed ${alpha(colore, 0.4)}`, color: colore,
-          fontFamily: F.mono, fontSize: S.minuta, cursor: 'pointer', textAlign: 'left' }}>
+          fontFamily: F.sans, fontSize: S.minuta, cursor: 'pointer', textAlign: 'left' }}>
           + {prossima.casa} — {prossima.trasferta} @{Number(prossima.quota).toFixed(2).replace('.', ',')}
           {' '}<span style={{ color: C.fioco }}>({nomeGiorno(giorno(prossima.data))} {gg(prossima.data)} {prossima.ora?.slice(0, 5)})</span>
         </button>
@@ -199,10 +199,10 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, regola, quotaMinima, co
             onChange={e => setPerc(e.target.value.replace(',', '.'))}
             style={{ width: 54, background: C.pozzo, color: C.testo, border: `1px solid ${C.bordo}`,
               borderRadius: 6, padding: '4px 6px', fontFamily: F.mono, fontSize: S.media, textAlign: 'center' }} />
-          <span style={{ color: C.spento, fontFamily: F.mono, fontSize: S.base }}>% dell&apos;utile</span>
+          <span style={{ color: C.spento, fontFamily: F.sans, fontSize: S.base }}>% dell&apos;utile</span>
           {/* ⚠️ Il consiglio si vede sempre, anche quando lo si scavalca: è
               l'unico modo di sapere *da cosa* ti stai scostando. */}
-          <span style={{ color: C.fioco, fontFamily: F.mono, fontSize: S.minuta }}>consigliato {consiglio.toFixed(0)}%</span>
+          <span style={{ color: C.fioco, fontFamily: F.sans, fontSize: S.minuta }}>consigliato {consiglio.toFixed(0)}%</span>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 8, textAlign: 'center' }}>
           <div>
@@ -215,7 +215,7 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, regola, quotaMinima, co
           </div>
         </div>
         {r.resto > 0.005 && (
-          <div style={{ fontSize: S.micro, fontFamily: F.mono, color: C.fioco, marginTop: 5, textAlign: 'center' }}>
+          <div style={{ fontSize: S.micro, fontFamily: F.sans, color: C.fioco, marginTop: 5, textAlign: 'center' }}>
             l&apos;arrotondamento per difetto manda {eur(r.resto)} in accumulo
           </div>
         )}
@@ -230,7 +230,7 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, regola, quotaMinima, co
             necessari i divieti, non il registro. */}
         {[['vinto', C.verde], ['perso', C.rosso], [null, C.spento]].map(([e, col]) => (
           <button key={e || 'aperto'} onClick={() => setEsito(e)} style={{
-            flex: 1, padding: '6px 0', fontFamily: F.mono, fontSize: S.base, cursor: 'pointer',
+            flex: 1, padding: '6px 0', fontFamily: F.sans, fontSize: S.base, cursor: 'pointer',
             color: esito === e ? col : C.spento,
             background: esito === e ? `linear-gradient(${alpha(col, 0.14)},${alpha(col, 0.14)}), ${C.card}` : C.card,
             border: `1px solid ${alpha(col, esito === e ? 0.5 : 0.18)}`,
@@ -277,7 +277,7 @@ function Riparti({ quante, onAzzera }) {
       style={{ width: '100%', marginTop: 14, padding: '9px 0', cursor: 'pointer',
         background: armato ? `linear-gradient(${alpha(C.rosso, .12)},${alpha(C.rosso, .12)}), ${C.card}` : 'transparent',
         border: `1px solid ${alpha(colore, armato ? 0.5 : 0.25)}`, color: colore,
-        fontFamily: F.mono, fontSize: S.base }}>
+        fontFamily: F.sans, fontSize: S.base }}>
       {armato
         ? `⚠️ TOCCA ANCORA PER CANCELLARE ${quante === 1 ? 'LA SCALATA' : `LE ${quante} SCALATE`}`
         : '↺ riparti da 0'}
@@ -293,7 +293,7 @@ function Archivio({ storico, onAzzera }) {
   if (!storico) return <Card><Attesa style={{ padding: 0 }} /></Card>
   if (!chiuse.length) return (
     <div>
-      <Card><div style={{ fontSize: S.base, fontFamily: F.mono, color: C.spento, lineHeight: 1.6 }}>
+      <Card><div style={{ fontSize: S.base, fontFamily: F.sans, color: C.spento, lineHeight: 1.6 }}>
         Nessuna scalata chiusa. Apri un piano, segna gli esiti e premi <b>STOP</b>:
         da quel momento resta qui dentro, com&apos;era.
       </div></Card>
@@ -322,7 +322,7 @@ function Archivio({ storico, onAzzera }) {
         return (
           <Card key={s.id} style={{ marginBottom: 6, padding: '9px 12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
-              <span style={{ fontFamily: F.mono, fontSize: S.base, color: C.testo }}>
+              <span style={{ fontFamily: F.sans, fontSize: S.base, color: C.testo }}>
                 {String(s.chiusa_il).slice(8, 10)}/{String(s.chiusa_il).slice(5, 7)}
                 <span style={{ color: C.spento }}> · {REGOLE[s.regola]?.nome ?? s.regola}</span>
               </span>
@@ -517,16 +517,16 @@ export default function ScalataPage() {
     return { inGioco: c.cassa, accumulo: c.accumulo, vivi: c.vivi, live, risultato: c.accumulo + c.cassa - posta }
   }, [aperta, reg.passi, passi, esiti, quote, perc, regola, posta, bankrollIniziale])
 
-  if (!righe) return <div style={{ padding: 16, color: C.spento, fontFamily: F.mono, fontSize: S.corpo }}>carico le partite…</div>
+  if (!righe) return <Attesa>carico le partite…</Attesa>
 
   const Tasto = ({ onClick, children, attivo, colore = C.oro, style }) => (
-    <button onClick={onClick} style={{ padding: '5px 10px', fontSize: S.base, fontFamily: F.mono, cursor: 'pointer',
+    <button onClick={onClick} style={{ padding: '5px 10px', fontSize: S.base, fontFamily: F.sans, cursor: 'pointer',
       color: attivo ? colore : C.spento, background: attivo ? `linear-gradient(${alpha(colore, .14)},${alpha(colore, .14)}), ${C.card}` : C.card,
       border: `1px solid ${alpha(colore, attivo ? .5 : .18)}`, ...style }}>{children}</button>
   )
   const Numero = ({ label, valore, passo, set, suffisso = '' }) => (
     <div style={{ display: 'contents' }}>
-      <div style={{ fontSize: S.corpo, fontFamily: F.mono, color: C.testo }}>{label}</div>
+      <div style={{ fontSize: S.corpo, fontFamily: F.sans, color: C.testo }}>{label}</div>
       <Tasto onClick={() => set(v => Math.max(0, Math.round((v - passo) * 100) / 100))} colore={C.spento}>−</Tasto>
       <div style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700, color: C.oro, minWidth: 54, textAlign: 'center' }}>
         {valore}{suffisso}
@@ -538,7 +538,7 @@ export default function ScalataPage() {
   return (
     <div style={{ padding: '12px 12px 90px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '4px 0 10px' }}>
-        <h2 style={{ fontSize: S.titolo, fontFamily: F.mono, letterSpacing: '0.1em', color: C.testo, margin: 0 }}>ROAD TO WEEKEND</h2>
+        <h2 style={{ fontSize: S.titolo, fontFamily: F.sans, letterSpacing: '0.1em', color: C.testo, margin: 0 }}>ROAD TO WEEKEND</h2>
         {/* ⚠️ Un **interruttore**, non una voce di menu: il menu è per le
             pagine, questa è un'altra vista della stessa cosa — e ci si passa
             dentro continuamente mentre si gioca. */}
@@ -551,7 +551,7 @@ export default function ScalataPage() {
 
       {reg.errore && (
         <Card style={{ marginBottom: 10, borderColor: alpha(C.rosso, .4) }}>
-          <div style={{ color: C.rosso, fontSize: S.base, fontFamily: F.mono }}>registro: {reg.errore}</div>
+          <div style={{ color: C.rosso, fontSize: S.base, fontFamily: F.sans }}>registro: {reg.errore}</div>
         </Card>
       )}
 
@@ -590,7 +590,7 @@ export default function ScalataPage() {
             che propone è quello vero del conto, e `↺` ci torna. */}
         <div style={{ display: 'grid', gridTemplateColumns: 'auto auto auto auto 1fr', gap: 6,
           alignItems: 'center', marginTop: 10, paddingTop: 9, borderTop: `1px solid ${alpha(C.testo, 0.1)}` }}>
-          <div style={{ fontSize: S.base, fontFamily: F.mono, color: C.spento }}>bankroll iniziale</div>
+          <div style={{ fontSize: S.base, fontFamily: F.sans, color: C.spento }}>bankroll iniziale</div>
           {/* ⚠️ **Un euro per scatto, tenendo premuto** (Mattia, 18/10): a 10 € per
               tocco il bankroll si poteva solo approssimare, e la puntata è il suo
               10% — cioè il passo del bankroll decide il passo della puntata. */}
@@ -602,11 +602,11 @@ export default function ScalataPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
             {currentUser?.bankroll != null && Math.floor(Number(currentUser.bankroll)) !== bankrollIniziale && (
               <button onClick={() => setBankroll(null)} title="torna al bankroll vero del conto"
-                style={{ background: 'transparent', border: 'none', color: C.oro, cursor: 'pointer', fontFamily: F.mono, fontSize: S.minuta }}>
+                style={{ background: 'transparent', border: 'none', color: C.oro, cursor: 'pointer', fontFamily: F.sans, fontSize: S.minuta }}>
                 ↺ conto: {eur(Math.floor(Number(currentUser.bankroll)))}
               </button>
             )}
-            <span style={{ fontFamily: F.mono, fontSize: S.base, color: C.spento }}>
+            <span style={{ fontFamily: F.sans, fontSize: S.base, color: C.spento }}>
               prossima puntata <b style={{ color: C.oro }}>{eur(posta)}</b>
               <span style={{ fontSize: S.micro, color: C.fioco }}> (10%)</span>
             </span>
@@ -614,7 +614,7 @@ export default function ScalataPage() {
         </div>
 
         {casse.vivi > 0 && (
-          <div style={{ fontSize: S.minuta, fontFamily: F.mono, color: C.spento, marginTop: 8, textAlign: 'center' }}>
+          <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.spento, marginTop: 8, textAlign: 'center' }}>
             {casse.vivi} {casse.vivi === 1 ? 'passo giocato' : 'passi giocati'} · risultato{' '}
             <b style={{ color: casse.risultato >= 0 ? C.verde : C.rosso }}>
               {casse.risultato >= 0 ? '+' : ''}{eur(casse.risultato)}
@@ -643,7 +643,7 @@ export default function ScalataPage() {
             setEsiti({}); setPerc({}); setTolte([]); setAggiunte({}); setBankroll(null)
           }}
             style={{ width: '100%', marginTop: 10, padding: '8px 0', background: `linear-gradient(${alpha(C.rosso, .1)},${alpha(C.rosso, .1)}), ${C.card}`,
-              border: `1px solid ${alpha(C.rosso, 0.4)}`, color: C.rosso, fontFamily: F.mono, fontSize: S.base, cursor: 'pointer' }}>
+              border: `1px solid ${alpha(C.rosso, 0.4)}`, color: C.rosso, fontFamily: F.sans, fontSize: S.base, cursor: 'pointer' }}>
             ⏹ STOP SCALATA — porta {eur(casse.accumulo + casse.inGioco)} nel capitale e chiudi
           </button>
         ) : (
@@ -680,13 +680,13 @@ export default function ScalataPage() {
             style={{ width: '100%', marginTop: 10, padding: '9px 0',
               background: passi.length ? `linear-gradient(${alpha(C.verde, .12)},${alpha(C.verde, .12)}), ${C.card}` : C.card,
               border: `1px solid ${alpha(C.verde, passi.length ? 0.5 : 0.15)}`,
-              color: passi.length ? C.verde : C.fioco, fontFamily: F.mono, fontSize: S.base,
+              color: passi.length ? C.verde : C.fioco, fontFamily: F.sans, fontSize: S.base,
               cursor: passi.length ? 'pointer' : 'default' }}>
             {reg.occupato ? 'salvo il piano…' : `▶ APRI SCALATA — congela ${passi.length} passi e comincia a registrare`}
           </button>
         )}
         {erroreApri && (
-          <div style={{ marginTop: 6, fontSize: S.minuta, fontFamily: F.mono, color: C.rosso, textAlign: 'center' }}>
+          <div style={{ marginTop: 6, fontSize: S.minuta, fontFamily: F.sans, color: C.rosso, textAlign: 'center' }}>
             {erroreApri}
           </div>
         )}
@@ -705,7 +705,7 @@ export default function ScalataPage() {
           <button onClick={() => { setAttMin(CONSIGLIATO.att); setSceMin(CONSIGLIATO.scelta); setVpmMin(0) }}
             style={{
               textAlign: 'right', cursor: 'pointer', padding: '4px 8px', lineHeight: 1.35,
-              color: C.testo, fontFamily: F.mono,
+              color: C.testo, fontFamily: F.sans,
               background: attMin === CONSIGLIATO.att && sceMin === CONSIGLIATO.scelta && !vpmMin
                 ? `linear-gradient(${alpha(C.verde, .12)},${alpha(C.verde, .12)}), ${C.card}` : C.card,
               border: `1px solid ${alpha(C.verde, attMin === CONSIGLIATO.att && sceMin === CONSIGLIATO.scelta && !vpmMin ? 0.5 : 0.2)}`,
@@ -746,7 +746,7 @@ export default function ScalataPage() {
             ↻ {aperta ? 'nuovo piano' : 'ricarica'}
           </Tasto>
         </div>
-        <div style={{ fontSize: S.minuta, fontFamily: F.mono, color: C.spento, marginTop: 7, lineHeight: 1.5 }}>
+        <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.spento, marginTop: 7, lineHeight: 1.5 }}>
           {REGOLE[regola].desc} · posta <b style={{ color: C.testo }}>{posta}</b> (10% del bankroll, per difetto)
           · gamba ≥ {QUOTA_MINIMA_GAMBA} · massimo {MAX_GAMBE} gambe
         </div>
@@ -755,13 +755,13 @@ export default function ScalataPage() {
       {/* ── La scaletta ───────────────────────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
         <Etichetta>LA SCALETTA</Etichetta>
-        <span style={{ fontFamily: F.mono, fontSize: S.minuta, color: C.spento }}>
+        <span style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.spento }}>
           {candidate.length} partite · {passi.length} passi
         </span>
       </div>
 
       {!passi.length && imbuto && (
-        <Card><div style={{ fontSize: S.base, fontFamily: F.mono, color: C.spento, lineHeight: 1.7 }}>
+        <Card><div style={{ fontSize: S.base, fontFamily: F.sans, color: C.spento, lineHeight: 1.7 }}>
           Nessuna partita passa i filtri. Dove si sono fermate:
           <div style={{ marginTop: 6, color: C.testo }}>
             {imbuto.future} future → <b>{imbuto.att}</b> sopra attendibilità {attMin}%
@@ -869,7 +869,7 @@ export default function ScalataPage() {
         const nascosti = totali - (frontiera + 1)
         if (nascosti < 1) return null
         return (
-          <div style={{ fontFamily: F.mono, fontSize: S.minuta, color: C.spento, textAlign: 'center',
+          <div style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.spento, textAlign: 'center',
             marginTop: 8, padding: '7px 0', border: `1px dashed ${alpha(C.testo, 0.12)}` }}>
             {nascosti === 1 ? 'un altro passo in programma' : `altri ${nascosti} passi in programma`}
             {' · '}<span style={{ color: C.fioco }}>compare quando segni l&apos;esito del passo {frontiera + 1}</span>
@@ -889,7 +889,7 @@ export default function ScalataPage() {
         <div style={{ marginTop: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
             <Etichetta>TUTTE LE CONSIGLIATE</Etichetta>
-            <span style={{ fontFamily: F.mono, fontSize: S.micro, color: C.fioco }}>
+            <span style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco }}>
               {candidate.length} in scaletta{tolte.length ? ` · ${tolte.length} tolte` : ''}
             </span>
           </div>

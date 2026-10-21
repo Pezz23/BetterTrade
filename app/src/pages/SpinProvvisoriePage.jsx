@@ -81,7 +81,7 @@ function Compila({ indice, celle, piena, onFatto }) {
         {conferma ? `⚠️ La spin ${indice + 1} è già compilata: sovrascrivo?` : stato === 'scrivo' ? 'Scrivo…' : `Compila spin n.${indice + 1}`}
       </Btn>
       {conferma && <span onClick={() => setConferma(false)} style={{ fontSize: S.base, color: C.spento, cursor: 'pointer', fontFamily: F.sans }}>annulla</span>}
-      {stato === 'fatta' && <span style={{ fontSize: S.base, color: C.verde, fontFamily: F.mono }}>✓ scritta nella griglia — la vedi in Slot</span>}
+      {stato === 'fatta' && <span style={{ fontSize: S.base, color: C.verde, fontFamily: F.sans }}>✓ scritta nella griglia — la vedi in Slot</span>}
       {stato && stato !== 'fatta' && stato !== 'scrivo' && <span style={{ fontSize: S.base, color: C.rosso, fontFamily: F.sans }}>⚠️ {stato}</span>}
     </div>
   )
@@ -98,13 +98,13 @@ function Griglia({ titolo, colore, celle, riferimento, votiDi, indice, piena, on
           {onPerQuota && (
             <button onClick={onPerQuota} style={{
               background: alpha(C.oro, 0.1), border: `1px solid ${alpha(C.oro, 0.35)}`, borderRadius: 20, color: C.oro,
-              fontSize: S.minuta, fontFamily: F.mono, padding: '3px 9px', cursor: 'pointer',
+              fontSize: S.minuta, fontFamily: F.sans, padding: '3px 9px', cursor: 'pointer',
             }}>compila per quota</button>
           )}
           {onRipristina && (
             <button onClick={onRipristina} style={{
               background: 'transparent', border: `1px solid ${C.bordo}`, borderRadius: 20, color: C.spento,
-              fontSize: S.minuta, fontFamily: F.mono, padding: '3px 9px', cursor: 'pointer',
+              fontSize: S.minuta, fontFamily: F.sans, padding: '3px 9px', cursor: 'pointer',
             }}>↺ riparti dalle votate</button>
           )}
         </span>

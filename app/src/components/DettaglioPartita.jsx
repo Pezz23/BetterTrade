@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { C, F, alpha, S } from '../theme'
-import { Etichetta } from './ui'
+import { Etichetta, Attesa } from './ui'
 import { usaForma } from '../hooks/usaForma'
 import { striscia } from '../lib/forma'
 import TestataPartita, { CATEGORIE, Stella, Barra, pct } from './TestataPartita'
@@ -38,7 +38,7 @@ const Confronto = ({ etichetta, nota, a, b, forte = false }) => {
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 52px 52px', alignItems: 'baseline', gap: 6, padding: '5px 0' }}>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: forte ? 12 : 11, fontWeight: forte ? 700 : 500, fontFamily: F.sans, color: forte ? C.testo : C.fioco }}>{etichetta}</div>
-        {nota && <div style={{ fontSize: S.micro, fontFamily: F.mono, color: C.fantasma }}>{nota}</div>}
+        {nota && <div style={{ fontSize: S.micro, fontFamily: F.sans, color: C.fantasma }}>{nota}</div>}
       </div>
       {[[a, ma], [b, mb]].map(([v, max], i) => (
         <div key={i} style={{
@@ -117,8 +117,8 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
             {onChiudi && (
               <button onClick={onChiudi} style={{ background: 'transparent', border: 'none', color: C.spento, fontSize: S.titolo, cursor: 'pointer', padding: '0 4px 0 0', fontFamily: F.sans }}>‹</button>
             )}
-            <span style={{ fontSize: S.minuta, fontWeight: 700, fontFamily: F.mono, padding: '3px 9px', borderRadius: 20, background: alpha(C.bluPieno, 0.12), color: C.blu }}>{sigla(p.div)}</span>
-            {cat !== 'no' && <span style={{ fontSize: S.minuta, fontWeight: 700, fontFamily: F.mono, padding: '3px 9px', borderRadius: 20, background: alpha(c.colore, 0.15), color: c.colore, textTransform: 'uppercase' }}>{c.nome}</span>}
+            <span style={{ fontSize: S.minuta, fontWeight: 700, fontFamily: F.sans, padding: '3px 9px', borderRadius: 20, background: alpha(C.bluPieno, 0.12), color: C.blu }}>{sigla(p.div)}</span>
+            {cat !== 'no' && <span style={{ fontSize: S.minuta, fontWeight: 700, fontFamily: F.sans, padding: '3px 9px', borderRadius: 20, background: alpha(c.colore, 0.15), color: c.colore, textTransform: 'uppercase' }}>{c.nome}</span>}
           </div>
           <Stella voti={voti} mio={mio} puoVotare={puoVotare} onVota={onVota} />
         </div>
@@ -140,7 +140,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
       </div>
 
       {errore && <Blocco><div style={{ color: C.rosso, fontSize: S.base, fontFamily: F.sans }}>⚠️ {errore}</div></Blocco>}
-      {!forma && !errore && <Blocco><div style={{ color: C.spento, fontSize: S.base, fontFamily: F.mono }}>carico la forma…</div></Blocco>}
+      {!forma && !errore && <Blocco><Attesa style={{ padding: 0 }}>carico la forma…</Attesa></Blocco>}
 
       {forma && <>
         {/* ── 3. La forma ───────────────────────────────────────────── */}
@@ -236,7 +236,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
             {[[p.casa, g.lambdaCasa], [p.trasferta, g.lambdaFuori]].map(([chi, lam], i) => (
               <div key={chi} style={{ flex: 1, textAlign: i ? 'right' : 'left', minWidth: 0 }}>
-                <div style={{ fontSize: S.micro, fontFamily: F.mono, color: C.spento, letterSpacing: '0.06em',
+                <div style={{ fontSize: S.micro, fontFamily: F.sans, color: C.spento, letterSpacing: '0.06em',
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{chi.toUpperCase()}</div>
                 <div style={{ fontSize: S.evidenza, fontWeight: 700, fontFamily: F.mono, color: C.testo, lineHeight: 1.1 }}>
                   {lam.toFixed(2).replace('.', ',')}
@@ -254,7 +254,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
           {(() => {
             const iv = intervalloGol(g.totale)
             return (
-              <div style={{ textAlign: 'center', marginBottom: 12, fontSize: S.minuta, fontFamily: F.mono, color: C.spento, letterSpacing: '0.04em' }}>
+              <div style={{ textAlign: 'center', marginBottom: 12, fontSize: S.minuta, fontFamily: F.sans, color: C.spento, letterSpacing: '0.04em' }}>
                 ATTESI <span style={{ color: C.testo, fontWeight: 700, fontSize: S.corpo }}>DA {iv.da} A {iv.a} GOL</span>
                 {' '}· {(iv.copertura * 100).toFixed(0)}% DELLE VOLTE
               </div>
@@ -334,7 +334,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
                 padding: '8px 10px', minHeight: 36,
                 background: `linear-gradient(${alpha(tinta, 0.07)},${alpha(tinta, 0.07)}), ${C.card}`,
                 border: `1px solid ${alpha(tinta, 0.25)}` }}>
-                <span style={{ fontSize: S.micro, fontFamily: F.mono, color: C.spento, letterSpacing: '0.08em' }}>CONSIGLIO</span>
+                <span style={{ fontSize: S.micro, fontFamily: F.sans, color: C.spento, letterSpacing: '0.08em' }}>CONSIGLIO</span>
                 <span style={{ fontSize: S.media, fontWeight: 700, fontFamily: F.mono, color: C.testo, letterSpacing: '0.04em' }}>
                   {cg.esito || 'IN BILICO'}
                 </span>
@@ -349,7 +349,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
 
           {/* Da dove viene il numero: attacco e difesa rispetto alla media del
               campionato, dove 1,00 è "come tutti gli altri". */}
-          <div style={{ marginTop: 10, fontSize: S.minuta, fontFamily: F.mono, color: C.spento, lineHeight: 1.6 }}>
+          <div style={{ marginTop: 10, fontSize: S.minuta, fontFamily: F.sans, color: C.spento, lineHeight: 1.6 }}>
             attacco {g.attacco.casa.toFixed(2).replace('.', ',')} · {g.attacco.trasferta.toFixed(2).replace('.', ',')}
             {'   '}difesa {g.difesa.casa.toFixed(2).replace('.', ',')} · {g.difesa.trasferta.toFixed(2).replace('.', ',')}
             {'   '}<span style={{ color: C.fantasma }}>(1,00 = media del campionato, {g.media.toFixed(2).replace('.', ',')} gol)</span>
@@ -397,7 +397,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
                     <span style={{ fontSize: S.corpo, fontFamily: F.mono, color: C.oro, fontWeight: 700 }}>{cl.punti} pt</span>
                   </div>
                   <div style={{ marginTop: 7 }}>{conti(cl.vinte, cl.pari, cl.perse)}</div>
-                  <div style={{ fontSize: S.minuta, fontFamily: F.mono, color: C.fioco, marginTop: 3 }}>in {cl.giocate} partite</div>
+                  <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.fioco, marginTop: 3 }}>in {cl.giocate} partite</div>
 
                   {/* La classifica delle ultime 5: dice se sta salendo o scendendo. */}
                   <div style={{ marginTop: 10, paddingTop: 9, borderTop: `1px solid ${C.bordoChiaro}` }}>
@@ -522,7 +522,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 52px 52px', gap: 6, paddingBottom: 6, borderBottom: `1px solid ${C.bordoChiaro}` }}>
               <div />
               {squadre.map(sq => (
-                <div key={sq} style={{ textAlign: 'right', fontSize: S.micro, fontFamily: F.mono, color: C.spento, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div key={sq} style={{ textAlign: 'right', fontSize: S.micro, fontFamily: F.sans, color: C.spento, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {sq.length > 8 ? sq.slice(0, 8) + '…' : sq}
                 </div>
               ))}
@@ -603,7 +603,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
 
       {/* ── 8. I dettagli tecnici ───────────────────────────────────── */}
       <div>
-        <button onClick={() => setDettagli(v => !v)} style={{ width: '100%', background: 'transparent', border: `1px solid ${C.bordoTenue}`, borderRadius: 10, padding: '9px 12px', color: C.spento, fontFamily: F.mono, fontSize: S.minuta, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer' }}>
+        <button onClick={() => setDettagli(v => !v)} style={{ width: '100%', background: 'transparent', border: `1px solid ${C.bordoTenue}`, borderRadius: 10, padding: '9px 12px', color: C.spento, fontFamily: F.sans, fontSize: S.minuta, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer' }}>
           {dettagli ? '⌃ chiudi i dettagli' : '⌄ dettagli completi'}
         </button>
         {dettagli && (
@@ -654,7 +654,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
               <span style={{ color: C.spento }}>fonte · scaricato</span>
               <span style={{ color: C.grigio }}>{p.fonte || '—'} · {new Date(p.scaricato_il).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
             </div>
-            {forma && <div style={{ marginTop: 6, fontSize: S.minuta, fontFamily: F.mono, color: C.fantasma }}>forma e classifica: stagione {`20${forma.stagione.slice(0, 2)}/${forma.stagione.slice(2)}`}</div>}
+            {forma && <div style={{ marginTop: 6, fontSize: S.minuta, fontFamily: F.sans, color: C.fantasma }}>forma e classifica: stagione {`20${forma.stagione.slice(0, 2)}/${forma.stagione.slice(2)}`}</div>}
           </Blocco>
         )}
       </div>

@@ -81,13 +81,23 @@ export function Attesa({ children = 'carico…', style }) {
   )
 }
 
-// L'etichetta piccola in maiuscolo che intesta ogni sezione.
+/**
+ * L'etichetta piccola in maiuscolo che intesta ogni sezione.
+ *
+ * ⚠️⚠️ **In Sora dal 21/10/2026, ed è il colpo più largo del lotto sul
+ * monospaziato**: questa riga sta in **11 file** e intesta quasi ogni cosa
+ * dell'app — SELEZIONE, LA SCALETTA, PUNTATA, ACCUMULO. Sono **parole**, non
+ * numeri: il monospaziato serve a incolonnare cifre, e su un'etichetta non
+ * incolonna niente — fa solo sembrare la pagina un terminale.
+ * ⚠️ L'interlettera resta: è quella, non il carattere, a far leggere una riga
+ * maiuscola come un'etichetta invece che come un titolo gridato.
+ */
 export function Etichetta({ children, colore = C.spento, style }) {
   return (
     <div style={{
       fontSize: S.micro,
       color: colore,
-      fontFamily: F.mono,
+      fontFamily: F.sans,
       textTransform: 'uppercase',
       letterSpacing: '0.07em',
       ...style,

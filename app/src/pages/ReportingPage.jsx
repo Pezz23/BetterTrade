@@ -257,15 +257,15 @@ export default function ReportingPage() {
 
   return (
     <div style={{padding:'16px'}}>
-      <div style={{fontSize:S.micro,color:C.oro,fontFamily:F.mono,letterSpacing:4,marginBottom:4}}>REPORTING</div>
+      <div style={{fontSize:S.micro,color:C.oro,fontFamily:F.sans,letterSpacing:4,marginBottom:4}}>REPORTING</div>
       {/* Selettore stagione */}
       <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16}}>
-        <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.mono,textTransform:'uppercase',letterSpacing:'0.07em'}}>Stagione</div>
+        <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,textTransform:'uppercase',letterSpacing:'0.07em'}}>Stagione</div>
         <select value={stagione} onChange={e=>setStagione(e.target.value)} style={{background:C.card,border:`1px solid ${C.bordo}`,borderRadius:7,padding:'6px 12px',color:C.oro,fontSize:S.media,fontFamily:F.mono,outline:'none',cursor:'pointer'}}>
           {STAGIONI.map(s=><option key={s} value={s}>{s}</option>)}
         </select>
         {stagione!==stagioneCorrente && (
-          <span style={{fontSize:S.minuta,color:C.ambra,background:alpha(C.ambra,0.10),border:`1px solid ${alpha(C.ambra,0.20)}`,borderRadius:20,padding:'3px 10px',fontFamily:F.mono}}>
+          <span style={{fontSize:S.minuta,color:C.ambra,background:alpha(C.ambra,0.10),border:`1px solid ${alpha(C.ambra,0.20)}`,borderRadius:20,padding:'3px 10px',fontFamily:F.sans}}>
             Sola lettura
           </span>
         )}
@@ -312,7 +312,7 @@ export default function ReportingPage() {
             {label:'Tot. Saldo',    val:fmt(totali.saldo,true),color:pctColor(totali.saldo)},
           ].map(({label,val,color})=>(
             <div key={label} style={stileCard({padding:'12px'})}>
-              <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.mono,marginBottom:5}}>{label}</div>
+              <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,marginBottom:5}}>{label}</div>
               <div style={{fontSize:S.titolo,fontWeight:700,color,fontFamily:F.mono}}>{val}</div>
             </div>
           ))}
@@ -399,7 +399,7 @@ export default function ReportingPage() {
               {SEZIONI.map(sez=>(
                 <>
                   <tr key={`h-${sez.key}`}>
-                    <td colSpan={2+giornate.length} style={{padding:'10px 10px 4px',fontSize:S.micro,fontWeight:700,color:C.oro,fontFamily:F.mono,textTransform:'uppercase',letterSpacing:'0.08em',background:C.barra,borderTop:`1px solid ${C.bordoRiga}`}}>
+                    <td colSpan={2+giornate.length} style={{padding:'10px 10px 4px',fontSize:S.micro,fontWeight:700,color:C.oro,fontFamily:F.sans,textTransform:'uppercase',letterSpacing:'0.08em',background:C.barra,borderTop:`1px solid ${C.bordoRiga}`}}>
                       {sez.label}
                     </td>
                   </tr>
