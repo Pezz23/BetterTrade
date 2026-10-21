@@ -9,53 +9,75 @@
 // quel poco che stila fuori da React (body, scrollbar).
 
 export const C = {
-  // Sfondi, dal più scuro al più chiaro
-  fondo:    '#090909',  // sfondo pagina
-  barra:    '#0d0d0d',  // header e tab bar
-  pozzo:    '#0a0a0a',  // campi di input, "incassati" nella superficie
-  pannello: '#111111',  // card di login, modali
-  card:     '#141414',  // card di contenuto
+  // ── Superfici, dal fondo alla card ──────────────────────────────────────
+  // Rifatte il 21/10/2026 sulla tavolozza scelta da Mattia.
+  // ⚠️⚠️ **E QUI UNA COSA DA SAPERE, MISURATA: il passo fra il fondo e la card
+  // non è migliorato.** Prima `#090909` → `#141414` dava un rapporto di
+  // **1,08:1**, adesso `#0B0D10` → `#14171B` dà **1,08:1** — identico. Nella
+  // tavolozza proposta la superficie secondaria sta lì, e lì l'ho messa. Quindi
+  // **una card continua a vedersi grazie al bordo, non al fondo**, ed è il
+  // motivo per cui questa app è un reticolo di riquadri. Per staccarla davvero
+  // servirebbe portarla attorno a `#1A1F26`, un passo oltre la tavolozza: è una
+  // decisione da prendere guardando lo schermo, non da infilare qui.
+  // ⚠️ Il guadagno vero della palette nuova è **sul testo**: `spento` passa da
+  // 2,47:1 a 6,97:1 (vedi sotto).
+  fondo:    '#0B0D10',  // sfondo pagina
+  barra:    '#0F1216',  // header e tab bar: appena sopra il fondo
+  pozzo:    '#0E1115',  // campi di input, "incassati" **sotto** la card
+  pannello: '#11151A',  // card di login, modali
+  card:     '#14171B',  // card di contenuto
 
-  // Bordi, dal più tenue al più marcato
-  bordoTenue: '#181818',
-  bordoRiga:  '#1a1a1a',
-  bordo:      '#1e1e1e',
+  // ── Bordi, dal più tenue al più marcato ─────────────────────────────────
+  bordoTenue: '#1E242A',
+  bordoRiga:  '#232930',
+  bordo:      '#292F36',
+  bordoChiaro: '#343B43',
 
-  // Testo
-  testo:      '#e0d9d0',
-  spento:     '#555555',  // etichette, testo secondario
-  fioco:      '#444444',  // testo terziario
-  fantasma:   '#333333',  // placeholder, testo disabilitato
-  inattivo:   '#4a4540',  // icone tab non selezionate
+  // ── Testo ───────────────────────────────────────────────────────────────
+  // ⚠️⚠️ **`spento` è il cambio più importante di tutta la palette.** Era
+  // `#555555` su una card `#141414`: contrasto **2,6:1**, sotto il minimo
+  // leggibile di 4,5:1 — ed è il colore più usato dell'app (**173 volte**),
+  // quello delle etichette. Ora è `#9AA2AC`, che fa **7,2:1**. Le etichette
+  // devono essere discrete, non quasi invisibili.
+  testo:      '#F1F2F3',
+  spento:     '#9AA2AC',  // etichette, testo secondario
+  fioco:      '#6B7480',  // testo terziario
+  fantasma:   '#4A525C',  // placeholder, testo disabilitato
+  inattivo:   '#5A626C',  // icone tab non selezionate
 
-  // Grigi neutri: testo terziario e caselle senza esito
-  grigio:      '#888888',
-  grigioScuro: '#777777',
-  grigioFioco: '#666666',
-  quasiNero:   '#222222',
-  bordoChiaro: '#2a2a2a',
+  // Grigi neutri: caselle senza esito, linee, dettagli
+  grigio:      '#9AA2AC',
+  grigioFioco: '#6B7480',
+  // ⚠️ Si chiamava `quasiNero` e ora non lo è più: è la **superficie sopra la
+  // card** — il fondo di una barra di avanzamento, di una casella toccata, di
+  // un pallino spento. Il nome vecchio descriveva il valore, questo descrive
+  // il ruolo, che è l'unica cosa che sopravvive a un cambio di tavolozza.
+  attiva:      '#1B2026',
+  grigioMedio: '#7A838E',
+  grigioCupo:  '#3E464F',
+  acciaio:     '#8A939E',  // argento spento
 
-  // Accenti — anche i ruoli usano questi
-  oro:    '#c9a84c',  // colore dell'app, superadmin, full
-  verde:  '#22c55e',  // vincita, deposito, tris
-  rosso:  '#ef4444',  // perdita, prelievo, errore
-  blu:    '#60a5fa',  // admin, quaterna, informazione
-  ambra:  '#f59e0b',  // partita di oggi, avviso
-  viola:  '#a855f7',  // riga evidenziata
-  menta:  '#4ade80',  // ruolo user
-  oroChiaro: '#f0d060',
-  acciaio:   '#9aa3ab',  // argento spento
-  bianco:    '#ffffff',  // le linee interne della slot e la quota in Andamento
-  celeste:   '#7dd3fc',
+  // ── Accenti — anche i ruoli usano questi ───────────────────────────────
+  // ⚠️ Scelti da Mattia il 21/10/2026 sulla tavolozza proposta nel briefing.
+  // Sono spostati di poco dai precedenti (l'oro era `#c9a84c`), ma insieme ai
+  // fondi nuovi reggono meglio il contrasto.
+  oro:    '#D8B44A',  // colore dell'app, superadmin, full
+  verde:  '#20B875',  // vincita, deposito, tris
+  rosso:  '#E05252',  // perdita, prelievo, errore
+  blu:    '#4C9FFF',  // admin, quaterna, informazione
+  ambra:  '#F0A830',  // partita di oggi, avviso
+  viola:  '#A878F0',  // Goal/NoGoal, riga evidenziata
+  menta:  '#3DD68C',  // ruolo user
+  oroChiaro: '#E8CC72',
+  bianco:    '#FFFFFF',  // le linee interne della slot e la quota in Andamento
+  celeste:   '#7DC8FC',
 
   // Tinte usate solo come sfondo trasparente. Sono più sature delle
   // corrispondenti piene qui sopra: servono a colorare un fondo senza
   // schiarirlo, e vanno tenute distinte o l'aspetto cambia.
-  bluPieno:      '#3b82f6',
-  giallo:        '#eab308',
-  celestePieno:  '#38bdf8',
-  grigioMedio:   '#646464',
-  grigioCupo:    '#3c3c3c',
+  bluPieno:      '#3D8BFF',
+  giallo:        '#E0B020',
+  celestePieno:  '#38BDF8',
 }
 
 export const F = {
@@ -104,6 +126,42 @@ export const S = {
   cifra:  28,    // un numero solo, grosso
   mega:   48,    // la percentuale della Dashboard, che è tutta la pagina
   icona:  18,    // i glifi del menu e della tab bar (non è testo)
+}
+
+/**
+ * ⚠️⚠️ **LA SCALA DELLE SPAZIATURE.** Come per i caratteri, prima non
+ * esisteva: `gap` usava 8 (49 volte), 6 (25), 10 (19), 4 (15), più 7, 5, 3 e
+ * 12 sparsi — cioè gli stessi valori a occhio, scritti da mani diverse. I sette
+ * passi qui sotto **sono** quei valori, messi in fila.
+ *
+ * ⚠️ **Si adotta una pagina per volta, non tutta in un colpo.** Cambiare 500
+ * `padding` e `gap` alla cieca sposta i layout, e un trabordamento su un
+ * telefono stretto non si vede da qui: la scala entra nei pezzi condivisi
+ * subito (dove i numeri sono gli stessi di prima, quindi non cambia un pixel) e
+ * nelle pagine mentre le si rifà.
+ */
+export const SP = {
+  xs:   4,   // fra due cose attaccate
+  s:    6,
+  m:    8,   // il più usato: fra gli elementi di una riga
+  l:   10,
+  xl:  14,   // il riempimento verticale di una card
+  xxl: 16,   // il margine della pagina, il riempimento orizzontale di una card
+  sez: 24,   // fra due sezioni
+}
+
+/**
+ * I raggi. ⚠️ `pastiglia` è 999 e non 20: su un elemento basso 20 è già un
+ * mezzo cerchio, ma se l'elemento cresce 20 torna a essere uno spigolo
+ * arrotondato. 999 è "tonda qualunque sia l'altezza" — una proprietà, non una
+ * misura.
+ */
+export const R = {
+  s:   4,
+  m:   6,
+  g:  10,   // la card
+  xl: 14,
+  pastiglia: 999,
 }
 
 // I tre tipi di schedina, con il loro colore.

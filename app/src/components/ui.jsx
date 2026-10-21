@@ -6,7 +6,7 @@
 // cambiare l'aspetto significava rincorrerle tutte.
 
 import { useRef, useEffect } from 'react'
-import { C, F, alpha, S } from '../theme'
+import { C, F, alpha, S, SP, R } from '../theme'
 
 // La card grigia standard: fondo, bordo, angoli tondi.
 /**
@@ -27,8 +27,10 @@ import { C, F, alpha, S } from '../theme'
 export const stileCard = (style, colore) => ({
   background: C.card,
   border: `1px solid ${colore ? alpha(colore, 0.2) : C.bordo}`,
-  borderRadius: 10,
-  padding: '14px 16px',
+  borderRadius: R.g,
+  // ⚠️ `SP.xl` e `SP.xxl` **sono** i 14 e 16 di prima: la scala è stata
+  // costruita sui numeri già in uso, quindi qui non cambia un pixel.
+  padding: `${SP.xl}px ${SP.xxl}px`,
   ...style,
 })
 

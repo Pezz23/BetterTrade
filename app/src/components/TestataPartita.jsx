@@ -69,7 +69,7 @@ export function Posizione({ nome, colore, posto, compatta = false, style }) {
 }
 
 export const Barra = ({ frazione, colore, altezza = 6 }) => (
-  <div style={{ height: altezza, borderRadius: altezza, background: C.quasiNero, overflow: 'hidden' }}>
+  <div style={{ height: altezza, borderRadius: altezza, background: C.attiva, overflow: 'hidden' }}>
     <div style={{ width: `${Math.max(0, Math.min(1, frazione)) * 100}%`, height: '100%', background: colore, borderRadius: altezza }} />
   </div>
 )
@@ -108,7 +108,7 @@ export default function TestataPartita({ p, cat, compatta = false, gol = null })
             {i === 1 && (
               <div style={{ alignSelf: 'center', textAlign: 'center', padding: '0 6px', minWidth: compatta ? 76 : 96 }}>
                 <Etichetta style={{ fontSize: S.micro, letterSpacing: '0.12em', marginBottom: 4 }}>giocata</Etichetta>
-                <div style={{ fontSize: compatta ? 19 : 24, fontWeight: 800, fontFamily: F.mono, color: c.colore, lineHeight: 1.1 }}>{pronosticoDa(p.giocata)}</div>
+                <div style={{ fontSize: compatta ? 19 : 24, fontWeight: 700, fontFamily: F.mono, color: c.colore, lineHeight: 1.1 }}>{pronosticoDa(p.giocata)}</div>
                 <div style={{ marginTop: compatta ? 5 : 7 }}><Barra frazione={p.probGiocata} colore={c.colore} altezza={compatta ? 5 : 6} /></div>
                 {/* ⚠️ **I due consigli sotto la giocata, in bianco** (scelta di
                     Mattia, 15/10/2026). Stanno qui perché sono dello stesso
@@ -196,7 +196,7 @@ export default function TestataPartita({ p, cat, compatta = false, gol = null })
               gap: compatta ? 6 : 9, minWidth: 0 }}>
               <div style={{
                 fontSize: compatta ? 'clamp(11px, 3.4vw, 14px)' : 'clamp(13px, 4.4vw, 19px)',
-                fontWeight: 800, fontFamily: F.sans, letterSpacing: '0.02em',
+                fontWeight: 700, fontFamily: F.sans, letterSpacing: '0.02em',
                 textTransform: 'uppercase', lineHeight: 1.15, overflowWrap: 'anywhere',
                 textAlign: 'center', minWidth: 0,
                 color: p.segno === segno ? C.testo : C.spento,

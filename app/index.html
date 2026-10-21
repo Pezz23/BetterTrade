@@ -5,7 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BetterTrade</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- ⚠️ Tre pesi di Sora, non cinque (21/10/2026). Il **300 non lo usava
+         nessuno**, e il **500 era usato 5 volte su 149**: tolti, sono due file
+         in meno da scaricare. ⚠️ E `fontWeight: 800` era usato 5 volte **senza
+         che l'800 fosse caricato**, quindi il browser se lo inventava
+         ingrassando il 700 — una finta grassetta, più brutta e più lenta da
+         disegnare. Quei cinque punti ora dicono 700. -->
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   </head>
   <body>
     <div id="root"></div>

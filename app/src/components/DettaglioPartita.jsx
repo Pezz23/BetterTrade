@@ -457,7 +457,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
                 {/* La sintesi è una barra, non tre nomi accorciati: i nomi
                     lunghi venivano tagliati e il confronto spariva. */}
                 <div style={{ marginBottom: 10 }}>
-                  <div style={{ display: 'flex', height: 8, borderRadius: 8, overflow: 'hidden', background: C.quasiNero }}>
+                  <div style={{ display: 'flex', height: 8, borderRadius: 8, overflow: 'hidden', background: C.attiva }}>
                     {[[vCasa, C.verde], [pari, C.giallo], [vTrasferta, C.rosso]].map(([n, col], i) =>
                       n > 0 && <div key={i} style={{ width: `${100 * n / tot}%`, background: col }} />)}
                   </div>
@@ -512,7 +512,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
                 <b style={{ color: COLORE_VPM[vs] }}>{vincente}</b>, e {PAROLA_VPM[vs]}.
                 {vs !== 'incerto' && <> Sotto {String(VPM_NETTO).replace('.', ',')} non si pronuncia.</>}
               </div>
-              <div style={{ fontSize: S.evidenza, fontWeight: 800, fontFamily: F.mono, color: COLORE_VPM[vs], lineHeight: 1, flexShrink: 0 }}>
+              <div style={{ fontSize: S.evidenza, fontWeight: 700, fontFamily: F.mono, color: COLORE_VPM[vs], lineHeight: 1, flexShrink: 0 }}>
                 {v.punti.toFixed(2).replace('.', ',')}
               </div>
             </div>

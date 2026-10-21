@@ -19,9 +19,9 @@
    Si tengono solo quelle davvero usate: meno copia, meno disallineamento. */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg: #090909;      /* C.fondo */
-  --border: #1e1e1e;  /* C.bordo */
-  --text: #e0d9d0;    /* C.testo */
+  --bg: #0B0D10;      /* C.fondo */
+  --border: #292F36;  /* C.bordo */
+  --text: #F1F2F3;    /* C.testo */
   --sans: 'Sora', sans-serif;
 }
 body {
@@ -34,6 +34,17 @@ body {
   padding-bottom: 70px;
 }
 input, button, select, textarea { font-family: var(--sans); }
+
+/* ⚠️ **Il contorno del fuoco: prima non c'era nessuno stile e si vedeva
+   quello del browser**, cioè un anello azzurro di sistema sopra un tema
+   scuro. `:focus-visible` e non `:focus`: così compare con la tastiera e
+   **non** al tocco del dito, dove sarebbe un alone che resta attaccato al
+   pulsante dopo averlo premuto. */
+:focus-visible {
+  outline: 2px solid #D8B44A;  /* C.oro */
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 

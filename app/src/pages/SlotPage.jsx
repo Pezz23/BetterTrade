@@ -209,7 +209,7 @@ function SlotVisiva({tiles}) {
           sono solo lo sfondo che passa fra le celle (gap di 1px). */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:1,width:'100%',
         background:C.bianco,border:`3px solid ${C.oro}`,overflow:'hidden',
-        boxShadow:`0 0 0 1px ${C.quasiNero}`}}>
+        boxShadow:`0 0 0 1px ${C.attiva}`}}>
         {SLOT_GRID.flat().map(partita=>{
           const ts=getTileStyle(partita),t=tiles.find(t=>t.id===partita)
           // La tinta della casella è semitrasparente e sotto passa la griglia
@@ -321,7 +321,7 @@ function Schedine({tiles,isAdmin,sched,isWip,spinIdx}) {
                 const oggi=isOggi(t.data)
                 return (
                   <div key={pos} style={{display:'flex',alignItems:'center',gap:8,padding:'4px 0',borderBottom:`1px solid ${C.bordoTenue}`}}>
-                    <div style={{width:7,height:7,borderRadius:'50%',background:oggi?C.ambra:C.quasiNero,flexShrink:0,boxShadow:oggi?`0 0 6px ${alpha(C.ambra,0.6)}`:''}}/>
+                    <div style={{width:7,height:7,borderRadius:'50%',background:oggi?C.ambra:C.attiva,flexShrink:0,boxShadow:oggi?`0 0 6px ${alpha(C.ambra,0.6)}`:''}}/>
                     <span style={{fontSize:S.base,color:C.oro,fontFamily:F.mono,fontWeight:700,minWidth:14}}>{t.pronostico||'-'}</span>
                     <span style={{flex:1,fontSize:S.corpo,color:t.casa?C.testo:C.fantasma,fontFamily:F.sans}}>{t.casa||`Pos.${pos}`}{t.ospite?` - ${t.ospite}`:''}</span>
                     <div style={{display:'flex',gap:6,alignItems:'center',flexShrink:0}}>

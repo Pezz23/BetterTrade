@@ -174,7 +174,7 @@ export default function PartitePage() {
           ⚙ filtri{attivi.length > 0 ? ` · ${attivi.length}` : ''}
         </button>
         {attivi.map(f => (
-          <button key={f.id} onClick={f.togli} title="togli questo filtro" style={{ ...pillola(true, f.colore || C.oro), fontWeight: 500 }}>
+          <button key={f.id} onClick={f.togli} title="togli questo filtro" style={{ ...pillola(true, f.colore || C.oro), fontWeight: 600 }}>
             {f.label} <span style={{ color: C.fantasma }}>✕</span>
           </button>
         ))}

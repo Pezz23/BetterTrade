@@ -17,7 +17,7 @@ const ST = {
   sub:   { fontSize:S.corpo, color:C.spento, marginBottom:28, fontFamily:F.sans },
   form:  { display:'flex', flexDirection:'column', gap:18 },
   field: { display:'flex', flexDirection:'column', gap:6 },
-  label: { fontSize:S.base, fontWeight:500, color:C.grigioFioco, textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:F.mono },
+  label: { fontSize:S.base, fontWeight:600, color:C.grigioFioco, textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:F.mono },
   err:   { background:alpha(C.rosso,0.08), border:`1px solid ${alpha(C.rosso,0.22)}`, borderRadius:8, padding:'10px 14px', fontSize:S.media, color:C.rosso, fontFamily:F.sans },
   btn:   { background:C.oro, border:'none', borderRadius:8, padding:'13px', color:C.fondo, fontSize:S.titolo, fontWeight:700, cursor:'pointer', fontFamily:F.sans, marginTop:4 },
   hint:  { marginTop:22, fontSize:S.corpo, color:C.fantasma, textAlign:'center', fontFamily:F.sans },

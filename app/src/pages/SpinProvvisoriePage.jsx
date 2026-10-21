@@ -259,7 +259,7 @@ export default function SpinProvvisoriePage() {
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(300px, 1fr))`, gap: 16 }}>
       {!caricamento && automatiche.map((auto, i) => (
         <Card key={i} style={{ padding: '14px' }}>
-          <div style={{ fontSize: S.cifra, fontWeight: 800, color: C.oro, fontFamily: F.sans, letterSpacing: 2, marginBottom: 12 }}>SPIN {i + 1}</div>
+          <div style={{ fontSize: S.cifra, fontWeight: 700, color: C.oro, fontFamily: F.sans, letterSpacing: 2, marginBottom: 12 }}>SPIN {i + 1}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <Griglia titolo="Automatica" colore={C.spento} celle={auto} votiDi={votiDi} indice={i} piena={piene[i]} onFatto={leggiGriglia}
               spiegazione={<>Le più attendibili in ordine: la prima al <b style={{ color: C.menta }}>centro</b>, le 4 dopo agli <b style={{ color: C.oroChiaro }}>angoli</b>, le ultime 4 ai <b style={{ color: C.celeste }}>lati</b>.</>} />
@@ -314,7 +314,7 @@ export default function SpinProvvisoriePage() {
 
       {!caricamento && (
         <Card style={{ marginTop: 16, padding: 14 }}>
-          <div style={{ fontSize: S.titolo, fontWeight: 800, color: C.oro, fontFamily: F.sans, letterSpacing: 2, marginBottom: 8 }}>LE VOTATE</div>
+          <div style={{ fontSize: S.titolo, fontWeight: 700, color: C.oro, fontFamily: F.sans, letterSpacing: 2, marginBottom: 8 }}>LE VOTATE</div>
           {votateTutte.length === 0
             ? <div style={{ fontSize: S.corpo, color: C.spento, fontFamily: F.sans }}>Nessuna partita con stelline: si votano dalla pagina Partite.</div>
             : votateTutte.map(p => {

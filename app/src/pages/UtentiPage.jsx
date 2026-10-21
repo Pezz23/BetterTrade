@@ -16,7 +16,7 @@ const ST = {
   formCard:{ background:C.pannello, border:`1px solid ${C.bordo}`, borderRadius:12, padding:20, marginBottom:18 },
   grid:  { display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 },
   field: { display:'flex', flexDirection:'column', gap:5 },
-  label: { fontSize:S.base, fontWeight:500, color:C.spento, textTransform:'uppercase', letterSpacing:'0.07em', fontFamily:F.mono },
+  label: { fontSize:S.base, fontWeight:600, color:C.spento, textTransform:'uppercase', letterSpacing:'0.07em', fontFamily:F.mono },
   err:   { background:alpha(C.rosso,0.08), border:`1px solid ${alpha(C.rosso,0.2)}`, borderRadius:7, padding:'9px 12px', fontSize:S.media, color:C.rosso, fontFamily:F.sans },
   ok:    { background:alpha(C.verde,0.08), border:`1px solid ${alpha(C.verde,0.2)}`, borderRadius:7, padding:'9px 12px', fontSize:S.media, color:C.verde, fontFamily:F.sans, marginBottom:12 },
   saveBtn:{ background:C.oro, border:'none', borderRadius:7, padding:'10px 22px', color:C.fondo, fontSize:S.grande, fontWeight:700, cursor:'pointer', fontFamily:F.sans, marginTop:12 },
@@ -27,7 +27,7 @@ const ST = {
   rsub:  { fontSize:S.base, color:C.fioco, fontFamily:F.mono },
   bkWrap:{ display:'flex', alignItems:'center', background:C.pozzo, border:`1px solid ${C.bordo}`, borderRadius:6, height:30, overflow:'hidden' },
   bkEur: { padding:'0 8px', fontSize:S.base, color:C.spento, borderRight:`1px solid ${C.bordo}`, fontFamily:F.mono },
-  bkInp: { background:'transparent', border:'none', outline:'none', color:C.oro, fontSize:S.media, fontFamily:F.mono, width:75, padding:'0 8px', fontWeight:500 },
+  bkInp: { background:'transparent', border:'none', outline:'none', color:C.oro, fontSize:S.media, fontFamily:F.mono, width:75, padding:'0 8px', fontWeight:600 },
   delBtn:{ background:alpha(C.rosso,0.08), border:`1px solid ${alpha(C.rosso,0.18)}`, borderRadius:6, color:C.rosso, fontSize:S.base, cursor:'pointer', padding:'5px 10px', fontFamily:F.sans },
   empty: { padding:40, textAlign:'center', color:C.fantasma, fontSize:S.grande, fontFamily:F.sans },
   pwBtn: { background:alpha(C.oro,0.10), border:`1px solid ${alpha(C.oro,0.3)}`, borderRadius:6, color:C.oro, fontSize:S.base, cursor:'pointer', padding:'5px 10px', fontFamily:F.sans },
@@ -190,7 +190,7 @@ export default function UtentiPage() {
                 <Badge colore={rs.color} sfondo={rs.bg}>{u.role}</Badge>
                 <div style={{background:C.pozzo,border:`1px solid ${C.bordo}`,borderRadius:6,padding:'5px 12px',display:'flex',alignItems:'center',gap:4,minWidth:90}}>
                   <span style={{fontSize:S.base,color:C.spento,fontFamily:F.mono}}>€</span>
-                  <span style={{fontSize:S.media,color:C.oro,fontFamily:F.mono,fontWeight:500}}>
+                  <span style={{fontSize:S.media,color:C.oro,fontFamily:F.mono,fontWeight:600}}>
                     {(u.bankroll||0).toFixed(2)}
                   </span>
                 </div>
