@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../supabase'
 import { useAuth } from '../context/AuthContext'
 import { valuta, oggiLocale } from '../lib/attendibilita'
@@ -66,21 +66,27 @@ export function usaProssime() {
     return () => { vivo = false }
   }, [])
 
+  // ⚠️⚠️ **Queste quattro sono avvolte in `useCallback` perché le righe della
+  // lista sono `memo`.** Una funzione ricostruita a ogni ridisegno è una
+  // proprietà nuova, e una proprietà nuova fa ridisegnare la riga: con 67
+  // partite erano ~270 componenti rifatti **a ogni tasto premuto** in un campo
+  // dei filtri. Il `memo` sulla riga non serve a niente se chi gli passa le
+  // proprietà le rifà ogni volta.
   /** Rifà le due letture buttando la memoria: lo chiama il tasto ↻. */
-  async function ricarica() {
+  const ricarica = useCallback(async () => {
     setCaricamento(true)
     try {
       const d = await carica(true)
       setRighe(d.righe); setVoti(d.voti); setErrore(null)
     } catch (e) { setErrore(e.message) }
     setCaricamento(false)
-  }
+  }, [])
 
   // Voto: una riga per admin per partita. Si scrive prima in memoria — la
   // risposta del database arriva dopo — e se fallisce si torna indietro.
   // ⚠️ Si aggiorna **anche la memoria di modulo**: senza, una stellina messa
   // nella pagina Partite sparirebbe tornandoci dopo essere passati altrove.
-  async function vota(prossimaId) {
+  const vota = useCallback(async (prossimaId) => {
     if (!isAdmin || !currentUser) return
     const mio = voti.some(v => v.prossima_id === prossimaId && v.user_id === currentUser.id)
     const prima = voti
@@ -97,9 +103,10 @@ export function usaProssime() {
       if (memoria) memoria.voti = prima
       setErrore(`Voto non salvato: ${error.message}`)
     }
-  }
-  const votiDi = id => voti.filter(v => v.prossima_id === id).length
-  const mioVoto = id => !!currentUser && voti.some(v => v.prossima_id === id && v.user_id === currentUser.id)
+  }, [isAdmin, currentUser, voti])
+  const votiDi = useCallback((id) => voti.filter(v => v.prossima_id === id).length, [voti])
+  const mioVoto = useCallback((id) =>
+    !!currentUser && voti.some(v => v.prossima_id === id && v.user_id === currentUser.id), [currentUser, voti])
 
   return { righe, voti, vota, votiDi, mioVoto, caricamento, errore, ricarica }
 }

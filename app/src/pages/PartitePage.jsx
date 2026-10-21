@@ -44,7 +44,10 @@ export default function PartitePage() {
 
   // Lo scorrimento non si salva più: da quando la scheda è un foglio sopra la
   // lista (SchedaScorrevole), la lista non viene smontata e il punto resta suo.
-  const apri = id => setApertaId(id)
+  // ⚠️ Le righe sono `memo`, quindi quello che si passa deve restare lo stesso
+  // fra un ridisegno e l'altro: `setApertaId` di `useState` è stabile per
+  // costruzione, un `id => setApertaId(id)` scritto qui **no** — ed è il modo
+  // di annullare il `memo` senza accorgersene.
 
   // Per il menu a tendina: "I1 – Serie A"
   const campionati = useMemo(() => {
@@ -280,8 +283,8 @@ export default function PartitePage() {
         {visibili.map(p => (
           <RigaPartita key={p.id} p={p} cat={categoria(p.probGiocata, soglie)}
             vpm={vpmDi.get(p.id) ?? null}
-            voti={votiDi(p.id)} mio={mioVoto(p.id)} puoVotare={isAdmin} onVota={() => vota(p.id)}
-            onApri={() => apri(p.id)} />
+            voti={votiDi(p.id)} mio={mioVoto(p.id)} puoVotare={isAdmin} onVota={vota}
+            onApri={setApertaId} />
         ))}
       </div>
 

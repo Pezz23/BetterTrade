@@ -79,8 +79,8 @@ export default function VotatePage() {
                ⚠️ Dalla mappa e non calcolato qui: dentro il `map` del JSX
                girava a ogni ridisegno, per ogni riga. */
             vpm={vpmDi.get(p.id) ?? null}
-            voti={votiDi(p.id)} mio={mioVoto(p.id)} puoVotare={isAdmin} onVota={() => vota(p.id)}
-            onApri={() => setApertaId(p.id)} />
+            voti={votiDi(p.id)} mio={mioVoto(p.id)} puoVotare={isAdmin} onVota={vota}
+            onApri={setApertaId} />
         ))}
       </div>
 
