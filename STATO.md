@@ -64,13 +64,20 @@ spaziature**, cioè la voce qui sotto, e va fatta guardando lo schermo.
 
 ### Da dove ripartire adesso
 
-1. **Mattia guarda l'app** e dice se l'effetto AS/400 è passato. È la sola
+0. ⚠️⚠️ **PRIMA DI TUTTO: `cd btscout && node --env-file=.env scripts/aggiorna.js --esegui`.**
+   I dati sono fermi al **15 ottobre** (ultima partita in archivio: 14/10), e
+   da questo dipendono almeno due cose che sembrano difetti dell'app: le
+   **leghe minori che non si vedono** nel calendario e la pagina **Andamento**
+   vuota. Vedi *Le dieci idee di Mattia*, voce 8.
+1. **Le dieci idee del 21/10** stanno nella sezione qui sotto, verificate una
+   per una. La **1 (Road to weekend a mano)** è la priorità dichiarata da lui.
+2. **Mattia guarda l'app** e dice se l'effetto AS/400 è passato. È la sola
    domanda che da terminale non ha risposta, e adesso ha davanti un'app senza
    i difetti qui sopra.
-2. ⚠️ **Il tocco su un telefono vero**: che `:hover` non resti attaccato dopo
+3. ⚠️ **Il tocco su un telefono vero**: che `:hover` non resti attaccato dopo
    aver premuto. Un Chromium headless non lo può dire.
-3. **La decisione sulle spaziature** (vedi sotto): è sua, e si prende guardando.
-4. ⚠️ **Il collaudo di Road to weekend dal browser resta aperto**: è la prima
+4. **La decisione sulle spaziature** (vedi sotto): è sua, e si prende guardando.
+5. ⚠️ **Il collaudo di Road to weekend dal browser resta aperto**: è la prima
    cosa da fare in una sessione che tocchi la scalata.
 
 ### 🔧 Il tagliando del 21/10/2026 (sera), dopo il restyling
@@ -135,6 +142,130 @@ ciascuno — **si decide guardando lo schermo, non da terminale.**
 ⚠️ E la sostituzione pura (scrivere `SP.m` dove c'è `8`) **non cambia un
 pixel**: è contabilità, utile solo il giorno in cui si vuole cambiare tutto da
 un posto. Non è quello che fa sembrare l'app meno un gestionale.
+
+## 📋 LE DIECI IDEE DI MATTIA — 21 ottobre 2026 (notte)
+
+Consegnate in blocco. **Verificate una per una prima di scriverle qui**: tre
+esistevano già in tutto o in parte, e una non è un'idea ma un dato vecchio.
+⛔ Nessuna è stata sviluppata: si decide l'ordine con Mattia.
+
+| | voce | stato verificato |
+|---|---|---|
+| **1** | **Road to weekend: aggiungere partite a mano** | 🆕 da fare — **la più urgente, lo dice lui** |
+| 2 | La linea spessa nella scheda + data/ora più piccole | 🆕 trovata la riga esatta |
+| 3 | Barra dei campionati fissa, tipo Time Machine | 🆕 da progettare |
+| 4 | Filtri: via «voto minimo», dentro «scelta» con `+`/`−` | 🆕 il filtro esiste, va sostituito |
+| 5 | Le finestre come card 2×2, con «Domani» | 🆕 «Domani» **oggi non esiste** |
+| 6 | API di ESPN | ⚠️ **ESPN è già collegato e funziona** |
+| 7 | Il campionato a sinistra nelle spin | 🆕 c'è, ma dopo il nome |
+| 8 | Non si vedono le leghe minori (Serie B) | ⚠️ **non è il codice: i dati sono fermi al 15/10** |
+| 9 | Spin a quota minima | ✅ **esiste già** |
+| 10 | Creatore di schedina | ⚠️ **esiste da terminale**, non in app |
+
+### 1 · Road to weekend, partite a mano — la priorità
+
+Un tasto **«+ aggiungi manualmente»** che apre una ricerca *«cerca squadra o
+campionato…»*, con sopra i filtri **votate · scelta · attendibilità**. La lista
+colorata **per distanza nel tempo**: bianco le più vicine, poi verde, giallo,
+arancione, rosso, viola, blu. ⚠️ **La stessa scala va usata anche nella
+scaletta** sotto.
+
+⚠️ Non si parte da zero: **`components/ScegliCasella.jsx` fa già ricerca +
+filtri + finestra al centro** per le spin, ed è il modello che Mattia cita.
+Prima di scrivere un terzo selettore di partite (ce ne sono già due,
+`ScegliCasella` e `SceltaPartita`) va deciso se si allarga uno dei due.
+⚠️⚠️ **Oggi il `+` della scalata fa un'altra cosa**: tira su la prima gamba del
+passo successivo. Non va sostituito — è come si arriva alla quota minima quando
+una fascia ha una gamba sola. Il tasto nuovo è un secondo gesto, non lo stesso.
+⚠️ La scala a sette colori **è la prima cosa dell'app che codifica il tempo con
+un colore**: oggi il colore dice la categoria (centro/giallo/blu) o l'esito. Due
+significati sullo stesso canale nella stessa schermata vanno pensati insieme,
+non aggiunti di slancio.
+
+### 2 · La linea spessa, e perché si è notata proprio adesso
+
+`DettaglioPartita.jsx:144`: `borderTop: 2px solid alpha(c.colore, 0.35)`, sopra
+la barra dei cinque numeri.
+⚠️ **Si è fatta notare oggi per colpa mia**: per le partite senza categoria
+`c.colore` era `fantasma` (2,27:1, quasi invisibile) e il 21/10 l'ho portato a
+`spento` (6,97:1) perché vestiva anche il pronostico, che si deve leggere. La
+linea è la stessa di prima, è il colore che è salito. Va tolta o riportata a
+`bordoTenue`, e **non ribaltando la correzione sul pronostico**.
+Insieme: data e ora nella scheda scendono da `S.grande`.
+
+### 3 · La barra dei campionati, tipo Time Machine
+
+Una barra fissa a destra per saltare da un campionato all'altro.
+⚠️ Da progettare con attenzione: su 375px una colonna fissa a destra toglie
+larghezza ai **nomi delle squadre**, che il 21/10 sono già stati tarati al
+pixel sulla larghezza disponibile (`BOURNEMOUTH` = 8,774px per px di corpo).
+Prima di disegnarla va deciso **cosa si restringe**.
+
+### 4 · I filtri
+
+Via **«voto minimo»** (`votoMin` in `PartitePage`, filtro e targhetta), dentro
+**«scelta»** con i tasti `+` e `−`. ⚠️ `TastoRipeti` esiste già in `ui.jsx` e si
+tiene premuto: è lo stesso pezzo di Andamento e del bankroll della scalata.
+
+### 5 · Le finestre come card
+
+Oggi sono quattro pastiglie in fila (`FINESTRE` in `lib/attendibilita.js`):
+`Oggi · Fino a lunedì · Anche la prossima · Tutte`.
+⚠️ **«Domani» non esiste**: va aggiunta alla lista, non è solo grafica.
+
+### 6 · ESPN — attenzione, c'è già
+
+⚠️⚠️ **L'integrazione ESPN esiste, è viva e porta i risultati in giornata**:
+`btscout/scripts/importa-espn.js`, 59 alias scritti a mano, la pagina
+**Importazioni** per i casi dubbi, e `partite.fonte` che dice da dove viene ogni
+riga. È stata costruita il 12/10/2026 proprio perché football-data era rimasto
+tre settimane indietro.
+**Prima di rifare qualcosa va chiarito cosa non funziona**, perché «il
+collegamento diretto non funziona» non corrisponde a quello che c'è scritto qui.
+⚠️ Quello che ESPN **non** dà sono le quote, e non è un difetto: quelle restano
+football-data e The Odds API.
+
+### 7 · Il campionato a sinistra nelle spin
+
+`SpinProvvisoriePage.jsx:58` e `:334` mostrano già `sigla(div) · giorno`, ma
+**dopo** il nome delle squadre. Va spostato a sinistra.
+
+### 8 · Le leghe minori — NON è un difetto del codice
+
+Misurato il 21/10:
+
+```
+oggi ................................ 21/10
+ultimo scarico quote ................ 15/10, 16:16
+ultima partita giocata in archivio .. 14/10
+```
+
+⚠️⚠️ **L'archivio HA le leghe minori** — stagione in corso: E1 119 partite,
+SP2 99, B1 72, F2 72, D2 63, **I2 60**, SC0 48, T1 27 — **ma il calendario no**:
+le 67 future coprono solo 7 prime divisioni (SP1, E0, I1, D1, F1, N1, P1).
+Il motivo più probabile è che **la routine non gira da sei giorni**, e
+`prossime_partite` è la fotografia di quel singolo scarico.
+✅ **Prima cosa da fare: `node --env-file=.env scripts/aggiorna.js --esegui`**
+e ricontrollare. Se dopo l'aggiornamento la Serie B continua a mancare, allora
+è un difetto e si cerca in `importa-prossime.js` / `importa-prossime-odds.js`.
+⚠️ Probabilmente spiega anche la pagina **Andamento** vista vuota il 21/10:
+`andamento` si ricalcola in coda all'importazione.
+
+### 9 · Spin a quota minima — c'è già
+
+✅ **`components/CompilaPerQuota.jsx`**, tasto *«compila per quota»* nelle Spin
+provvisorie: si dà la quota minima e riempie **le caselle vuote** con le più
+attendibili che pagano almeno quanto chiedi, mostrando prima quante partite
+restano e da che attendibilità si parte.
+**Da capire con Mattia cosa manca**: forse che compili una spin **intera** da
+zero invece delle sole caselle vuote.
+
+### 10 · Creatore di schedina — esiste, ma da terminale
+
+⚠️ `app/scripts/schedina-weekend.js --quota=5` fa **esattamente questo**: dalla
+quota desiderata sceglie le migliori del weekend e compone la schedina. Il
+lavoro quindi non è inventare il criterio — **è portarlo a schermo**, e il
+calcolo sta già in `src/lib/`, cioè è usabile dal browser senza riscriverlo.
 
 ## Il 21 ottobre: il tagliando prima della grafica
 
