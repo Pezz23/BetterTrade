@@ -2041,6 +2041,20 @@ cui 6 già sopra 1,70** (col 62 erano 14 e 8, di cui 4).
 ⚠️ Il tasto sta **in testa alla card SELEZIONE, a destra**: accanto ai tasti
 delle regole sembrava una terza regola.
 
+### La scheda della partita si apre anche da qui (22/10/2026)
+
+Toccando **i nomi** di una gamba — nel passo o nell'elenco in fondo — si apre
+la **stessa** scheda della pagina Partite: `DettaglioPartita` dentro
+`SchedaScorrevole`, non una versione ridotta. Un secondo posto per la stessa
+cosa prima o poi diverge.
+⚠️ **I nomi e non tutta la riga**: lì dentro ci sono già il campo della quota e
+la × che toglie la gamba, e un contenitore cliccabile sopra di loro vuol dire
+aprire un foglio a tutto schermo mentre si corregge una quota.
+⚠️ **L'id da aprire è `prossima_id`** quando la gamba arriva dal registro: in
+`scalata_gambe` la colonna `id` è la gamba, non la partita. E la scheda vuole
+la **riga intera** di `prossime_partite` — la gamba salvata porta solo la
+fotografia dei quattro numeri di quel giorno.
+
 ### La posizione in classifica dentro il passo
 
 ⚠️ **La posizione sta a destra di OGNI squadra**, inline e in corpo 8: così si

@@ -7,9 +7,11 @@ import { usaVpm } from '../hooks/usaVpm'
 import { usaClassifiche, postoDi } from '../hooks/usaClassifiche'
 import { usaScalate } from '../hooks/usaScalate'
 import { Posizione } from '../components/TestataPartita'
+import SchedaScorrevole from '../components/SchedaScorrevole'
+import DettaglioPartita from '../components/DettaglioPartita'
 import { valutaPartita } from '../lib/vpm'
 import { sigla } from '../lib/campionati'
-import { weekendDi } from '../lib/attendibilita'
+import { weekendDi, categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
 import { pct, eur, gg } from '../lib/formato'
 import {
   METODO, NOMI_REGOLA, MAX_GAMBE, QUOTA_MINIMA_GAMBA, QUOTA_MINIMA_SCHEDINA, CONSIGLIATO,
@@ -65,7 +67,7 @@ const iniziaDopo = (p, istante) => {
 
 function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumulato, colore, classifiche,
                 quote, setQuote, perc, setPerc, esito, setEsito, onToglie, prossima, onAggiunge,
-                onQuota = null, onSpezza = null }) {
+                onQuota = null, onSpezza = null, onApri = null }) {
   // ⚠️ La quota della schedina è il **prodotto delle quote modificate**, non di
   // quelle scaricate: Mattia gioca su book diversi e con i bonus, e una pagina
   // che mostra la quota del consenso gli racconterebbe un piano che non è il suo.
@@ -129,7 +131,20 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
         )}
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 34px 58px 20px',
           gap: 6, alignItems: 'center', padding: '6px 0', borderTop: `1px solid ${alpha(C.testo, 0.06)}` }}>
-          <div style={{ minWidth: 0 }}>
+          {/* ⚠️⚠️ **Si apre la scheda toccando i NOMI, non tutta la riga**
+              (Mattia, 22/10/2026: *"vorrei cliccare la partita e vedere la
+              scheda"*). Nella riga ci sono già due comandi — il campo della
+              quota e la × che la toglie dal passo — e un contenitore
+              cliccabile sopra di loro vuol dire aprire un foglio a tutto
+              schermo mentre si cerca di correggere una quota.
+              ⚠️ **È la stessa scheda della pagina Partite**, non una versione
+              ridotta: `DettaglioPartita` dentro `SchedaScorrevole`. Un secondo
+              posto per la stessa cosa prima o poi diverge — ed è la regola per
+              cui `TestataPartita` è condivisa fra lista e scheda.
+              ⚠️ L'id da aprire è `prossima_id` quando la gamba viene dal
+              registro: lì `id` è la gamba, non la partita. */}
+          <div onClick={() => onApri?.(g.prossima_id ?? g.id)} role={onApri ? 'button' : undefined}
+            style={{ minWidth: 0, cursor: onApri ? 'pointer' : 'default' }}>
             {/* ⚠️ **I numeri SOPRA le squadre** (richiesta di Mattia, 18/10):
                 att · scelta · VPM · campionato · orario. Si guarda prima
                 *quanto vale la partita* e poi *quale partita è* — chi compone
@@ -387,12 +402,14 @@ function Archivio({ storico, onAzzera }) {
 }
 
 export default function ScalataPage() {
-  const { currentUser } = useAuth()
-  const { righe, ricarica: ricaricaPartite } = usaProssime()
+  const { currentUser, isAdmin } = useAuth()
+  const { righe, ricarica: ricaricaPartite, vota, votiDi, mioVoto } = usaProssime()
   const datiVpm = usaVpm()
   const classifiche = usaClassifiche()
   const reg = usaScalate(currentUser?.id)
   const [modo, setModo] = useState('piano')
+  // la partita aperta a tutto schermo, come nella pagina Partite
+  const [apertaId, setApertaId] = useState(null)
   const [erroreApri, setErroreApri] = useState(null)
 
   const [attMin, setAttMin] = useState(CONSIGLIATO.att)
@@ -432,6 +449,10 @@ export default function ScalataPage() {
   // alla partita, non alla posizione, così non si sposta quando il piano cambia.
   const [tagli, setTagli] = useState([])
 
+  // ⚠️ La scheda vuole la **riga intera** di `prossime_partite`, non la gamba:
+  // le gambe salvate portano una copia dei quattro numeri di quel giorno, non
+  // le quote di mercato né il resto. Si risale per id.
+  const partitaAperta = (righe || []).find(r => r.id === apertaId)
   const aperta = reg.aperta
   const bankrollIniziale = aperta ? Number(aperta.bankroll_iniziale) : (bankroll ?? Math.floor(reg.capitale))
   const posta = aperta ? Number(aperta.posta) : postaDi(bankrollIniziale)
@@ -906,7 +927,7 @@ export default function ScalataPage() {
                della catena: tutto l'utile contro il 70%). */
             <Passo key={riga.id} numero={i + 1} gambe={gambe} giorno={riga.giorno} ora={gambe[0]?.ora?.slice(0, 5)}
               posta={p} postaIniziale={posta} accumulato={acc} colore={coloreDi(i)} classifiche={classifiche}
-              quote={quote} setQuote={setQuote}
+              quote={quote} setQuote={setQuote} onApri={setApertaId}
               onQuota={(id, v) => reg.cambiaQuota(id, riga.id, v)}
               onToglie={(id) => reg.togliGamba(id, riga.id)}
               prossima={prossimaSalvata(i)}
@@ -972,7 +993,7 @@ export default function ScalataPage() {
                due chiavi uguali ridisegna la cosa sbagliata, in silenzio. */
             <Passo key={f.partite[0]?.id ?? f.giorno + f.ora} numero={i + 1} gambe={f.partite} giorno={f.giorno} ora={f.ora}
               posta={p} postaIniziale={posta} accumulato={acc} colore={coloreDi(i)} classifiche={classifiche}
-              prossima={prossimaDi(i)}
+              onApri={setApertaId} prossima={prossimaDi(i)}
               onAggiunge={() => { const n = prossimaDi(i); if (n) setAggiunte(a => ({ ...a, [i]: [...(a[i] || []), n.id] })) }}
               onSpezza={(iG) => { const id = f.partite[iG]?.id; if (id) setTagli(t => [...t, id]) }}
               quote={quote} setQuote={setQuote}
@@ -1088,7 +1109,11 @@ export default function ScalataPage() {
                         colorate e il resto grigio, quindi il filo che lega la
                         riga al passo si spezzava in mezzo. Il colore è il
                         legame — o lo porta tutta la riga, o non serve. */}
-                    <span style={{ color: fuori ? C.fioco : col, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: F.sans, fontSize: S.base, display: 'block' }}>
+                    {/* ⚠️ Anche qui si apre toccando i nomi: l'elenco serve a
+                        decidere cosa tirare dentro un passo, ed è il momento
+                        in cui si vuole guardare la partita per davvero. */}
+                    <span onClick={() => setApertaId(g.id)} role="button"
+                      style={{ color: fuori ? C.fioco : col, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: F.sans, fontSize: S.base, display: 'block', cursor: 'pointer' }}>
                       {g.casa} — {g.trasferta}
                     </span>
                     <span style={{ color: fuori ? C.fioco : alpha(col, 0.75), fontSize: S.micro, display: 'block' }}>
@@ -1110,6 +1135,19 @@ export default function ScalataPage() {
         </div>
       )}
       </>}
+
+      {/* ⚠️⚠️ **Fuori dal ramo `modo === 'piano'`**: il foglio copre la pagina,
+          e legarlo a una vista vorrebbe dire che cambiando vista resta aperto
+          sopra il nulla. ⚠️ `SOGLIE_DEFAULT` è la stessa base da cui parte la
+          pagina Partite (lì sono uno stato locale, non salvate): la categoria
+          decide solo il colore della giocata nella scheda. */}
+      {partitaAperta && (
+        <SchedaScorrevole onChiudi={() => setApertaId(null)}>
+          <DettaglioPartita p={partitaAperta} cat={categoria(partitaAperta.probGiocata, SOGLIE_DEFAULT)}
+            voti={votiDi(partitaAperta.id)} mio={mioVoto(partitaAperta.id)} puoVotare={isAdmin}
+            onVota={() => vota(partitaAperta.id)} onChiudi={() => setApertaId(null)} />
+        </SchedaScorrevole>
+      )}
     </div>
   )
 }
