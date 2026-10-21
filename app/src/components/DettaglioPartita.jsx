@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { C, F, alpha } from '../theme'
 import { Etichetta } from './ui'
 import { usaForma } from '../hooks/usaForma'
@@ -87,11 +87,17 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
   // lista: stessa funzione e stessi dati, quindi non possono dire numeri
   // diversi. Passarlo come proprietà avrebbe voluto dire toccare due pagine.
   const datiVpm = usaVpm()
-  const v = datiVpm ? valutaPartita(datiVpm, p) : null
+  // ⚠️ Dentro un `useMemo`, non nel corpo: la scheda si ridisegna quando arriva
+  // la forma, quando si apre un dettaglio, a ogni tocco su una casella — e
+  // questi due sono i calcoli più grossi dell'app (quattro finestre per squadra
+  // più il Poisson). Dipendono solo dalla partita e dai dati, che non cambiano
+  // mentre la scheda è aperta.
+  const v = useMemo(() => datiVpm ? valutaPartita(datiVpm, p) : null, [datiVpm, p])
   const vs = verso(v)
   // I gol attesi: stesso hook, stesse finestre di VPM. Sta nella scheda e non
   // in barra (scelta di Mattia): è un dato da leggere, non da scorrere.
-  const g = datiVpm ? golAttesi(datiVpm.squadre?.[p.div], p.casa, p.trasferta) : null
+  const g = useMemo(() => datiVpm ? golAttesi(datiVpm.squadre?.[p.div], p.casa, p.trasferta) : null,
+    [datiVpm, p.div, p.casa, p.trasferta])
   const c = CATEGORIE[cat]
   const squadre = [p.casa, p.trasferta]
   const q = n => n == null ? '—' : Number(n).toFixed(2).replace('.', ',')

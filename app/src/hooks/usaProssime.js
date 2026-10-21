@@ -3,52 +3,103 @@ import { supabase } from '../supabase'
 import { useAuth } from '../context/AuthContext'
 import { valuta, oggiLocale } from '../lib/attendibilita'
 
-// Le partite future valutate, con i voti degli admin. Lo usano la pagina
-// Partite e le Spin provvisorie: stessa lista, stesse stelline, un solo posto
-// dove si carica.
+// Le partite future valutate, con i voti degli admin. Le usano la pagina
+// Partite, le Spin provvisorie e Road to weekend: stessa lista, stesse
+// stelline, un solo posto dove si carica.
+//
+// ⚠️⚠️ **Con memoria di modulo, come `usaVpm` e `usaClassifiche`** (21/10/2026).
+// Prima ogni montaggio rifaceva le due richieste: cambiare pagina quattro volte
+// voleva dire scaricare quattro volte le stesse 67 partite, e **l'avvio di Road
+// to weekend pagava un giro intero** che la pagina Partite aveva già fatto.
+// ⚠️ **E le due letture partono insieme.** Erano in fila — partite, poi voti —
+// cioè due andate e ritorno quando una bastava: i voti non dipendono dalle
+// partite. Qui il tempo non è nei dati (31 kB in tutto), è nel numero di giri.
+// ⚠️ La memoria si svuota **a richiesta** (`ricarica()`), perché il calendario
+// cambia quando gira l'importazione: una cache senza modo di buttarla è il
+// difetto peggiore di una cache.
+
+const COLONNE = 'id, div, campionato, data, ora, casa, trasferta, scaricato_il, fonte, book, book_1, book_x, book_2, b365_1, b365_x, b365_2, b365_over25, b365_under25, avg_ap_over25, avg_ap_under25, avg_ap_1, avg_ap_x, avg_ap_2, max_ap_1, max_ap_x, max_ap_2'
+
+let memoria = null      // { righe, voti }, una volta arrivate
+let inCorso = null      // la richiesta, finché è in volo
+
+function carica(forza = false) {
+  if (forza) { memoria = null; inCorso = null }
+  if (memoria) return Promise.resolve(memoria)
+  if (!inCorso) {
+    inCorso = (async () => {
+      // ⚠️ Data locale, non UTC: fra mezzanotte e le due italiane
+      // `toISOString` dà ieri, e la lista mostrava partite già giocate. Stessa
+      // funzione che usa la finestra "Oggi", così le due non possono divergere.
+      const oggi = oggiLocale()
+      const [p, v] = await Promise.all([
+        supabase.from('prossime_partite').select(COLONNE)
+          .gte('data', oggi).order('data').order('ora'),
+        // I voti: se la tabella non c'è ancora, la lista resta senza stelle attive.
+        supabase.from('voti_partite').select('prossima_id, user_id'),
+      ])
+      inCorso = null
+      if (p.error) throw new Error(p.error.message)
+      memoria = {
+        righe: (p.data || []).map(valuta).filter(r => r.prob !== null),
+        voti: v.data || [],
+      }
+      return memoria
+    })()
+  }
+  return inCorso
+}
 
 export function usaProssime() {
   const { currentUser, isAdmin } = useAuth()
-  const [righe, setRighe] = useState([])
-  const [voti, setVoti] = useState([])     // [{ prossima_id, user_id }]
-  const [caricamento, setCaricamento] = useState(true)
+  const [righe, setRighe] = useState(() => memoria?.righe ?? [])
+  const [voti, setVoti] = useState(() => memoria?.voti ?? [])
+  const [caricamento, setCaricamento] = useState(!memoria)
   const [errore, setErrore] = useState(null)
 
   useEffect(() => {
-    async function carica() {
-      // ⚠️ Data locale, non UTC: fra mezzanotte e le due italiane `toISOString`
-      // dà ieri, e la lista mostrava partite già giocate. Stessa funzione che
-      // usa la finestra "Oggi", così le due non possono divergere.
-      const oggi = oggiLocale()
-      const { data, error } = await supabase
-        .from('prossime_partite')
-        .select('id, div, campionato, data, ora, casa, trasferta, scaricato_il, fonte, book, book_1, book_x, book_2, b365_1, b365_x, b365_2, b365_over25, b365_under25, avg_ap_over25, avg_ap_under25, avg_ap_1, avg_ap_x, avg_ap_2, max_ap_1, max_ap_x, max_ap_2')
-        .gte('data', oggi).order('data').order('ora')
-      if (error) setErrore(error.message)
-      else setRighe((data || []).map(valuta).filter(r => r.prob !== null))
-      // I voti: se la tabella non c'è ancora, la lista resta senza stelle attive.
-      const { data: v } = await supabase.from('voti_partite').select('prossima_id, user_id')
-      setVoti(v || [])
-      setCaricamento(false)
-    }
+    let vivo = true
+    if (memoria) return
     carica()
+      .then(d => { if (!vivo) return; setRighe(d.righe); setVoti(d.voti); setCaricamento(false) })
+      .catch(e => { if (vivo) { setErrore(e.message); setCaricamento(false) } })
+    return () => { vivo = false }
   }, [])
+
+  /** Rifà le due letture buttando la memoria: lo chiama il tasto ↻. */
+  async function ricarica() {
+    setCaricamento(true)
+    try {
+      const d = await carica(true)
+      setRighe(d.righe); setVoti(d.voti); setErrore(null)
+    } catch (e) { setErrore(e.message) }
+    setCaricamento(false)
+  }
 
   // Voto: una riga per admin per partita. Si scrive prima in memoria — la
   // risposta del database arriva dopo — e se fallisce si torna indietro.
+  // ⚠️ Si aggiorna **anche la memoria di modulo**: senza, una stellina messa
+  // nella pagina Partite sparirebbe tornandoci dopo essere passati altrove.
   async function vota(prossimaId) {
     if (!isAdmin || !currentUser) return
     const mio = voti.some(v => v.prossima_id === prossimaId && v.user_id === currentUser.id)
     const prima = voti
-    setVoti(mio ? voti.filter(v => !(v.prossima_id === prossimaId && v.user_id === currentUser.id))
-                : [...voti, { prossima_id: prossimaId, user_id: currentUser.id }])
+    const dopo = mio
+      ? voti.filter(v => !(v.prossima_id === prossimaId && v.user_id === currentUser.id))
+      : [...voti, { prossima_id: prossimaId, user_id: currentUser.id }]
+    setVoti(dopo)
+    if (memoria) memoria.voti = dopo
     const { error } = mio
       ? await supabase.from('voti_partite').delete().eq('prossima_id', prossimaId).eq('user_id', currentUser.id)
       : await supabase.from('voti_partite').insert({ prossima_id: prossimaId, user_id: currentUser.id })
-    if (error) { setVoti(prima); setErrore(`Voto non salvato: ${error.message}`) }
+    if (error) {
+      setVoti(prima)
+      if (memoria) memoria.voti = prima
+      setErrore(`Voto non salvato: ${error.message}`)
+    }
   }
   const votiDi = id => voti.filter(v => v.prossima_id === id).length
   const mioVoto = id => !!currentUser && voti.some(v => v.prossima_id === id && v.user_id === currentUser.id)
 
-  return { righe, voti, vota, votiDi, mioVoto, caricamento, errore }
+  return { righe, voti, vota, votiDi, mioVoto, caricamento, errore, ricarica }
 }

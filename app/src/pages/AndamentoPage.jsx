@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { C, F, alpha } from '../theme'
 import { Card, Etichetta, TastoRipeti } from '../components/ui'
+import { gg } from '../lib/formato'
 import {
   METODI, SOGLIE_BASE, FASCE_QUOTA, FASCIA_BASE, QUOTA_MIN, QUOTA_MAX, PASSO_QUOTA,
   conSoglie, scrivi, sopra, quota,
@@ -39,7 +40,6 @@ function Tasto({ attivo, onClick, children, colore = C.oro, style }) {
   )
 }
 
-const gg = (d) => d ? String(d).slice(8, 10) + '/' + String(d).slice(5, 7) : '—'
 
 /** L'elenco delle partite, coi quattro valori su ogni riga. */
 function Elenco({ righe, metodo, soglie, titolo, evidenzia = true }) {

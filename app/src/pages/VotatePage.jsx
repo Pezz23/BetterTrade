@@ -32,6 +32,16 @@ export default function VotatePage() {
 
   const aperta = righe.find(r => r.id === apertaId)
 
+  // ⚠️ VPM una volta per partita, come nella pagina Partite: nel `map` del JSX
+  // girava a ogni ridisegno per ogni riga, ed è il calcolo più grosso dell'app.
+  // ⚠️ Si calcola sulle **votate**, non su tutte le 67 future: qui l'elenco è
+  // quello, e valutare il resto sarebbe lavoro che nessuno legge.
+  const vpmDi = useMemo(() => {
+    const m = new Map()
+    if (datiVpm) for (const r of votate) m.set(r.id, valutaPartita(datiVpm, r))
+    return m
+  }, [datiVpm, votate])
+
 
   const conteggi = votate.reduce((c, r) => { const k = categoria(r.probGiocata, SOGLIE_DEFAULT); if (k !== 'no') c[k]++; else c.fuori++; return c },
     { centro: 0, giallo: 0, blu: 0, fuori: 0 })
@@ -65,8 +75,10 @@ export default function VotatePage() {
         {votate.map(p => (
           <RigaPartita key={p.id} p={p} cat={categoria(p.probGiocata, SOGLIE_DEFAULT)}
             /* lo stesso numero della pagina Partite: due liste con VPM diversi
-               sulla stessa partita sarebbero un difetto */
-            vpm={datiVpm ? valutaPartita(datiVpm, p) : null}
+               sulla stessa partita sarebbero un difetto.
+               ⚠️ Dalla mappa e non calcolato qui: dentro il `map` del JSX
+               girava a ogni ridisegno, per ogni riga. */
+            vpm={vpmDi.get(p.id) ?? null}
             voti={votiDi(p.id)} mio={mioVoto(p.id)} puoVotare={isAdmin} onVota={() => vota(p.id)}
             onApri={() => setApertaId(p.id)} />
         ))}

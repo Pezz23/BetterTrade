@@ -9,6 +9,7 @@ import { usaScalate } from '../hooks/usaScalate'
 import { Posizione } from '../components/TestataPartita'
 import { valutaPartita } from '../lib/vpm'
 import { sigla } from '../lib/campionati'
+import { pct, eur, gg } from '../lib/formato'
 import {
   REGOLE, MAX_GAMBE, QUOTA_MINIMA_GAMBA, CONSIGLIATO, postaDi, fasce, giorno, casseDi,
   percentualeConsigliata, applicaIncasso,
@@ -43,10 +44,8 @@ import {
 const COLORI_PASSO = [C.verde, C.giallo, C.rosso, C.blu, C.viola, C.menta, C.ambra, C.celestePieno, C.oroChiaro, C.acciaio]
 const coloreDi = (i) => COLORI_PASSO[i % COLORI_PASSO.length]
 
-const gg = (d) => d ? `${String(d).slice(8, 10)}/${String(d).slice(5, 7)}` : '—'
 const GIORNI = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab']
 const nomeGiorno = (d) => d ? GIORNI[new Date(d + 'T12:00:00').getDay()] : ''
-const eur = (v) => '€ ' + (Number(v) || 0).toFixed(2).replace('.', ',')
 
 /**
  * La partita comincia dopo questo istante?
@@ -61,7 +60,6 @@ const iniziaDopo = (p, istante) => {
   if (!p.ora) return new Date(`${g}T23:59:00`).getTime() >= istante
   return new Date(`${g}T${String(p.ora).slice(0, 5)}:00`).getTime() >= istante
 }
-const pct = (v) => v == null ? '—' : `${(v * 100).toFixed(0)}%`
 
 function Passo({ numero, gambe, giorno: gio, ora, posta, regola, quotaMinima, colore, classifiche,
                 quote, setQuote, perc, setPerc, esito, setEsito, onToglie, prossima, onAggiunge,
@@ -352,7 +350,7 @@ function Archivio({ storico, onAzzera }) {
 
 export default function ScalataPage() {
   const { currentUser } = useAuth()
-  const { righe } = usaProssime()
+  const { righe, ricarica: ricaricaPartite } = usaProssime()
   const datiVpm = usaVpm()
   const classifiche = usaClassifiche()
   const reg = usaScalate(currentUser?.id)
@@ -735,7 +733,16 @@ export default function ScalataPage() {
               scalate dimenticate"* — il denaro è lo stato della scalata, il
               piano è settimanale. */}
           <Tasto colore={C.oro} style={{ marginLeft: 'auto' }}
-            onClick={() => { setTolte([]); setAggiunte({}); setDaOra(Date.now()); if (aperta) reg.azzeraPiano() }}>
+            onClick={() => {
+              setTolte([]); setAggiunte({}); setDaOra(Date.now())
+              // ⚠️ **E rilegge davvero le partite.** Finché `usaProssime` non
+              // aveva memoria questo tasto non ricaricava niente — spostava
+              // solo l'orologio — e il nome mentiva: le partite erano quelle
+              // scaricate all'avvio della sessione. Ora la memoria si butta
+              // qui, che è l'unico posto dove qualcuno ha chiesto dati nuovi.
+              ricaricaPartite()
+              if (aperta) reg.azzeraPiano()
+            }}>
             ↻ {aperta ? 'nuovo piano' : 'ricarica'}
           </Tasto>
         </div>

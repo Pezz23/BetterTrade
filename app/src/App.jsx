@@ -1,20 +1,30 @@
-import { useState } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import LoginPage from './pages/LoginPage'
-import SpinProvvisoriePage from './pages/SpinProvvisoriePage'
-import VotatePage from './pages/VotatePage'
-import StoricoPage from './pages/StoricoPage'
-import UtentiPage from './pages/UtentiPage'
-import SlotPage from './pages/SlotPage'
 import DashboardPage from './pages/DashboardPage'
-import ReportingPage from './pages/ReportingPage'
-import BilancioPage from './pages/BilancioPage'
-import PartitePage from './pages/PartitePage'
-import AndamentoPage from './pages/AndamentoPage'
-import ImportazioniPage from './pages/ImportazioniPage'
 import { C, F, alpha } from './theme'
 import { VERSIONE } from './versione'
-import ScalataPage from './pages/ScalataPage'
+
+// ⚠️⚠️ **Ogni pagina è un pezzo a parte, scaricato quando la apri** (21/10/2026).
+// Prima stavano tutte in un file solo da **437 kB**: aprendo l'app si
+// scaricavano e si compilavano anche Andamento, Reporting, Bilancio e Road to
+// weekend, cioè quattro pagine che in una sessione normale non si aprono.
+// Su telefono quel peso è l'avvio.
+// ⚠️ **Dashboard no**: è quella che si apre per prima, e metterla in un pezzo
+// separato vorrebbe dire una seconda richiesta prima di poter disegnare
+// qualcosa — l'opposto di quello che serve.
+// ⚠️ E **LoginPage nemmeno**: chi non ha fatto login vede solo quella.
+const SpinProvvisoriePage = lazy(() => import('./pages/SpinProvvisoriePage'))
+const VotatePage = lazy(() => import('./pages/VotatePage'))
+const StoricoPage = lazy(() => import('./pages/StoricoPage'))
+const UtentiPage = lazy(() => import('./pages/UtentiPage'))
+const SlotPage = lazy(() => import('./pages/SlotPage'))
+const ReportingPage = lazy(() => import('./pages/ReportingPage'))
+const BilancioPage = lazy(() => import('./pages/BilancioPage'))
+const PartitePage = lazy(() => import('./pages/PartitePage'))
+const AndamentoPage = lazy(() => import('./pages/AndamentoPage'))
+const ImportazioniPage = lazy(() => import('./pages/ImportazioniPage'))
+const ScalataPage = lazy(() => import('./pages/ScalataPage'))
 
 // ── Tab bar bottom ────────────────────────────────────────────────────────────
 // ⚠️ **Rifatta il 12/10/2026, scelta di Mattia**: in basso stanno le pagine del
@@ -225,7 +235,15 @@ function AppShell() {
         flex:1, width:'100%', maxWidth:720, margin:'0 auto',
         paddingBottom:'var(--barra-bassa)',
       }}>
-        {renderPage()}
+        {/* ⚠️ L'attesa è **una riga sola e discreta**, non uno scheletro:
+            il pezzo di una pagina pesa 10-40 kB e arriva in un lampo sulla
+            connessione di casa. Un'animazione che compare e sparisce in
+            200 ms si legge come uno sfarfallio, non come un caricamento. */}
+        <Suspense fallback={
+          <div style={{ padding: 24, fontFamily: F.mono, fontSize: 11, color: C.spento }}>carico…</div>
+        }>
+          {renderPage()}
+        </Suspense>
       </div>
       <TabBar active={tab} onChange={setTab} isAdmin={isAdmin} />
     </div>

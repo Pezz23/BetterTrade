@@ -1,5 +1,6 @@
 import { C, F, alpha } from '../theme'
 import { verso } from '../lib/vpm'
+import { pct } from '../lib/formato'
 
 // La barra dei cinque numeri di una partita: quota · attendibilità · VPM ·
 // resa · voto. **La usano sia la riga della lista sia la scheda** (10/10/2026,
@@ -16,7 +17,9 @@ import { verso } from '../lib/vpm'
 const COLORE_VPM = { contro: C.rosso, conferma: C.verde, incerto: C.fioco }
 const ALTA_VALORE = 19
 
-export const pct1 = v => (v == null ? '—' : `${(v * 100).toFixed(0)}%`)
+// ⚠️ Ri-esportata per chi la importa da qui, ma serve anche in questo file:
+// `export … from` non porta il nome nello scope del modulo.
+export { pct }
 const num2 = v => (v == null ? '—' : v.toFixed(2).replace('.', ','))
 
 function Colonna({ valore, etichetta, colore, coloreEtichetta, divisore, prefisso = null, primo = false }) {
@@ -92,7 +95,7 @@ export default function BarraPartita({ p, cat, vpm = null, colore }) {
           sopra**: non è un dato rotto come le quote in conflitto — è un dato
           buono che dice *il mercato è incerto*. Due avvisi con lo stesso peso
           renderebbero illeggibile quello grave. */}
-      <Colonna divisore={c} colore={c} valore={pct1(p.probGiocata)}
+      <Colonna divisore={c} colore={c} valore={pct(p.probGiocata)}
         coloreEtichetta={p.bookSparsi ? C.ambra : undefined}
         etichetta={p.bookSparsi ? 'ATTEND. ~' : 'ATTEND.'} />
 
@@ -118,13 +121,13 @@ export default function BarraPartita({ p, cat, vpm = null, colore }) {
           basso, è una partita da non scegliere. La resa per intero resta nei
           dettagli completi della scheda. */}
       <Colonna divisore={c} colore={vpm?.scelta == null ? C.fantasma : C.testo}
-        valore={pct1(vpm?.scelta)} etichetta="SCELTA" />
+        valore={pct(vpm?.scelta)} etichetta="SCELTA" />
 
       {/* Il voto è la resa corretta dal campo: verde sopra il pareggio, rosso
           sotto. È l'unico numero della barra che dice "conviene o no". */}
       <Colonna divisore={c}
         colore={p.quotaDaConsenso || vpm?.voto == null ? C.fantasma : vpm.voto >= 1 ? C.verde : C.ambra}
-        valore={pct1(vpm?.voto)} etichetta="VOTO" />
+        valore={pct(vpm?.voto)} etichetta="VOTO" />
     </div>
     </>
   )

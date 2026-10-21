@@ -1,4 +1,5 @@
 import { C, F, alpha } from '../theme'
+import { pct, giorno } from '../lib/formato'
 import { pronosticoDa } from '../lib/spin'
 import { Etichetta } from './ui'
 import { usaClassifiche, postoDi, fasciaDi } from '../hooks/usaClassifiche'
@@ -15,8 +16,9 @@ export const CATEGORIE = {
   no:     { nome: '—',      colore: C.fantasma,  desc: 'sotto soglia' },
 }
 
-export const pct = v => (v * 100).toFixed(0) + '%'
-export const giorno = d => new Date(d + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit' })
+// ⚠️ Definite in `lib/formato.js` e ri-esportate qui **solo** perché mezzo
+// progetto le importa da questo file: il posto dove vivono è uno.
+export { pct, giorno }
 
 // ⚠️ **La posizione in classifica è una targhetta `1/20`, non un tondo**
 // (15/10/2026, dopo tre proposte: tondo bocciato da Mattia).

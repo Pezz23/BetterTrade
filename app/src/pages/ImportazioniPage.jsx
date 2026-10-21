@@ -4,6 +4,9 @@ import { C, F, alpha } from '../theme'
 import { Card, Etichetta } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { sigla } from '../lib/campionati'
+// ⚠️ `ggAnno` e non `gg`: questa coda attraversa gli anni, e una data senza
+// anno in un elenco di cose rimaste in attesa non si può leggere.
+import { ggAnno as gg } from '../lib/formato'
 
 // IMPORTAZIONI — le partite che la seconda fonte non ha saputo agganciare.
 //
@@ -58,7 +61,6 @@ export default function ImportazioniPage() {
     carica()
   }
 
-  const gg = (d) => d ? String(d).slice(8, 10) + '/' + String(d).slice(5, 7) + '/' + String(d).slice(2, 4) : '—'
 
   return (
     <div style={{ padding: '12px 12px 90px' }}>

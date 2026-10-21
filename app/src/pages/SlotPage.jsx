@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../supabase'
-import { C, F, alpha } from '../theme'
+import { C, F, alpha, TIPO } from '../theme'
 import { DISPOSIZIONE, cellaDa } from '../lib/spin'
 import { usaProssime } from '../hooks/usaProssime'
 import SceltaPartita from '../components/SceltaPartita'
@@ -25,7 +25,14 @@ export const PRONOSTICI = ['1','2','1+O1,5','2+O1,5','1+O2,5','2+O2,5']
 // quarta è libera — "Fun": si scrive quello che si vuole, senza collegamento.
 const SPIN_LABELS = ['Spin 1','Spin 2','Spin 3','Fun']
 export const SPIN_LIBERA = 3
-const TIPO_COLOR  = { tris:C.verde, quaterna:C.blu, full:C.oro }
+// ⚠️ Il colore dei tre tipi arriva da `theme.TIPO`, che era **dichiarato e mai
+// usato** mentre questa pagina ne teneva una copia identica (tagliando del
+// 21/10/2026). Due posti per la stessa cosa prima o poi divergono.
+const TIPO_COLOR  = TIPO
+// ⚠️ Il fondo **non** è la tinta del testo con l'alfa: la quaterna è scritta in
+// `blu` su un fondo di `bluPieno`, che sono due token diversi di proposito
+// (`rgba()` e `#hex` dello stesso nome sono tinte diverse — trappola già
+// pagata). Per questo non si ricava da `TIPO` con un `alpha()`.
 const TIPO_BG     = { tris:alpha(C.verde,0.10), quaterna:alpha(C.bluPieno,0.10), full:alpha(C.oro,0.10) }
 const SLOT_GRID   = DISPOSIZIONE
 const TILE_BASE   = {
@@ -225,7 +232,7 @@ function SlotVisiva({tiles}) {
           pagina sotto le dita. */}
       <div style={{marginTop:14,minHeight:22,display:'flex',flexWrap:'wrap',gap:6,justifyContent:'center'}}>
         {winCombos.map(c=>(
-          <div key={c.id} style={{fontSize:10,fontWeight:600,padding:'3px 10px',borderRadius:20,background:TIPO_BG[c.tipo],color:TIPO_COLOR[c.tipo],border:`1px solid ${TIPO_COLOR[c.tipo]}55`,fontFamily:F.mono,boxShadow:`0 0 8px ${TIPO_COLOR[c.tipo]}44`}}>
+          <div key={c.id} style={{fontSize:10,fontWeight:600,padding:'3px 10px',borderRadius:20,background:TIPO_BG[c.tipo],color:TIPO_COLOR[c.tipo],border:`1px solid ${alpha(TIPO_COLOR[c.tipo],0.33)}`,fontFamily:F.mono,boxShadow:`0 0 8px ${alpha(TIPO_COLOR[c.tipo],0.27)}`}}>
             ✓ {c.nome}
           </div>
         ))}
