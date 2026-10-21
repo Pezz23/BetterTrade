@@ -45,25 +45,38 @@ export const COLONNA = 720
 // protezione vera resta la policy RLS.
 // ⚠️ `icona` è un nome del set in `components/Icona.jsx`, non un carattere:
 // un'emoji non obbedisce al colore, quindi i tasti spenti sembravano accesi.
+// ⚠️ **Spin è scesa nel menu e Road to weekend è salita qui** (scelta di
+// Mattia, 21/10/2026): la scalata è diventata il giro settimanale, la spin
+// provvisoria si guarda più di rado.
+// ⚠️ L'etichetta in basso è **WEEKEND** e non "Road to weekend": i tasti sono
+// a 9px e il nome intero misura 96px contro i ~90 disponibili su un telefono
+// da 375. È la stessa ragione per cui Spin non si chiamava "Spin provvisorie".
 const TABS_BASE = [
   { id:'dashboard',   label:'Dashboard', icona:'dashboard' },
   { id:'slot',        label:'Slot',      icona:'slot' },
-  { id:'provvisorie', label:'Spin',      icona:'spin', soloAdmin:true },
-  { id:'partite',     label:'Partite',   icona:'partite' },
+  { id:'scalata',     label:'Weekend',   icona:'scalata', soloAdmin:true },
+  // ⚠️ `colore` lo porta **solo l'icona**, non l'etichetta (scelta di Mattia):
+  // il campo è verde, la scritta resta oro da accesa e spenta da spenta come
+  // gli altri tre tasti. È il verde del tema — quello delle vincite — non una
+  // tinta nuova.
+  { id:'partite',     label:'Partite',   icona:'partite', colore:C.verde },
 ]
 // Il menu ad hamburger: tutto quello che non sta nei tasti in basso.
 // `soloAdmin` nasconde la voce, ma la protezione vera è la policy RLS.
+// ⚠️ **L'ordine è quello chiesto da Mattia il 21/10/2026**, e non è alfabetico
+// né per importanza: Andamento in cima perché è quella che apre più spesso.
+// Non riordinarlo "per pulizia".
 const VOCI_MENU = [
+  { id:'andamento',   label:'Andamento',        icona:'andamento', desc:'Quale indicatore ci azzecca, giorno per giorno' },
   { id:'votate',      label:'Partite votate',   icona:'stella', desc:'Quelle con la stellina: entrano nella spin comunque' },
   { id:'storico',     label:'Storico',          icona:'storico', desc:'L\'archivio e come stanno andando le proposte' },
-  { id:'andamento',   label:'Andamento',        icona:'andamento', desc:'Quale indicatore ci azzecca, giorno per giorno' },
+  // ⚠️ Scesa dalla barra in basso il 21/10/2026, dove ha preso il suo posto
+  // Road to weekend.
+  { id:'provvisorie', label:'Spin',             icona:'spin', desc:'Le spin provvisorie: le candidate di questo weekend', soloAdmin:true },
   { id:'reporting',   label:'Reporting',        icona:'reporting', desc:'Le giornate registrate, per persona e per settimana' },
   { id:'bilancio',    label:'Bilancio',         icona:'bilancio', desc:'Saldi, movimenti e bankroll del gruppo' },
-  { id:'importazioni',label:'Importazioni',     icona:'importazioni', desc:'Partite da ESPN che non si agganciano da sole' },
-  // ⚠️ Nel menu e non fra i tasti in basso: una pagina nuova va nel menu, e
-  // questa è un esperimento con un bankroll suo, non il giro settimanale.
-  { id:'scalata',     label:'Road to weekend',  icona:'scalata', desc:'La road map del weekend: scaletta, quote a mano, accumulo', soloAdmin:true },
   { id:'utenti',      label:'Utenti',           icona:'utenti', desc:'Gestione utenti e password', soloAdmin:true },
+  { id:'importazioni',label:'Importazioni',     icona:'importazioni', desc:'Partite da ESPN che non si agganciano da sole' },
 ]
 
 function TabBar({ active, onChange, isAdmin }) {
@@ -92,7 +105,9 @@ function TabBar({ active, onChange, isAdmin }) {
             fontFamily:F.mono, fontSize:S.micro, letterSpacing:1,
             cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:SP.xs,
           }}>
-            <Icona nome={t.icona} misura={S.icona} />
+            <span style={{ display:'flex', color: t.colore ?? 'inherit' }}>
+              <Icona nome={t.icona} misura={S.icona} />
+            </span>
             {t.label.toUpperCase()}
           </button>
         )
