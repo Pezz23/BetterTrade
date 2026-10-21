@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../supabase'
 import { C, F, alpha, S } from '../theme'
+import { stileCard } from '../components/ui'
 
 const COMBOS = [
   { tipo:'tris',    pos:[1,5,2] },
@@ -113,7 +114,7 @@ export default function DashboardPage() {
       {loading ? (
         <div style={{ textAlign:'center', padding:40, color:C.spento, fontFamily:F.sans }}>Caricamento…</div>
       ) : !hasAnyData ? (
-        <div style={{ textAlign:'center', padding:'60px 24px', color:C.fantasma, fontSize:S.grande, fontFamily:F.sans, background:C.card, border:`1px solid ${C.bordo}`, borderRadius:10 }}>
+        <div style={stileCard({ textAlign:'center', padding:'60px 24px', color:C.fantasma, fontSize:S.grande, fontFamily:F.sans })}>
           {daSpuntare ? (
             <>
               {compilate === 1 ? 'Una spin è compilata' : `${compilate} spin sono compilate`}, ma nessuna è segnata come giocata.<br/>
@@ -131,7 +132,10 @@ export default function DashboardPage() {
       ) : (
         <>
           {/* Saldo principale */}
-          <div style={{ background:C.card, border:`1px solid ${C.bordo}`, borderRadius:12, padding:'24px 16px', marginBottom:16, display:'flex', flexDirection:'column', alignItems:'center', gap:6 }}>
+          {/* ⚠️ Il riempimento generoso resta scritto: questo è il blocco grosso
+          della pagina, e 24px in verticale sono una scelta, non una distrazione.
+          Il raggio invece passa a quello di `Card` — era 12 per caso. */}
+      <div style={stileCard({ padding:'24px 16px', marginBottom:16, display:'flex', flexDirection:'column', alignItems:'center', gap:6 })}>
             <div style={{ fontSize:S.micro, color:C.spento, fontFamily:F.mono, letterSpacing:4, textTransform:'uppercase' }}>
               {isSuperAdmin ? 'Andamento aggregato' : `Andamento · ${currentUser?.display_name||currentUser?.username}`}
             </div>
@@ -151,7 +155,7 @@ export default function DashboardPage() {
               { label:'Saldo €',    val: fmt(totSaldo, true),     color: pctColor(totSaldo) },
               { label:'Saldo %',    val: `${totPct>0?'+':''}${totPct.toFixed(1)}%`, color: pctColor(totPct) },
             ].map(({label,val,color}) => (
-              <div key={label} style={{ background:C.card, border:`1px solid ${C.bordo}`, borderRadius:10, padding:'14px 16px' }}>
+              <div key={label} style={stileCard()}>
                 <div style={{ fontSize:S.micro, color:C.spento, fontFamily:F.mono, textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:6 }}>{label}</div>
                 <div style={{ fontSize:S.evidenza, fontWeight:700, color, fontFamily:F.mono }}>{val}</div>
               </div>
@@ -164,12 +168,15 @@ export default function DashboardPage() {
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             {spinResults.map((r, i) => (
-              <div key={i} style={{
-                background:C.card, border:`1px solid ${r ? (r.saldo>0?alpha(C.verde,0.2):r.saldo<0?alpha(C.rosso,0.2):C.bordo) : C.bordoRiga}`,
-                borderRadius:9, padding:'12px 16px',
+              /* ⚠️ Il bordo è scritto perché dice **com'è andata la spin** —
+                 verde, rosso o niente — e una spin non giocata ha il bordo più
+                 tenue di tutti. È informazione, non stile. */
+              <div key={i} style={stileCard({
+                border:`1px solid ${r ? (r.saldo>0?alpha(C.verde,0.2):r.saldo<0?alpha(C.rosso,0.2):C.bordo) : C.bordoRiga}`,
+                padding:'12px 16px',
                 display:'flex', justifyContent:'space-between', alignItems:'center',
                 opacity: r ? 1 : 0.4,
-              }}>
+              })}>
                 <div>
                   <div style={{ fontSize:S.media, fontWeight:600, color:C.testo, fontFamily:F.sans }}>Spin {i+1}</div>
                   {r ? (

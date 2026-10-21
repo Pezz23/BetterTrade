@@ -9,18 +9,31 @@ import { useRef, useEffect } from 'react'
 import { C, F, alpha, S } from '../theme'
 
 // La card grigia standard: fondo, bordo, angoli tondi.
+/**
+ * ⚠️⚠️ **Lo stile della superficie, estratto dal componente** (21/10/2026).
+ * `Card` resta il modo normale di fare un riquadro, ma sei pagine —
+ * Dashboard, Bilancio, Reporting, Slot, Utenti, Login — se lo riscrivevano a
+ * mano, in tutto una trentina di volte: fondo, bordo, raggio e riempimenti
+ * ripetuti riga per riga, ognuno con la sua piccola differenza. Cambiare
+ * `Card` non le toccava, quindi un cambio di look le avrebbe lasciate con
+ * l'aspetto vecchio **accanto** a quello nuovo.
+ *
+ * Serve come stile e non solo come componente perché in quei punti la
+ * superficie non è un `<div>` qualunque: è un `<button>`, una `<label>`, una
+ * cella dentro un `map` con altre proprietà. **Il componente per il caso
+ * normale, lo stile per gli altri — ma il fondo, il bordo e il raggio stanno
+ * in un posto solo.**
+ */
+export const stileCard = (style, colore) => ({
+  background: C.card,
+  border: `1px solid ${colore ? alpha(colore, 0.2) : C.bordo}`,
+  borderRadius: 10,
+  padding: '14px 16px',
+  ...style,
+})
+
 export function Card({ children, style, colore, ...resto }) {
-  return (
-    <div style={{
-      background: C.card,
-      border: `1px solid ${colore ? alpha(colore, 0.2) : C.bordo}`,
-      borderRadius: 10,
-      padding: '14px 16px',
-      ...style,
-    }} {...resto}>
-      {children}
-    </div>
-  )
+  return <div style={stileCard(style, colore)} {...resto}>{children}</div>
 }
 
 // L'etichetta piccola in maiuscolo che intesta ogni sezione.

@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../supabase'
 import { aggiornaBankroll } from '../lib/bankroll'
 import { C, F, alpha, S } from '../theme'
+import { stileCard } from '../components/ui'
 
 const SPIN_LABELS = ['Spin 1','Spin 2','Spin 3','Spin 4']
 
@@ -310,7 +311,7 @@ export default function ReportingPage() {
             {label:'Tot. Incasso',  val:fmt(totali.incasso),  color:C.blu},
             {label:'Tot. Saldo',    val:fmt(totali.saldo,true),color:pctColor(totali.saldo)},
           ].map(({label,val,color})=>(
-            <div key={label} style={{background:C.card,border:`1px solid ${C.bordo}`,borderRadius:10,padding:'12px'}}>
+            <div key={label} style={stileCard({padding:'12px'})}>
               <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.mono,marginBottom:5}}>{label}</div>
               <div style={{fontSize:S.titolo,fontWeight:700,color,fontFamily:F.mono}}>{val}</div>
             </div>
@@ -320,7 +321,7 @@ export default function ReportingPage() {
 
       {/* Pannello selezione utenti per Salva per tutti */}
       {showSalvaPerTutti&&isSuperAdmin&&(
-        <div style={{background:C.card,border:`1px solid ${alpha(C.verde,0.3)}`,borderRadius:10,padding:'16px',marginBottom:16}}>
+        <div style={stileCard({padding:'16px',marginBottom:16}, C.verde)}>
           <div style={{fontSize:S.media,fontWeight:600,color:C.testo,fontFamily:F.sans,marginBottom:12}}>Seleziona utenti per questa giornata</div>
           <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:14}}>
             {users.filter(u=>u.role!=='superadmin').map(u=>(
@@ -354,7 +355,7 @@ export default function ReportingPage() {
       )}
 
       {giornate.length===0?(
-        <div style={{padding:'60px 24px',textAlign:'center',color:C.fantasma,fontSize:S.grande,fontFamily:F.sans,background:C.card,border:`1px solid ${C.bordo}`,borderRadius:10}}>
+        <div style={stileCard({padding:'60px 24px',textAlign:'center',color:C.fantasma,fontSize:S.grande,fontFamily:F.sans})}>
           Nessuna giornata salvata.<br/>
           <span style={{fontSize:S.corpo,color:C.bordoChiaro}}>Inserisci le partite nella Slot e premi "Salva giornata".</span>
         </div>

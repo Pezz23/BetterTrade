@@ -2232,6 +2232,34 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   conto `visibili/totali`. Rifatti così il 2/10/2026 perché in fila non si
   capivano: una pagina con più di tre filtri li mette in un pannello, non in
   riga.
+- ⚠️⚠️ **Le misure dei caratteri vengono dalla scala `S` di `theme.js`**, non si
+  scrivono a mano (21/10/2026): dodici passi con un ruolo — `S.base` è il testo
+  corrente, `S.minuta` un contrassegno, `S.evidenza` un titolo grande o un
+  numero che conta. Prima erano **19 misure sparse** e *"piccolo"* voleva dire
+  9, 10 o 11 a seconda di chi scriveva. ⚠️ `S.nano` (7) è **misurato**, non
+  scelto: è l'etichetta sotto i cinque numeri della barra, cinque colonne su
+  375px. ⚠️ I nomi delle squadre restano in `clamp()`, perché devono
+  restringersi invece di andare a capo. ⚠️ Le **spaziature** non sono ancora in
+  scala: `padding` e `gap` sono numeri a mano.
+- ⚠️⚠️ **La superficie di un riquadro viene da `stileCard()`** (`ui.jsx`), e
+  `Card` è lo stesso stile avvolto in un componente. Si usa il componente nel
+  caso normale e lo **stile** quando la superficie è un `<button>`, una
+  `<label>` o una cella dentro un `map` con altre proprietà. Esiste perché sei
+  pagine — Dashboard, Bilancio, Reporting, Slot, Utenti, Login — se la
+  riscrivevano a mano, **19 volte**, e un cambio di `Card` non le toccava: un
+  restyling le avrebbe lasciate con l'aspetto vecchio accanto a quello nuovo.
+  ⚠️ Un `border` scritto a mano sopra `stileCard` va bene **quando il bordo dice
+  qualcosa** (nella Dashboard dice com'è andata la spin): è informazione, non
+  stile.
+- ⚠️⚠️ **Le righe della lista sono `memo`, e questo vincola chi le usa.**
+  `RigaPartita` è avvolta in `memo` e `onVota`/`onApri` prendono **l'id**: la
+  pagina passa `onApri={setApertaId}`, non `onApri={() => apri(p.id)}`. Una
+  funzione costruita nel JSX è una proprietà nuova a ogni ridisegno, quindi il
+  `memo` non salta niente — e con 67 partite erano **~270 componenti rifatti a
+  ogni tasto premuto** in un campo dei filtri. Per lo stesso motivo `vota`,
+  `votiDi`, `mioVoto` e `ricarica` in `usaProssime` sono in `useCallback`.
+  ⚠️ **Basta che una proprietà torni a essere costruita sul posto e il `memo`
+  smette di servire, in silenzio.**
 - ⚠️⚠️ **Ogni pagina è un pezzo a parte, e una pagina nuova va aggiunta così**
   (21/10/2026): in `App.jsx` con `lazy(() => import('./pages/…'))`, non con un
   `import` in testa. Prima stavano tutte in un file solo da **437 kB** —

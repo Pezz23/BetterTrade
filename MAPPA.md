@@ -77,19 +77,34 @@ quanti file compare.
 | `TastoRipeti` | 3 | il tasto che si ripete tenendolo premuto |
 | `Btn` · `Badge` · `StatCard` · `Posizione` · `LegendaPartite` | 2 | il resto |
 
-⚠️⚠️ **E QUI STA LA TRAPPOLA DEL RESTYLING: tre pagine non usano `ui.jsx`.**
+### ✅ La trappola del restyling, chiusa il 21/10/2026
 
-| pagina | riquadri fatti a mano |
-|---|---|
-| **Slot** | **17** |
-| **Reporting** | **12** |
-| **Dashboard** | **4** |
+Sei pagine — **Dashboard, Bilancio, Reporting, Slot, Utenti, Login** — non
+usavano `Card` e si riscrivevano la superficie a mano. Cambiare `Card` non le
+avrebbe toccate: sarebbero rimaste con l'aspetto vecchio **accanto** a quello
+nuovo, ed è il difetto che non si nota provando una pagina alla volta.
 
-Sono **33 riquadri** scritti dentro le pagine, con i loro padding e i loro
-bordi. Cambiare `Card` **non li tocca**: finirebbero con l'aspetto vecchio
-accanto a quello nuovo, ed è esattamente il tipo di difetto che non si nota
-provando una pagina alla volta. **Vanno portate su `Card` prima** del cambio di
-look, oppure messe in conto come lavoro a parte.
+⚠️ **E il numero scritto qui la prima volta era sbagliato: dicevo 33 contando
+le righe con `borderRadius`**, che però comprendono pulsanti, pastiglie, caselle
+e celle della griglia. Le superfici vere — fondo `C.card`, bordo, raggio — erano
+**19**, e sono tutte travasate:
+
+| pagina | superfici | ora |
+|---|---|---|
+| **Bilancio** | 10 | `stileCard()` |
+| **Dashboard** | 4 | `stileCard()` |
+| **Reporting** | 3 | `stileCard()` |
+| **Slot** | 2 | `stileCard()` |
+| **Login** | 1 | **lasciata**: è `C.pannello` con raggio 18, ed è voluto — `pannello` è il token delle modali e del login |
+| Utenti | 0 | quelle che sembravano card sono due avvisi e due pulsanti |
+
+⚠️ **`stileCard(style, colore)` e non il componente `Card`**, in quei punti: la
+superficie non è un `<div>` qualunque ma un `<button>`, una `<label>`, una cella
+dentro un `map` con altre proprietà. **Il componente per il caso normale, lo
+stile per gli altri — e il fondo, il bordo e il raggio stanno in un posto solo.**
+⚠️ Quello che è cambiato a vedersi, in tutto: il raggio del blocco grosso della
+Dashboard (12 → 10), delle sue righe per spin (9 → 10) e dei due riquadri della
+Slot (8 → 10), più il bordo verde di Reporting da 0,30 a 0,20 di opacità.
 
 ---
 
@@ -117,11 +132,25 @@ vincita e deposito · `rosso` = perdita e errore · `blu` = admin e informazione
 è una scelta: i numeri in colonna devono stare incolonnati. È anche il motivo
 per cui l'app sembra un terminale.
 
-⚠️⚠️ **Non esiste una scala tipografica.** In `src/` ci sono **19 misure di
-carattere diverse**, con tre picchi: **11px (102 volte) · 10px (81) · 9px (50)**.
-Più tre `clamp()` per i nomi delle squadre. **Una scala — tre o quattro misure
-con un nome — è probabilmente il primo guadagno del cambio di look**, perché
-oggi "piccolo" vuol dire 9, 10 o 11 a seconda di chi ha scritto la riga.
+### ✅ La scala dei caratteri, fatta il 21/10/2026
+
+Prima non c'era: **19 misure diverse** scritte a mano, con tre picchi (11px
+**102 volte**, 10px 81, 9px 50) e una coda di numeri usati una o due volte.
+*"Piccolo"* voleva dire 9, 10 o 11 a seconda di chi aveva scritto la riga.
+
+Adesso `S` in `theme.js` ha **dodici passi, ognuno con un ruolo** — si scrive
+`S.base` perché è il testo corrente, non perché sono 11 pixel:
+
+`nano 7` · `micro 9` · `minuta 10` · **`base 11`** · `corpo 12` · `media 13` ·
+`grande 14` · `titolo 16` · `evidenza 20` · `cifra 28` · `mega 48` ·
+`icona 18` *(i glifi, che non sono testo)*
+
+**446 misure sostituite in 23 file**, e verificato risolvendo i nomi in numeri e
+confrontando col prima: ne cambiano **29**, tutte di 1-2 px e tutte usi singoli.
+⚠️ `nano` resta 7 e **non si tocca per fare ordine**: è l'etichetta sotto i
+cinque numeri della barra, e cinque colonne su 375px fanno 63px l'una.
+⚠️ I nomi delle squadre restano in `clamp()`: devono restringersi col telefono
+invece di andare a capo.
 
 ---
 
@@ -146,12 +175,17 @@ pagina — è la regola che tiene il motore e lo schermo sullo stesso numero.
 
 ## 6. Se si cambia il look, l'ordine conveniente
 
-1. **La scala tipografica e le spaziature** in `theme.js` (oggi non ci sono):
-   arrivano in ogni file, perché ogni file scrive `fontSize` a mano.
-2. **`Etichetta` e `Card`** (11 e 9 file): il colpo più largo con la modifica
-   più piccola.
-3. **Le tre pagine fuori da `ui.jsx`** — Slot, Reporting, Dashboard — portate su
-   `Card`: 33 riquadri, ed è lavoro di travaso, non di gusto.
+⚠️ **I punti 1 e 3 sono stati fatti il 21/10/2026**, prima di sapere l'idea di
+Mattia, proprio perché erano lavoro meccanico e non di gusto: la scala dei
+caratteri esiste e le superfici passano tutte da un posto solo. **Quindi il
+restyling ora parte dal punto 2.**
+
+1. ✅ **La scala dei caratteri** (`S` in `theme.js`) — fatta. Le **spaziature**
+   no: `padding`, `gap` e `marginBottom` sono ancora numeri a mano, e sono il
+   prossimo `S` da scrivere se serve.
+2. **`Etichetta` e `Card`** (11 e 9 file) **più `stileCard`** (4 pagine): il
+   colpo più largo con la modifica più piccola.
+3. ✅ **Le sei pagine fuori da `ui.jsx`** — fatte: 19 superfici travasate.
 4. **`TestataPartita` + `BarraPartita`**: sono *la* partita, e si vedono in
    cinque schermate su quattordici.
 5. **La cornice** (header, menu, tab bar) — ricordando `--barra-alta` e

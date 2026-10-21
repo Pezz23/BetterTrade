@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../supabase'
 import { C, F, alpha, TIPO, S } from '../theme'
+import { stileCard } from '../components/ui'
 import { DISPOSIZIONE, cellaDa } from '../lib/spin'
 import { usaProssime } from '../hooks/usaProssime'
 import SceltaPartita from '../components/SceltaPartita'
@@ -116,7 +117,9 @@ function TabellaGriglia({tiles,isAdmin,onUpdate,onCambia,onReset,syncing,libera,
     <div>
       {syncing&&<div style={{fontSize:S.minuta,color:C.spento,fontFamily:F.mono,marginBottom:8,textAlign:'right'}}>⟳ Sincronizzazione…</div>}
       {(()=>{const a=ampiezzaSpin(tiles);return a&&(
-        <div style={{background:`linear-gradient(${alpha(C.rosso,0.10)},${alpha(C.rosso,0.10)}), ${C.card}`,border:`1px solid ${alpha(C.rosso,0.45)}`,borderRadius:8,padding:'9px 12px',marginBottom:12,display:'flex',alignItems:'center',gap:8}}>
+        <div /* ⚠️ Il fondo resta la tinta su fondo opaco: una tinta semitrasparente da
+             sola si illuminerebbe su sfondo chiaro (trappola gia' pagata). */
+          style={stileCard({background:`linear-gradient(${alpha(C.rosso,0.10)},${alpha(C.rosso,0.10)}), ${C.card}`,border:`1px solid ${alpha(C.rosso,0.45)}`,padding:'9px 12px',marginBottom:12,display:'flex',alignItems:'center',gap:8})}>
           <span style={{fontSize:S.titolo,lineHeight:1}}>⚠️</span>
           <span style={{fontSize:S.corpo,color:C.testo,fontFamily:F.sans,lineHeight:1.5}}>
             <b style={{color:C.rosso}}>Questa spin mescola due weekend</b>: fra la prima partita e l'ultima
@@ -283,7 +286,7 @@ function Schedine({tiles,isAdmin,sched,isWip,spinIdx}) {
           {label:'Full ×1',val:isWip?'WIP':`€${sched.full}`,color:C.oro},
           {label:'Tot. inv.',val:isWip?'WIP':`€${sched.totale}`,color:C.testo},
         ].map(({label,val,color})=>(
-          <div key={label} style={{flex:1,minWidth:70,background:C.card,border:`1px solid ${C.bordo}`,borderRadius:8,padding:'8px 10px'}}>
+          <div key={label} style={stileCard({flex:1,minWidth:70,padding:'8px 10px'})}>
             <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.mono,marginBottom:3}}>{label}</div>
             <div style={{fontSize:S.grande,fontWeight:700,color,fontFamily:F.mono}}>{val}</div>
           </div>
