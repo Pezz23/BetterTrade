@@ -2270,6 +2270,33 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   375px. ⚠️ I nomi delle squadre restano in `clamp()`, perché devono
   restringersi invece di andare a capo. ⚠️ Le **spaziature** non sono ancora in
   scala: `padding` e `gap` sono numeri a mano.
+- ⚠️⚠️ **Le superfici sono una SCALA, e una card si vede perché è più chiara,
+  non perché è cerchiata** (21/10/2026). Prima `card #14171B` su
+  `fondo #0B0D10` faceva **1,08:1**, cioè niente: l'unica cosa che separava un
+  riquadro dalla pagina era il bordo disegnato attorno, e da lì i **161 bordi
+  da 1px su 61 superfici** che davano all'app l'aria di un gestionale. Nessuno
+  l'aveva scelto: era la conseguenza di due fondi indistinguibili.
+  La scala adesso è `fondo 1,00 → card 1,19 → pannello 1,25 → attiva 1,36`,
+  più `pozzo` che è l'unico gradino **in giù** (i campi, incassati).
+  ⚠️ `attiva` serve a due cose: lo stato premuto/scelto **e una superficie
+  dentro un'altra** — senza, una card annidata sparisce ora che i bordi non
+  ci sono più.
+  ⚠️ `stileCard` dà un bordo **1px trasparente**: il bordo si passa
+  (`colore`) solo quando **significa** qualcosa — la categoria di una partita,
+  com'è andata una spin. E resta 1px trasparente invece di `none`, o la misura
+  di ogni card cambierebbe di 2px.
+- ⚠️ **Le etichette sono parole: vanno in Sora.** Mono maiuscolo e spaziato è
+  *letteralmente* l'estetica di un terminale, ed era rimasto sulle etichette
+  della barra dei cinque numeri e sulle dieci pastiglie dei filtri. La regola
+  del mono vale per le **cifre**.
+- ⚠️⚠️ **Quando una colonna deve restare uguale, si fissa la LARGHEZZA e si
+  adatta la scritta — non il contrario.** La colonna della giocata aveva un
+  `minWidth`: `1+O1,5` occupa 3,6px per ogni px di corpo, quindi a 19px
+  cresceva a 68px contro i 58 del minimo, e quei **22px** li guadagnava la
+  barra (che smetteva di essere un metro) e li perdevano i due nomi, **solo
+  sulle combinate**. Ora la larghezza è fissa e il corpo si calcola
+  dallo spazio. ⚠️ Vale anche per l'**altezza**: due righe riservate al nome,
+  o un nome che va a capo alza un lato e sfalsa le due squadre.
 - ⚠️⚠️ **Nell'interfaccia non si scrivono emoji: i segni vengono da
   `components/Icona.jsx`** (21/10/2026). Due motivi, il secondo è un difetto
   vero: **un'emoji non obbedisce al colore del testo** — nella tab bar
@@ -2387,6 +2414,17 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
 
 ## Trappole già incontrate
 
+- ⚠️⚠️ **Un commento `/* … */` fra due tag JSX diventa TESTO A SCHERMO**, e
+  né il lint né `vite build` se ne accorgono: per loro è una stringa
+  legittima. Ci sono cascato **due volte**, e la seconda la riga
+  *«/* stessa traccia della barra…»* è finita in mezzo alla scheda di una
+  partita. Dentro il JSX un commento vuole le graffe: `{/* … */}`.
+  ✅ Ora `guarda.mjs` cerca `/*` nel testo che la pagina mostra e lo segnala.
+- ⚠️ **La mappa di `guarda.mjs` va tenuta allineata alla navigazione.**
+  Spostando Spin nel menu e Road to weekend nella barra in basso ho dimenticato
+  `PAGINE`: due pagine sono andate in **timeout di trenta secondi l'una**, con
+  una riga `❌` in mezzo alle altre. È scritto nella skill, e me ne sono
+  dimenticato lo stesso.
 - ⚠️⚠️ **`borderColor: undefined` NON vuol dire "lascia il bordo com'è": lo
   cancella.** React imposta la scorciatoia `border: 1px solid <colore>` e poi
   la longhand `borderColor`; metterla a `undefined` la **toglie dalla

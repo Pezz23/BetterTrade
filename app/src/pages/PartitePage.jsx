@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { usaProssime } from '../hooks/usaProssime'
 import { usaVpm } from '../hooks/usaVpm'
 import { useAuth } from '../context/AuthContext'
-import { C, F, alpha, S } from '../theme'
+import { C, F, alpha, S, R } from '../theme'
 import { Card, Etichetta } from '../components/ui'
 import RigaPartita, { CATEGORIE, pct, giorno } from '../components/RigaPartita'
 import SchedaScorrevole from '../components/SchedaScorrevole'
@@ -17,11 +17,24 @@ import LegendaPartite from '../components/LegendaPartite'
 // I calcoli stanno in lib/attendibilita.js, la riga in components/RigaPartita.jsx:
 // qui solo caricamento, filtri e composizione.
 
+/**
+ * ⚠️⚠️ **Le pastiglie erano il pezzo più "terminale" della pagina**: dieci
+ * fra filtri e ordinamenti, tutte in **monospaziato** e tutte dentro un bordo
+ * da 1px — quattro righe di scatole con dentro testo da console. Due cure, e
+ * sono quelle della prova del 21/10/2026:
+ *   · **Sora**, perché sono parole («attendibilità», «filtri»), non cifre.
+ *     La regola del lotto 2 non era mai arrivata fin qui.
+ *   · **niente bordo da spente**: una pastiglia spenta è una superficie
+ *     leggermente più chiara del fondo, non una linea. Il bordo resta
+ *     **solo su quella accesa**, dove distingue lo stato.
+ * ⚠️ E il testo spento passa da `fioco` (3,80:1) a `spento` (6,97:1): sono
+ * comandi da leggere, non decorazioni.
+ */
 const pillola = (on, colore = C.oro) => ({
-  padding: '6px 12px', borderRadius: 20, cursor: 'pointer', fontFamily: F.mono, fontSize: S.base, fontWeight: 600,
-  background: on ? alpha(colore, 0.15) : 'transparent',
-  border: `1px solid ${on ? alpha(colore, 0.5) : C.bordo}`,
-  color: on ? colore : C.fioco,
+  padding: '7px 13px', borderRadius: R.pastiglia, cursor: 'pointer', fontFamily: F.sans, fontSize: S.corpo, fontWeight: 600,
+  background: on ? alpha(colore, 0.15) : C.card,
+  border: `1px solid ${on ? alpha(colore, 0.5) : 'transparent'}`,
+  color: on ? colore : C.spento,
 })
 const campo = { padding: '6px 10px', borderRadius: 20, background: C.pozzo, border: `1px solid ${C.bordo}`, color: C.testo, fontFamily: F.mono, fontSize: S.base, outline: 'none', width: 74 }
 
@@ -130,9 +143,9 @@ export default function PartitePage() {
     <div style={{ padding: '16px' }}>
       <LegendaPartite />
 
-      <Etichetta colore={C.oro} style={{ letterSpacing: 4, marginBottom: 4 }}>PARTITE</Etichetta>
+      <Etichetta colore={C.oro} style={{ letterSpacing: 2, marginBottom: 4, fontFamily: F.sans }}>PARTITE</Etichetta>
       <div style={{ fontSize: S.evidenza, fontWeight: 700, color: C.testo, fontFamily: F.sans, marginBottom: 4 }}>Prossime partite</div>
-      <div style={{ fontSize: S.corpo, color: C.spento, fontFamily: F.sans, marginBottom: 14, lineHeight: 1.6 }}>
+      <div style={{ fontSize: S.corpo, color: C.spento, fontFamily: F.sans, marginBottom: 20, lineHeight: 1.6 }}>
         {caricamento ? 'Caricamento…' : (
           <>
             {inFinestra.length} partite{ultimaData && ` fino a ${giorno(ultimaData)}`} ·{' '}
@@ -267,7 +280,7 @@ export default function PartitePage() {
           stessa lista da tre lati. Sta attaccato alla lista, non in cima alla
           pagina, perché è di lei che parla. */}
       <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
-        <span style={{ fontSize: S.base, color: C.spento, fontFamily: F.mono }}>ordina</span>
+        <span style={{ fontSize: S.base, color: C.spento, fontFamily: F.sans }}>ordina</span>
         {ORDINI.map(o => (
           /* Un tasto per ogni colonna della barra. ⚠️ Il secondo tocco sullo
              stesso inverte il verso: sulla quota serve davvero, perché a volte
@@ -279,7 +292,10 @@ export default function PartitePage() {
         ))}
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {/* ⚠️ 12 e non 8: senza bordo attorno, due righe a 8px di distanza si
+          leggono come un blocco unico. Lo stacco fra due card lo fa lo spazio,
+          non più la linea. */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {visibili.map(p => (
           <RigaPartita key={p.id} p={p} cat={categoria(p.probGiocata, soglie)}
             vpm={vpmDi.get(p.id) ?? null}

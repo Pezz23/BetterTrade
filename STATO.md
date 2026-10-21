@@ -3,7 +3,7 @@
 > To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 21 ottobre 2026 (notte) · app alla versione **1.35.00**
+**Ultimo aggiornamento:** 21 ottobre 2026 (notte) · app alla versione **1.37.00**
 
 ## ▶️ IL RESTYLING È COMINCIATO — leggi questo per primo
 
@@ -31,13 +31,19 @@ sei correzioni e gli undici lotti, sta in
 | 4 | **La partita** — testata, barra, riga | ✅ 21/10 sera |
 | 5 | **La scheda partita** | ✅ 21/10 sera |
 | 6 | **La cornice** — header, menu, tab bar | ✅ 21/10 sera |
-| 7 | Le pagine dei numeri — Dashboard, Bilancio, Reporting, Storico, Andamento | 🟡 **parziale** |
-| 8 | Le pagine dense — Slot, Spin, Road to weekend | 🟡 **parziale** |
-| 9 | Le minori — Utenti, Importazioni, Login | 🟡 **parziale** |
+| 7 | **Le pagine dei numeri** — Dashboard, Bilancio, Reporting, Storico, Andamento | ✅ |
+| 8 | **Le pagine dense** — Slot, Spin, Road to weekend | ✅ |
+| 9 | **Le minori** — Utenti, Importazioni, Login | ✅ |
 | 10 | **Le icone** — emoji → SVG, un set solo | ✅ 21/10 sera |
 | 11 | **Verifica delle larghezze** | ✅ e **non serve più Mattia** |
 
-⚠️ **7, 8 e 9 sono "parziali" e il motivo conta**: le cure che servivano davvero
+⚠️ **7, 8 e 9 si sono chiusi dal tema, non pagina per pagina** (21/10 notte):
+alzando la scala delle superfici e togliendo il bordo muto da `stileCard`,
+tutte e dodici le schermate si sono allineate in una volta. Il motivo per cui
+è bastato è lo stesso per cui prima erano tutte uguali: **il difetto non era di
+pagina, era del token.**
+
+⚠️ Com'era prima: le cure che servivano davvero
 erano **trasversali**, non di pagina — il bordo bianco, le emoji, i grigi
 illeggibili, la cornice — e sono state applicate ovunque in una volta. Guardate
 una per una dopo quelle cure, Dashboard · Bilancio · Reporting · Storico ·

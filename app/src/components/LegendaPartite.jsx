@@ -23,9 +23,13 @@ export default function LegendaPartite() {
     <div style={{ marginBottom: 14 }}>
       <button onClick={() => setAperta(v => !v)} style={{
         width: '100%', textAlign: 'left', cursor: 'pointer',
-        background: aperta ? `linear-gradient(${alpha(C.oro, 0.06)},${alpha(C.oro, 0.06)}), ${C.card}` : 'transparent',
-        border: `1px solid ${aperta ? alpha(C.oro, 0.3) : C.bordo}`, borderRadius: 0,
-        padding: '9px 12px', color: C.spento, fontFamily: F.mono, fontSize: S.base, letterSpacing: '0.08em',
+        // ⚠️ Prova del 21/10/2026: niente scatola squadrata e niente
+        // monospaziato spaziato — una riga che si apre, non un campo di un
+        // gestionale. Il bordo compare **solo da aperta**, dove racchiude
+        // davvero qualcosa.
+        background: aperta ? `linear-gradient(${alpha(C.oro, 0.06)},${alpha(C.oro, 0.06)}), ${C.card}` : C.card,
+        border: `1px solid ${aperta ? alpha(C.oro, 0.3) : 'transparent'}`, borderRadius: 10,
+        padding: '10px 13px', color: C.spento, fontFamily: F.sans, fontSize: S.corpo, letterSpacing: '0.02em',
         display: 'flex', alignItems: 'center', gap: 8,
       }}>
         <span style={{ color: C.oro }}>{aperta ? '⌃' : '⌄'}</span>

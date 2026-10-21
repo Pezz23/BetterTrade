@@ -470,7 +470,9 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
                 {/* La sintesi è una barra, non tre nomi accorciati: i nomi
                     lunghi venivano tagliati e il confronto spariva. */}
                 <div style={{ marginBottom: 10 }}>
-                  <div style={{ display: 'flex', height: 8, borderRadius: 8, overflow: 'hidden', background: C.attiva }}>
+                  {/* stessa traccia della barra della giocata: schiarita, non un
+                      token di superficie, così non sparisce se cambia il fondo */}
+                  <div style={{ display: 'flex', height: 8, borderRadius: 8, overflow: 'hidden', background: alpha(C.bianco, 0.12) }}>
                     {[[vCasa, C.verde], [pari, C.giallo], [vTrasferta, C.rosso]].map(([n, col], i) =>
                       n > 0 && <div key={i} style={{ width: `${100 * n / tot}%`, background: col }} />)}
                   </div>

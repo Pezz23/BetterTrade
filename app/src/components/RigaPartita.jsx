@@ -39,12 +39,24 @@ function RigaPartita({ p, cat, vpm = null, voti = 0, mio = false, puoVotare = fa
        nessuno. **Una proprietà a `undefined` non è una proprietà assente.**
        ⚠️ E gli angoli tornano tondi come tutto il resto: squadrati erano
        l'altra metà di quell'effetto. */
-    <Card style={{ padding: `${SP.m}px ${SP.l}px`, borderRadius: R.g,
-      border: `1px solid ${cat !== 'no' ? alpha(c.colore, 0.35) : C.bordo}`,
+    /* ⚠️⚠️ **La prova del 21/10/2026: meno bordi, più superficie, più
+       respiro.** L'app era un reticolo — 161 bordi da 1px su 61 superfici — e
+       la ragione per cui i bordi c'erano tutti è che **la card non si
+       staccava dal fondo**: `card #14171B` su `fondo #0B0D10` fa 1,08:1,
+       cioè niente, quindi l'unica cosa che separava una riga dalla pagina era
+       la linea disegnata attorno.
+       Qui la riga sta su `C.attiva` (1,19:1), che è un token già nella
+       tavolozza e non un colore nuovo, e **il bordo resta solo dove dice
+       qualcosa**: la categoria della partita. Una riga senza categoria non ha
+       più nessuna linea attorno — si vede perché è più chiara del fondo.
+       ⚠️ `stileCard` **non** è stato toccato: questa è una prova su una
+       pagina, non un cambio del tema. */
+    <Card style={{ padding: `${SP.ml}px ${SP.xl}px`, borderRadius: R.g,
+      border: cat !== 'no' ? `1px solid ${alpha(c.colore, 0.35)}` : '1px solid transparent',
       cursor: 'pointer' }} onClick={() => onApri?.(p.id)}>
       {/* la riga dei contrassegni: campionato, categoria, e il voto — che si
           deve poter dare dalla lista, senza aprire la partita */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: SP.m, marginBottom: SP.m }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: SP.m, marginBottom: SP.l }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: SP.s }}>
           <span style={{ fontSize: S.minuta, fontWeight: 700, fontFamily: F.mono, padding: '2px 8px', borderRadius: R.pastiglia, background: alpha(C.bluPieno, 0.12), color: C.blu }}>{sigla(p.div)}</span>
           {cat !== 'no' && <span style={{ fontSize: S.minuta, fontWeight: 700, fontFamily: F.mono, padding: '2px 8px', borderRadius: R.pastiglia, background: alpha(c.colore, 0.15), color: c.colore, textTransform: 'uppercase' }}>{c.nome}</span>}
@@ -54,7 +66,7 @@ function RigaPartita({ p, cat, vpm = null, voti = 0, mio = false, puoVotare = fa
 
       <TestataPartita p={p} cat={cat} compatta />
 
-      <div style={{ marginTop: SP.m }}>
+      <div style={{ marginTop: SP.l }}>
         <BarraPartita p={p} vpm={vpm} colore={c.colore} />
       </div>
     </Card>

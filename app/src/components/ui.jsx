@@ -26,7 +26,14 @@ import { C, F, alpha, S, SP, R } from '../theme'
  */
 export const stileCard = (style, colore) => ({
   background: C.card,
-  border: `1px solid ${colore ? alpha(colore, 0.2) : C.bordo}`,
+  // ⚠️⚠️ **Da spenta la cornice è trasparente** (21/10/2026). La card si vede
+  // perché il suo fondo è più chiaro della pagina (1,19:1), non perché ha una
+  // linea attorno: l'app era un reticolo di 161 bordi da 1px, e il bordo è
+  // tornato a dire qualcosa — lo si passa (`colore`) quando significa la
+  // categoria di una partita o com'è andata una spin.
+  // ⚠️ Il bordo resta **1px trasparente** e non `none`: toglierlo cambierebbe
+  // la misura di ogni card di 2px e sposterebbe i layout.
+  border: `1px solid ${colore ? alpha(colore, 0.2) : 'transparent'}`,
   borderRadius: R.g,
   // ⚠️ `SP.xl` e `SP.xxl` **sono** i 14 e 16 di prima: la scala è stata
   // costruita sui numeri già in uso, quindi qui non cambia un pixel.

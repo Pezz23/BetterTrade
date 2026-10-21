@@ -21,11 +21,25 @@ export const C = {
   // decisione da prendere guardando lo schermo, non da infilare qui.
   // ⚠️ Il guadagno vero della palette nuova è **sul testo**: `spento` passa da
   // 2,47:1 a 6,97:1 (vedi sotto).
+  // ⚠️⚠️ **Le superfici sono una SCALA, e il 21/10/2026 sono state alzate.**
+  // Prima `card` era `#14171B`, cioè **1,08:1** contro il fondo: una card non
+  // si vedeva, e l'unica cosa che la separava dalla pagina era il bordo
+  // disegnato attorno. Da lì i 161 bordi da 1px e l'aspetto da gestionale —
+  // nessuno aveva scelto quel reticolo, era la conseguenza di due fondi
+  // indistinguibili. Adesso:
+  //   fondo 1,00 → card 1,19 → pannello 1,25 → attiva 1,36
+  // Una superficie si vede perché è più chiara, non perché è cerchiata, e il
+  // bordo torna a voler dire qualcosa (la categoria, l'esito, lo stato).
+  // ⚠️ `pozzo` resta **sotto** il fondo: è l'incassato dei campi, l'unico
+  // gradino che va in giù.
   fondo:    '#0B0D10',  // sfondo pagina
   barra:    '#0F1216',  // header e tab bar: appena sopra il fondo
   pozzo:    '#0E1115',  // campi di input, "incassati" **sotto** la card
-  pannello: '#11151A',  // card di login, modali
-  card:     '#14171B',  // card di contenuto
+  pannello: '#1F242B',  // modali e login: stanno SOPRA le card, non sotto
+  card:     '#1B2026',  // card di contenuto
+  // ⚠️ `attiva` è il gradino sopra la card, e serve a due cose: lo stato
+  // premuto/scelto, e **una superficie dentro un'altra** — senza, una card
+  // annidata in una card sparisce ora che i bordi non ci sono più.
 
   // ── Bordi, dal più tenue al più marcato ─────────────────────────────────
   bordoTenue: '#1E242A',
@@ -63,7 +77,7 @@ export const C = {
   // card** — il fondo di una barra di avanzamento, di una casella toccata, di
   // un pallino spento. Il nome vecchio descriveva il valore, questo descrive
   // il ruolo, che è l'unica cosa che sopravvive a un cambio di tavolozza.
-  attiva:      '#1B2026',
+  attiva:      '#242B34',
   grigioMedio: '#7A838E',
   grigioCupo:  '#3E464F',
   acciaio:     '#8A939E',  // argento spento

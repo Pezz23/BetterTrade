@@ -44,6 +44,60 @@ export { pct, giorno }
 // parla.
 const COLORE_FASCIA = { alta: C.verde, media: C.giallo, bassa: C.rosso }
 
+// ⚠️⚠️ **Il corpo del nome lo decide la PAROLA più lunga, non il nome.**
+// `ASTON VILLA` sono 11 caratteri ma va a capo fra le due parole senza
+// danno; `BOURNEMOUTH` sono gli stessi 11 in un pezzo solo, e misurato
+// occupa **8,774px per ogni px di corpo** — a 11px fa 96,5px, dove la colonna
+// ne offre ~80. Un corpo unico deve quindi essere tarato sul caso peggiore,
+// cioè rimpicciolire **tutti** i nomi per colpa di quattro squadre.
+// Qui scende solo chi ha davvero una parola lunga: le altre restano leggibili.
+// ⚠️ Le soglie vengono dai nomi veri in calendario (132 squadre): la parola
+// più lunga è `Bournemouth` (11), poi dieci squadre a 10.
+const corpoNome = (sq, compatta) => {
+  const lunga = Math.max(...sq.split(/[\s-]+/).map(x => x.length))
+  if (lunga >= 10) return compatta ? 'clamp(8px, 2.2vw, 10px)' : 'clamp(8px, 2.3vw, 11px)'
+  return compatta ? 'clamp(9px, 2.6vw, 12px)' : 'clamp(10px, 2.9vw, 14px)'
+}
+
+// ⚠️⚠️ **Due righe riservate al nome, sempre.** È *questa* la cosa che tiene
+// allineate le due squadre, non la speranza che il testo ci stia: se un nome
+// va a capo e l'altro no, un blocco diventa più alto e i due nomi finiscono a
+// quote diverse — `ASTON VILLA` sopra, `MAN CITY` sotto (Mattia, 21/10/2026).
+// Riservando lo spazio l'altezza non dipende più da cosa c'è scritto.
+// È la stessa regola per cui nella Slot il ✓/✗ non allunga la casella.
+//
+// ⚠️⚠️ **E NON si scrive in `em`.** Provato così, restavano 9 righe su 67
+// sfalsate di 1,7px: `em` si misura sul corpo dell'elemento, e il nome con
+// una parola lunga ha un corpo più piccolo (`corpoNome`), quindi le sue due
+// righe riservate erano più basse di quelle dell'altra squadra. Lo spazio
+// riservato deve essere **lo stesso numero per tutte e due**, cioè due righe
+// del corpo GRANDE, qualunque corpo abbia poi il singolo nome.
+/**
+ * ⚠️⚠️ **La colonna della giocata ha una larghezza FISSA, e la scritta si
+ * adatta a lei** (Mattia, 21/10/2026: *"quando la partita indica 1+O1,5 la
+ * barra diventa più lunga, io la vorrei sempre uguale — piuttosto
+ * rimpiccioliamo la scritta"*).
+ * Prima era un `minWidth`: la colonna cresceva per contenere il testo, e
+ * misurato `1+O1,5` occupa **3,6px per ogni px di corpo** — a 19px fa 68px
+ * contro i 58 del minimo. Quei **22px** li guadagnava la barra, che così
+ * cambiava lunghezza da una riga all'altra e smetteva di essere un metro, e
+ * li perdevano i due nomi, che si stringevano **solo sulle combinate**.
+ * Con la larghezza fissa ogni riga ha la stessa impaginazione.
+ */
+const LARGA_GIOCATA = compatta => (compatta ? 62 : 76)
+// lo spazio vero dentro la colonna, tolto il riempimento laterale di 6px
+const corpoGiocata = (testo, compatta) => {
+  const dentro = LARGA_GIOCATA(compatta) - 12
+  const grande = compatta ? 19 : 24
+  // 0,6px di larghezza per carattere per ogni px di corpo, misurato su DM Mono
+  const serve = testo.length * 0.6
+  return Math.min(grande, Math.floor(dentro / serve))
+}
+
+const DUE_RIGHE = compatta => compatta
+  ? 'calc(2.3 * clamp(9px, 2.6vw, 12px))'
+  : 'calc(2.3 * clamp(10px, 2.9vw, 14px))'
+
 /**
  * ⚠️ `style` **si accetta e si sovrascrive in fondo.** Il 18/10/2026 la pagina
  * Road to weekend passava uno `style` per rimpicciolire la targhetta e il
@@ -59,10 +113,12 @@ export function Posizione({ nome, colore, posto, compatta = false, style }) {
   return (
     <div title={posto ? `${posto.posizione}° su ${posto.squadre} · ${posto.punti} punti in ${posto.giocate}` : nome}
       style={{
-        flexShrink: 0, borderRadius: R.s, padding: compatta ? '2px 4px' : '2px 5px',
+        flexShrink: 0, borderRadius: R.s, padding: compatta ? '1px 3px' : '1px 4px',
         background: alpha(tinta, 0.12), border: `1px solid ${alpha(tinta, 0.4)}`,
         color: tinta, fontFamily: F.mono, fontWeight: 700, lineHeight: 1.2,
-        fontSize: compatta ? S.minuta : S.corpo, whiteSpace: 'nowrap',
+        // ⚠️ Scesa di un passo il 21/10/2026 (Mattia: *"anche la posizione è
+        // troppo grande"*): ogni px che lascia qui è un px che va al nome.
+        fontSize: compatta ? S.micro : S.minuta, whiteSpace: 'nowrap',
         ...style,
       }}>
       {/* ⚠️ Il denominatore è più piccolo e più tenue: la posizione è il dato,
@@ -75,8 +131,21 @@ export function Posizione({ nome, colore, posto, compatta = false, style }) {
   )
 }
 
+/**
+ * ⚠️⚠️ **La traccia non può essere un colore del tema: deve essere "un po' più
+ * chiara di quello che c'è sotto".** Il 21/10/2026, dando alle righe della
+ * lista il fondo `C.attiva`, la traccia — che era `C.attiva` anche lei — è
+ * diventata **1,00:1 contro la riga**, cioè invisibile: restava solo la parte
+ * piena, e senza vedere dove finisce la corsa non si capisce più **a che punto
+ * della percentuale** sei (trovato da Mattia).
+ * ⚠️ Non si cura rimettendo un bordo: il bordo nasconderebbe il sintomo
+ * rimettendo una linea, mentre il guasto è che due superfici hanno lo stesso
+ * colore. `alpha(bianco, .12)` si schiarisce su **qualunque** fondo — la riga
+ * della lista e la card della scheda — quindi non può più sparire per colpa di
+ * un cambio di superficie.
+ */
 export const Barra = ({ frazione, colore, altezza = 6 }) => (
-  <div style={{ height: altezza, borderRadius: altezza, background: C.attiva, overflow: 'hidden' }}>
+  <div style={{ height: altezza, borderRadius: altezza, background: alpha(C.bianco, 0.12), overflow: 'hidden' }}>
     <div style={{ width: `${Math.max(0, Math.min(1, frazione)) * 100}%`, height: '100%', background: colore, borderRadius: altezza }} />
   </div>
 )
@@ -125,9 +194,22 @@ export default function TestataPartita({ p, cat, compatta = false, gol = null })
                 quei 12px servivano al nome delle squadre, e qui dentro non li
                 usava nessuno — l'etichetta GIOCATA ne chiede una cinquantina. */}
             {i === 1 && (
-              <div style={{ alignSelf: 'center', textAlign: 'center', padding: '0 6px', minWidth: compatta ? 64 : 84 }}>
+              <div style={{ alignSelf: 'center', textAlign: 'center', padding: '0 6px', width: LARGA_GIOCATA(compatta) }}>
                 <Etichetta style={{ fontSize: S.micro, letterSpacing: '0.12em', marginBottom: 4 }}>giocata</Etichetta>
-                <div style={{ fontSize: compatta ? 19 : 24, fontWeight: 700, fontFamily: F.mono, color: c.colore, lineHeight: 1.1 }}>{pronosticoDa(p.giocata)}</div>
+                {/* ⚠️ Il corpo lo decide quanto è lunga la giocata: `2` resta
+                    grande, `1+O1,5` scende fino a stare nella colonna. È la
+                    scritta che si adatta alla colonna, non il contrario. */}
+                {/* ⚠️ Anche l'ALTEZZA è riservata, per la stessa ragione della
+                    larghezza: se la combinata scende a 13px la sua riga di
+                    testo è più bassa, il blocco si accorcia e **la barra si
+                    alza** rispetto alle altre righe. Lo spazio è quello della
+                    giocata grande, qualunque corpo abbia poi la scritta. */}
+                <div style={{
+                  fontSize: corpoGiocata(pronosticoDa(p.giocata), compatta),
+                  fontWeight: 700, fontFamily: F.mono, color: c.colore, lineHeight: 1.1,
+                  minHeight: Math.round((compatta ? 19 : 24) * 1.1),
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>{pronosticoDa(p.giocata)}</div>
                 <div style={{ marginTop: compatta ? 5 : 7 }}><Barra frazione={p.probGiocata} colore={c.colore} altezza={compatta ? 5 : 6} /></div>
                 {/* ⚠️ **I due consigli sotto la giocata, in bianco** (scelta di
                     Mattia, 15/10/2026). Stanno qui perché sono dello stesso
@@ -178,7 +260,11 @@ export default function TestataPartita({ p, cat, compatta = false, gol = null })
                             {et}{cons?.fonte === 'mercato' && <span style={{ color: C.oroChiaro }}> · quote</span>}
                           </Etichetta>
                           <div style={{
-                            fontFamily: F.mono, fontWeight: 700, fontSize: compatta ? 11 : 12, letterSpacing: '0.03em',
+                            // ⚠️ `UNDER 3,5` è la riga più lunga: 9 caratteri,
+                            // cioè 5,4px per px di corpo. Dentro i 64px della
+                            // colonna sta fino a 11px, non oltre — e sono
+                            // `nowrap`, quindi oltre sborderebbero in silenzio.
+                            fontFamily: F.mono, fontWeight: 700, fontSize: compatta ? 10 : 11, letterSpacing: '0.03em',
                             whiteSpace: 'nowrap',
                             // ⚠️ IN BILICO resta spento: un consiglio che non
                             // c'è non deve avere lo stesso peso di uno che c'è.
@@ -211,49 +297,24 @@ export default function TestataPartita({ p, cat, compatta = false, gol = null })
                 blocchi non sono più specchiati. È quello che è stato chiesto:
                 "a destra del nome" vale per il nome, non per il lato della
                 card. */}
-            {/* ⚠️⚠️ **`flexWrap` è la cura di un difetto che nessun corpo di
-                carattere poteva risolvere** (21/10/2026). Misurato nel browser:
-                `BOURNEMOUTH` — la parola più lunga delle 132 squadre in
-                calendario — occupa **96,5px già a 11px**, e la colonna laterale
-                della scheda ne misura **104,5 targhetta compresa**. Accanto
-                alla targhetta non ci sta a nessuna misura leggibile, e infatti
-                `ASTON VILLA` si spezzava in **quattro righe da due lettere**:
-                `AST / ON / VILL / A`.
-                Andando a capo, la targhetta scende sotto il nome **solo quando
-                serve** e il nome si prende tutta la colonna: la regola "la
-                targhetta a destra della squadra" vale finché c'è spazio, e
-                dove non c'è degrada invece di rompersi.
-                ⚠️ Limite noto, misurato: sotto i ~355px di schermo nemmeno la
-                colonna intera basta a BOURNEMOUTH, e lì interviene
-                `break-word`. È l'ultima difesa, non il caso normale. */}
+            {/* ⚠️ **`nowrap`, per richiesta di Mattia (21/10/2026).** Prima
+                il blocco andava a capo e la targhetta scendeva sotto il nome
+                quando non ci stava: risolveva lo sbordo ma **sfalsava
+                l'allineamento**, perché quel lato diventava alto due righe e
+                l'altro no. Adesso la targhetta resta sempre in linea e a
+                reggere l'altezza è `DUE_RIGHE` sul nome. */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexWrap: 'wrap',
-              // ⚠️ 4px e non 6 in compatta: erano i tre pixel che mancavano a
-              // FIORENTINA per stare su una riga. Misurato, non scelto.
-              gap: compatta ? 4 : SP.s, minWidth: 0 }}>
+              flexWrap: 'nowrap', gap: compatta ? 4 : SP.s, minWidth: 0 }}>
               <div style={{
-                // ⚠️⚠️ **Misurato con il browser, non stimato** (21/10/2026).
-                // A 375px il nome aveva **68-74px** e a 12,75px parole come
-                // DORTMUND, VALENCIA o FIORENTINA non ci stavano: andavano a
-                // capo **a metà parola**, lasciando una lettera sola sulla
-                // riga sotto — `DORTMUN` / `D`. Succedeva su sette partite
-                // delle prime dodici, e dal codice non si vedeva.
-                // Il corpo scende di un filo **solo al minimo** (3,0vw: a
-                // 375px sono 11,25px invece di 12,75); sopra i 466px il
-                // massimo di 14px è identico a prima.
-                // ⚠️ Il massimo della scheda viene dal conto, non dal gusto:
-                // la colonna è ~112px e BOURNEMOUTH occupa 8,774px per ogni px
-                // di corpo, quindi oltre **12,8px** non ci sta. 3,4vw a 375px
-                // fa 12,75 — e su uno schermo più largo cresce insieme alla
-                // colonna, che è il motivo per cui resta un `clamp()`.
-                fontSize: compatta ? 'clamp(10px, 3.0vw, 14px)' : 'clamp(11px, 3.4vw, 17px)',
+                fontSize: corpoNome(sq, compatta),
                 fontWeight: 700, fontFamily: F.sans, letterSpacing: '0.02em',
                 // ⚠️ `break-word` e non `anywhere`: spezza una parola solo se
                 // **da sola** non entra nella riga, mentre `anywhere` la
-                // spezzava appena conveniva. Resta come ultima difesa per un
-                // nome davvero lungo — meglio spezzato che fuori dalla card.
+                // spezzava appena conveniva. Resta l'ultima difesa.
                 textTransform: 'uppercase', lineHeight: 1.15, overflowWrap: 'break-word',
                 textAlign: 'center', minWidth: 0,
+                // lo spazio è riservato: una riga o due, l'altezza non cambia
+                minHeight: DUE_RIGHE(compatta), display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: p.segno === segno ? C.testo : C.spento,
               }}>{sq}</div>
               <Posizione nome={sq} colore={p.segno === segno ? c.colore : C.grigioFioco} compatta={compatta}

@@ -40,7 +40,11 @@ function Colonna({ valore, etichetta, colore, coloreEtichetta, divisore, prefiss
         )}
         {valore}
       </div>
-      <div style={{ fontSize: S.nano, fontFamily: F.mono, letterSpacing: '0.08em', marginTop: 2,
+      {/* ⚠️ **Le etichette sono parole, quindi Sora** — e qui erano rimaste
+          mono maiuscolo spaziato, che è *letteralmente* l'estetica di un
+          terminale. La regola del lotto 2 (mono solo per i numeri) non era
+          mai arrivata fin qui. Il valore sopra resta mono: quello è una cifra. */}
+      <div style={{ fontSize: S.nano, fontFamily: F.sans, letterSpacing: '0.02em', marginTop: 3,
         color: coloreEtichetta || C.spento, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {etichetta}
       </div>
@@ -70,8 +74,15 @@ export default function BarraPartita({ p, cat, vpm = null, colore }) {
         ⚠️ QUOTE IN CONFLITTO — Partita da verificare.
       </div>
     )}
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', padding: '7px 0',
-      background: alpha(c, 0.07), border: `1px solid ${alpha(p.quoteIncoerenti ? C.rosso : c, 0.28)}`, borderRadius: 0 }}>
+    {/* ⚠️ **Senza scatola.** I cinque numeri erano dentro un riquadro con
+        fondo e bordo, dentro un'altra card con fondo e bordo: due cornici
+        annidate per cinque cifre. Adesso li separa una sola linea sopra, e le
+        colonne restano divise dai loro filetti. Il rosso delle quote in
+        conflitto resta un bordo pieno, perché lì **deve** gridare. */}
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', padding: '9px 0 1px',
+      ...(p.quoteIncoerenti
+        ? { border: `1px solid ${alpha(C.rosso, 0.45)}`, background: alpha(C.rosso, 0.06), borderRadius: 0 }
+        : { borderTop: `1px solid ${alpha(c, 0.22)}` }) }}>
       {/* ⚠️ L'etichetta dice **da quale book** viene la quota (12/10/2026): da
           quando Bet365 ha la precedenza le fonti sono tre e si alternano nella
           stessa lista — Bet365 sul weekend in corso, Codere o la massima sulle
