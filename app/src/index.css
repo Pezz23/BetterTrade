@@ -30,9 +30,17 @@ body {
   color: var(--text);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
-  /* spazio per tab bar fissa in basso */
-  padding-bottom: 70px;
 }
+/* ⚠️⚠️ **Qui c'era `padding-bottom: 70px` "per la tab bar fissa", e non era
+   solo un numero scritto a mano accanto a `--barra-bassa`: era lo spazio
+   contato DUE VOLTE.** Lo riserva già il contenitore della pagina in
+   `App.jsx` (`paddingBottom: var(--barra-bassa)`), che è il posto giusto —
+   la tab bar sta dentro quell'albero, e la pagina di login, che non ce l'ha,
+   sta fuori e non deve lasciare spazio a niente.
+   ⚠️ E faceva un danno visibile: il contenitore è alto `100vh`, quindi con
+   70px di riempimento sotto il `body` **la pagina era sempre 70px più alta
+   della finestra** — una barra di scorrimento che compariva anche su una
+   schermata vuota. */
 input, button, select, textarea { font-family: var(--sans); }
 
 /* ⚠️ **Il contorno del fuoco: prima non c'era nessuno stile e si vedeva
