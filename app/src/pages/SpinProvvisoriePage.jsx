@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { usaProssime } from '../hooks/usaProssime'
-import { C, F, alpha, S } from '../theme'
+import { C, F, alpha, S, R } from '../theme'
 import Icona from '../components/Icona'
 import { Card, Etichetta, Btn } from '../components/ui'
 import { CATEGORIE, pct, giorno } from '../components/RigaPartita'
@@ -98,13 +98,13 @@ function Griglia({ titolo, colore, celle, riferimento, votiDi, indice, piena, on
         <span style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
           {onPerQuota && (
             <button onClick={onPerQuota} style={{
-              background: alpha(C.oro, 0.1), border: `1px solid ${alpha(C.oro, 0.35)}`, borderRadius: 20, color: C.oro,
+              background: alpha(C.oro, 0.1), border: `1px solid ${alpha(C.oro, 0.35)}`, borderRadius: R.pastiglia, color: C.oro,
               fontSize: S.minuta, fontFamily: F.sans, padding: '3px 9px', cursor: 'pointer',
             }}>compila per quota</button>
           )}
           {onRipristina && (
             <button onClick={onRipristina} style={{
-              background: 'transparent', border: `1px solid ${C.bordo}`, borderRadius: 20, color: C.spento,
+              background: 'transparent', border: `1px solid ${C.bordo}`, borderRadius: R.pastiglia, color: C.spento,
               fontSize: S.minuta, fontFamily: F.sans, padding: '3px 9px', cursor: 'pointer',
             }}>↺ riparti dalle votate</button>
           )}

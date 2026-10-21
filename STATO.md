@@ -3,7 +3,7 @@
 > To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 21 ottobre 2026 (notte) · app alla versione **1.37.00**
+**Ultimo aggiornamento:** 21 ottobre 2026 (notte) · app alla versione **1.37.01**
 
 ## ▶️ IL RESTYLING È COMINCIATO — leggi questo per primo
 
@@ -72,6 +72,53 @@ spaziature**, cioè la voce qui sotto, e va fatta guardando lo schermo.
 3. **La decisione sulle spaziature** (vedi sotto): è sua, e si prende guardando.
 4. ⚠️ **Il collaudo di Road to weekend dal browser resta aperto**: è la prima
    cosa da fare in una sessione che tocchi la scalata.
+
+### 🔧 Il tagliando del 21/10/2026 (sera), dopo il restyling
+
+**Quello che è risultato pulito**, misurato e non supposto:
+
+| | |
+|---|---|
+| export morti | **zero**. ⚠️ Due sembravano tali (`componiPasso`, `simula`) ma li usa `btscout/scripts/prova-scalata.js`: è la regola del repo — `app/src/lib/` è **condiviso col motore**, e un controllo che guarda solo `app/` lo dichiara morto per sbaglio |
+| dipendenze | 3 a runtime (`react`, `react-dom`, `supabase-js`), tutte usate, **0 vulnerabilità** |
+| icone | 26 disegnate, **26 usate** |
+| token | colori 33/33 · caratteri 12/12 · spaziature 8/8 |
+| richieste al database | una sessione di 6 spostamenti = **16 richieste**. ⚠️ Tornando su Partite la seconda volta: **0** — la memoria di modulo funziona davvero |
+| lint | 0 errori · gli 8 avvisi sono quelli voluti di sempre |
+| larghezze | nessuno sbordo da 320 a 1280 · nessun errore dal browser |
+
+**Quello che è stato corretto:**
+- **la traccia della barra era scritta due volte** (`alpha(C.bianco, .12)` in due
+  file) → token `C.traccia`. Due copie della stessa cosa prima o poi divergono,
+  ed è il difetto di famiglia di questo progetto.
+- **12 pastiglie avevano raggio 20 invece di `R.pastiglia`**, contro una regola
+  già scritta qui dentro: 20 è tondo **finché l'elemento resta basso**, poi
+  torna a essere uno spigolo arrotondato. Nessun cambiamento visibile oggi, ma
+  non è più una bomba a orologeria.
+
+### ⚠️⚠️ La decisione aperta numero 2: la scala dei raggi è una finzione
+
+Contati: **94 raggi scritti a mano, 14 valori diversi**, e `R` ne descrive
+**23 su 94**. I due più usati non ci sono proprio:
+
+| raggio | volte | |
+|---|---|---|
+| **8** | 22 | ⚠️ fuori scala |
+| **7** | 20 | ⚠️ fuori scala |
+| 6 | 13 | `R.m` |
+| 20 | 12 | ✅ ora `R.pastiglia` |
+| 12 | 7 | ⚠️ fuori scala |
+
+⚠️⚠️ **E il punto non è che mancano dei passi: è che 7 e 8 sono lo stesso
+raggio.** All'occhio non si distinguono, e sono usati **42 volte** senza che
+nessuno abbia mai scelto quale dei due. Aggiungerli tutti e due alla scala
+vorrebbe dire **mettere per iscritto una distinzione che non esiste** — è il
+motivo per cui qui NON ho fatto quello che ho fatto con `SP.ml`, dove il 12 era
+un passo vero.
+**La cura è unificarli su un valore solo**, ed è un cambio da un pixel: va bene
+farlo, ma è una decisione di Mattia come quella sulle spaziature, e si prende
+guardando lo schermo. ⚠️ Nota a margine: `R.xl` (14) non lo usa **nessuno**,
+mentre il 14 è scritto a mano una volta.
 
 ### ⚠️ La decisione aperta: la scala delle spaziature
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabase'
-import { C, F, alpha, S } from '../theme'
+import { C, F, alpha, S, R } from '../theme'
 import Icona from '../components/Icona'
 import { Card, Etichetta, Attesa } from '../components/ui'
 import { CATEGORIE, pct, giorno } from '../components/TestataPartita'
@@ -149,7 +149,7 @@ export default function StoricoPage() {
         <Card style={{ padding: '10px 14px' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {perCampionato.map(([div, n]) => (
-              <span key={div} style={{ fontSize: S.base, fontFamily: F.mono, padding: '4px 10px', borderRadius: 20, background: alpha(C.bluPieno, 0.1), color: C.blu }}>
+              <span key={div} style={{ fontSize: S.base, fontFamily: F.mono, padding: '4px 10px', borderRadius: R.pastiglia, background: alpha(C.bluPieno, 0.1), color: C.blu }}>
                 {sigla(div)} <b style={{ color: C.testo }}>{n}</b>
               </span>
             ))}

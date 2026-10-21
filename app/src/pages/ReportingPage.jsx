@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../supabase'
 import { aggiornaBankroll } from '../lib/bankroll'
-import { C, F, alpha, S } from '../theme'
+import { C, F, alpha, S, R } from '../theme'
 import { stileCard } from '../components/ui'
 
 const SPIN_LABELS = ['Spin 1','Spin 2','Spin 3','Spin 4']
@@ -265,7 +265,7 @@ export default function ReportingPage() {
           {STAGIONI.map(s=><option key={s} value={s}>{s}</option>)}
         </select>
         {stagione!==stagioneCorrente && (
-          <span style={{fontSize:S.minuta,color:C.ambra,background:alpha(C.ambra,0.10),border:`1px solid ${alpha(C.ambra,0.20)}`,borderRadius:20,padding:'3px 10px',fontFamily:F.sans}}>
+          <span style={{fontSize:S.minuta,color:C.ambra,background:alpha(C.ambra,0.10),border:`1px solid ${alpha(C.ambra,0.20)}`,borderRadius:R.pastiglia,padding:'3px 10px',fontFamily:F.sans}}>
             Sola lettura
           </span>
         )}

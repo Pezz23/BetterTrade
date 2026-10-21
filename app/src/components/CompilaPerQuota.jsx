@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { C, F, alpha, S } from '../theme'
+import { C, F, alpha, S, R } from '../theme'
 import { Etichetta } from './ui'
 import { tocco } from '../lib/schermo'
 
@@ -49,7 +49,7 @@ export default function CompilaPerQuota({ partite, daRiempire, usate = [], onCom
               style={{ width: 80, background: C.pozzo, border: `1px solid ${minimo === null ? C.rosso : C.bordo}`, borderRadius: 7, padding: '8px 10px', color: C.testo, fontSize: S.titolo, fontFamily: F.mono, outline: 'none' }} />
             {['1,30', '1,40', '1,50', '1,70'].map(v => (
               <button key={v} onClick={() => setTesto(v)} style={{
-                padding: '6px 10px', borderRadius: 20, cursor: 'pointer', fontFamily: F.mono, fontSize: S.base,
+                padding: '6px 10px', borderRadius: R.pastiglia, cursor: 'pointer', fontFamily: F.mono, fontSize: S.base,
                 background: testo === v ? alpha(C.oro, 0.15) : 'transparent',
                 border: `1px solid ${testo === v ? alpha(C.oro, 0.5) : C.bordo}`, color: testo === v ? C.oro : C.fioco,
               }}>{v}</button>

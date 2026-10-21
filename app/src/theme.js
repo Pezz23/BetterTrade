@@ -100,6 +100,13 @@ export const C = {
   // Tinte usate solo come sfondo trasparente. Sono più sature delle
   // corrispondenti piene qui sopra: servono a colorare un fondo senza
   // schiarirlo, e vanno tenute distinte o l'aspetto cambia.
+  // ⚠️ La traccia di una barra di avanzamento **non è un colore di superficie,
+  // è "un po' più chiara di quello che c'è sotto"**: scritta come token fisso
+  // (`attiva`) è sparita il 21/10/2026 appena le righe hanno preso quel fondo
+  // — 1,00:1, invisibile. Sta qui perché era scritta in due punti, e due copie
+  // della stessa cosa prima o poi divergono.
+  traccia:       'rgba(255,255,255,0.12)',
+
   bluPieno:      '#3D8BFF',
   giallo:        '#E0B020',
   celestePieno:  '#38BDF8',

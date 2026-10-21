@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { C, F, alpha, S } from '../theme'
+import { C, F, alpha, S, R } from '../theme'
 import Icona from './Icona'
 import { Etichetta, Attesa } from './ui'
 import { usaForma } from '../hooks/usaForma'
@@ -126,8 +126,8 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
             {onChiudi && (
               <button onClick={onChiudi} style={{ background: 'transparent', border: 'none', color: C.spento, fontSize: S.titolo, cursor: 'pointer', padding: '0 4px 0 0', fontFamily: F.sans }}>‹</button>
             )}
-            <span style={{ fontSize: S.minuta, fontWeight: 700, fontFamily: F.sans, padding: '3px 9px', borderRadius: 20, background: alpha(C.bluPieno, 0.12), color: C.blu }}>{sigla(p.div)}</span>
-            {cat !== 'no' && <span style={{ fontSize: S.minuta, fontWeight: 700, fontFamily: F.sans, padding: '3px 9px', borderRadius: 20, background: alpha(c.colore, 0.15), color: c.colore, textTransform: 'uppercase' }}>{c.nome}</span>}
+            <span style={{ fontSize: S.minuta, fontWeight: 700, fontFamily: F.sans, padding: '3px 9px', borderRadius: R.pastiglia, background: alpha(C.bluPieno, 0.12), color: C.blu }}>{sigla(p.div)}</span>
+            {cat !== 'no' && <span style={{ fontSize: S.minuta, fontWeight: 700, fontFamily: F.sans, padding: '3px 9px', borderRadius: R.pastiglia, background: alpha(c.colore, 0.15), color: c.colore, textTransform: 'uppercase' }}>{c.nome}</span>}
           </div>
           <Stella voti={voti} mio={mio} puoVotare={puoVotare} onVota={onVota} />
         </div>
@@ -472,7 +472,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
                 <div style={{ marginBottom: 10 }}>
                   {/* stessa traccia della barra della giocata: schiarita, non un
                       token di superficie, così non sparisce se cambia il fondo */}
-                  <div style={{ display: 'flex', height: 8, borderRadius: 8, overflow: 'hidden', background: alpha(C.bianco, 0.12) }}>
+                  <div style={{ display: 'flex', height: 8, borderRadius: 8, overflow: 'hidden', background: C.traccia }}>
                     {[[vCasa, C.verde], [pari, C.giallo], [vTrasferta, C.rosso]].map(([n, col], i) =>
                       n > 0 && <div key={i} style={{ width: `${100 * n / tot}%`, background: col }} />)}
                   </div>

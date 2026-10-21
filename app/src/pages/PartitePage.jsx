@@ -36,7 +36,7 @@ const pillola = (on, colore = C.oro) => ({
   border: `1px solid ${on ? alpha(colore, 0.5) : 'transparent'}`,
   color: on ? colore : C.spento,
 })
-const campo = { padding: '6px 10px', borderRadius: 20, background: C.pozzo, border: `1px solid ${C.bordo}`, color: C.testo, fontFamily: F.mono, fontSize: S.base, outline: 'none', width: 74 }
+const campo = { padding: '6px 10px', borderRadius: R.pastiglia, background: C.pozzo, border: `1px solid ${C.bordo}`, color: C.testo, fontFamily: F.mono, fontSize: S.base, outline: 'none', width: 74 }
 
 export default function PartitePage() {
   const { isAdmin } = useAuth()

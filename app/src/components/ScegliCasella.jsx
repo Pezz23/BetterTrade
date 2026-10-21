@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { C, F, alpha, S } from '../theme'
+import { C, F, alpha, S, R } from '../theme'
 import { giorno, CATEGORIE } from './TestataPartita'
 import { categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
 import { pronosticoDa } from '../lib/spin'
@@ -68,7 +68,7 @@ export default function ScegliCasella({ pos, partite, votiDi, usate = [], altrov
               const on = filtro === f.id
               return (
                 <button key={f.id} onClick={() => setFiltro(f.id)} style={{
-                  padding: '5px 10px', borderRadius: 20, cursor: 'pointer', fontFamily: F.mono, fontSize: S.base, fontWeight: 600,
+                  padding: '5px 10px', borderRadius: R.pastiglia, cursor: 'pointer', fontFamily: F.mono, fontSize: S.base, fontWeight: 600,
                   background: on ? alpha(f.colore, 0.16) : 'transparent',
                   border: `1px solid ${on ? alpha(f.colore, 0.5) : C.bordo}`, color: on ? f.colore : C.fioco,
                 }}>{f.label} <span style={{ color: on ? C.testo : C.spento }}>{conta(f.id)}</span></button>

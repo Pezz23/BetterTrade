@@ -2270,6 +2270,21 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   375px. ⚠️ I nomi delle squadre restano in `clamp()`, perché devono
   restringersi invece di andare a capo. ⚠️ Le **spaziature** non sono ancora in
   scala: `padding` e `gap` sono numeri a mano.
+- ⚠️ **La traccia di una barra di avanzamento è `C.traccia`**, cioè *"un po'
+  più chiara di quello che c'è sotto"*, **non** un token di superficie. Scritta
+  come colore fisso è sparita appena le righe hanno preso quel fondo (1,00:1),
+  e la cura non è rimettere un bordo: è un colore che si schiarisce su
+  qualunque fondo. ⚠️ Era scritta in **due** file — due copie divergono.
+- ⚠️ **Una pastiglia è `R.pastiglia` (999), mai 20**: 20 è tondo finché
+  l'elemento resta basso, poi torna a essere uno spigolo arrotondato. Dodici
+  punti lo facevano ancora, ed è stato corretto nel tagliando del 21/10/2026.
+  ⚠️ **`R` descrive 23 raggi su 94**, e i due più usati — 7 (×20) e 8 (×22) —
+  non ci sono: all'occhio sono lo stesso raggio, scelto a caso 42 volte.
+  **Unificarli è una decisione aperta**, non una pulizia da fare di slancio.
+- ⚠️ **Un controllo del codice morto che guarda solo `app/` sbaglia.**
+  `componiPasso` e `simula` in `lib/scalata.js` sembrano senza usi e li chiama
+  `btscout/scripts/prova-scalata.js`: `app/src/lib/` è **condiviso col
+  motore**, ed è scritto in cima a questo file. Si cerca in tutto il repo.
 - ⚠️⚠️ **Le superfici sono una SCALA, e una card si vede perché è più chiara,
   non perché è cerchiata** (21/10/2026). Prima `card #14171B` su
   `fondo #0B0D10` faceva **1,08:1**, cioè niente: l'unica cosa che separava un

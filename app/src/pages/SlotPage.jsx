@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../supabase'
-import { C, F, alpha, TIPO, S } from '../theme'
+import { C, F, alpha, TIPO, S, R } from '../theme'
 import Icona from '../components/Icona'
 import { stileCard } from '../components/ui'
 import { DISPOSIZIONE, cellaDa } from '../lib/spin'
@@ -236,7 +236,7 @@ function SlotVisiva({tiles}) {
           pagina sotto le dita. */}
       <div style={{marginTop:14,minHeight:22,display:'flex',flexWrap:'wrap',gap:6,justifyContent:'center'}}>
         {winCombos.map(c=>(
-          <div key={c.id} style={{fontSize:S.minuta,fontWeight:600,padding:'3px 10px',borderRadius:20,background:TIPO_BG[c.tipo],color:TIPO_COLOR[c.tipo],border:`1px solid ${alpha(TIPO_COLOR[c.tipo],0.33)}`,fontFamily:F.sans,boxShadow:`0 0 8px ${alpha(TIPO_COLOR[c.tipo],0.27)}`}}>
+          <div key={c.id} style={{fontSize:S.minuta,fontWeight:600,padding:'3px 10px',borderRadius:R.pastiglia,background:TIPO_BG[c.tipo],color:TIPO_COLOR[c.tipo],border:`1px solid ${alpha(TIPO_COLOR[c.tipo],0.33)}`,fontFamily:F.sans,boxShadow:`0 0 8px ${alpha(TIPO_COLOR[c.tipo],0.27)}`}}>
             ✓ {c.nome}
           </div>
         ))}
@@ -300,11 +300,11 @@ function Schedine({tiles,isAdmin,sched,isWip,spinIdx}) {
           <div key={c.id} style={{background:isW?alpha(C.verde,0.06):isL?alpha(C.rosso,0.06):C.card,border:`1px solid ${isW?alpha(C.verde,0.25):isL?alpha(C.rosso,0.25):C.bordo}`,borderRadius:12,padding:'12px 14px',opacity:ins?0.75:1}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
               <div style={{display:'flex',alignItems:'center',gap:8}}>
-                <span style={{fontSize:S.minuta,fontWeight:700,padding:'2px 8px',borderRadius:20,background:TIPO_BG[c.tipo],color:TIPO_COLOR[c.tipo],fontFamily:F.sans}}>{c.tipo.toUpperCase()}</span>
+                <span style={{fontSize:S.minuta,fontWeight:700,padding:'2px 8px',borderRadius:R.pastiglia,background:TIPO_BG[c.tipo],color:TIPO_COLOR[c.tipo],fontFamily:F.sans}}>{c.tipo.toUpperCase()}</span>
                 <span style={{fontSize:S.media,fontWeight:600,color:C.testo,fontFamily:F.sans}}>{c.nome}</span>
               </div>
               <div style={{display:'flex',alignItems:'center',gap:8}}>
-                {isWip?<span style={{fontSize:S.corpo,color:C.ambra,background:alpha(C.ambra,0.1),border:`1px solid ${alpha(C.ambra,0.2)}`,borderRadius:20,padding:'2px 10px',fontFamily:F.sans}}>WIP</span>
+                {isWip?<span style={{fontSize:S.corpo,color:C.ambra,background:alpha(C.ambra,0.1),border:`1px solid ${alpha(C.ambra,0.2)}`,borderRadius:R.pastiglia,padding:'2px 10px',fontFamily:F.sans}}>WIP</span>
                 :<span style={{fontSize:S.titolo,fontWeight:700,color:TIPO_COLOR[c.tipo],fontFamily:F.mono}}>€{punt}</span>}
                 {isAdmin&&<button onClick={()=>toggle(c.id)} style={{fontSize:S.base,padding:'4px 10px',borderRadius:6,cursor:'pointer',fontFamily:F.sans,border:`1px solid ${ins?alpha(C.verde,0.3):C.bordo}`,background:ins?alpha(C.verde,0.12):'transparent',color:ins?C.verde:C.spento}}>{ins?'✓ Inserita':'Inserisci'}</button>}
                 {!isAdmin&&ins&&<span style={{fontSize:S.base,color:C.verde}}>✓ Inserita</span>}

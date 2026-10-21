@@ -145,7 +145,7 @@ export function Posizione({ nome, colore, posto, compatta = false, style }) {
  * un cambio di superficie.
  */
 export const Barra = ({ frazione, colore, altezza = 6 }) => (
-  <div style={{ height: altezza, borderRadius: altezza, background: alpha(C.bianco, 0.12), overflow: 'hidden' }}>
+  <div style={{ height: altezza, borderRadius: altezza, background: C.traccia, overflow: 'hidden' }}>
     <div style={{ width: `${Math.max(0, Math.min(1, frazione)) * 100}%`, height: '100%', background: colore, borderRadius: altezza }} />
   </div>
 )
