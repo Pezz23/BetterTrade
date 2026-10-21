@@ -28,7 +28,46 @@ Pomelli:
 ```bash
 node --env-file=.env scripts/guarda.mjs scalata partite   # solo due pagine
 node --env-file=.env scripts/guarda.mjs --largo           # anche a 1280px
+node --env-file=.env scripts/guarda.mjs --larghezze=320,430,768   # le larghezze che vuoi
+node --env-file=.env scripts/guarda.mjs --intera          # senza il taglio a 2600px
 ```
+
+## Le tre schermate che non si raggiungono da un tasto
+
+Aggiunte il 21/10/2026, e ognuna era un buco: **si restyla quello che si
+vede**, e queste non si vedevano mai.
+
+| | |
+|---|---|
+| `login` | si scatta **prima** di entrare. È la prima cosa che vede chi apre l'app, e lo strumento la attraversava senza guardarla |
+| `scheda` | la partita aperta: lo script va su Partite e tocca la prima riga |
+| `menu` | il pannello ☰ aperto — otto voci, un terzo dello schermo — che prima si apriva solo per attraversarlo |
+
+⚠️⚠️ **La scheda NON si fotografa con `fullPage`**, ed è una trappola che mi
+ha fregato per un giro: è un foglio `position: fixed` con uno scorrimento suo
+(`SchedaScorrevole`), quindi una pagina intera cattura **la lista che sta
+sotto** — e la foto sembra giusta. Si scatta quello che si vede e si scorre il
+foglio, come farebbe un dito: `scheda-1.png`, `scheda-2.png`… che per di più
+si leggono meglio di una striscia da cinquemila pixel.
+
+⚠️ Il menu **non si chiude da solo e non ha Escape**: lo chiude il suo tasto.
+Senza richiuderlo, la voce dopo trova il pannello davanti e il clic va in
+timeout dopo trenta secondi.
+
+## ⚠️⚠️ Lo sbordo si MISURA, non si guarda
+
+Lo script confronta `scrollWidth` con la finestra e dice **quante pagine
+escono e di quanti pixel**:
+
+```
+✅ andamento-320  ⚠️ esce di 2px
+```
+
+Controllare a occhio dodici pagine per quattro larghezze vuol dire guardare
+quarantotto immagini e fidarsi di non aver saltato la riga che esce di sei
+pixel. Il browser invece lo sa esattamente. È così che il 21/10 è saltato fuori
+l'unico sbordo rimasto — **2px a 320px**, due tasti da 159,8px più 6 di spazio
+— che nessuna foto avrebbe fatto notare.
 
 ## Cosa serve
 
@@ -57,7 +96,15 @@ node --env-file=.env scripts/guarda.mjs --largo           # anche a 1280px
 - ⚠️ L'attesa fra un clic e la foto è **fissa (1,2 s)** e non `networkidle`:
   l'app continua a parlare col database, quindi "rete ferma" non arriva mai.
 - ⚠️ `fullPage: true`: si fotografa la pagina **intera**, non la finestra — il
-  difetto sta quasi sempre sotto la piega.
+  difetto sta quasi sempre sotto la piega. **Tranne la scheda**, vedi sopra.
+- ⚠️ Una pagina lunga, ridotta per starci in uno schermo, **non si legge**:
+  Partite fa 28.758px. Si taglia a 2600, e per guardare un dettaglio si
+  **ritaglia il PNG** (`sips -c <alta> <larga> --cropOffset <y> 0 …`) invece di
+  aprire l'immagine intera.
+- ⚠️ **Il login di Supabase ha un limite di tentativi**: un giro per ogni
+  modifica, in pochi minuti, se lo prende. Se la pagina esce **vuota** o
+  l'attesa del tasto Dashboard va in timeout, non è il codice — si raggruppano
+  le pagine in un giro solo e si riprova.
 - ⚠️ Le schermate **non si versionano** (`.schermate/` è in `.gitignore`):
   sono materiale di lavoro, e un PNG per pagina per lotto gonfierebbe il repo.
 

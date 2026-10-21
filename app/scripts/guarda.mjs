@@ -26,11 +26,19 @@ const DOVE = '.schermate'
 // scorciatoie di Andamento). Si fotografa lì, non su un desktop comodo.
 const TELEFONO = { width: 375, height: 812 }
 const LARGO = { width: 1280, height: 900 }
+// ⚠️ Le larghezze di prova si scelgono da riga di comando
+// (`--larghezze=375,430,768`). 375 resta quella di partenza perché è lo
+// schermo stretto su cui questo progetto ha già rotto due layout.
+const altezzaPer = w => (w >= 1024 ? 900 : w >= 700 ? 1024 : 812)
 
 // ⚠️ **Le pagine si raggiungono CLICCANDO, non con un indirizzo**: l'app tiene
 // la pagina corrente in uno stato di React e non ha rotte (è il lotto Q di
 // STATO.md, mai fatto). Quindi qui ogni voce dice *da dove* si passa.
 const PAGINE = [
+  // ⚠️ Il login si fotografa **prima** di entrare, ed è l'unica schermata che
+  // lo strumento attraversava senza guardarla: è anche la prima cosa che vede
+  // chi apre l'app.
+  { id: 'login',     via: 'prima' },
   { id: 'dashboard', via: 'tab',  testo: 'Dashboard' },
   { id: 'slot',      via: 'tab',  testo: 'Slot' },
   { id: 'spin',      via: 'tab',  testo: 'Spin',             admin: true },
@@ -42,10 +50,20 @@ const PAGINE = [
   { id: 'bilancio',  via: 'menu', testo: 'Bilancio' },
   { id: 'scalata',   via: 'menu', testo: 'Road to weekend',  admin: true },
   { id: 'utenti',    via: 'menu', testo: 'Utenti',           admin: true },
+  // ⚠️ La scheda di una partita è **la schermata più densa dell'app** — tre
+  // livelli, dieci celle a fasce, il blocco VPM — e non si raggiunge da nessun
+  // tasto: si apre toccando una riga. Senza questa voce era l'unica cosa che
+  // continuava a svilupparsi alla cieca.
+  { id: 'scheda',    via: 'partita' },
+  // ⚠️ Il menu è una **superficie come le altre** — otto voci, un terzo dello
+  // schermo — e fino al 21/10/2026 non si fotografava mai: si apriva solo per
+  // attraversarlo. Si restyla quello che si vede.
+  { id: 'menu',      via: 'aperto' },
 ]
 
 const arg = process.argv.slice(2)
 const largo = arg.includes('--largo')
+const chiesteLarghezze = (arg.find(a => a.startsWith('--larghezze=')) || '').split('=')[1]
 const intera = arg.includes('--intera')
 // ⚠️ 2600 px: poco più di tre schermate di telefono in fila.
 const MAX_ALTEZZA = 2600
@@ -71,8 +89,20 @@ mkdirSync(DOVE, { recursive: true })
 const browser = await chromium.launch({ channel: 'chromium' })
 const errori = []
 
-for (const vista of largo ? [TELEFONO, LARGO] : [TELEFONO]) {
-  const suffisso = vista === LARGO ? '-largo' : ''
+const viste = chiesteLarghezze
+  ? chiesteLarghezze.split(',').map(n => ({ width: +n, height: altezzaPer(+n) }))
+  : largo ? [TELEFONO, LARGO] : [TELEFONO]
+
+// ⚠️⚠️ **Lo sbordo si MISURA, non si guarda.** Controllare a occhio dodici
+// pagine per quattro larghezze vuol dire guardare quarantotto immagini e
+// fidarsi di non aver saltato la riga che esce di sei pixel. Il browser invece
+// sa esattamente quanto è largo il contenuto: se supera la finestra, c'è uno
+// scorrimento orizzontale — che su un telefono è il difetto più fastidioso e
+// il più facile da non notare in una schermata ferma.
+const sbordi = []
+
+for (const vista of viste) {
+  const suffisso = vista === LARGO ? '-largo' : (viste.length > 1 && vista.width !== TELEFONO.width ? `-${vista.width}` : '')
   const ctx = await browser.newContext({ viewport: vista, deviceScaleFactor: 2 })
   const pagina = await ctx.newPage()
   // ⚠️ Gli errori del browser si raccolgono: una pagina può *sembrare* a posto
@@ -81,18 +111,59 @@ for (const vista of largo ? [TELEFONO, LARGO] : [TELEFONO]) {
   pagina.on('console', m => { if (m.type() === 'error') errori.push(m.text()) })
 
   await pagina.goto(URL, { waitUntil: 'domcontentloaded' })
+  if (pagine.some(p => p.via === 'prima')) {
+    await pagina.waitForTimeout(1200)
+    await pagina.screenshot({ path: `${DOVE}/login${suffisso}.png`, fullPage: true })
+    console.log(`  ✅ login${suffisso}`)
+  }
   await pagina.getByPlaceholder('Il tuo username').fill(utente)
   await pagina.getByPlaceholder('••••••••').fill(pw)
   await pagina.getByRole('button', { name: 'Accedi' }).click()
   await pagina.getByRole('button', { name: 'Dashboard' }).waitFor({ timeout: 15000 })
 
   for (const p of pagine) {
+    if (p.via === 'prima') continue   // già fatta sopra, prima di entrare
     try {
-      if (p.via === 'tab') {
-        // ⚠️ **Senza `exact`**: il nome accessibile del tasto comprende
-        // l'icona — è `◈ Dashboard`, non `Dashboard` — quindi un confronto
-        // esatto non combacia mai e la pagina non viene mai fotografata.
-        // Costava 30 secondi di attesa a vuoto per ognuna delle quattro.
+      if (p.via === 'partita') {
+        await pagina.getByRole('button', { name: 'Partite' }).first().click()
+        await pagina.waitForTimeout(1500)
+        // la prima riga della lista: l'unico `role=button` che contiene la
+        // parola della giocata
+        await pagina.locator('[role="button"]').filter({ hasText: /giocata/i }).first().click()
+        await pagina.waitForTimeout(1500)
+        // ⚠️⚠️ **La scheda non si fotografa con `fullPage`**: è un foglio
+        // `position: fixed` con uno scorrimento suo (`SchedaScorrevole`),
+        // quindi una pagina intera cattura **la lista che sta sotto** — ci ho
+        // creduto per un giro, guardando una foto che sembrava giusta.
+        // Si scatta quello che si vede e si scorre il foglio, come farebbe un
+        // dito: più schermate numerate, che per di più si leggono meglio di
+        // una striscia lunga cinquemila pixel.
+        const foglio = pagina.locator('.scheda-entra')
+        for (let n = 1; n <= 6; n++) {
+          await pagina.screenshot({ path: `${DOVE}/${p.id}-${n}${suffisso}.png` })
+          const avanti = await foglio.evaluate((e, h) => {
+            const prima = e.scrollTop
+            e.scrollTop += h - 60   // una schermata meno un dito di sovrapposizione
+            return e.scrollTop > prima
+          }, vista.height)
+          await pagina.waitForTimeout(400)
+          if (!avanti) break
+        }
+        // si richiude, o la pagina dopo verrebbe scattata con il foglio davanti
+        await pagina.keyboard.press('Escape').catch(() => {})
+        console.log(`  ✅ ${p.id}${suffisso}`)
+        continue
+      } else if (p.via === 'aperto') {
+        // il menu si fotografa aperto e poi si richiude, o la pagina dopo
+        // verrebbe scattata con il pannello ancora davanti
+        await pagina.locator('.icona-menu').click()
+      } else if (p.via === 'tab') {
+        // ⚠️ **Senza `exact`**: finché le icone erano caratteri il nome
+        // accessibile del tasto era `◈ Dashboard` e un confronto esatto non
+        // combaciava mai — trenta secondi di attesa a vuoto per ognuna delle
+        // quattro. Ora le icone sono SVG con `aria-hidden`, quindi il nome è
+        // pulito, ma il confronto largo resta: costa niente e regge il
+        // prossimo cambio di etichetta.
         await pagina.getByRole('button', { name: p.testo }).first().click()
       } else {
         await pagina.locator('.icona-menu').click()
@@ -116,7 +187,16 @@ for (const vista of largo ? [TELEFONO, LARGO] : [TELEFONO]) {
           clip: { x: 0, y: 0, width: vista.width, height: MAX_ALTEZZA },
         }),
       })
-      console.log(`  ✅ ${p.id}${suffisso}`)
+      // ⚠️ Il menu non si chiude da sé e **non ha un tasto Escape**: lo chiude
+      // il suo sfondo. Senza questo, la voce successiva trovava il pannello
+      // davanti e il clic andava in timeout dopo trenta secondi.
+      if (p.via === 'aperto') {
+        await pagina.locator('.icona-menu').click().catch(() => {})
+        await pagina.waitForTimeout(300)
+      }
+      const fuori = await pagina.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+      if (fuori > 1) sbordi.push(`${p.id} a ${vista.width}px esce di ${fuori}px`)
+      console.log(`  ✅ ${p.id}${suffisso}${fuori > 1 ? `  ⚠️ esce di ${fuori}px` : ''}`)
     } catch (e) {
       console.log(`  ❌ ${p.id}${suffisso}: ${String(e).split('\n')[0].slice(0, 90)}`)
     }
@@ -126,6 +206,12 @@ for (const vista of largo ? [TELEFONO, LARGO] : [TELEFONO]) {
 await browser.close()
 
 console.log(`\nSchermate in app/${DOVE}/`)
+if (sbordi.length) {
+  console.log(`\n⚠️ ${sbordi.length} pagine escono dallo schermo:`)
+  for (const r of sbordi) console.log('   ' + r)
+} else {
+  console.log('Nessuna pagina esce dallo schermo.')
+}
 if (errori.length) {
   console.log(`\n⚠️ ${errori.length} errori dal browser:`)
   for (const e of [...new Set(errori)].slice(0, 10)) console.log('   ' + e.slice(0, 160))
