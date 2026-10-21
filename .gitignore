@@ -20,3 +20,6 @@ btscout/.cache/
 
 # Backup del database — contengono password in chiaro, MAI committare
 backup/
+
+# Le schermate di scripts/guarda.mjs: si guardano, non si versionano.
+app/.schermate/
