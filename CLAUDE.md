@@ -2270,6 +2270,28 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   375px. ⚠️ I nomi delle squadre restano in `clamp()`, perché devono
   restringersi invece di andare a capo. ⚠️ Le **spaziature** non sono ancora in
   scala: `padding` e `gap` sono numeri a mano.
+- ⚠️⚠️ **Nell'interfaccia non si scrivono emoji: i segni vengono da
+  `components/Icona.jsx`** (21/10/2026). Due motivi, il secondo è un difetto
+  vero: **un'emoji non obbedisce al colore del testo** — nella tab bar
+  convivevano due glifi (`◈` `⊞`) e due emoji (`🎰` `⚽`), e le seconde
+  restavano a colori pieni anche da spente, quindi **due tasti su quattro
+  sembravano accesi quando non lo erano**, cioè l'unico segnale di "dove sono"
+  non funzionava su metà della barra. E **un'emoji la disegna il sistema
+  operativo**, quindi la stessa schermata ha tre aspetti su tre telefoni.
+  Il set: riquadro 24×24, **solo contorno**, spessore 1,6, `currentColor`,
+  `aria-hidden`. Una icona nuova si aggiunge lì, non nel JSX.
+  ⚠️ `pieno` esiste **per una sola icona**, la stella del voto, che deve
+  distinguere votata da non votata come facevano `★` e `☆`.
+  ⚠️ Restano i **glifi monocromatici** (`✓ ✗ ✕ ⚙ ·`): obbediscono al colore e
+  non sono emoji. Le emoji nei **commenti** e in questo file non c'entrano.
+- ⚠️ **Header, contenuto e tab bar stanno nella stessa colonna** (`COLONNA`,
+  720px, in `App.jsx`). Il contenuto era già incolonnato, header e tab bar no:
+  su un portatile il nome dell'utente finiva all'estremo destro, il logo
+  all'estremo sinistro e la pagina in mezzo — **tre allineamenti diversi** — e
+  i quattro tasti erano larghi 320px l'uno. Su telefono non cambia niente.
+- ⚠️ **Il marchio sta dentro `index.html`** come SVG in un `data:`: non esiste
+  una cartella `public/`, quindi senza di lui il browser chiedeva
+  `/favicon.ico` e si prendeva un **404 a ogni caricamento, su ogni pagina**.
 - ⚠️⚠️ **La superficie di un riquadro viene da `stileCard()`** (`ui.jsx`), e
   `Card` è lo stesso stile avvolto in un componente. Si usa il componente nel
   caso normale e lo **stile** quando la superficie è un `<button>`, una
@@ -2365,6 +2387,29 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
 
 ## Trappole già incontrate
 
+- ⚠️⚠️ **`borderColor: undefined` NON vuol dire "lascia il bordo com'è": lo
+  cancella.** React imposta la scorciatoia `border: 1px solid <colore>` e poi
+  la longhand `borderColor`; metterla a `undefined` la **toglie dalla
+  scorciatoia**, e un bordo senza colore cade su `currentColor` — che in
+  quest'app è `C.testo`, cioè **bianco**. In `RigaPartita` il ramo
+  `cat !== 'no' ? alpha(…) : undefined` ha dato per settimane il **bordo
+  bianco a 56 righe su 67**, ed è *quello* il reticolo da gestionale che Mattia
+  vedeva: non l'aveva scelto nessuno e dal codice sembrava giusto. Misurato nel
+  browser (`border-width: 1px; border-style: solid;` e nessun `border-color`),
+  non dedotto. ✅ **Il bordo si scrive intero, con un colore in tutti i rami.**
+  ⚠️ Vale per ogni longhand di una scorciatoia: `background`, `font`, `margin`.
+- ⚠️⚠️ **Il nome di una squadra si misura, e il vincolo è la PAROLA PIÙ LUNGA.**
+  Nella scheda `ASTON VILLA` si spezzava in **quattro righe da due lettere**
+  (`AST / ON / VILL / A`). Misurato: la colonna laterale è **104,5px** e al
+  nome ne restavano **45,6**, perché il resto se lo prendeva la targhetta della
+  posizione. E misurato il carattere: `BOURNEMOUTH` — la parola più lunga delle
+  132 squadre in calendario — occupa **8,774px per ogni px di corpo**, cioè
+  **96,5px già a 11px**. Quindi *nessuna* misura leggibile la fa stare accanto
+  alla targhetta: non era un problema di font-size. ✅ `flexWrap` sul blocco
+  nome+targhetta: la targhetta scende sotto **solo quando serve**, e la regola
+  "targhetta a destra della squadra" vale finché c'è spazio invece di rompersi.
+  ⚠️ **Prima di cambiare un corpo di carattere per far stare un testo, misura
+  quanto occupa quel testo**: il conto dice se la strada è quella giusta.
 - **`onAuthStateChange` non sopporta query al database dentro il callback.**
   supabase-js tiene un lock mentre lo esegue: una `supabase.from()` lì dentro
   blocca la login stessa. Si rimanda con `setTimeout(…, 0)`.
@@ -2643,6 +2688,12 @@ node --env-file=.env scripts/verifica-partite.js   # confronto con la sorgente
 # ⚠️ Questi quattro stanno in app/scripts, NON in btscout: importano src/lib/*
 # con un percorso relativo e da btscout non partono (MODULE_NOT_FOUND). Erano
 # elencati nel blocco sbagliato fino al 15/10/2026.
+node --env-file=.env scripts/guarda.mjs            # GUARDA: apre l'app a 375px e fotografa le 14 schermate
+#   pomelli: --largo (anche 1280) · --larghezze=320,430,768 · --intera · guarda.mjs partite scheda
+#   ⚠️ Fotografa anche **login** (prima di entrare), **scheda** (la partita aperta: foglio
+#      `fixed`, quindi a schermate successive e NON con fullPage) e **menu** aperto.
+#   ⚠️ **Misura lo sbordo**: dice quante pagine escono dallo schermo e di quanti px.
+#      Verificato il 21/10/2026: zero a 320, 375, 430, 768 e 1280.
 node --env-file=.env scripts/prova-vpm.js          # VPM sul weekend: dove campo e mercato litigano
 node --env-file=.env scripts/prova-ordine.js       # i criteri della lista, casi limite compresi
 node --env-file=.env scripts/prova-scheda.js --squadra=Lens    # il blocco VPM della scheda, e l'identità dei pesi

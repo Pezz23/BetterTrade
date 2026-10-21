@@ -151,11 +151,27 @@ export const S = {
  * subito (dove i numeri sono gli stessi di prima, quindi non cambia un pixel) e
  * nelle pagine mentre le si rifà.
  */
+/**
+ * ⚠️⚠️ **Il 12 mancava, ed era il quarto valore più usato dell'app**
+ * (21/10/2026). Contati i numeri scritti a mano in `src/`: `gap` 8×46, 6×23,
+ * 10×18, 4×15 · `marginBottom` 4×23, 8×22, 10×21, **12×20**, 16×16. La scala
+ * era stata ricavata dai `gap`, dove il 12 compare solo 4 volte, e i margini
+ * non erano stati guardati: **una scala che non contiene un valore in uso 24
+ * volte costringe a scriverlo a mano, cioè si scavalca da sola.**
+ *
+ * ⚠️ E qui c'è una critica onesta da tenere in vista: 4-6-8-10-12-14-16 non è
+ * una scala, è *ogni numero pari*. Una scala serve a **ridurre le scelte**, e
+ * questa non lo fa. Stringerla davvero (4-8-12-16-24) vuol dire spostare un
+ * centinaio di punti di qualche pixel ciascuno: è una decisione che si prende
+ * **guardando lo schermo**, non da terminale, ed è di Mattia. Finché non è
+ * presa, questa scala descrive quello che c'è invece di mentire.
+ */
 export const SP = {
   xs:   4,   // fra due cose attaccate
   s:    6,
   m:    8,   // il più usato: fra gli elementi di una riga
   l:   10,
+  ml:  12,   // margini fra blocchi: 24 volte, e non era in scala
   xl:  14,   // il riempimento verticale di una card
   xxl: 16,   // il margine della pagina, il riempimento orizzontale di una card
   sez: 24,   // fra due sezioni

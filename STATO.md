@@ -3,7 +3,7 @@
 > To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 21 ottobre 2026 (sera) · app alla versione **1.31.00**
+**Ultimo aggiornamento:** 21 ottobre 2026 (notte) · app alla versione **1.35.00**
 
 ## ▶️ IL RESTYLING È COMINCIATO — leggi questo per primo
 
@@ -25,32 +25,63 @@ sei correzioni e gli undici lotti, sta in
 
 | # | lotto | stato |
 |---|---|---|
-| 1 | **I token** — palette, `SP`, `R`, pesi di Sora, `:focus-visible` | ✅ **fatto** (`56b274f`) |
-| 2 | La regola del mono — parole in Sora, numeri in mono (262 usi) | da fare |
-| 3 | I pezzi condivisi + gli stati (hover, focus, disabled, loading) | da fare |
-| 4 | La partita — testata, barra, riga (5 schermate) | da fare · **alto rischio** |
-| 5 | La scheda partita — tre livelli, le dieci celle a fasce conservate | da fare · alto |
-| 6 | La cornice — header, menu, tab bar | da fare |
-| 7 | Le pagine dei numeri — Dashboard, Bilancio, Reporting, Storico, Andamento | da fare |
-| 8 | Le pagine dense — Slot, Spin, Road to weekend | da fare · **alto** |
-| 9 | Le minori — Utenti, Importazioni, Login | da fare |
-| 10 | Le icone — emoji → SVG | da fare, per ultimo |
-| 11 | Verifica delle larghezze e dei trabordamenti | **serve Mattia** |
+| 1 | **I token** — palette, `SP`, `R`, pesi di Sora, `:focus-visible` | ✅ `56b274f` |
+| 2 | **La regola del mono** — parole in Sora, numeri in mono | ✅ `cbb2694` |
+| 3 | **I pezzi condivisi + gli stati** (hover, pressione, disabilitato) | ✅ `8e8d99f` |
+| 4 | **La partita** — testata, barra, riga | ✅ 21/10 sera |
+| 5 | **La scheda partita** | ✅ 21/10 sera |
+| 6 | **La cornice** — header, menu, tab bar | ✅ 21/10 sera |
+| 7 | Le pagine dei numeri — Dashboard, Bilancio, Reporting, Storico, Andamento | 🟡 **parziale** |
+| 8 | Le pagine dense — Slot, Spin, Road to weekend | 🟡 **parziale** |
+| 9 | Le minori — Utenti, Importazioni, Login | 🟡 **parziale** |
+| 10 | **Le icone** — emoji → SVG, un set solo | ✅ 21/10 sera |
+| 11 | **Verifica delle larghezze** | ✅ e **non serve più Mattia** |
 
-⚠️ **L'ordine consigliato è 1 → 3 → 2 → 6**: massima resa, rischio minimo. Poi
-4, 5 e 8 uno per volta con una guardata in mezzo.
+⚠️ **7, 8 e 9 sono "parziali" e il motivo conta**: le cure che servivano davvero
+erano **trasversali**, non di pagina — il bordo bianco, le emoji, i grigi
+illeggibili, la cornice — e sono state applicate ovunque in una volta. Guardate
+una per una dopo quelle cure, Dashboard · Bilancio · Reporting · Storico ·
+Andamento · Slot · Spin · Road to weekend · Utenti · Login **si leggono bene e
+non hanno difetti visibili**. Quello che resta per chiuderli è **rifinitura di
+spaziature**, cioè la voce qui sotto, e va fatta guardando lo schermo.
+
+### ⚠️⚠️ Quello che la prima guardata ha trovato, e che nessuna lettura del codice aveva trovato
+
+| difetto | com'era | quanto grande |
+|---|---|---|
+| **il bordo bianco delle righe** | `borderColor: … : undefined` cancella la longhand e il bordo cade su `currentColor` | **56 righe su 67** nella lista: *era* l'effetto gestionale, e non l'aveva scelto nessuno |
+| **ASTON VILLA in quattro righe** | `AST / ON / VILL / A` nella scheda | la colonna è 104,5px e al nome ne restavano **45,6** |
+| **le emoji nella tab bar** | `🎰` e `⚽` non obbediscono al colore | due tasti su quattro sembravano **accesi da spenti** |
+| **ESCI più luminoso del menu** | fondo e bordo d'oro sul gesto più raro | gerarchia al contrario, e stava pure a sinistra del nome |
+| **il 404 su ogni pagina** | niente `public/`, niente `<link rel=icon>` | una richiesta sprecata a ogni caricamento |
+| **`fantasma` su testo da leggere** | 2,27:1, in 17 punti | fra cui il **pronostico** in mezzo alla card |
 
 ### Da dove ripartire adesso
 
-1. ⏳ **Mattia deve mandare due o tre schermate** del lotto 1 (Dashboard, la
-   lista delle partite, una pagina densa). Servono a tre domande che dal
-   terminale non hanno risposta: le etichette ora sono **troppo accese**? i
-   fondi vanno portati un passo più su (`#1A1F26`)? l'oro nuovo regge sui
-   numeri piccoli?
-2. Se si vuole andare avanti senza aspettare: **lotto 3**, che tocca `ui.jsx` e
-   non dipende dal giudizio sulle schermate.
-3. ⚠️ **Il collaudo di Road to weekend dal browser resta aperto**: è la prima
+1. **Mattia guarda l'app** e dice se l'effetto AS/400 è passato. È la sola
+   domanda che da terminale non ha risposta, e adesso ha davanti un'app senza
+   i difetti qui sopra.
+2. ⚠️ **Il tocco su un telefono vero**: che `:hover` non resti attaccato dopo
+   aver premuto. Un Chromium headless non lo può dire.
+3. **La decisione sulle spaziature** (vedi sotto): è sua, e si prende guardando.
+4. ⚠️ **Il collaudo di Road to weekend dal browser resta aperto**: è la prima
    cosa da fare in una sessione che tocchi la scalata.
+
+### ⚠️ La decisione aperta: la scala delle spaziature
+
+`SP` esiste ma **418 fra `gap`, `padding` e `margin` sono ancora numeri scritti
+a mano**. Contati: `gap` 8×46, 6×23, 10×18, 4×15 · `marginBottom` 4×23, 8×22,
+10×21, **12×20**, 16×16.
+
+⚠️ Il 12 **non era nella scala** ed era il quarto valore più usato: aggiunto
+(`SP.ml`), perché una scala che non contiene un valore in uso 24 volte si
+scavalca da sola. Ma resta il punto vero: **4-6-8-10-12-14-16 non è una scala,
+è ogni numero pari**, e una scala serve a ridurre le scelte. Stringerla davvero
+(4-8-12-16-24) vuol dire spostare un centinaio di punti di qualche pixel
+ciascuno — **si decide guardando lo schermo, non da terminale.**
+⚠️ E la sostituzione pura (scrivere `SP.m` dove c'è `8`) **non cambia un
+pixel**: è contabilità, utile solo il giorno in cui si vuole cambiare tutto da
+un posto. Non è quello che fa sembrare l'app meno un gestionale.
 
 ## Il 21 ottobre: il tagliando prima della grafica
 
