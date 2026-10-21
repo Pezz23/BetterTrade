@@ -14,6 +14,7 @@
  *   node --env-file=.env scripts/guarda.mjs                  # tutte, da telefono
  *   node --env-file=.env scripts/guarda.mjs scalata partite  # solo queste
  *   node --env-file=.env scripts/guarda.mjs --largo          # anche a 1280px
+ *   node --env-file=.env scripts/guarda.mjs --intera         # pagina intera, anche lunghissima
  */
 import { chromium } from 'playwright'
 import { mkdirSync, rmSync } from 'fs'
@@ -45,6 +46,9 @@ const PAGINE = [
 
 const arg = process.argv.slice(2)
 const largo = arg.includes('--largo')
+const intera = arg.includes('--intera')
+// ⚠️ 2600 px: poco più di tre schermate di telefono in fila.
+const MAX_ALTEZZA = 2600
 const scelte = arg.filter(a => !a.startsWith('--'))
 const pagine = scelte.length ? PAGINE.filter(p => scelte.includes(p.id)) : PAGINE
 
@@ -54,10 +58,17 @@ if (!utente || !pw) {
   process.exit(1)
 }
 
-rmSync(DOVE, { recursive: true, force: true })
+// ⚠️ Si svuota la cartella **solo quando si fotografa tutto**: chiedendo due
+// pagine si buttavano via le altre dieci, e ci si ritrovava con un giro
+// incompleto credendo di avere l'insieme.
+if (!scelte.length) rmSync(DOVE, { recursive: true, force: true })
 mkdirSync(DOVE, { recursive: true })
 
-const browser = await chromium.launch()
+// ⚠️ `channel: 'chromium'` usa il **browser intero** in modalità headless
+// invece del "guscio headless", che è un secondo pacchetto da 83 MB. Su una
+// connessione lenta valeva cinque minuti di scaricamento in meno, e il
+// risultato a schermo è lo stesso.
+const browser = await chromium.launch({ channel: 'chromium' })
 const errori = []
 
 for (const vista of largo ? [TELEFONO, LARGO] : [TELEFONO]) {
@@ -78,7 +89,11 @@ for (const vista of largo ? [TELEFONO, LARGO] : [TELEFONO]) {
   for (const p of pagine) {
     try {
       if (p.via === 'tab') {
-        await pagina.getByRole('button', { name: p.testo, exact: true }).first().click()
+        // ⚠️ **Senza `exact`**: il nome accessibile del tasto comprende
+        // l'icona — è `◈ Dashboard`, non `Dashboard` — quindi un confronto
+        // esatto non combacia mai e la pagina non viene mai fotografata.
+        // Costava 30 secondi di attesa a vuoto per ognuna delle quattro.
+        await pagina.getByRole('button', { name: p.testo }).first().click()
       } else {
         await pagina.locator('.icona-menu').click()
         await pagina.getByText(p.testo, { exact: true }).first().click()
@@ -87,7 +102,20 @@ for (const vista of largo ? [TELEFONO, LARGO] : [TELEFONO]) {
       // database (memoria di sessione, voti), quindi `networkidle` non arriva
       // mai. 1,2 s copre una lettura lenta senza far durare il giro un'ora.
       await pagina.waitForTimeout(1200)
-      await pagina.screenshot({ path: `${DOVE}/${p.id}${suffisso}.png`, fullPage: true })
+      // ⚠️⚠️ **La pagina intera è illeggibile su una lista lunga.** Partite
+      // con 67 partite fa **28.758 pixel** di altezza: ridotta per starci in
+      // uno schermo diventa una striscia dove non si distingue una riga da
+      // un'altra. Si taglia a `MAX_ALTEZZA`, che è abbastanza per vedere la
+      // testata e le prime righe — dove sta quasi sempre il difetto. Con
+      // `--intera` si prende tutto, quando serve davvero.
+      const alta = await pagina.evaluate(() => document.body.scrollHeight)
+      await pagina.screenshot({
+        path: `${DOVE}/${p.id}${suffisso}.png`,
+        fullPage: true,
+        ...(intera || alta <= MAX_ALTEZZA ? {} : {
+          clip: { x: 0, y: 0, width: vista.width, height: MAX_ALTEZZA },
+        }),
+      })
       console.log(`  ✅ ${p.id}${suffisso}`)
     } catch (e) {
       console.log(`  ❌ ${p.id}${suffisso}: ${String(e).split('\n')[0].slice(0, 90)}`)
