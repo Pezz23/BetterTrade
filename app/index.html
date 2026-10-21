@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BetterTrade</title>
+    <!-- ⚠️ Il marchio sta QUI dentro, non in un file: senza, il browser
+         chiede `/favicon.ico` a ogni caricamento e si prende un **404** — era
+         l'errore che compariva su tutte le pagine (21/10/2026). Non esiste una
+         cartella `public/`, quindi la via più corta è disegnarlo nell'HTML:
+         zero richieste, zero file, e la scheda porta le quattro caselle d'oro
+         del logo invece del quadrato vuoto. -->
+    <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28"><rect width="28" height="28" rx="6" fill="%230B0D10"/><rect x="4" y="4" width="9" height="9" rx="2" fill="%23D8B44A"/><rect x="15" y="4" width="9" height="9" rx="2" fill="%23D8B44A" opacity=".5"/><rect x="4" y="15" width="9" height="9" rx="2" fill="%23D8B44A" opacity=".5"/><rect x="15" y="15" width="9" height="9" rx="2" fill="%23D8B44A"/></svg>' />
+    <meta name="theme-color" content="#0B0D10" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <!-- ⚠️ Tre pesi di Sora, non cinque (21/10/2026). Il **300 non lo usava
          nessuno**, e il **500 era usato 5 volte su 149**: tolti, sono due file
