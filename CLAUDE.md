@@ -1746,14 +1746,71 @@ volte). Quella correzione resta valida nel merito — *mettere via poco al primo
 passo non rientra* — ed è il motivo per cui il consiglio al primo passo è il
 massimo possibile.
 
-**Le due regole** (`REGOLE` in `lib/scalata.js`): `capitale` (1° passo tutto
-l'utile, poi 70%) e `gioco` (niente fino alla fine).
+### ⚠️⚠️ IL METODO È UNO SOLO: la Scalata madre (21/10/2026)
+
+**Le due regole di incasso sono uscite** (`capitale` e `gioco`, Mattia:
+*"abbiamo definito il nostro metodo"*). Servivano a **misurare** quale
+conviene, e la misura ha risposto — sull'utile, mediana 81 contro 42 su 100.
+Un tasto che offre ancora la regola bocciata è un modo di giocarla per sbaglio.
+
+**Al loro posto i PAVIMENTI** (`PAVIMENTI` in `lib/scalata.js`): l'accumulo
+**cumulativo** da raggiungere dopo ogni passo, in multipli della posta
+iniziale — **0,7× · 1,3× · 2,8×**, poi tutto l'utile. Su posta 10 e quota 2,00
+fanno 7 · 13 · 28, cioè netto **−3 · +3 · +18**.
+⚠️⚠️ **Sono un traguardo, non una frazione**, e la differenza è il vincolo che
+ha dato Mattia: *"in 2 giornate DEVO recuperare il capitale iniziale"*. 1,3×
+dopo il secondo passo **è** quel vincolo; un 46% a quota diversa non lo
+sarebbe. Sopra 2,00 si mette via lo stesso e la scalata cresce di più — il
+verso giusto, perché una quota più alta non deve far accantonare di più.
+⚠️ Il consiglio si calcola **da quanto manca** al pavimento, non da una
+percentuale fissa: se un passo ha messo via più del dovuto (i centesimi
+dell'arrotondamento, o una scelta a mano), il passo dopo mette via meno.
+
+⚠️⚠️ **La quota minima della SCHEDINA è 2,00 "a salire"**
+(`QUOTA_MINIMA_SCHEDINA`), e non è un numero tondo di comodo: **è quello che fa
+stare in piedi il metodo**. A 1,90 i due vincoli di Mattia — *stesso piano di
+rientro in percentuale* e *capitale rientrato in due giornate* — si
+contraddicono; a 2,00 coincidono, perché l'utile è pari alla puntata.
+⚠️ **Non è più una manopola nei filtri**: il minimo è uno, e il posto dove
+dirlo è la card del passo che non ci arriva — che scrive **quanto** manca, non
+solo che manca.
+⚠️ **La colonna `regola` del registro non si converte**: le scalate vecchie
+restano `capitale`/`gioco` (`NOMI_REGOLA` le legge a schermo), perché quella
+colonna è la fotografia di come si giocava allora. `sql/32` allarga il `check`.
+
+⚠️⚠️ **E la schedina si chiude appena supera 2,00** (`spezzaAlMinimo`,
+Mattia 21/10/2026). La fascia dice *quando* si gioca, non *quanto* ci sta
+dentro: un sabato pieno ne metteva otto nello stesso passo, cioè una schedina a
+quota 21. ⚠️ Conseguenza da sapere: dopo il taglio automatico **«spezza qui»
+non compare quasi mai**, perché un pezzo minimo non si può dividere in due
+pezzi che arrivino entrambi a 2,00 — riappare solo su un passo allungato a mano.
+⚠️⚠️ **I passi restano uno per volta anche nel piano**, e questa riga ha già
+avuto il suo contrario per un giorno: il 21/10 li avevo aperti tutti perché
+*"lo spezza funziona solo sul passo 1"*, e Mattia il 22/10 li ha visti e
+rifiutati — *"voglio tornare come prima"*. Ventidue card fino al 1° novembre
+non sono una road map, sono una pagina da scorrere. **La regola regge in
+entrambi i modi** e per la ragione di sempre: la puntata del passo 2 è la cassa
+che arriva fin lì, quindi senza l'esito del 1 è un numero ipotetico.
+⚠️ E la riga dei passi nascosti **non promette un passo che non arriverà**: con
+la cassa a zero dice che la scalata si è fermata, non *"compare quando segni
+l'esito del passo 3"*.
 
 **I passi sono fasce** (`fasce()`): stesso giorno, orari entro **tre ore**
 (`FINESTRA_ORE`). Tiene insieme il blocco delle 15 e quello delle 18, lascia il
 20:45 al passo dopo — perché **un passo deve finire prima che cominci il
 successivo**, o la scalata non è una scalata. Il raggruppamento è una proposta:
 si togliono le partite a mano.
+⚠️⚠️ **Spezzare un passo in due** (`spezzaPasso` in `usaScalate.js`,
+`spezzaFasce` in `lib/scalata.js`, 21/10/2026): il taglio sta **fra due
+gambe**, non sul passo — un tasto sul passo dovrebbe indovinare *dove*
+tagliare, e con tre gambe non esiste una metà. ⚠️ A scalata aperta inserisce
+una riga col **numero di mezzo** (3 e 4 → **3,5**), ed è il motivo di
+`sql/31`: con `numero` intero e unico, inserire in mezzo voleva dire
+rinumerare la coda un passo per volta. ⚠️⚠️ **E si offre solo dove i DUE pezzi
+arrivano a 2,00** (`puoSpezzare`): offerto dappertutto proponeva di fabbricare
+una schedina a 1,30, che non è un passo di questa scalata — trovato da Mattia
+il 21/10, il giorno dopo averlo fatto.
+
 ⚠️ **Il pavimento di quota per gamba è 1,30** (`QUOTA_MINIMA_GAMBA`) e non è
 prudenza: dentro `att ≥ 67%`, sotto 1,20 la resa è **88,5%**, fra 1,20 e 1,30 il
 **95,1%**, fra 1,30 e 1,45 il **99,0%**. **Le azzeccate salgono scendendo di

@@ -22,9 +22,9 @@ export function giornoLocale(d) {
   return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
 }
 
-/** Il lunedì che chiude il weekend di una data, come nelle spin. */
-export function weekendDi(d) {
-  const x = new Date(d); x.setHours(12, 0, 0, 0);
-  x.setDate(x.getDate() + ((8 - x.getDay()) % 7));
-  return giornoLocale(x);
-}
+// ⚠️⚠️ **`weekendDi` NON vive più qui**: è la stessa regola che usa l'app per
+// raggruppare le giornate, e il 22/10/2026 ne sono esistite due copie per
+// mezz'ora. Si ri-esporta da `app/src/lib/attendibilita.js` — una copia che
+// nessuno confronta non si accorge di essere sbagliata, ed è la regola del
+// progetto (una misura e lo schermo devono eseguire lo stesso codice).
+export { weekendDi } from '../../app/src/lib/attendibilita.js';

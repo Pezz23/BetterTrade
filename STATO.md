@@ -152,6 +152,137 @@ ciascuno — **si decide guardando lo schermo, non da terminale.**
 pixel**: è contabilità, utile solo il giorno in cui si vuole cambiare tutto da
 un posto. Non è quello che fa sembrare l'app meno un gestionale.
 
+## 🪜 SCALATA MADRE — il piano di rientro progressivo (21 ottobre 2026)
+
+Briefing di Mattia, ragionato con Gemini. ⛔ **Non sviluppato in blocco**:
+valutato, misurato e diviso in lotti. Le decisioni qui sotto sono sue.
+
+### ⚠️⚠️ Il numero su cui si regge, misurato
+
+Il briefing parte da *"precisione storica ~72%"*. In questo progetto quel 72% è
+la percentuale con cui vince **un singolo favorito corto** (1,35-1,40:
+dichiarato 69,1%, arrivato 72,5%). Il piano però gioca **doppie**, che sono un
+altro evento. Misurato con `prova-scalata.js --quota=2.0`, 8 stagioni, 723
+passi:
+
+```
+quota minima 2,00 →  vince 41,6%   quota media realizzata 2,448
+                     gambe medie 2,71      resa 100,8%
+```
+
+⚠️ **41,6%, non 72%.** E per arrivare a 2,00 partendo da gambe ≥1,30 ce ne
+vogliono **2,71 in media, non 2**: la quota sfonda a 2,448, il che sposta tutte
+le poste del piano.
+
+**L'EV del Modello A**, un ciclo da 10 unità:
+
+| p(passo) | EV ciclo | chiude 4/4 | cicli in utile |
+|---|---|---|---|
+| 41,6% | −3,47u | 3,0% | 17% |
+| 49,0% | −0,48u | 5,8% | 24% |
+| **50,4%** (resa 100,8%) | **+0,20u** | 6,5% | 25% |
+
+⚠️⚠️ **L'EV è indistinguibile da zero**, e il segno dipende da una stima con
+±8 punti di margine. Non è una bocciatura — a quota 2,00 la resa misurata è la
+**migliore di tutte le fasce provate** — ma va detto cos'è il modello:
+**ridistribuisce la varianza, non crea un margine.**
+
+```
+49,6% → −10u    25,0% → −3u    12,6% → +3u    6,3% → +18u    6,5% → +68u
+```
+
+Si perdono **tre cicli su quattro**, poco per volta, e si vince molto di rado.
+⚠️ **Nel codice non si scrive mai «garantito»**: il «+3u garantito dopo due
+passi» del briefing è condizionato ad aver già vinto due passi, cosa che accade
+il 25% delle volte.
+
+### Le decisioni di Mattia (21/10/2026)
+
+| | |
+|---|---|
+| quota minima | **2,00 "a salire"** — corretta il 21/10 dopo aver visto che a 1,90 i due vincoli qui sotto **non possono valere insieme** (il 1° passo incassa 19 e non 20) |
+| l'arrotondamento | **i centesimi in accumulo, le cifre intere in «da rigiocare»** |
+| il vincolo vero | **in due giornate deve rientrare il capitale iniziale** — è il pavimento del 2° passo |
+| il Satellite | **si aspetta**, in fondo a questa lista |
+| i backtest | ⚠️⚠️ **si chiedono prima di lanciarli.** Selezione da usare: **attendibilità ≥ 68% _oppure_ scelta ≥ 66%**, gamba con quota ≥ 1,30 |
+
+### I lotti
+
+| | | stato |
+|---|---|---|
+| **A** | **Spezzare un passo in due** | ✅ **fatto il 21/10** (`sql/31`, `spezzaFasce`, `spezzaPasso`, `puoSpezzare`) — provato dal vivo **e a scalata aperta** |
+| **B** | La regola «Madre» a **pavimenti** (`PAVIMENTI`, `percentualeConsigliata`) | ✅ **fatto il 21/10** · **misurata il 22/10**, vedi sotto |
+| **C** | La pagina: via la quota schedina e le due regole dai filtri, l'avviso sul passo | ✅ **fatto il 21/10** (`sql/32`) |
+| **D** | **Il Satellite** | ⏸️ **in attesa, priorità futura** |
+
+⚠️⚠️ **La tabella 7/6/15 del briefing non è una formula: sono tre numeri che
+valgono solo a quota 2,00 esatta.** Sotto però c'è una logica che si
+generalizza, ed è quella da implementare: **i pavimenti**. Dopo ogni passo
+vinto il peggio che può succedere è **−3, poi +3, poi +18** (in unità sulla
+posta iniziale di 10). Da lì l'accantonamento si ricava a qualunque quota.
+✅ **Sciolto il 21/10 fissando la quota minima a 2,00.** La domanda era: cosa
+fare quando la quota non basta a riempire il pavimento (a 1,70 il primo passo
+incassa 17, il pavimento ne chiede 7 e ne restano 10 da rigiocare — la scalata
+non cresce). La risposta di Mattia non è stata una delle due che avevo
+proposto: **ha alzato la quota minima**, e così il caso non si presenta.
+⚠️ **Resta vero sotto 2,00, e il codice lo tratta senza inventare**: il
+pavimento prende quello che c'è (la percentuale è limitata a 100) e il passo
+dopo recupera il resto, perché i pavimenti sono cumulativi. La card avvisa
+**quanto** manca alla quota minima.
+
+### ⚠️⚠️ La misura, fatta il 22/10/2026 con la selezione di Mattia
+
+`prova-scalata.js --stagioni=8 --quota=2.0 --soglia=0.68 --scelta=0.66`, cioè
+**attendibilità ≥ 68% OPPURE scelta ≥ 66%**, gamba ≥ 1,30. 260 weekend.
+⚠️ Lì un passo = **un giorno** (l'archivio non ha l'ora), quindi è la lettura
+conservativa.
+
+```
+quota 2,00 →  576 passi · 2,80 gambe · quota media 2,459 · vince 42,2% · resa 103,1%
+```
+
+⚠️⚠️ **Il 103,1% NON è un guadagno: il margine è ±10 punti** (576 passi a quota
+2,46). Dice la stessa cosa di tutte le altre righe — **circa 98-100%** — e la
+selezione più stretta **non ha migliorato il passo**: con att ≥ 60% la resa a
+2,00 era 100,8%, con att ≥ 68% _oppure_ scelta ≥ 66% è 103,1%, cioè lo stesso
+numero dentro il rumore. **Il materiale però cala**: 576 passi invece di 723.
+
+**E la scalata intera, 149 scalate:**
+
+| | |
+|---|---|
+| muore al 1° passo | **60%** |
+| passi vinti di fila | 0→89 · 1→42 · 2→13 · 3→4 · 4→1 |
+| rientra la posta | 28% |
+| risultato | mediana **−1,00** · media −0,61 · migliore +43 · peggiore −11 |
+| bankroll per stagione (da 100) | 69 · 41 · 102 · 46 · 37 · 84 · 27 · 84 → **mediana 69**, in utile **1 su 8** |
+
+⚠️⚠️ **Il vincolo "in due giornate rientra il capitale" si avvera il 12% delle
+volte** (18 scalate su 149 hanno vinto due passi), perché per rientrare bisogna
+**prima** vincerli. Il pavimento garantisce *quanto* si mette via, non che ci
+si arrivi.
+⚠️ **I pavimenti non cambiano il segno, cambiano la forma**: con una resa per
+passo attorno al 98-100% nessuna regola di accantonamento crea margine — è la
+stessa frase scritta per le due regole vecchie, e vale identica per questa.
+Quello che comprano è *perdere poco spesso e vincere molto di rado*.
+⚠️ **Resta la disputa aperta**, ed è il motivo per cui la pagina salva tutto:
+questa misura è sulla selezione **meccanica**. Mattia sceglie a mano, e solo il
+registro può dire se fa meglio del 98%.
+
+### ⏸️ D — La Scalata Satellite, in attesa
+
+Si attiva **solo** dopo un 4° passo vinto, finanziata con 10u del profitto.
+⚠️ **Scatta nel 6,5% dei cicli**, e nella simulazione su otto stagioni il
+quarto passo **non è mai arrivato** (*passi vinti di fila: 0→57 · 1→21 · 2→8 ·
+3→2 · **4→0*** su 88 scalate). È una funzione che si vedrebbe forse una volta
+l'anno: per questo è l'ultima.
+⚠️ Il **«rischio ZERO»** del briefing è contabilità mentale: vinte, quelle 10u
+sono bankroll come le altre. La perdita massima di 10u **è** corretta (i passi
+1-3 rigiocano solo vincite), ma l'EV resta negativo: si converte un profitto
+realizzato in uno atteso un filo più basso, in cambio di varianza.
+⚠️ Serve una colonna nuova (`tipo` o `madre_id` su `scalate`), quindi una
+migrazione: un motivo in più per non farla finché la Madre non ha girato.
+
 ## 📋 LE DIECI IDEE DI MATTIA — 21 ottobre 2026 (notte)
 
 Consegnate in blocco. **Verificate una per una prima di scriverle qui**: tre

@@ -26,6 +26,23 @@ export const FRAZIONE_BANKROLL = 0.10
 export const QUOTA_MINIMA_GAMBA = 1.30
 
 /**
+ * ⚠️⚠️ **La quota minima della SCHEDINA: 2,00 "a salire"** (decisione di
+ * Mattia, 21/10/2026), e non è un numero tondo scelto per comodità — **è il
+ * numero che fa stare in piedi il metodo**.
+ *
+ * Il piano della Scalata madre chiede due cose insieme: *"stesso piano di
+ * rientro in percentuale"* e *"in due giornate DEVO recuperare il capitale"*.
+ * A quota 1,90 le due si contraddicono (il primo passo incassa 19 e non 20,
+ * quindi o si accantona meno o il pavimento del secondo passo scende sotto il
+ * pari). **A 2,00 coincidono**: la posta raddoppia, l'utile è pari alla
+ * puntata, e i pavimenti qui sotto sono esattamente le percentuali del piano.
+ * ⚠️ Non è più un filtro con la manopola: era nei filtri e Mattia l'ha
+ * toglie (*"il passo mi deve avvisare"*) — il minimo è uno, e il posto dove
+ * dirlo è la card del passo che non ci arriva.
+ */
+export const QUOTA_MINIMA_SCHEDINA = 2.00
+
+/**
  * ⚠️ **Quattro gambe al massimo** (scelta di Mattia), e il motivo è che
  * **ogni gamba moltiplica il margine**: una gamba al 99% diventa 98% in due e
  * 97% in tre. Chiedere più quota non allunga la scalata, la fa morire prima —
@@ -37,46 +54,55 @@ export const MAX_GAMBE = 4
 export const MAX_PASSI = 4
 
 /**
- * Le due regole di incasso, decise il 15/10/2026 dopo aver calcolato la
- * distribuzione di sette candidate.
+ * ⚠️⚠️ **IL METODO, e adesso è UNO SOLO** (Mattia, 21/10/2026: *"togliamo
+ * l'opzione prima il capitale e tutto in gioco, abbiamo definito il nostro
+ * metodo"*). Le due regole servivano a **misurare** dove conviene stare, e la
+ * misura ha risposto: sull'utile `capitale` chiudeva a mediana 81 su 100 e
+ * `gioco` a 42. Tenere a schermo la regola bocciata voleva dire poter giocare
+ * per sbaglio quella che perde il doppio.
  *
- * ⚠️⚠️ **Entrambe mettono via la POSTA INIZIALE al primo passo**, e questa è
- * la correzione più importante all'idea di partenza. Mattia voleva "rientrare
- * del 10% in 2-3 giocate" mettendo via il 40%: con una quota di 1,88 il 40% di
- * 18,8 fa 7,5, **non basta**, e serve vincere un secondo passo — cosa che
- * succede il **27%** delle volte. Mettendo via esattamente la posta si rientra
- * al **primo** passo, cioè il **52%** delle volte. Stesso obiettivo, il doppio
- * delle probabilità, e costa niente.
+ * **I PAVIMENTI sono accumulo CUMULATIVO, in multipli della posta iniziale.**
+ * Non una frazione per passo: il vincolo che Mattia ha dato è un traguardo
+ * (*"in due giornate devo recuperare il capitale iniziale"*), e un traguardo
+ * si scrive come quota da raggiungere, non come percentuale da applicare.
  *
- * ⚠️ `capitale` ha il tetto più basso (35) e `gioco` il più alto (63): è la
- * curva di scambio, e le due servono a misurare dove conviene stare. A parità
- * di sicurezza `capitale` batte la frazione fissa al 60% (tetto 35 contro 32),
- * perché al primo passo mette via **il minimo necessario e non un centesimo di
- * più**.
+ * Su una posta di 10 e quota 2,00 a ogni passo:
+ *
+ * | passo | incassa | pavimento | mette via | in accumulo | netto |
+ * |---|---|---|---|---|---|
+ * | 1 | 20 | 0,7× | 7 (70% dell'utile) | 7 | **−3** |
+ * | 2 | 26 | 1,3× | 6 (46%) | 13 | **+3** |
+ * | 3 | 40 | 2,8× | 15 (75%) | 28 | **+18** |
+ *
+ * ⚠️ **Il secondo passo è il traguardo del capitale**: 1,3× la posta vuol dire
+ * che dopo due giornate vinte i 10 iniziali sono rientrati **più 3**. È quello
+ * il vincolo, e per questo è un pavimento e non un 46% — a quota 2,20 il 46%
+ * accantonerebbe un numero diverso, il pavimento no.
+ * ⚠️ **Sopra 2,00 il pavimento resta lo stesso e la scalata cresce di più**:
+ * si mette via quello che serve, e tutto il resto continua a salire. È il
+ * verso giusto — una quota più alta non deve far accantonare di più.
+ * ⚠️ **Oltre il terzo passo si mette via tutto l'utile**: non c'è un quarto
+ * traguardo, e lasciare un pavimento vuoto vorrebbe dire "non accantonare
+ * niente" proprio dove la cassa è più grande.
  */
-/** Il segnaposto "metti via esattamente la posta iniziale". */
-export const POSTA = 'posta'
+export const PAVIMENTI = [0.7, 1.3, 2.8]
 
-export const REGOLE = {
-  capitale: {
-    nome: 'Prima il capitale',
-    desc: "al 1° passo mette via tutto l'utile, poi il 70%",
-    // la frazione del montante da mettere via, per numero di passo.
-    // ⚠️ `'posta'` e non `null`: con `null` il `??` qui sotto lo prendeva per
-    // "manca" e restituiva **1**, cioè la regola metteva via tutto al primo
-    // passo e la scalata finiva subito. Trovato dal collaudo della libreria
-    // appena scritta, non da un errore — `null` è un valore legittimo e un
-    // operatore che lo tratta come assenza se lo mangia in silenzio.
-    // ⚠️ `POSTA` = "metti al sicuro quello che puoi": sull'utile è il **100%**,
-    // e il risultato è che si rigioca sempre la stessa puntata e si intasca la
-    // vincita. Il caso peggiore passa da −10 a **−1,2**.
-    frazione: (numero) => [POSTA, 0.70, 0.70][numero - 1] ?? 1,
-  },
-  gioco: {
-    nome: 'Tutto in gioco',
-    desc: 'non mette via niente fino alla fine',
-    frazione: () => 0,
-  },
+export const METODO = {
+  nome: 'Scalata madre',
+  desc: 'pavimenti di accumulo 0,7× · 1,3× · 2,8× la posta — il capitale rientra al 2° passo',
+}
+
+/**
+ * I nomi delle regole **vecchie**, che servono solo all'archivio.
+ * ⚠️ Le scalate chiuse prima del 21/10/2026 hanno `regola = 'capitale'` o
+ * `'gioco'` nel registro: quella colonna è la fotografia di come si giocava
+ * **allora**, e riscriverla sarebbe falsificare l'archivio. Qui c'è solo come
+ * si chiamavano.
+ */
+export const NOMI_REGOLA = {
+  madre: METODO.nome,
+  capitale: 'Prima il capitale',
+  gioco: 'Tutto in gioco',
 }
 
 /**
@@ -137,26 +163,30 @@ export function fasce(partite) {
 }
 
 /**
- * La percentuale che l'app **consiglia** di mettere via, 0-100.
+ * La percentuale che l'app **consiglia** di mettere via, 0-100: quella che
+ * porta l'accumulo **esattamente al pavimento** di questo passo.
  *
- * ⚠️⚠️ **È un consiglio e non un comando** (richiesta di Mattia, 15/10/2026):
- * la pagina ha un campo in percentuale e decide lui. Il motivo è che il
- * consiglio nasce da una regola media, mentre lui guarda *quella* partita —
- * e un'app che impone la frazione gli toglie l'unica cosa che la misura non
- * sa fare.
- * ⚠️ Al primo passo il consiglio è **quanto serve a rimettere al sicuro la
- * posta**, non una frazione tonda: con quota 1,88 sono il 53%, e il 40% non
- * basterebbe — è la correzione misurata il 15/10.
+ * ⚠️⚠️ **Resta un consiglio e non un comando** (richiesta di Mattia,
+ * 15/10/2026): la pagina ha un campo in percentuale e decide lui. Il consiglio
+ * nasce da una regola media, lui guarda *quella* partita — e un'app che impone
+ * la frazione gli toglie l'unica cosa che la misura non sa fare.
+ * ⚠️ **Si calcola da quanto MANCA**, non da una frazione fissa: se il passo
+ * prima ha messo via più del dovuto (i centesimi dell'arrotondamento, o una
+ * percentuale scelta a mano), qui si mette via **meno**. È quello che rende i
+ * pavimenti un traguardo invece di una tassa.
+ * ⚠️ `posta` è la posta **iniziale** della scalata, non la puntata di questo
+ * passo: i pavimenti sono multipli del capitale messo in gioco all'inizio, ed
+ * è l'unico numero che non cambia mentre la scalata sale.
  */
-export function percentualeConsigliata(regola, { numero, montante, puntata }) {
-  if (!(Number(montante) - Number(puntata) > 0)) return 0
-  const f = REGOLE[regola]?.frazione(numero)
-  // ⚠️ "Metti al sicuro il capitale" **sull'utile** vuol dire tutto l'utile:
-  // sotto quota 2,00 l'utile è meno della puntata, quindi la puntata intera non
-  // si può mettere via in un passo. Quello che si ottiene è il caso peggiore
-  // ridotto a `puntata − utile`, non azzerato.
-  if (f === POSTA) return 100
-  return (f ?? 1) * 100
+export function percentualeConsigliata({ numero, montante, puntata, posta, accumulato = 0 }) {
+  const utile = Number(montante) - Number(puntata)
+  if (!(utile > 0)) return 0
+  const fattore = PAVIMENTI[numero - 1]
+  // oltre l'ultimo pavimento: tutto l'utile.
+  if (fattore == null) return 100
+  const manca = fattore * (Number(posta) || 0) - (Number(accumulato) || 0)
+  if (manca <= 0) return 0
+  return Math.min(100, manca / utile * 100)
 }
 
 /**
@@ -232,10 +262,9 @@ export const postaDi = (bankroll) => Math.floor(Number(bankroll) * FRAZIONE_BANK
  * deve chiudere, altrimenti il montante resterebbe "in gioco" senza una partita
  * dove giocarlo.
  */
-export function incassa(regola, { numero, posta, quota, ultimo = false }) {
-  if (!REGOLE[regola]) throw new Error(`regola sconosciuta: ${regola}`)
+export function incassa({ numero, posta, quota, ultimo = false, postaIniziale = posta, accumulato = 0 }) {
   const montante = Number(posta) * Number(quota)
-  const p = percentualeConsigliata(regola, { numero, montante, puntata: posta })
+  const p = percentualeConsigliata({ numero, montante, puntata: posta, posta: postaIniziale, accumulato })
   return { montante, ...applicaIncasso(montante, p, posta, ultimo) }
 }
 
@@ -287,9 +316,9 @@ export function componiPasso(candidate, { quotaMinima, maxGambe = MAX_GAMBE, pav
  * ma **la verità è questa funzione**.
  *
  * `percDi(i)` è la percentuale scelta a mano per il passo `i`, o `undefined`
- * per usare il consiglio della regola.
+ * per usare il consiglio del metodo.
  */
-export function casseDi(passi, posta, regola, percDi = () => undefined) {
+export function casseDi(passi, posta, percDi = () => undefined) {
   let cassa = Number(posta) || 0, accumulo = 0, vivi = 0
   for (const [i, p] of (passi || []).entries()) {
     // ⚠️ Si ferma al primo passo non ancora giocato: è lì che sta la cassa.
@@ -297,7 +326,7 @@ export function casseDi(passi, posta, regola, percDi = () => undefined) {
     vivi++
     if (p.esito === 'perso') { cassa = 0; break }
     const montante = cassa * Number(p.quota)
-    const pc = percDi(i) ?? percentualeConsigliata(regola, { numero: i + 1, montante, puntata: cassa })
+    const pc = percDi(i) ?? percentualeConsigliata({ numero: i + 1, montante, puntata: cassa, posta, accumulato: accumulo })
     const r = applicaIncasso(montante, pc, cassa)
     accumulo += r.via
     cassa = r.rigioca
@@ -313,7 +342,7 @@ export function casseDi(passi, posta, regola, percDi = () => undefined) {
  * progressione: è questo che rende la scalata una scalata e non una serie di
  * puntate indipendenti.
  */
-export function simula(passi, { bankroll, regola, maxPassi = MAX_PASSI }) {
+export function simula(passi, { bankroll, maxPassi = MAX_PASSI }) {
   const postaIniziale = postaDi(bankroll)
   const registro = []
   let posta = postaIniziale, accumulo = 0
@@ -327,7 +356,7 @@ export function simula(passi, { bankroll, regola, maxPassi = MAX_PASSI }) {
       posta = 0
       break
     }
-    const r = incassa(regola, { numero, posta, quota, ultimo })
+    const r = incassa({ numero, posta, quota, ultimo, postaIniziale, accumulato: accumulo })
     accumulo += r.via
     registro.push({ numero, posta, quota, esito: 'vinto', ...r })
     posta = r.rigioca
@@ -340,4 +369,84 @@ export function simula(passi, { bankroll, regola, maxPassi = MAX_PASSI }) {
     risultato: accumulo - postaIniziale,
     rientrata: accumulo >= postaIniziale,
   }
+}
+
+
+/**
+ * Spezza le fasce nei punti scelti a mano.
+ *
+ * ⚠️ Il taglio è ancorato **all'id della prima gamba del pezzo staccato**, non
+ * alla posizione: una fascia può cambiare contenuto (si tolgono partite, se ne
+ * tirano su dal passo dopo) e un taglio salvato come "dopo il secondo" finirebbe
+ * in un punto diverso da quello che si era toccato.
+ * ⚠️ Un taglio sulla **prima** gamba di una fascia non fa niente: staccherebbe
+ * tutto, cioè lascerebbe le cose come stanno.
+ */
+export function spezzaFasce(gruppi, tagli) {
+  if (!tagli?.length) return gruppi
+  const taglia = new Set(tagli)
+  return gruppi.flatMap(f => {
+    const pezzi = []
+    let corrente = []
+    for (const p of f.partite) {
+      if (corrente.length && taglia.has(p.id)) { pezzi.push({ ...f, partite: corrente }); corrente = [] }
+      corrente.push(p)
+    }
+    if (corrente.length) pezzi.push({ ...f, partite: corrente })
+    return pezzi
+  })
+}
+
+/**
+ * Si può spezzare il passo **prima** della gamba `iTaglio`?
+ *
+ * ⚠️⚠️ **Trovato da Mattia il 21/10/2026**: *"dice spezza a tutte le partite
+ * aggiunte anche se la quota è 1,3"*. Il taglio offerto dappertutto proponeva
+ * di fabbricare due schedine sotto il minimo — e una schedina a 1,30 non è un
+ * passo di questa scalata, è un'altra cosa. Il tasto non deve offrire un gesto
+ * che produce un piano non giocabile.
+ * ⚠️ **Si guardano i DUE pezzi**, non solo quello staccato: tagliare dopo la
+ * prima gamba lascia *sopra* una schedina da 1,45, che è lo stesso difetto
+ * dall'altro lato.
+ * ⚠️ Le quote sono quelle **modificate a mano**, non quelle scaricate: il piano
+ * è il suo, e il controllo deve guardare i numeri che giocherà.
+ */
+export function puoSpezzare(quote, iTaglio, quotaMinima = QUOTA_MINIMA_SCHEDINA) {
+  if (!(iTaglio > 0) || iTaglio >= quote.length) return false
+  const prodotto = (da, a) => quote.slice(da, a).reduce((x, q) => x * (Number(q) || 1), 1)
+  return prodotto(0, iTaglio) >= quotaMinima && prodotto(iTaglio, quote.length) >= quotaMinima
+}
+
+/**
+ * Spezza ogni fascia **appena la quota supera il minimo** (Mattia, 21/10/2026:
+ * *"spezza le schedine appena superano la quota 2,00"*).
+ *
+ * ⚠️⚠️ **Il raggruppamento per orario non è una schedina**: `fasce()` mette
+ * insieme tutto quello che si gioca entro tre ore, e in un sabato pieno sono
+ * otto partite — una schedina da quota 21, che vince quasi mai. La fascia dice
+ * *quando* si può giocare, la quota dice *quanto* ci sta dentro, e sono due
+ * domande diverse.
+ * ⚠️ **Si taglia appena si SUPERA, non appena ci si avvicina**: ogni gamba in
+ * più moltiplica il margine del book, quindi la schedina giusta è la più corta
+ * che arriva alla quota chiesta — la stessa regola di `componiPasso`.
+ * ⚠️ **La coda sotto il minimo resta**, non si butta e non si attacca alla
+ * fascia dopo: è materiale di quell'orario, e la card dirà quanto le manca.
+ * Attaccarla al blocco successivo vorrebbe dire una schedina che comincia
+ * prima di finire.
+ * ⚠️ L'ordine dentro la fascia è quello dell'orario, non dell'attendibilità:
+ * la composizione è sua, e riordinare renderebbe imprevedibile dove cade il
+ * taglio.
+ */
+export function spezzaAlMinimo(gruppi, quotaMinima = QUOTA_MINIMA_SCHEDINA) {
+  return (gruppi || []).flatMap(f => {
+    const pezzi = []
+    let corrente = [], q = 1
+    for (const p of f.partite) {
+      corrente.push(p)
+      q *= Number(p.quota) || 1
+      if (q >= quotaMinima) { pezzi.push(corrente); corrente = []; q = 1 }
+    }
+    if (corrente.length) pezzi.push(corrente)
+    return pezzi.map(partite => ({ ...f, ora: String(partite[0]?.ora || f.ora || '').slice(0, 5), partite }))
+  })
 }

@@ -296,6 +296,45 @@ export function usaScalate(userId) {
     return {}
   }, [quotaDi, ricarica])
 
+  /**
+   * **Spezzare un passo in due** (21/10/2026, richiesta di Mattia: *"se mi
+   * propone 4 partite vicine devo poter dividerle in 2"*).
+   *
+   * Le gambe passate restano dove sono, tutte le **altre** scendono in un
+   * passo nuovo inserito subito dopo. Da lì in poi sono due schedine distinte,
+   * e la catena delle casse se ne accorge da sola — `casseDi` cammina sui
+   * passi, quindi la puntata del pezzo nuovo è quella che arriva fin lì.
+   *
+   * ⚠️⚠️ **Il numero del passo nuovo è un valore DI MEZZO** (3 e 4 → 3,5), ed è
+   * il motivo per cui `sql/31` ha portato la colonna a `numeric`. Con un
+   * intero, unico per scalata e limitato a 1..30, inserire in mezzo voleva
+   * dire rinumerare i successivi **uno per volta dalla coda** — fino a nove
+   * andate e ritorno per un tocco, su una pagina il cui costo è già stato
+   * misurato in giri.
+   * ⚠️ La `posta` si copia da quella del passo spezzato solo perché la colonna
+   * non ammette nulli: **non la legge nessuno**, la puntata vera la ricalcola
+   * `casseDi` dalla catena.
+   */
+  const spezzaPasso = useCallback(async (passo, prossimoNumero, gambeGiu) => {
+    if (!gambeGiu.length) return { errore: 'niente da spostare' }
+    const numero = prossimoNumero != null
+      ? (Number(passo.numero) + Number(prossimoNumero)) / 2
+      : Number(passo.numero) + 1
+    const { data: nuovo, error } = await supabase.from('scalata_passi').insert({
+      scalata_id: passo.scalata_id, numero, giorno: passo.giorno, posta: passo.posta,
+      quota: gambeGiu.reduce((a, g) => a * Number(g.quota), 1),
+    }).select('id').single()
+    if (error) return { errore: error.message }
+
+    const errore = primoErrore(await Promise.all([
+      ...gambeGiu.map(g => supabase.from('scalata_gambe').update({ passo_id: nuovo.id }).eq('id', g.id)),
+      scriviQuota(passo.id, quotaDi(passo.id, g => g.filter(x => !gambeGiu.some(y => y.id === x.id)))),
+    ]))
+    if (errore) return { errore }
+    await ricarica()
+    return {}
+  }, [quotaDi, ricarica])
+
   const cambiaQuota = useCallback(async (gambaId, passoId, quota) => {
     if (!(Number(quota) > 1)) return { errore: 'quota non valida' }
     const errore = primoErrore(await Promise.all([
@@ -352,6 +391,7 @@ export function usaScalate(userId) {
     togliGamba: attendendo(togliGamba),
     aggiungiGamba: attendendo(aggiungiGamba),
     spostaGamba: attendendo(spostaGamba),
+    spezzaPasso: attendendo(spezzaPasso),
     cambiaQuota: attendendo(cambiaQuota),
   }
 }

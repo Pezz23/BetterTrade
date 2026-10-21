@@ -9,10 +9,12 @@ import { usaScalate } from '../hooks/usaScalate'
 import { Posizione } from '../components/TestataPartita'
 import { valutaPartita } from '../lib/vpm'
 import { sigla } from '../lib/campionati'
+import { weekendDi } from '../lib/attendibilita'
 import { pct, eur, gg } from '../lib/formato'
 import {
-  REGOLE, MAX_GAMBE, QUOTA_MINIMA_GAMBA, CONSIGLIATO, postaDi, fasce, giorno, casseDi,
-  percentualeConsigliata, applicaIncasso,
+  METODO, NOMI_REGOLA, MAX_GAMBE, QUOTA_MINIMA_GAMBA, QUOTA_MINIMA_SCHEDINA, CONSIGLIATO,
+  postaDi, fasce, spezzaFasce, spezzaAlMinimo, giorno, casseDi, percentualeConsigliata, applicaIncasso,
+  puoSpezzare,
 } from '../lib/scalata'
 
 // ROAD TO WEEKEND — la road map delle giocate del weekend.
@@ -61,15 +63,16 @@ const iniziaDopo = (p, istante) => {
   return new Date(`${g}T${String(p.ora).slice(0, 5)}:00`).getTime() >= istante
 }
 
-function Passo({ numero, gambe, giorno: gio, ora, posta, regola, quotaMinima, colore, classifiche,
+function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumulato, colore, classifiche,
                 quote, setQuote, perc, setPerc, esito, setEsito, onToglie, prossima, onAggiunge,
-                onQuota = null }) {
+                onQuota = null, onSpezza = null }) {
   // ⚠️ La quota della schedina è il **prodotto delle quote modificate**, non di
   // quelle scaricate: Mattia gioca su book diversi e con i bonus, e una pagina
   // che mostra la quota del consenso gli racconterebbe un piano che non è il suo.
-  const quota = gambe.reduce((a, g) => a * (Number(quote[g.id] ?? g.quota) || 1), 1)
+  const quoteGambe = gambe.map(g => Number(quote[g.id] ?? g.quota) || 1)
+  const quota = quoteGambe.reduce((a, q) => a * q, 1)
   const montante = posta * quota
-  const consiglio = percentualeConsigliata(regola, { numero, montante, puntata: posta })
+  const consiglio = percentualeConsigliata({ numero, montante, puntata: posta, posta: postaIniziale, accumulato })
   const p = perc ?? consiglio
   const r = applicaIncasso(montante, p, posta)
   // ⚠️ L'esito vince sul colore del blocco: a piano finito conta com'è andata,
@@ -82,15 +85,49 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, regola, quotaMinima, co
         <Etichetta colore={tinta}>
           ● PASSO {numero} · {nomeGiorno(gio)} {gg(gio)} {ora && `· ${ora}`}
         </Etichetta>
+        {/* ⚠️⚠️ **L'avviso dice QUANTO manca, non solo che manca** (Mattia,
+            21/10/2026: *"il passo mi deve avvisare quanto la quota è sotto"*).
+            La manopola «quota schedina ≥» è uscita dai filtri — il minimo è
+            uno e non si negozia — quindi questa è l'unica cosa che lo dice, e
+            *"sotto 2,00"* da solo costringe a fare la sottrazione a mente
+            mentre si cerca una gamba da aggiungere. */}
         <span style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700,
-          color: quota >= quotaMinima ? C.oro : C.ambra }}>
+          color: quota >= QUOTA_MINIMA_SCHEDINA ? C.oro : C.ambra }}>
           quota {quota.toFixed(2).replace('.', ',')}
-          {quota < quotaMinima && <span style={{ fontSize: S.micro, color: C.ambra }}> · sotto {quotaMinima.toFixed(2).replace('.', ',')}</span>}
+          {quota < QUOTA_MINIMA_SCHEDINA && (
+            <span style={{ fontSize: S.micro, color: C.ambra }}>
+              {' · '}manca {(QUOTA_MINIMA_SCHEDINA - quota).toFixed(2).replace('.', ',')} al minimo {QUOTA_MINIMA_SCHEDINA.toFixed(2).replace('.', ',')}
+            </span>
+          )}
         </span>
       </div>
 
-      {gambe.map(g => (
-        <div key={g.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 34px 58px 20px',
+      {gambe.map((g, iG) => (
+        <div key={g.id}>
+        {/* ⚠️⚠️ **Il taglio sta FRA due gambe, non su una** (richiesta di
+            Mattia, 21/10/2026: *"se mi propone 4 partite vicine devo poter
+            dividerle in 2"*). Un tasto "spezza" sul passo dovrebbe indovinare
+            **dove** tagliare — a metà? dopo la prima? — e con tre gambe non
+            esiste una metà. Messo in mezzo, il punto di taglio è quello che
+            si tocca: nessuna regola da ricordare.
+            ⚠️ Non compare dopo l'ultima gamba (lì non c'è niente da staccare)
+            né su un passo già giocato: quello che è accaduto non si tocca. */}
+        {/* ⚠️⚠️ **E solo dove i DUE pezzi arrivano al minimo** (correzione di
+            Mattia, 21/10): prima il taglio si offriva fra ogni coppia di
+            gambe, quindi proponeva di fabbricare una schedina a 1,30 — che non
+            è un passo di questa scalata. `puoSpezzare` guarda il prodotto di
+            qua e di là dal taglio. */}
+        {iG > 0 && onSpezza && !esito && puoSpezzare(quoteGambe, iG) && (
+          <button onClick={() => onSpezza(iG)} title="Da qui in giù diventa un passo a parte"
+            style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', padding: '3px 0',
+              background: 'none', border: 'none', cursor: 'pointer', color: C.fioco, fontFamily: F.sans,
+              fontSize: S.micro, letterSpacing: '0.04em' }}>
+            <span style={{ flex: 1, height: 1, background: alpha(C.testo, 0.10) }} />
+            spezza qui
+            <span style={{ flex: 1, height: 1, background: alpha(C.testo, 0.10) }} />
+          </button>
+        )}
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 34px 58px 20px',
           gap: 6, alignItems: 'center', padding: '6px 0', borderTop: `1px solid ${alpha(C.testo, 0.06)}` }}>
           <div style={{ minWidth: 0 }}>
             {/* ⚠️ **I numeri SOPRA le squadre** (richiesta di Mattia, 18/10):
@@ -155,6 +192,7 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, regola, quotaMinima, co
                   fontFamily: F.mono, fontSize: S.corpo, textAlign: 'center' }} />
           <button onClick={() => onToglie(g.id)} title="togli dal passo"
             style={{ background: 'transparent', border: 'none', color: C.fioco, cursor: 'pointer', fontSize: S.grande }}>×</button>
+        </div>
         </div>
       ))}
 
@@ -324,7 +362,7 @@ function Archivio({ storico, onAzzera }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
               <span style={{ fontFamily: F.sans, fontSize: S.base, color: C.testo }}>
                 {String(s.chiusa_il).slice(8, 10)}/{String(s.chiusa_il).slice(5, 7)}
-                <span style={{ color: C.spento }}> · {REGOLE[s.regola]?.nome ?? s.regola}</span>
+                <span style={{ color: C.spento }}> · {NOMI_REGOLA[s.regola] ?? s.regola}</span>
               </span>
               <span style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700, color: d >= 0 ? C.verde : C.rosso }}>
                 {d >= 0 ? '+' : ''}{eur(d)}
@@ -365,7 +403,6 @@ export default function ScalataPage() {
   // filtra solo per giorno, quindi a metà pomeriggio la lista conterrebbe
   // ancora le partite delle 13.
   const [daOra, setDaOra] = useState(() => Date.now())
-  const [quotaMin, setQuotaMin] = useState(1.70)
   // ⚠️⚠️ **Capitale dedicato, non il conto vero** (scelta di Mattia,
   // 18/10/2026): la scalata ha un suo capitale che vive nelle sue tabelle, e il
   // bankroll del gruppo non si muove. Quando si vorrà renderlo reale,
@@ -378,11 +415,13 @@ export default function ScalataPage() {
   const [bankroll, setBankroll] = useState(null)
   // le partite aggiunte a mano a un passo, per indice di passo
   const [aggiunte, setAggiunte] = useState({})
-  const [regola, setRegola] = useState('capitale')
   const [quote, setQuote] = useState({})
   const [perc, setPerc] = useState({})
   const [esiti, setEsiti] = useState({})
   const [tolte, setTolte] = useState([])
+  // ⚠️ Gli id della **prima gamba di ogni pezzo staccato**: il taglio si ancora
+  // alla partita, non alla posizione, così non si sposta quando il piano cambia.
+  const [tagli, setTagli] = useState([])
 
   const aperta = reg.aperta
   const bankrollIniziale = aperta ? Number(aperta.bankroll_iniziale) : (bankroll ?? Math.floor(reg.capitale))
@@ -431,7 +470,23 @@ export default function ScalataPage() {
   // Nasconderle vorrebbe dire far sparire partite buone senza dire perché, e
   // la pagina serve a comporre a mano — magari aggiungendo una gamba.
   const passi = useMemo(() => {
-    const base = fasce(candidate)
+    // ⚠️⚠️ **I tagli si applicano PRIMA delle aggiunte**, e l'ordine conta:
+    // `aggiunte` è indicizzata sulla posizione del passo **come si vede a
+    // schermo**, quindi deve riferirsi alla stessa lista che viene disegnata.
+    // Applicando i tagli dopo, un passo spezzato avrebbe spostato di uno tutti
+    // gli indici successivi e le aggiunte si sarebbero riferite al passo
+    // sbagliato — in silenzio.
+    // ⚠️ Limite noto: spezzare un passo sposta comunque di uno gli indici dei
+    // passi **dopo** di lui, quindi un'aggiunta fatta prima su uno di quelli si
+    // ritrova sul vicino. Si compone a mano e si vede subito; chiuderlo per
+    // davvero vuol dire indicizzare le aggiunte per id invece che per
+    // posizione, ed è una rifattorizzazione, non una riga.
+    // ⚠️⚠️ **Prima si taglia alla quota, poi a mano.** La fascia dice *quando*
+    // si gioca, non *quanto* ci sta dentro: un sabato pieno ne mette otto nello
+    // stesso blocco, cioè una schedina da quota 21. `spezzaAlMinimo` chiude la
+    // schedina appena supera 2,00 (Mattia, 21/10), e i tagli a mano lavorano
+    // su quello che resta.
+    const base = spezzaFasce(spezzaAlMinimo(fasce(candidate)), tagli)
     // ⚠️ Le aggiunte a mano **non ricompongono le fasce**: una partita messa nel
     // passo 1 resta nel passo 1 anche se il suo orario sarebbe di un altro
     // blocco. È il punto della pagina — il raggruppamento è una proposta, la
@@ -444,7 +499,7 @@ export default function ScalataPage() {
         ...(aggiunte[i] || []).map(id => candidate.find(c => c.id === id)).filter(Boolean),
       ],
     })).filter(f => f.partite.length)
-  }, [candidate, aggiunte])
+  }, [candidate, aggiunte, tagli])
 
   // ⚠️ Il conto filtro per filtro: quando non esce niente bisogna sapere
   // **quale** soglia ha tagliato, o si gira la manopola sbagliata.
@@ -508,14 +563,14 @@ export default function ScalataPage() {
   // solo, perché non c'è un secondo numero da disfare.
   const casse = useMemo(() => {
     const c = aperta
-      ? casseDi(reg.passi, posta, regola, (i) => perc[i])
+      ? casseDi(reg.passi, posta, (i) => perc[i])
       : casseDi(passi.map((f, i) => ({
         quota: f.partite.reduce((a, g) => a * (Number(quote[g.id] ?? g.quota) || 1), 1),
         esito: esiti[i] ?? 'aperto',
-      })), posta, regola, (i) => perc[i])
+      })), posta, (i) => perc[i])
     const live = bankrollIniziale - posta + c.accumulo + c.cassa
     return { inGioco: c.cassa, accumulo: c.accumulo, vivi: c.vivi, live, risultato: c.accumulo + c.cassa - posta }
-  }, [aperta, reg.passi, passi, esiti, quote, perc, regola, posta, bankrollIniziale])
+  }, [aperta, reg.passi, passi, esiti, quote, perc, posta, bankrollIniziale])
 
   if (!righe) return <Attesa>carico le partite…</Attesa>
 
@@ -668,7 +723,7 @@ export default function ScalataPage() {
           <button disabled={!passi.length || reg.occupato}
             onClick={async () => {
               const piano = []
-              let p = posta
+              let p = posta, acc = 0
               for (const [i, f] of passi.entries()) {
                 const q = f.partite.reduce((a, g) => a * (Number(quote[g.id] ?? g.quota) || 1), 1)
                 piano.push({
@@ -678,11 +733,17 @@ export default function ScalataPage() {
                 // il piano salva la catena ipotetica: le puntate vere le
                 // ricalcola la pagina man mano che gli esiti arrivano
                 const m = p * q
-                const pc = perc[i] ?? percentualeConsigliata(regola, { numero: i + 1, montante: m, puntata: p })
-                p = applicaIncasso(m, pc, p).rigioca
+                const pc = perc[i] ?? percentualeConsigliata({ numero: i + 1, montante: m, puntata: p, posta, accumulato: acc })
+                const inc = applicaIncasso(m, pc, p)
+                acc += inc.via
+                p = inc.rigioca
                 if (p < 1) break
               }
-              const r = await reg.apri({ bankroll: bankrollIniziale, posta, quotaMinima: quotaMin, regola, piano })
+              // ⚠️ `regola: 'madre'` è il metodo di oggi, e si scrive nel
+              // registro perché l'archivio deve poter dire **come si giocava**
+              // quando quella scalata è stata aperta: le righe vecchie hanno
+              // 'capitale' o 'gioco' e restano così.
+              const r = await reg.apri({ bankroll: bankrollIniziale, posta, quotaMinima: QUOTA_MINIMA_SCHEDINA, regola: 'madre', piano })
               // ⚠️ L'errore va **a schermo**: un tasto che non fa niente e non
               // dice perché è il modo di non capire mai cosa è andato storto.
               if (r.errore) setErroreApri(r.errore)
@@ -733,12 +794,16 @@ export default function ScalataPage() {
           <Numero label="attendibilità ≥" valore={attMin} passo={1} set={setAttMin} suffisso="%" />
           <Numero label="scelta ≥" valore={sceMin} passo={1} set={setSceMin} suffisso="%" />
           <Numero label="VPM ≥" valore={vpmMin ? vpmMin.toFixed(1).replace('.', ',') : 'tutti'} passo={0.5} set={setVpmMin} />
-          <Numero label="quota schedina ≥" valore={quotaMin.toFixed(2).replace('.', ',')} passo={0.05} set={setQuotaMin} />
         </div>
+        {/* ⚠️⚠️ **Qui non ci sono più né la quota schedina né le due regole**
+            (Mattia, 21/10/2026). La quota minima è **2,00 e basta**: era una
+            manopola quando si cercava dove stare, adesso il metodo l'ha fissata
+            — e il posto dove dirlo è la card del passo che non ci arriva.
+            Le due regole di incasso servivano a misurare quale conviene, e la
+            misura ha risposto: ne resta una, e un tasto che offre quella
+            bocciata è un modo di giocarla per sbaglio. */}
         <div style={{ display: 'flex', gap: 5, marginTop: 9, flexWrap: 'wrap', alignItems: 'center' }}>
-          {Object.entries(REGOLE).map(([k, R]) => (
-            <Tasto key={k} attivo={regola === k} onClick={() => setRegola(k)} colore={C.celestePieno}>{R.nome}</Tasto>
-          ))}
+          <Etichetta colore={C.celestePieno}>METODO · {METODO.nome.toUpperCase()}</Etichetta>
           {/* ⚠️ A scalata aperta il ricarica **azzera il piano e lascia i
               soldi dove sono**: è la risposta di Mattia a *"cosa succede alle
               scalate dimenticate"* — il denaro è lo stato della scalata, il
@@ -758,8 +823,9 @@ export default function ScalataPage() {
           </Tasto>
         </div>
         <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.spento, marginTop: 7, lineHeight: 1.5 }}>
-          {REGOLE[regola].desc} · posta <b style={{ color: C.testo }}>{posta}</b> (10% del bankroll, per difetto)
-          · gamba ≥ {QUOTA_MINIMA_GAMBA} · massimo {MAX_GAMBE} gambe
+          {METODO.desc}
+          <br />posta <b style={{ color: C.testo }}>{posta}</b> (10% del bankroll, per difetto)
+          · schedina ≥ {QUOTA_MINIMA_SCHEDINA.toFixed(2).replace('.', ',')} · gamba ≥ {QUOTA_MINIMA_GAMBA} · massimo {MAX_GAMBE} gambe
         </div>
       </Card>
 
@@ -800,7 +866,11 @@ export default function ScalataPage() {
           // ⚠️ La puntata di un passo è **la cassa che arriva fin lì**,
           // ricalcolata dalla stessa catena delle casse: quella salvata al
           // momento del piano non sa quale percentuale sceglierai.
-          const p = casseDi(reg.passi.slice(0, i), posta, regola, (k) => perc[k]).cassa
+          // ⚠️ Dalla stessa catena arriva anche **quanto c'è già in
+          // accumulo**: i pavimenti del metodo sono cumulativi, quindi il
+          // consiglio di questo passo dipende da quello che i passi prima
+          // hanno già messo via — compresi i centesimi dell'arrotondamento.
+          const { cassa: p, accumulo: acc } = casseDi(reg.passi.slice(0, i), posta, (k) => perc[k])
           if (p < 1 || i > frontiera) return null
           return (
             /* ⚠️⚠️ **`i + 1`, non `riga.numero`.** La colonna `numero` è
@@ -813,7 +883,7 @@ export default function ScalataPage() {
                applicato alle casse erano due numeri diversi (al primo passo
                della catena: tutto l'utile contro il 70%). */
             <Passo key={riga.id} numero={i + 1} gambe={gambe} giorno={riga.giorno} ora={gambe[0]?.ora?.slice(0, 5)}
-              posta={p} regola={regola} quotaMinima={quotaMin} colore={coloreDi(i)} classifiche={classifiche}
+              posta={p} postaIniziale={posta} accumulato={acc} colore={coloreDi(i)} classifiche={classifiche}
               quote={quote} setQuote={setQuote}
               onQuota={(id, v) => reg.cambiaQuota(id, riga.id, v)}
               onToglie={(id) => reg.togliGamba(id, riga.id)}
@@ -825,12 +895,16 @@ export default function ScalataPage() {
                  gesto solo — prima erano due chiamate in fila, cioè una dozzina
                  di andate e ritorno al database per un tocco. */
               onAggiunge={() => { const n = prossimaSalvata(i); if (n) reg.spostaGamba(n, riga.id) }}
+              /* ⚠️ Qui il taglio è una **riga nuova nel database**, non uno
+                 stato della pagina: da `gambe[iG]` in giù scendono in un passo
+                 inserito subito dopo, col numero di mezzo (3 e 4 → 3,5). */
+              onSpezza={(iG) => reg.spezzaPasso(riga, reg.passi[i + 1]?.numero ?? null, gambe.slice(iG))}
               perc={perc[i]} setPerc={(v) => setPerc(x => ({ ...x, [i]: v }))}
               esito={riga.esito === 'aperto' ? null : riga.esito}
               setEsito={(e) => {
                 const q = gambe.reduce((a, g) => a * Number(g.quota), 1)
                 const m = p * q
-                const pc = perc[i] ?? percentualeConsigliata(regola, { numero: i + 1, montante: m, puntata: p })
+                const pc = perc[i] ?? percentualeConsigliata({ numero: i + 1, montante: m, puntata: p, posta, accumulato: acc })
                 const r = applicaIncasso(m, pc, p)
                 // ⚠️ Si scrive **solo l'esito e la fotografia del passo**: le
                 // casse non si toccano, le ricalcola `casseDi`. Annullare è
@@ -849,20 +923,36 @@ export default function ScalataPage() {
         })
         : passi.map((f, i) => {
           // la posta di un passo è quello che il precedente ha rigiocato
-          let p = posta
+          // ⚠️⚠️ **Un passo per volta, anche nel piano** (Mattia, 22/10/2026:
+          // *"voglio tornare come prima, il passo 2 si apre solo quando do
+          // l'esito del passo 1"*). Il 21/10 li avevo aperti tutti per poterli
+          // spezzare, e lui li ha rivisti e **rifiutati**: ventidue card fino
+          // al 1° novembre non sono una road map, sono una pagina da scorrere.
+          // ⚠️ E la ragione di prima regge comunque: la puntata del passo 2 è
+          // la cassa che arriva fin lì, quindi senza l'esito del 1 è un numero
+          // ipotetico. ⚠️ Lo spezza del passo 2 si raggiunge segnando l'esito
+          // del 1 — e col taglio automatico a 2,00 serve molto di rado.
+          let p = posta, acc = 0
           for (let k = 0; k < i; k++) {
             if (esiti[k] !== 'vinto') { p = 0; break }
             const q = passi[k].partite.reduce((a, g) => a * (Number(quote[g.id] ?? g.quota) || 1), 1)
             const m = p * q
-            const pc = perc[k] ?? percentualeConsigliata(regola, { numero: k + 1, montante: m, puntata: p })
-            p = applicaIncasso(m, pc, p).rigioca
+            const pc = perc[k] ?? percentualeConsigliata({ numero: k + 1, montante: m, puntata: p, posta, accumulato: acc })
+            const inc = applicaIncasso(m, pc, p)
+            acc += inc.via
+            p = inc.rigioca
           }
           if (p < 1 || i > frontiera) return null
           return (
-            <Passo key={f.giorno + f.ora} numero={i + 1} gambe={f.partite} giorno={f.giorno} ora={f.ora}
-              posta={p} regola={regola} quotaMinima={quotaMin} colore={coloreDi(i)} classifiche={classifiche}
+            /* ⚠️ La chiave è **l'id della prima gamba**: due pezzi tagliati
+               dalla stessa fascia hanno lo stesso giorno e la stessa ora,
+               quindi `giorno + ora` ne faceva due chiavi uguali — e React con
+               due chiavi uguali ridisegna la cosa sbagliata, in silenzio. */
+            <Passo key={f.partite[0]?.id ?? f.giorno + f.ora} numero={i + 1} gambe={f.partite} giorno={f.giorno} ora={f.ora}
+              posta={p} postaIniziale={posta} accumulato={acc} colore={coloreDi(i)} classifiche={classifiche}
               prossima={prossimaDi(i)}
               onAggiunge={() => { const n = prossimaDi(i); if (n) setAggiunte(a => ({ ...a, [i]: [...(a[i] || []), n.id] })) }}
+              onSpezza={(iG) => { const id = f.partite[iG]?.id; if (id) setTagli(t => [...t, id]) }}
               quote={quote} setQuote={setQuote}
               perc={perc[i]} setPerc={(v) => setPerc(x => ({ ...x, [i]: v }))}
               esito={esiti[i] ?? null} setEsito={(e) => setEsiti(x => ({ ...x, [i]: e }))}
@@ -883,7 +973,16 @@ export default function ScalataPage() {
           <div style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.spento, textAlign: 'center',
             marginTop: 8, padding: '7px 0', border: `1px dashed ${alpha(C.testo, 0.12)}` }}>
             {nascosti === 1 ? 'un altro passo in programma' : `altri ${nascosti} passi in programma`}
-            {' · '}<span style={{ color: C.fioco }}>compare quando segni l&apos;esito del passo {frontiera + 1}</span>
+            {/* ⚠️ **Con la cassa a zero quei passi non arriveranno mai**, e
+                dire *"compare quando segni l'esito del passo 3"* sarebbe una
+                promessa falsa: il passo prima è perso, la catena è finita e
+                non c'è più niente da segnare. Visto provando il ritorno al
+                passo per volta (22/10/2026). */}
+            {' · '}<span style={{ color: C.fioco }}>
+              {casse.inGioco < 1
+                ? 'la scalata si è fermata qui: restano nel piano, non in gioco'
+                : `compare quando segni l'esito del passo ${frontiera + 1}`}
+            </span>
           </div>
         )
       })()}
@@ -908,18 +1007,51 @@ export default function ScalataPage() {
               colorata il velo rendeva illeggibili le tinte scure, soprattutto
               il blu e il viola dei passi più in là. */}
           <Card style={{ padding: '4px 10px', opacity: 0.78 }}>
-            {[...candidate, ...(righe || []).filter(r => tolte.includes(r.id))].map((g, k) => {
+            {[...candidate, ...(righe || []).filter(r => tolte.includes(r.id))].map((g, k, elenco) => {
               const fuori = tolte.includes(g.id)
+              // ⚠️⚠️ **Un divisore per weekend** (Mattia, 21/10). L'elenco è
+              // lungo e in ordine di data: senza una riga che separa le
+              // giornate, la partita di sabato prossimo e quella del sabato
+              // dopo si leggono come se fossero lo stesso blocco — e la
+              // scalata è una cosa che vive **dentro** un weekend.
+              // ⚠️⚠️ **Barrate le partite SPOSTATE A MANO**, non tutte quelle
+              // che stanno in un passo (Mattia, 21/10: *"lasciamole ma
+              // barrale, per far capire che sono state scelte"*). Provato a
+              // barrare "chi sta in un passo" e il risultato era **l'elenco
+              // intero sbarrato**: `fasce()` mette *ogni* candidata in un
+              // blocco, quindi "scelta" non distingue niente. Quello che
+              // distingue è il gesto — la partita che hai tirato su col `+` da
+              // un altro passo — ed è esattamente quella che, senza un segno,
+              // si va a cercare due volte.
+              const spostata = Object.values(aggiunte).flat().includes(g.id)
+              const wk = weekendDi(g.data)
+              const nuovoWk = !fuori && (k === 0 || weekendDi(elenco[k - 1].data) !== wk)
               // ⚠️ Il colore è **quello del passo che la contiene**: è il filo
               // che lega l'elenco ai passi sopra. Chi non sta in nessun passo
               // resta grigio, e si vede subito che è materiale non usato.
               const iPasso = passi.findIndex(f => f.partite.some(x => x.id === g.id))
               const col = fuori ? C.fioco : iPasso >= 0 ? coloreDi(iPasso) : C.grigio
               return (
-                <div key={g.id} style={{ display: 'grid', gridTemplateColumns: '58px minmax(0,1fr) 26px 42px 18px',
+                <div key={g.id}>
+                {nuovoWk && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 0 4px',
+                    borderTop: k ? `1px solid ${alpha(C.testo, 0.10)}` : 'none' }}>
+                    <Etichetta>WEEKEND DEL {gg(wk)}</Etichetta>
+                    <span style={{ flex: 1, height: 1, background: alpha(C.testo, 0.08) }} />
+                  </div>
+                )}
+                <div style={{ display: 'grid', gridTemplateColumns: '58px minmax(0,1fr) 26px 42px 18px',
                   gap: 6, alignItems: 'center', padding: '5px 0', fontFamily: F.mono, fontSize: S.minuta,
-                  borderTop: k ? `1px solid ${alpha(C.testo, 0.05)}` : 'none',
-                  textDecoration: fuori ? 'line-through' : 'none' }}>
+                  borderTop: k && !nuovoWk ? `1px solid ${alpha(C.testo, 0.05)}` : 'none',
+                  /* ⚠️⚠️ **Barrata anche quando è GIÀ IN UN PASSO** (Mattia,
+                     21/10: *"lasciamole ma barrale, per far capire che sono
+                     state scelte"*). Prima la riga restava identica a quelle
+                     libere e l'unico segnale era il pallino col numero: con
+                     quaranta righe non si vedeva. ⚠️ Il barrato qui vuol dire
+                     **"non è più da scegliere"**, per due motivi diversi —
+                     tolta o già usata — e a distinguerli è il colore: grigio
+                     fioco la tolta, la tinta del passo quella scelta. */
+                  textDecoration: fuori || spostata ? 'line-through' : 'none' }}>
                   <span style={{ color: col }}>
                     {iPasso >= 0 && !fuori ? `● ${iPasso + 1} ` : ''}
                     {nomeGiorno(giorno(g.data))} {gg(g.data)} {g.ora?.slice(0, 5)}
@@ -947,7 +1079,8 @@ export default function ScalataPage() {
                   <button onClick={() => setTolte(t => fuori ? t.filter(x => x !== g.id) : [...t, g.id])}
                     title={fuori ? 'rimetti in scaletta' : 'togli dalla scaletta'}
                     style={{ background: 'transparent', border: 'none', cursor: 'pointer',
-                      color: fuori ? C.verde : C.fioco, fontSize: S.media }}>{fuori ? '+' : '×'}</button>
+                      textDecoration: 'none', color: fuori ? C.verde : C.fioco, fontSize: S.media }}>{fuori ? '+' : '×'}</button>
+                </div>
                 </div>
               )
             })}

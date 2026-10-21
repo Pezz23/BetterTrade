@@ -17,19 +17,27 @@
 import { sql } from '../lib/db.js';
 import { ricostruisci } from '../lib/ricostruisci.js';
 import { weekendDi } from '../lib/date.js';
-import { componiPasso, simula, REGOLE, QUOTA_MINIMA_GAMBA } from '../../app/src/lib/scalata.js';
+import { componiPasso, simula, METODO, QUOTA_MINIMA_GAMBA } from '../../app/src/lib/scalata.js';
 
 const arg = (n, d) => { const a = process.argv.find(x => x.startsWith(`--${n}=`)); return a ? Number(a.split('=')[1]) : d };
 const STAGIONI = arg('stagioni', 8), QUOTA = arg('quota', 1.7);
 const SOGLIA = arg('soglia', 0.60), BANKROLL = arg('bankroll', 100);
+// ⚠️ **La selezione di Mattia è una OR, non una AND** (21/10/2026):
+// *"attendibilità 68% **oppure** scelta 66%"*. Sono due modi di arrivare alla
+// stessa fiducia — il mercato da solo, o il mercato corretto dal campo — e
+// chiederli insieme terrebbe fuori proprio le partite dove il campo aggiunge
+// qualcosa. Senza `--scelta` resta il filtro di prima, sulla sola attendibilità.
+const SCELTA = arg('scelta', 0);
 
 const { valutate, stagioni } = await ricostruisci({ stagioni: STAGIONI, daGiornata: 5 });
-console.log(`stagioni ${stagioni.join(', ')} · quota minima ${QUOTA.toFixed(2)} · attendibilità ≥ ${(SOGLIA * 100).toFixed(0)}% · gamba ≥ ${QUOTA_MINIMA_GAMBA}\n`);
+console.log(`stagioni ${stagioni.join(', ')} · quota minima ${QUOTA.toFixed(2)} · gamba ≥ ${QUOTA_MINIMA_GAMBA}`);
+console.log(`selezione: attendibilità ≥ ${(SOGLIA * 100).toFixed(0)}%${SCELTA > 0 ? ` OPPURE scelta ≥ ${(SCELTA * 100).toFixed(0)}%` : ''}\n`);
 
 // le candidate di ogni giorno, raggruppate per weekend
 const perWeekend = new Map();
 for (const v of valutate) {
-  if (v.att < SOGLIA || v.quota < QUOTA_MINIMA_GAMBA) continue;
+  const passa = v.att >= SOGLIA || (SCELTA > 0 && v.scelta != null && v.scelta >= SCELTA);
+  if (!passa || v.quota < QUOTA_MINIMA_GAMBA) continue;
   const wk = weekendDi(v.data);
   if (!perWeekend.has(wk)) perWeekend.set(wk, new Map());
   const g = perWeekend.get(wk);
@@ -85,7 +93,10 @@ const mediana = (l) => { const s = [...l].sort((a, b) => a - b); return s.length
   console.log('');
 }
 
-for (const regola of Object.keys(REGOLE)) {
+// ⚠️ **Un metodo solo dal 21/10/2026**: prima qui girava un ciclo sulle due
+// regole di incasso, che servivano a misurare quale conviene. La misura ha
+// risposto e Mattia ha scelto i pavimenti — il ciclo non ha più due termini.
+{
   let bankroll = BANKROLL, scalate = 0, rientrate = 0, saltati = 0, morti1 = 0;
   const risultati = [], perPasso = [0, 0, 0, 0, 0];   // quanti passi vinti di fila
   let minimo = BANKROLL, massimo = BANKROLL;
@@ -102,7 +113,7 @@ for (const regola of Object.keys(REGOLE)) {
     }
     if (!passi.length) { saltati++; continue }
 
-    const s = simula(passi, { bankroll, regola });
+    const s = simula(passi, { bankroll });
     scalate++;
     if (s.rientrata) rientrate++;
     if (s.registro[0]?.esito === 'perso') morti1++;
@@ -113,7 +124,7 @@ for (const regola of Object.keys(REGOLE)) {
     if (bankroll < 10) break;                      // sotto i 10 la posta è 1: si chiude
   }
 
-  const R = REGOLE[regola];
+  const R = METODO;
   const tot = risultati.reduce((a, x) => a + x, 0);
   console.log(`── ${R.nome} — ${R.desc}`);
   console.log(`   ${scalate} scalate · ${saltati} weekend saltati (nessun passo costruibile)`);
@@ -130,7 +141,7 @@ for (const regola of Object.keys(REGOLE)) {
 // sembra una condanna: ma è **una pescata**, e la riga sotto dice quanto sono
 // diverse fra loro.
 console.log('── il bankroll stagione per stagione (parte da 100 ogni volta) ──');
-for (const regola of Object.keys(REGOLE)) {
+{
   const finali = [];
   for (const st of stagioni) {
     let bankroll = 100;
@@ -144,13 +155,13 @@ for (const regola of Object.keys(REGOLE)) {
         if (c.gambe) passi.push({ quota: c.quota, vinto: c.gambe.every(x => x.vinta) });
       }
       if (!passi.length) continue;
-      bankroll += simula(passi, { bankroll, regola }).risultato;
+      bankroll += simula(passi, { bankroll }).risultato;
       if (bankroll < 10) break;
     }
     finali.push(bankroll);
   }
   const ord = [...finali].sort((a, b) => a - b);
-  console.log(`   ${REGOLE[regola].nome.padEnd(20)} ${finali.map(x => x.toFixed(0)).join(' · ')}`);
+  console.log(`   ${METODO.nome.padEnd(20)} ${finali.map(x => x.toFixed(0)).join(' · ')}`);
   console.log(`   ${''.padEnd(20)} mediana ${ord[Math.floor(ord.length / 2)].toFixed(0)} · in utile ${finali.filter(x => x > 100).length} stagioni su ${finali.length}`);
 }
 

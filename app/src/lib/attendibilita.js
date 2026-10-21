@@ -264,3 +264,23 @@ export const FINESTRE = [
   { id: 'due',       label: 'Anche la prossima', fine: () => lunediProssimo(1) },
   { id: 'tutte',     label: 'Tutte',             fine: () => '9999-12-31' },
 ]
+
+/**
+ * Il **lunedì che chiude il weekend** di una data, come nelle spin: la chiave
+ * con cui si raggruppano le giornate di gioco.
+ *
+ * ⚠️ **Sta qui e non in due posti**: la stessa regola serviva al motore
+ * (`btscout/lib/date.js`), che adesso **la ri-esporta da questo file** invece
+ * di tenerne una copia. Due definizioni di "quale weekend è questo" sono il
+ * difetto peggiore possibile — una copia che nessuno confronta non si accorge
+ * di essere sbagliata.
+ * ⚠️ Si passa da **mezzogiorno** e si ricostruisce la data dai componenti
+ * locali: `toISOString()` è UTC, e per una partita serale sposta il giorno
+ * indietro.
+ */
+export function weekendDi(d) {
+  const x = new Date(d)
+  x.setHours(12, 0, 0, 0)
+  x.setDate(x.getDate() + ((8 - x.getDay()) % 7))
+  return oggiLocale(x)
+}
