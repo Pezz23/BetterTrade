@@ -177,6 +177,19 @@ for (const vista of viste) {
       // database (memoria di sessione, voti), quindi `networkidle` non arriva
       // mai. 1,2 s copre una lettura lenta senza far durare il giro un'ora.
       await pagina.waitForTimeout(1200)
+      // ⚠️⚠️ **Ma 1,2 s non bastano a tutte, e questo ha prodotto due falsi
+      // allarmi** (21/10/2026): Bilancio fotografato su «Caricamento…», e
+      // Andamento con quattro card che dicevano «nessuna partita sopra
+      // soglia» — segnalato a Mattia **due volte** come possibile difetto dei
+      // dati, mentre la pagina era solo ancora in attesa delle sue RPC.
+      // **Una foto scattata presto non è una pagina rotta, ma è
+      // indistinguibile da una.** Quindi si aspetta che il testo del
+      // caricamento sparisca, con un tetto: se resta, la pagina è davvero
+      // ferma e la foto lo deve mostrare.
+      await pagina.waitForFunction(
+        () => !/\b(carico|caricamento)\b/i.test(document.body.innerText),
+        null, { timeout: 8000 },
+      ).catch(() => {})
       // ⚠️⚠️ **La pagina intera è illeggibile su una lista lunga.** Partite
       // con 67 partite fa **28.758 pixel** di altezza: ridotta per starci in
       // uno schermo diventa una striscia dove non si distingue una riga da
