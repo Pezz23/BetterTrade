@@ -2232,6 +2232,35 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   conto `visibili/totali`. Rifatti così il 2/10/2026 perché in fila non si
   capivano: una pagina con più di tre filtri li mette in un pannello, non in
   riga.
+- ⚠️⚠️ **Spaziature e raggi vengono da `SP` e `R` di `theme.js`**, e **si
+  adottano una pagina per volta** (21/10/2026). I passi sono ricavati dai valori
+  già in uso — `gap: 8` compariva 49 volte, 6 venticinque, 10 diciannove — e
+  `SP.xl`/`SP.xxl` **sono** i 14 e 16 del riempimento di `Card`, quindi entrare
+  nei pezzi condivisi non ha cambiato un pixel. ⚠️ **Perché una pagina per
+  volta e non tutte insieme**: cambiare cinquecento `padding` alla cieca sposta
+  i layout, e un trabordamento su un telefono stretto non si vede dal terminale.
+  ⚠️ `R.pastiglia` è **999 e non 20**: su un elemento basso 20 è già un mezzo
+  cerchio, ma se l'elemento cresce torna a essere uno spigolo arrotondato. 999
+  è *"tonda qualunque sia l'altezza"* — una proprietà, non una misura.
+- ⚠️⚠️ **Il contrasto si misura, non si guarda.** Il 21/10/2026 `spento` — il
+  colore **più usato dell'app, 173 volte**, quello di tutte le etichette — stava
+  a **2,47:1** sulla card, sotto il minimo leggibile di 4,5:1. Non era una
+  sensazione: il briefing diceva *"etichette con poco contrasto"* e il calcolo
+  gli dava ragione. Ora è `#9AA2AC`, **6,97:1**. ⚠️ Un'etichetta secondaria
+  deve essere **discreta, non quasi invisibile**, e la differenza fra le due
+  cose è un numero. ⚠️ `fantasma` resta basso (2,27:1) **ed è giusto**: è il
+  testo disabilitato, che per convenzione è escluso dal requisito.
+- ⚠️ **Il fondo di una card NON la stacca dalla pagina, e non è un difetto da
+  correggere di slancio**: `fondo #0B0D10` → `card #14171B` fa **1,08:1**,
+  esattamente come i vecchi `#090909` → `#141414`. È la tavolozza scelta. Quindi
+  **una card si vede grazie al bordo**, ed è la ragione per cui l'app è un
+  reticolo di riquadri: per staccarla col solo fondo servirebbe ~`#1A1F26`, un
+  passo oltre la tavolozza. **Decisione aperta, da prendere guardando lo
+  schermo.**
+- ⚠️ **`:focus-visible` sta in `index.css`** e prima non c'era: si vedeva
+  l'anello azzurro di sistema sopra un tema scuro. ⚠️ `focus-visible` e **non**
+  `focus`: così compare con la tastiera e non resta attaccato al pulsante dopo
+  averlo premuto col dito.
 - ⚠️⚠️ **Le misure dei caratteri vengono dalla scala `S` di `theme.js`**, non si
   scrivono a mano (21/10/2026): dodici passi con un ruolo — `S.base` è il testo
   corrente, `S.minuta` un contrassegno, `S.evidenza` un titolo grande o un

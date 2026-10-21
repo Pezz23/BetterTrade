@@ -3,7 +3,54 @@
 > To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 21 ottobre 2026 · app alla versione **1.29.00**
+**Ultimo aggiornamento:** 21 ottobre 2026 (sera) · app alla versione **1.31.00**
+
+## ▶️ IL RESTYLING È COMINCIATO — leggi questo per primo
+
+Mattia ha consegnato un **briefing sul restyling globale** (scritto da una
+sessione esterna che ha visto solo screenshot). La valutazione completa, con le
+sei correzioni e gli undici lotti, sta in
+**`briefing/risposte/2026-10-21-restyling-globale-risposta.md`**.
+
+**Le quattro decisioni prese da Mattia il 21/10:**
+
+| | |
+|---|---|
+| verifica | **screenshot dopo ogni lotto** — io non vedo lo schermo, e i criteri *"non sembra più un AS/400"* e *"funziona da 375 a 1280px"* sono suoi |
+| palette | **tutta quella proposta nel briefing** (oro `#D8B44A`, verde `#20B875`, rosso `#E05252`, blu `#4C9FFF`, fondi `#0B0D10`/`#14171B`) |
+| grafici nel Reporting | **no**: non esistono oggi, e aggiungerli è una funzione nuova che il briefing stesso vieta |
+| emoji del menu | **si disegnano in SVG**, un set solo, nessuna dipendenza — ma è il **lotto 10**, l'ultimo |
+
+**I lotti, e dove siamo:**
+
+| # | lotto | stato |
+|---|---|---|
+| 1 | **I token** — palette, `SP`, `R`, pesi di Sora, `:focus-visible` | ✅ **fatto** (`56b274f`) |
+| 2 | La regola del mono — parole in Sora, numeri in mono (262 usi) | da fare |
+| 3 | I pezzi condivisi + gli stati (hover, focus, disabled, loading) | da fare |
+| 4 | La partita — testata, barra, riga (5 schermate) | da fare · **alto rischio** |
+| 5 | La scheda partita — tre livelli, le dieci celle a fasce conservate | da fare · alto |
+| 6 | La cornice — header, menu, tab bar | da fare |
+| 7 | Le pagine dei numeri — Dashboard, Bilancio, Reporting, Storico, Andamento | da fare |
+| 8 | Le pagine dense — Slot, Spin, Road to weekend | da fare · **alto** |
+| 9 | Le minori — Utenti, Importazioni, Login | da fare |
+| 10 | Le icone — emoji → SVG | da fare, per ultimo |
+| 11 | Verifica delle larghezze e dei trabordamenti | **serve Mattia** |
+
+⚠️ **L'ordine consigliato è 1 → 3 → 2 → 6**: massima resa, rischio minimo. Poi
+4, 5 e 8 uno per volta con una guardata in mezzo.
+
+### Da dove ripartire adesso
+
+1. ⏳ **Mattia deve mandare due o tre schermate** del lotto 1 (Dashboard, la
+   lista delle partite, una pagina densa). Servono a tre domande che dal
+   terminale non hanno risposta: le etichette ora sono **troppo accese**? i
+   fondi vanno portati un passo più su (`#1A1F26`)? l'oro nuovo regge sui
+   numeri piccoli?
+2. Se si vuole andare avanti senza aspettare: **lotto 3**, che tocca `ui.jsx` e
+   non dipende dal giudizio sulle schermate.
+3. ⚠️ **Il collaudo di Road to weekend dal browser resta aperto**: è la prima
+   cosa da fare in una sessione che tocchi la scalata.
 
 ## Il 21 ottobre: il tagliando prima della grafica
 
@@ -93,7 +140,7 @@ numeri scritti qui, perché alcuni sono stati corretti.
 
 | | |
 |---|---|
-| app | **1.29.00**, commit `5f738c9`, lint 0 errori (8 avvisi noti), build ok |
+| app | **1.31.00**, commit `56b274f`, lint 0 errori (8 avvisi noti), build ok |
 | peso del primo paint | **381 kB / 110 kB compressi** (era 582 / 163) · le pagine arrivano a richiesta |
 | Road to weekend | in piedi · **registro vuoto**: la #16 era un collaudo, azzerata da Mattia col tasto il 19/10 |
 | archivio | **54.125** partite con risultato, l'ultima del **14/10** |
