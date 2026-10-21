@@ -44,21 +44,31 @@ export default function BilancioPage() {
 
   useEffect(()=>{ init() },[currentUser?.id])
 
+  // ⚠️⚠️ **Tutto insieme, non in fila.** Erano quattro letture una dopo l'altra
+  // — gli utenti, le giornate, i movimenti, i movimenti di tutti — e nessuna
+  // dipendeva dalle altre: 278 ms di attesa contro i 78 della più lenta. Le
+  // tabelle qui sono minuscole (3 movimenti, 275 giornate): il tempo era tutto
+  // nel numero di andate e ritorno.
+  // ⚠️ `fetchUsers()` resta perché la pagina mostra il gruppo intero, ma **non
+  // davanti alle altre**: il suo risultato non serve a costruire le altre
+  // richieste, serve solo a disegnare.
   async function init() {
-    await fetchUsers()
-    if (currentUser) {
-      // Carica storico giornate
-      const {data:g}=await supabase.from('giornate').select('*').eq('user_id',currentUser.id).order('stagione').order('week_number')
-      if (g) setStorico(g)
-      // Carica movimenti personali
-      const {data:m}=await supabase.from('movimenti').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false})
-      if (m) setMovimenti(m)
-      // SuperAdmin: carica movimenti di tutti
-      if (currentUser.role==='superadmin') {
-        const {data:tm}=await supabase.from('movimenti').select('*, users(display_name, username)').order('created_at',{ascending:false})
-        if (tm) setTuttiMovimenti(tm)
-      }
-    }
+    if (!currentUser) { await fetchUsers(); setLoading(false); return }
+    const mio = { user_id: currentUser.id }
+    const [, g, m, tm] = await Promise.all([
+      fetchUsers(),
+      supabase.from('giornate').select('*').match(mio).order('stagione').order('week_number'),
+      supabase.from('movimenti').select('*').match(mio).order('created_at',{ascending:false}),
+      // I movimenti di tutti li vede solo il superadmin. ⚠️ La promessa c'è
+      // comunque — risolta a vuoto — perché un `Promise.all` con un buco
+      // sposterebbe gli indici del risultato.
+      currentUser.role==='superadmin'
+        ? supabase.from('movimenti').select('*, users(display_name, username)').order('created_at',{ascending:false})
+        : Promise.resolve({ data: null }),
+    ])
+    if (g.data) setStorico(g.data)
+    if (m.data) setMovimenti(m.data)
+    if (tm.data) setTuttiMovimenti(tm.data)
     setLoading(false)
   }
 

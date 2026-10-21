@@ -3,7 +3,8 @@ import { supabase } from '../supabase'
 import { C, F, alpha } from '../theme'
 import { Card, Etichetta } from '../components/ui'
 import { CATEGORIE, pct, giorno } from '../components/TestataPartita'
-import { valuta, categoria, SOGLIE_DEFAULT, oggiLocale } from '../lib/attendibilita'
+import { valuta, categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
+import { usaProssime } from '../hooks/usaProssime'
 import { sigla } from '../lib/campionati'
 
 // Lo stato dell'archivio e come stanno andando le proposte.
@@ -49,34 +50,39 @@ const vinta = (giocata, r) => {
 // mostrare tutte.
 const VISIBILI = 10
 
+// ⚠️⚠️ **Le colonne si scrivono**, non si chiede `*`. Con `select('*')` questa
+// lettura spediva **236 kB** — 36 colonne per 329 proposte già giocate, comprese
+// quelle che nessuno guarda (l'exchange, le quote under, i book di dettaglio).
+// Qui servono le sei che `valuta()` legge più quelle che si vedono nella riga.
+const COLONNE_GIOCATE = 'id, div, data, casa, trasferta, b365_1, b365_x, b365_2, b365_over25, avg_ap_1, avg_ap_x, avg_ap_2, max_ap_1, max_ap_2, partite!inner(esito, gol_casa, gol_trasferta)'
+
 export default function StoricoPage() {
+  // ⚠️ Le future arrivano dall'hook condiviso, che ha la memoria di sessione:
+  // questa pagina se le riscaricava da sé con una query quasi identica a quella
+  // di `usaProssime` — la stessa lista, due volte, con il rischio di due numeri
+  // diversi sulla stessa cosa.
+  const { righe: future, caricamento: caricaFuture } = usaProssime()
   const [archivio, setArchivio] = useState(null)
   const [giocate, setGiocate] = useState([])
-  const [future, setFuture] = useState([])
   const [errore, setErrore] = useState(null)
   const [caricamento, setCaricamento] = useState(true)
   const [tutte, setTutte] = useState(false)   // le ultime chiuse: 10 o tutte
 
   useEffect(() => {
     async function carica() {
-      // ⚠️ `oggiLocale()` e non `toISOString()`: quello è UTC, e fra mezzanotte
-      // e le due italiane restituisce ieri.
-      const oggi = oggiLocale()
-      // Il conteggio dell'archivio: solo numeri, niente righe.
-      const totale = await supabase.from('partite').select('*', { count: 'exact', head: true })
-      const ultimaGiocata = await supabase.from('partite').select('div, stagione, data').order('data', { ascending: false }).limit(1)
-      // Le proposte già giocate, con il risultato agganciato dalla chiave esterna.
-      const { data: fatte, error } = await supabase
-        .from('prossime_partite')
-        .select('*, partite!inner(esito, gol_casa, gol_trasferta)')
-        .not('partita_id', 'is', null)
-      const { data: prossime } = await supabase.from('prossime_partite')
-        .select('id, div, campionato, data, ora, casa, trasferta, scaricato_il, fonte, book, book_1, book_x, book_2, b365_1, b365_x, b365_2, b365_over25, avg_ap_1, avg_ap_x, avg_ap_2, max_ap_1, max_ap_x, max_ap_2')
-        .gte('data', oggi)
-      if (error) setErrore(error.message)
+      // ⚠️⚠️ **Le tre letture insieme, non in fila.** Nessuna dipende dalle
+      // altre, e in fila costavano 407 ms contro i 136 della più lenta: su
+      // questa pagina il tempo era tutto nell'attesa, non nei dati.
+      const [totale, ultimaGiocata, fatte] = await Promise.all([
+        // Il conteggio dell'archivio: solo numeri, niente righe.
+        supabase.from('partite').select('*', { count: 'exact', head: true }),
+        supabase.from('partite').select('div, stagione, data').order('data', { ascending: false }).limit(1),
+        // Le proposte già giocate, col risultato agganciato dalla chiave esterna.
+        supabase.from('prossime_partite').select(COLONNE_GIOCATE).not('partita_id', 'is', null),
+      ])
+      if (fatte.error) setErrore(fatte.error.message)
       setArchivio({ totale: totale.count, ultima: ultimaGiocata.data?.[0] })
-      setGiocate((fatte || []).map(r => ({ ...r, ...r.partite })).map(valuta).filter(r => r.prob !== null))
-      setFuture((prossime || []).map(valuta).filter(r => r.prob !== null))
+      setGiocate((fatte.data || []).map(r => ({ ...r, ...r.partite })).map(valuta).filter(r => r.prob !== null))
       setCaricamento(false)
     }
     carica()
@@ -107,7 +113,10 @@ export default function StoricoPage() {
     return c
   }, [future])
 
-  if (caricamento) return <div style={{ padding: 16, color: C.spento, fontFamily: F.mono, fontSize: 12 }}>Carico…</div>
+  // ⚠️ Si aspettano **entrambe**: senza, per un istante la pagina scriveva
+  // *"partite future 0"* con un periodo vuoto — un numero sbagliato mostrato
+  // come se fosse quello giusto.
+  if (caricamento || caricaFuture) return <div style={{ padding: 16, color: C.spento, fontFamily: F.mono, fontSize: 12 }}>Carico…</div>
 
   return (
     <div style={{ padding: 16, maxWidth: 760, margin: '0 auto' }}>
