@@ -41,14 +41,18 @@ const PAGINE = [
   { id: 'login',     via: 'prima' },
   { id: 'dashboard', via: 'tab',  testo: 'Dashboard' },
   { id: 'slot',      via: 'tab',  testo: 'Slot' },
-  { id: 'spin',      via: 'tab',  testo: 'Spin',             admin: true },
+  // ⚠️ Spin è scesa nel menu e Road to weekend è salita nella barra in basso
+  // (21/10/2026). Questa mappa va tenuta allineata alla navigazione: il
+  // 21/10 non l'ho fatto e due pagine sono andate in timeout per trenta
+  // secondi l'una, con una riga `❌` in mezzo alle altre.
+  { id: 'spin',      via: 'menu', testo: 'Spin',              admin: true },
   { id: 'partite',   via: 'tab',  testo: 'Partite' },
   { id: 'votate',    via: 'menu', testo: 'Partite votate' },
   { id: 'storico',   via: 'menu', testo: 'Storico' },
   { id: 'andamento', via: 'menu', testo: 'Andamento' },
   { id: 'reporting', via: 'menu', testo: 'Reporting' },
   { id: 'bilancio',  via: 'menu', testo: 'Bilancio' },
-  { id: 'scalata',   via: 'menu', testo: 'Road to weekend',  admin: true },
+  { id: 'scalata',   via: 'tab',  testo: 'Weekend',           admin: true },
   { id: 'utenti',    via: 'menu', testo: 'Utenti',           admin: true },
   // ⚠️ La scheda di una partita è **la schermata più densa dell'app** — tre
   // livelli, dieci celle a fasce, il blocco VPM — e non si raggiunge da nessun
@@ -194,6 +198,18 @@ for (const vista of viste) {
         await pagina.locator('.icona-menu').click().catch(() => {})
         await pagina.waitForTimeout(300)
       }
+      // ⚠️⚠️ **Un commento JSX senza graffe diventa TESTO A SCHERMO.**
+      // `/* … */` fra due tag è contenuto, non un commento: ci sono cascato
+      // due volte, e la seconda la riga «/* stessa traccia della barra…»
+      // stava in mezzo alla scheda di una partita. Né il lint né il build se
+      // ne accorgono — per loro è una stringa legittima. Qui si guarda il
+      // testo che la pagina mostra davvero.
+      const commenti = await pagina.evaluate(() => {
+        const t = document.body.innerText
+        const i = t.indexOf('/*')
+        return i < 0 ? null : t.slice(i, i + 60).replace(/\s+/g, ' ')
+      })
+      if (commenti) errori.push(`COMMENTO A SCHERMO in ${p.id}: ${commenti}`)
       const fuori = await pagina.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
       if (fuori > 1) sbordi.push(`${p.id} a ${vista.width}px esce di ${fuori}px`)
       console.log(`  ✅ ${p.id}${suffisso}${fuori > 1 ? `  ⚠️ esce di ${fuori}px` : ''}`)
