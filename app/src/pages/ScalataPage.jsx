@@ -9,6 +9,8 @@ import { usaScalate } from '../hooks/usaScalate'
 import { Posizione } from '../components/TestataPartita'
 import SchedaScorrevole from '../components/SchedaScorrevole'
 import DettaglioPartita from '../components/DettaglioPartita'
+import Icona from '../components/Icona'
+import ScegliGamba from '../components/ScegliGamba'
 import { valutaPartita } from '../lib/vpm'
 import { sigla } from '../lib/campionati'
 import { weekendDi, categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
@@ -67,7 +69,7 @@ const iniziaDopo = (p, istante) => {
 
 function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumulato, colore, classifiche,
                 quote, setQuote, perc, setPerc, esito, setEsito, onToglie, prossima, onAggiunge,
-                onQuota = null, onSpezza = null, onApri = null }) {
+                onQuota = null, onSpezza = null, onApri = null, onManuale = null, tocca = true }) {
   // ⚠️ La quota della schedina è il **prodotto delle quote modificate**, non di
   // quelle scaricate: Mattia gioca su book diversi e con i bonus, e una pagina
   // che mostra la quota del consenso gli racconterebbe un piano che non è il suo.
@@ -119,7 +121,7 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
             gambe, quindi proponeva di fabbricare una schedina a 1,30 — che non
             è un passo di questa scalata. `puoSpezzare` guarda il prodotto di
             qua e di là dal taglio. */}
-        {iG > 0 && onSpezza && !esito && puoSpezzare(quoteGambe, iG) && (
+        {iG > 0 && onSpezza && !esito && tocca && puoSpezzare(quoteGambe, iG) && (
           <button onClick={() => onSpezza(iG)} title="Da qui in giù diventa un passo a parte"
             style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', padding: '3px 0',
               background: 'none', border: 'none', cursor: 'pointer', color: C.fioco, fontFamily: F.sans,
@@ -196,7 +198,10 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
           </div>
           {/* ⚠️ La quota è **modificabile**: book diversi e bonus. Il valore
               scaricato resta come segnaposto, così si vede se l'hai cambiata. */}
-          <input value={quote[g.id] ?? ''} placeholder={Number(g.quota).toFixed(2)}
+          {/* ⚠️ `readOnly` e non `disabled`: la quota si deve **leggere** anche
+              da spettatori, e un campo disabilitato in questo tema diventa
+              quasi invisibile (`fantasma` è 2,27:1). */}
+          <input value={quote[g.id] ?? ''} placeholder={Number(g.quota).toFixed(2)} readOnly={!tocca}
                 onChange={e => setQuote(q => ({ ...q, [g.id]: e.target.value.replace(',', '.') }))}
                 /* ⚠️ Si scrive nel registro **uscendo dal campo**, non a ogni
                    tasto: altrimenti "1,85" passerebbe per "1", "1,", "1,8" —
@@ -205,18 +210,34 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
                 inputMode="decimal" style={{ width: '100%', background: C.pozzo, color: C.oro,
                   border: `1px solid ${alpha(C.oro, 0.3)}`, borderRadius: 6, padding: '4px 6px',
                   fontFamily: F.mono, fontSize: S.corpo, textAlign: 'center' }} />
-          <button onClick={() => onToglie(g.id)} title="togli dal passo"
-            style={{ background: 'transparent', border: 'none', color: C.fioco, cursor: 'pointer', fontSize: S.grande }}>×</button>
+          {tocca && <button onClick={() => onToglie(g.id)} title="togli dal passo"
+            style={{ background: 'transparent', border: 'none', color: C.fioco, cursor: 'pointer', fontSize: S.grande }}>×</button>}
         </div>
         </div>
       ))}
+
+      {/* ⚠️⚠️ **Sotto la consigliata, e con un'aria diversa** (Mattia,
+          22/10/2026). Sono due gesti diversi: quello sopra **accetta** la
+          proposta dell'app (e dice quale partita sarebbe), questo **la
+          scavalca** aprendo il calendario intero. Lo stesso aspetto per
+          entrambi vorrebbe dire che l'app consiglia anche il secondo, e non è
+          vero: lì sotto la qualità la giudichi tu.
+          ⚠️ C'è **anche quando non c'è niente da consigliare**: è il caso in
+          cui serve di più — la fascia è finita e il passo è sotto quota. */}
+      {onManuale && !esito && tocca && (
+        <button onClick={onManuale} style={{ width: '100%', marginTop: 6, padding: '6px 8px',
+          background: 'transparent', border: `1px dashed ${alpha(C.testo, 0.18)}`, color: C.spento,
+          fontFamily: F.sans, fontSize: S.minuta, cursor: 'pointer', textAlign: 'left' }}>
+          + aggiungi partita manuale
+        </button>
+      )}
 
       {/* ── la posta, il consiglio, e la decisione ──────────────────────── */}
       {/* ⚠️ **Il tasto dice QUALE partita aggiungerebbe**, non "aggiungi": un
           tasto che pesca al buio costringe a premere per sapere cosa fa. Prende
           la prima consigliata non ancora in nessun passo, in ordine di data e
           ora — che è il senso di *"aggiungo le partite successive"*. */}
-      {prossima && (
+      {prossima && tocca && (
         <button onClick={onAggiunge} style={{ width: '100%', marginTop: 6, padding: '6px 8px',
           background: 'transparent', border: `1px dashed ${alpha(colore, 0.4)}`, color: colore,
           fontFamily: F.sans, fontSize: S.minuta, cursor: 'pointer', textAlign: 'left' }}>
@@ -248,7 +269,7 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
         border: `1px solid ${alpha(C.oro, 0.22)}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
           <Etichetta>METTI VIA</Etichetta>
-          <input value={perc ?? ''} placeholder={consiglio.toFixed(0)} inputMode="decimal"
+          <input value={perc ?? ''} placeholder={consiglio.toFixed(0)} inputMode="decimal" readOnly={!tocca}
             onChange={e => setPerc(e.target.value.replace(',', '.'))}
             style={{ width: 54, background: C.pozzo, color: C.testo, border: `1px solid ${C.bordo}`,
               borderRadius: 6, padding: '4px 6px', fontFamily: F.mono, fontSize: S.media, textAlign: 'center' }} />
@@ -274,7 +295,9 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+      {/* ⚠️ I tre tasti dell'esito spariscono per chi guarda e basta: sono
+          l'unica cosa della card che **scrive nel registro**. */}
+      {tocca && <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
         {/* ⚠️⚠️ **Nessun blocco, nemmeno a scalata aperta** (Mattia, 18/10:
             *"tutto troppo vincolante"*). Si può annullare un esito, cambiare
             una quota, togliere o aggiungere una gamba in qualunque momento:
@@ -289,7 +312,7 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
             border: `1px solid ${alpha(col, esito === e ? 0.5 : 0.18)}`,
           }}>{e === 'vinto' ? '✓ vinto' : e === 'perso' ? '✗ perso' : 'da giocare'}</button>
         ))}
-      </div>
+      </div>}
     </Card>
   )
 }
@@ -341,7 +364,7 @@ function Riparti({ quante, onAzzera }) {
   )
 }
 
-function Archivio({ storico, onAzzera }) {
+function Archivio({ storico, onAzzera, tocca = true }) {
   const chiuse = (storico || []).filter(s => s.stato === 'chiusa')
   if (!storico) return <Card><Attesa style={{ padding: 0 }} /></Card>
   if (!chiuse.length) return (
@@ -352,7 +375,7 @@ function Archivio({ storico, onAzzera }) {
       </div></Card>
       {/* ⚠️ Il tasto c'è anche senza scalate chiuse: quella **aperta** è il
           caso in cui serve più spesso — si è provato, non torna, si ricomincia. */}
-      {!!storico.length && <Riparti quante={storico.length} onAzzera={onAzzera} />}
+      {!!storico.length && tocca && <Riparti quante={storico.length} onAzzera={onAzzera} />}
     </div>
   )
   const tot = chiuse.reduce((a, s) => a + (Number(s.bankroll_finale) - Number(s.bankroll_iniziale)), 0)
@@ -396,20 +419,26 @@ function Archivio({ storico, onAzzera }) {
           </Card>
         )
       })}
-      <Riparti quante={storico.length} onAzzera={onAzzera} />
+      {tocca && <Riparti quante={storico.length} onAzzera={onAzzera} />}
     </div>
   )
 }
 
 export default function ScalataPage() {
   const { currentUser, isAdmin } = useAuth()
-  const { righe, ricarica: ricaricaPartite, vota, votiDi, mioVoto } = usaProssime()
+  const { righe, ricarica: ricaricaPartite, vota, votiDi, mioVoto, flagga, flagDi, mioFlag } = usaProssime()
   const datiVpm = usaVpm()
   const classifiche = usaClassifiche()
-  const reg = usaScalate(currentUser?.id)
+  // ⚠️ Chi non è admin legge **il registro che c'è**, non il proprio (vuoto).
+  const reg = usaScalate(currentUser?.id, !isAdmin)
   const [modo, setModo] = useState('piano')
   // la partita aperta a tutto schermo, come nella pagina Partite
   const [apertaId, setApertaId] = useState(null)
+  // il passo a cui si sta aggiungendo una partita a mano: { titolo, nelPasso, metti }
+  const [manuale, setManuale] = useState(null)
+  // ⚠️ L'errore di un'aggiunta a mano va **in cima**, con quelli del registro,
+  // non sotto APRI SCALATA: lì sembrerebbe che non si possa aprire la scalata.
+  const [avviso, setAvviso] = useState(null)
   const [erroreApri, setErroreApri] = useState(null)
 
   const [attMin, setAttMin] = useState(CONSIGLIATO.att)
@@ -526,10 +555,51 @@ export default function ScalataPage() {
       ...f,
       partite: [
         ...f.partite.filter(p => !usate.has(p.id)),
-        ...(aggiunte[i] || []).map(id => candidate.find(c => c.id === id)).filter(Boolean),
+        // ⚠️⚠️ **Si cerca in `valutate`, non in `candidate`**: dal
+        // «+ aggiungi partita manuale» può arrivare una partita che i filtri
+        // non prendono, e cercandola fra le candidate sarebbe sparita
+        // **in silenzio** — il tasto avrebbe fatto finta di funzionare.
+        ...(aggiunte[i] || []).map(id => valutate.find(c => c.id === id)).filter(Boolean),
       ],
     })).filter(f => f.partite.length)
-  }, [candidate, aggiunte, tagli])
+  }, [candidate, valutate, aggiunte, tagli])
+
+  // ⚠️⚠️ **Flaggate e votate restano in lista anche se i filtri le tagliano**
+  // (Mattia, 22/10/2026). Senza, bastava alzare una soglia per far sparire un
+  // segno messo a mano — e un segno che scompare in silenzio è il difetto
+  // peggiore di tutti. ⚠️ **Entrano nell'ELENCO, non nella scaletta**: i passi
+  // si compongono dalle candidate, perché le soglie alimentano anche il taglio
+  // automatico a 2,00 e una gamba corta entrata di straforo abbasserebbe la
+  // qualità del passo senza dirlo.
+  const fuoriFiltri = useMemo(() => {
+    if (!righe) return []
+    const dentro = new Set(candidate.map(c => c.id))
+    return valutate.filter(r => !dentro.has(r.id) && !tolte.includes(r.id)
+      && iniziaDopo(r, daOra) && (flagDi(r.id) > 0 || votiDi(r.id) > 0))
+  }, [righe, valutate, candidate, tolte, daOra, flagDi, votiDi])
+
+  // ⚠️ Si fondono **in ordine di data**, non in coda: una partita flaggata
+  // appartiene al suo weekend, e messa in fondo finirebbe sotto il divisore
+  // sbagliato.
+  const elenco = useMemo(() => [...candidate, ...fuoriFiltri].sort((a, b) =>
+    giorno(a.data).localeCompare(giorno(b.data))
+    || String(a.ora || '').localeCompare(String(b.ora || ''))), [candidate, fuoriFiltri])
+
+  // ⚠️ **Dove sta già ogni partita**, per la finestra dell'aggiunta a mano:
+  // `id della partita → numero del passo`. ⚠️ Si guarda **la catena giusta**:
+  // a scalata aperta i passi veri sono quelli salvati (e la gamba punta alla
+  // partita con `prossima_id`), nel piano sono le fasce composte dal vivo.
+  const inPassoDi = useMemo(() => {
+    const m = {}
+    if (aperta) {
+      reg.passi.forEach((r, i) => {
+        for (const g of reg.gambe) if (g.passo_id === r.id && g.prossima_id) m[g.prossima_id] = i + 1
+      })
+    } else {
+      passi.forEach((f, i) => { for (const g of f.partite) m[g.id] = i + 1 })
+    }
+    return m
+  }, [aperta, reg.passi, reg.gambe, passi])
 
   // ⚠️ Il conto filtro per filtro: quando non esce niente bisogna sapere
   // **quale** soglia ha tagliato, o si gira la manopola sbagliata.
@@ -640,10 +710,18 @@ export default function ScalataPage() {
         </Card>
       )}
 
+      {/* ⚠️ Si chiude col tocco: un avviso che resta lì per sempre diventa
+          arredamento, e il prossimo non si nota. */}
+      {avviso && (
+        <Card onClick={() => setAvviso(null)} style={{ marginBottom: 10, borderColor: alpha(C.ambra, .45), cursor: 'pointer' }}>
+          <div style={{ color: C.ambra, fontSize: S.base, fontFamily: F.sans }}>{avviso}</div>
+        </Card>
+      )}
+
       {/* ⚠️ Azzerare il registro azzera anche lo stato della pagina: esiti e
           percentuali sono indicizzati per passo, e passi non ce ne sono più. */}
       {modo === 'archivio' && (
-        <Archivio storico={reg.storico} onAzzera={async () => {
+        <Archivio storico={reg.storico} tocca={isAdmin} onAzzera={async () => {
           await reg.azzeraTutto()
           setEsiti({}); setPerc({}); setTolte([]); setAggiunte({}); setQuote({}); setBankroll(null)
         }} />
@@ -688,11 +766,13 @@ export default function ScalataPage() {
                 tocco il bankroll si poteva solo approssimare, e la puntata è il suo
                 10% — cioè il passo del bankroll decide il passo della puntata. */}
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: SP.s }}>
-              <TastoRipeti onScatto={() => setBankroll(Math.max(10, bankrollIniziale - 1))}>−</TastoRipeti>
+              {/* ⚠️ Il capitale lo muove chi gioca: per gli altri resta il
+                  numero, senza i due tasti. */}
+              {isAdmin && <TastoRipeti onScatto={() => setBankroll(Math.max(10, bankrollIniziale - 1))}>−</TastoRipeti>}
               <div style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700, color: C.testo, minWidth: 64, textAlign: 'center' }}>
                 {eur(bankrollIniziale)}
               </div>
-              <TastoRipeti onScatto={() => setBankroll(bankrollIniziale + 1)}>+</TastoRipeti>
+              {isAdmin && <TastoRipeti onScatto={() => setBankroll(bankrollIniziale + 1)}>+</TastoRipeti>}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: SP.m, flexWrap: 'wrap' }}>
@@ -725,7 +805,10 @@ export default function ScalataPage() {
             guadagnati, che è il contrario di "incassa tutto".
             ⚠️ E **chiude il record**: da lì in poi quella scalata non si tocca
             più, perché un registro riscrivibile non è una prova. */}
-        {aperta ? (
+        {/* ⚠️ Per chi guarda e basta i due tasti **non ci sono**, né spenti:
+            un tasto disabilitato racconta una cosa che si potrebbe fare, e
+            qui non si può — lo dice la policy, non solo questo `if`. */}
+        {!isAdmin ? null : aperta ? (
           <button onClick={async () => {
             // ⚠️⚠️ **Le casse si scrivono qui, una volta sola.** Da quando si
             // ricalcolano dalla catena, `scalate.cassa` e `scalate.accumulo`
@@ -927,7 +1010,7 @@ export default function ScalataPage() {
                della catena: tutto l'utile contro il 70%). */
             <Passo key={riga.id} numero={i + 1} gambe={gambe} giorno={riga.giorno} ora={gambe[0]?.ora?.slice(0, 5)}
               posta={p} postaIniziale={posta} accumulato={acc} colore={coloreDi(i)} classifiche={classifiche}
-              quote={quote} setQuote={setQuote} onApri={setApertaId}
+              quote={quote} setQuote={setQuote} onApri={setApertaId} tocca={isAdmin}
               onQuota={(id, v) => reg.cambiaQuota(id, riga.id, v)}
               onToglie={(id) => reg.togliGamba(id, riga.id)}
               prossima={prossimaSalvata(i)}
@@ -938,6 +1021,11 @@ export default function ScalataPage() {
                  gesto solo — prima erano due chiamate in fila, cioè una dozzina
                  di andate e ritorno al database per un tocco. */
               onAggiunge={() => { const n = prossimaSalvata(i); if (n) reg.spostaGamba(n, riga.id) }}
+              onManuale={() => setManuale({
+                titolo: `PASSO ${i + 1}`,
+                nelPasso: gambe.map(g => g.prossima_id),
+                metti: (p) => reg.aggiungiGamba(riga.id, p),
+              })}
               /* ⚠️ Qui il taglio è una **riga nuova nel database**, non uno
                  stato della pagina: da `gambe[iG]` in giù scendono in un passo
                  inserito subito dopo, col numero di mezzo (3 e 4 → 3,5). */
@@ -993,8 +1081,16 @@ export default function ScalataPage() {
                due chiavi uguali ridisegna la cosa sbagliata, in silenzio. */
             <Passo key={f.partite[0]?.id ?? f.giorno + f.ora} numero={i + 1} gambe={f.partite} giorno={f.giorno} ora={f.ora}
               posta={p} postaIniziale={posta} accumulato={acc} colore={coloreDi(i)} classifiche={classifiche}
-              onApri={setApertaId} prossima={prossimaDi(i)}
+              onApri={setApertaId} tocca={isAdmin} prossima={prossimaDi(i)}
               onAggiunge={() => { const n = prossimaDi(i); if (n) setAggiunte(a => ({ ...a, [i]: [...(a[i] || []), n.id] })) }}
+              onManuale={() => setManuale({
+                titolo: `PASSO ${i + 1}`,
+                nelPasso: f.partite.map(g => g.id),
+                /* ⚠️ Nel piano l'aggiunta è **stato della pagina**, non una
+                   scrittura: qui niente è ancora successo. Diventa una riga
+                   del registro solo con APRI SCALATA. */
+                metti: (p) => { setAggiunte(a => ({ ...a, [i]: [...(a[i] || []), p.id] })); return {} },
+              })}
               onSpezza={(iG) => { const id = f.partite[iG]?.id; if (id) setTagli(t => [...t, id]) }}
               quote={quote} setQuote={setQuote}
               perc={perc[i]} setPerc={(v) => setPerc(x => ({ ...x, [i]: v }))}
@@ -1043,15 +1139,17 @@ export default function ScalataPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
             <Etichetta>TUTTE LE CONSIGLIATE</Etichetta>
             <span style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco }}>
-              {candidate.length} in scaletta{tolte.length ? ` · ${tolte.length} tolte` : ''}
+              {candidate.length} in scaletta{fuoriFiltri.length ? ` · ${fuoriFiltri.length} segnate fuori filtri` : ''}{tolte.length ? ` · ${tolte.length} tolte` : ''}
             </span>
           </div>
           {/* ⚠️ Un filo meno spenta di prima (0,62 → 0,78): con tutta la riga
               colorata il velo rendeva illeggibili le tinte scure, soprattutto
               il blu e il viola dei passi più in là. */}
           <Card style={{ padding: '4px 10px', opacity: 0.78 }}>
-            {[...candidate, ...(righe || []).filter(r => tolte.includes(r.id))].map((g, k, elenco) => {
+            {[...elenco, ...(righe || []).filter(r => tolte.includes(r.id))].map((g, k, tutte) => {
               const fuori = tolte.includes(g.id)
+              // fuori dai filtri: ci sta solo perché qualcuno l'ha segnata
+              const soloSegno = !fuori && fuoriFiltri.some(x => x.id === g.id)
               // ⚠️⚠️ **Un divisore per weekend** (Mattia, 21/10). L'elenco è
               // lungo e in ordine di data: senza una riga che separa le
               // giornate, la partita di sabato prossimo e quella del sabato
@@ -1068,12 +1166,15 @@ export default function ScalataPage() {
               // si va a cercare due volte.
               const spostata = Object.values(aggiunte).flat().includes(g.id)
               const wk = weekendDi(g.data)
-              const nuovoWk = !fuori && (k === 0 || weekendDi(elenco[k - 1].data) !== wk)
+              const nuovoWk = !fuori && (k === 0 || weekendDi(tutte[k - 1].data) !== wk)
               // ⚠️ Il colore è **quello del passo che la contiene**: è il filo
               // che lega l'elenco ai passi sopra. Chi non sta in nessun passo
               // resta grigio, e si vede subito che è materiale non usato.
               const iPasso = passi.findIndex(f => f.partite.some(x => x.id === g.id))
-              const col = fuori ? C.fioco : iPasso >= 0 ? coloreDi(iPasso) : C.grigio
+              // ⚠️ Una riga che sta in lista **solo** perché è segnata deve
+              // dirlo: altrimenti sembra una candidata come le altre, e non
+              // si capisce perché non finisce in nessun passo.
+              const col = fuori || soloSegno ? C.fioco : iPasso >= 0 ? coloreDi(iPasso) : C.grigio
               return (
                 <div key={g.id}>
                 {nuovoWk && (
@@ -1083,8 +1184,8 @@ export default function ScalataPage() {
                     <span style={{ flex: 1, height: 1, background: alpha(C.testo, 0.08) }} />
                   </div>
                 )}
-                <div style={{ display: 'grid', gridTemplateColumns: '58px minmax(0,1fr) 26px 42px 18px',
-                  gap: 6, alignItems: 'center', padding: '5px 0', fontFamily: F.mono, fontSize: S.minuta,
+                <div style={{ display: 'grid', gridTemplateColumns: '24px 52px minmax(0,1fr) 24px 40px 16px',
+                  gap: 5, alignItems: 'center', padding: '5px 0', fontFamily: F.mono, fontSize: S.minuta,
                   borderTop: k && !nuovoWk ? `1px solid ${alpha(C.testo, 0.05)}` : 'none',
                   /* ⚠️⚠️ **Barrata anche quando è GIÀ IN UN PASSO** (Mattia,
                      21/10: *"lasciamole ma barrale, per far capire che sono
@@ -1095,6 +1196,44 @@ export default function ScalataPage() {
                      tolta o già usata — e a distinguerli è il colore: grigio
                      fioco la tolta, la tinta del passo quella scelta. */
                   textDecoration: fuori || spostata ? 'line-through' : 'none' }}>
+                  {/* ⚑ ── I DUE SEGNI, incolonnati a sinistra ──────────────
+                      ⚠️ **Stanno insieme e staccati dal resto** perché sono la
+                      stessa famiglia — *"qualcuno ha detto qualcosa su questa
+                      partita"* — e perché il colore della riga dice già
+                      un'altra cosa (in quale passo sta). Un flag verde in
+                      mezzo a una riga verde sarebbe illeggibile.
+                      ⚠️ **La bandiera si tocca, la stella no**: la stella si
+                      mette nella pagina Partite e qui è un'informazione. Un
+                      segno cliccabile accanto a uno che non lo è vuole che si
+                      veda quale dei due risponde — per questo la stella non ha
+                      né bordo né tasto.
+                      ⚠️ Il numero compare **solo se c'è**: uno zero accanto a
+                      ogni riga è rumore su quaranta righe. */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1,
+                    textDecoration: 'none' }}>
+                    {/* ⚠️ Per chi non è admin il flag resta **visibile ma non
+                        toccabile**: il conto dei segni è l'informazione, metterlo
+                        è un gesto riservato — e lo impone la policy, non questo
+                        `if`, che nasconde e basta. */}
+                    <button onClick={() => isAdmin && flagga(g.id)} disabled={!isAdmin}
+                      title={!isAdmin ? `${flagDi(g.id)} flag` : mioFlag(g.id) ? 'togli il flag' : 'mi piace per la scalata'}
+                      style={{ display: 'flex', alignItems: 'center', gap: 1, background: 'transparent',
+                        border: 'none', padding: 0, cursor: isAdmin ? 'pointer' : 'default',
+                        /* ⚠️ `C.fioco` e non `C.fantasma`: la bandiera spenta è un tasto che
+                           si può premere, e `fantasma` in questo progetto vuol dire
+                           **disabilitato**. Lo stesso grigio della × qui accanto. */
+                        color: mioFlag(g.id) ? C.verde : flagDi(g.id) ? alpha(C.verde, 0.75) : C.fioco }}>
+                      <Icona nome="bandiera" misura={13} pieno={mioFlag(g.id)} />
+                      {flagDi(g.id) > 1 && <span style={{ fontSize: S.micro }}>{flagDi(g.id)}</span>}
+                    </button>
+                    {votiDi(g.id) > 0 && (
+                      <span title={`${votiDi(g.id)} stelle dalla pagina Partite`}
+                        style={{ display: 'flex', alignItems: 'center', gap: 1, color: C.oro }}>
+                        <Icona nome="stella" misura={11} pieno={mioVoto(g.id)} />
+                        {votiDi(g.id) > 1 && <span style={{ fontSize: S.micro }}>{votiDi(g.id)}</span>}
+                      </span>
+                    )}
+                  </div>
                   <span style={{ color: col }}>
                     {iPasso >= 0 && !fuori ? `● ${iPasso + 1} ` : ''}
                     {nomeGiorno(giorno(g.data))} {gg(g.data)} {g.ora?.slice(0, 5)}
@@ -1120,13 +1259,24 @@ export default function ScalataPage() {
                       att {pct(g.att)} · sce {pct(g.scelta)}
                       {g.vpm != null && ` · VPM ${Number(g.vpm).toFixed(2).replace('.', ',')}`}
                     </span>
+                    {/* ⚠️ **Terza riga, sotto i nomi e i numeri** (Mattia,
+                        22/10/2026): nella colonna della data finiva incastrata
+                        fra l'ora e il bordo, su due righe strette. Qui ha
+                        tutta la larghezza della partita e sta su una riga
+                        sola, dove la si legge insieme a ciò che spiega. */}
+                    {soloSegno && (
+                      <span style={{ display: 'block', color: C.ambra, fontSize: S.micro,
+                        whiteSpace: 'nowrap' }}>
+                        fuori filtri
+                      </span>
+                    )}
                   </span>
                   <span style={{ color: fuori ? C.fioco : col, textAlign: 'center' }}>{g.giocata}</span>
                   <span style={{ color: col, textAlign: 'right' }}>{Number(g.quota).toFixed(2).replace('.', ',')}</span>
-                  <button onClick={() => setTolte(t => fuori ? t.filter(x => x !== g.id) : [...t, g.id])}
+                  {isAdmin && <button onClick={() => setTolte(t => fuori ? t.filter(x => x !== g.id) : [...t, g.id])}
                     title={fuori ? 'rimetti in scaletta' : 'togli dalla scaletta'}
                     style={{ background: 'transparent', border: 'none', cursor: 'pointer',
-                      textDecoration: 'none', color: fuori ? C.verde : C.fioco, fontSize: S.media }}>{fuori ? '+' : '×'}</button>
+                      textDecoration: 'none', color: fuori ? C.verde : C.fioco, fontSize: S.media }}>{fuori ? '+' : '×'}</button>}
                 </div>
                 </div>
               )
@@ -1141,6 +1291,22 @@ export default function ScalataPage() {
           sopra il nulla. ⚠️ `SOGLIE_DEFAULT` è la stessa base da cui parte la
           pagina Partite (lì sono uno stato locale, non salvate): la categoria
           decide solo il colore della giocata nella scheda. */}
+      {/* ⚠️ Le partite offerte sono **tutte le future valutate**, non le
+          candidate: è il senso del tasto. ⚠️ `iniziaDopo` resta — una partita
+          già cominciata non si aggiunge a un piano, e quello non è un filtro
+          di qualità ma di tempo. */}
+      {manuale && (
+        <ScegliGamba titolo={manuale.titolo} nelPasso={manuale.nelPasso} inPasso={inPassoDi}
+          partite={valutate.filter(r => iniziaDopo(r, daOra) && !r.quoteIncoerenti)}
+          flagDi={flagDi} votiDi={votiDi}
+          onScegli={async (p) => {
+            const r = await manuale.metti(p)
+            setAvviso(r?.errore ?? null)
+            setManuale(null)
+          }}
+          onChiudi={() => setManuale(null)} />
+      )}
+
       {partitaAperta && (
         <SchedaScorrevole onChiudi={() => setApertaId(null)}>
           <DettaglioPartita p={partitaAperta} cat={categoria(partitaAperta.probGiocata, SOGLIE_DEFAULT)}

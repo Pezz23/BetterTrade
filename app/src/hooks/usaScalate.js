@@ -48,7 +48,7 @@ const annulla = async (id, messaggio) => {
 }
 
 /** Le scalate dell'utente: la aperta (se c'è) e lo storico. */
-export function usaScalate(userId) {
+export function usaScalate(userId, tutte = false) {
   const [stato, setStato] = useState({ aperta: null, passi: [], gambe: [], storico: null, errore: null })
   // ⚠️ **`occupato` serve a schermo.** Ogni gesto è un giro al database, e un
   // tasto che per mezzo secondo non dice niente sembra rotto: è il motivo per
@@ -75,8 +75,17 @@ export function usaScalate(userId) {
    */
   const ricarica = useCallback(async () => {
     if (!userId) return
-    const { data: scalate, error } = await supabase.from('scalate')
-      .select('*').eq('user_id', userId).order('aperta_il', { ascending: false })
+    // ⚠️⚠️ **`tutte` serve agli SPETTATORI** (22/10/2026). Dal 22/10 la pagina
+    // è aperta anche a chi non è admin, e `sql/34` lascia leggere le tabelle a
+    // tutti — ma con il filtro sull'utente uno spettatore avrebbe letto **il
+    // proprio** registro, cioè niente: la pagina gli sarebbe sembrata vuota,
+    // e la policy aperta inutile. Senza filtro vede quello che c'è.
+    // ⚠️ Ogni admin continua a vedere **il suo**: due admin con una scalata
+    // aperta ciascuno sono due verità su due capitali diversi, e mescolarle
+    // vorrebbe dire segnare un esito sulla scalata di un altro. Lo spettatore
+    // invece non segna niente, quindi per lui "la più recente" basta.
+    const q = supabase.from('scalate').select('*').order('aperta_il', { ascending: false })
+    const { data: scalate, error } = await (tutte ? q : q.eq('user_id', userId))
     if (error) return setStato(s => ({ ...s, errore: error.message }))
 
     const aperta = (scalate || []).find(s => s.stato === 'aperta') || null
@@ -91,7 +100,7 @@ export function usaScalate(userId) {
       gambe = (p || []).flatMap(r => r.scalata_gambe || []).sort((a, b) => a.id - b.id)
     }
     setStato({ aperta, passi, gambe, storico: scalate || [], errore: null })
-  }, [userId])
+  }, [userId, tutte])
 
   useEffect(() => { ricarica() }, [ricarica])
 
@@ -252,7 +261,22 @@ export function usaScalate(userId) {
     return {}
   }, [quotaDi, ricarica])
 
+  /**
+   * Aggiunge una gamba a un passo salvato.
+   * ⚠️ Dal 22/10/2026 la usa anche **«+ aggiungi partita manuale»**, che pesca
+   * dal calendario intero e non dalle candidate: da lì può arrivare una quota
+   * strana o una partita già nel passo, e il database se ne accorgerebbe con
+   * un messaggio che non dice a una persona cosa correggere.
+   * ⚠️ La stessa partita due volte nello stesso passo è una schedina che al
+   * banco non esiste.
+   * ⚠️ I quattro numeri (att, scelta, VPM, quota giocata) entrano **com'erano
+   * oggi**: senza, l'archivio direbbe solo che l'hai giocata, non perché
+   * l'avevi scelta.
+   */
   const aggiungiGamba = useCallback(async (passoId, g) => {
+    if (!(Number(g?.quota) > 1)) return { errore: `la quota di ${g?.casa ?? 'questa partita'} non è valida` }
+    if (stato.gambe.some(x => x.passo_id === passoId && x.prossima_id === g.id))
+      return { errore: 'questa partita è già nel passo' }
     const errore = primoErrore(await Promise.all([
       supabase.from('scalata_gambe').insert({
         passo_id: passoId, prossima_id: g.id, div: g.div, data: g.data, ora: g.ora,
@@ -264,7 +288,7 @@ export function usaScalate(userId) {
     if (errore) return { errore }
     await ricarica()
     return {}
-  }, [quotaDi, ricarica])
+  }, [stato.gambe, quotaDi, ricarica])
 
   /**
    * Allungare un passo con la gamba di un altro è uno **spostamento**, e qui

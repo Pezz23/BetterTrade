@@ -20,7 +20,7 @@ import { valuta, oggiLocale } from '../lib/attendibilita'
 
 const COLONNE = 'id, div, campionato, data, ora, casa, trasferta, scaricato_il, fonte, book, book_1, book_x, book_2, b365_1, b365_x, b365_2, b365_over25, b365_under25, avg_ap_over25, avg_ap_under25, avg_ap_1, avg_ap_x, avg_ap_2, max_ap_1, max_ap_x, max_ap_2'
 
-let memoria = null      // { righe, voti }, una volta arrivate
+let memoria = null      // { righe, voti, flag }, una volta arrivate
 let inCorso = null      // la richiesta, finché è in volo
 
 function carica(forza = false) {
@@ -32,17 +32,22 @@ function carica(forza = false) {
       // `toISOString` dà ieri, e la lista mostrava partite già giocate. Stessa
       // funzione che usa la finestra "Oggi", così le due non possono divergere.
       const oggi = oggiLocale()
-      const [p, v] = await Promise.all([
+      const [p, v, f] = await Promise.all([
         supabase.from('prossime_partite').select(COLONNE)
           .gte('data', oggi).order('data').order('ora'),
         // I voti: se la tabella non c'è ancora, la lista resta senza stelle attive.
         supabase.from('voti_partite').select('prossima_id, user_id'),
+        // ⚑ I flag della scalata (sql/33): stessa forma delle stelle, altro
+        // significato. ⚠️ Parte **insieme** alle altre due e non dopo: qui il
+        // tempo non è nei dati, è nel numero di giri.
+        supabase.from('flag_partite').select('prossima_id, user_id'),
       ])
       inCorso = null
       if (p.error) throw new Error(p.error.message)
       memoria = {
         righe: (p.data || []).map(valuta).filter(r => r.prob !== null),
         voti: v.data || [],
+        flag: f.data || [],
       }
       return memoria
     })()
@@ -54,6 +59,7 @@ export function usaProssime() {
   const { currentUser, isAdmin } = useAuth()
   const [righe, setRighe] = useState(() => memoria?.righe ?? [])
   const [voti, setVoti] = useState(() => memoria?.voti ?? [])
+  const [flag, setFlag] = useState(() => memoria?.flag ?? [])
   const [caricamento, setCaricamento] = useState(!memoria)
   const [errore, setErrore] = useState(null)
 
@@ -61,7 +67,7 @@ export function usaProssime() {
     let vivo = true
     if (memoria) return
     carica()
-      .then(d => { if (!vivo) return; setRighe(d.righe); setVoti(d.voti); setCaricamento(false) })
+      .then(d => { if (!vivo) return; setRighe(d.righe); setVoti(d.voti); setFlag(d.flag); setCaricamento(false) })
       .catch(e => { if (vivo) { setErrore(e.message); setCaricamento(false) } })
     return () => { vivo = false }
   }, [])
@@ -77,7 +83,7 @@ export function usaProssime() {
     setCaricamento(true)
     try {
       const d = await carica(true)
-      setRighe(d.righe); setVoti(d.voti); setErrore(null)
+      setRighe(d.righe); setVoti(d.voti); setFlag(d.flag); setErrore(null)
     } catch (e) { setErrore(e.message) }
     setCaricamento(false)
   }, [])
@@ -105,8 +111,36 @@ export function usaProssime() {
     }
   }, [isAdmin, currentUser, voti])
   const votiDi = useCallback((id) => voti.filter(v => v.prossima_id === id).length, [voti])
+
+  // ⚑ Il flag della scalata: **identico al voto nel meccanismo** — una riga
+  // per admin per partita, scritta prima in memoria e disfatta se il database
+  // rifiuta — e diverso nel significato. Non si astrae in una funzione sola
+  // con `vota`: sono due tabelle e due domande, e il giorno in cui una delle
+  // due cambia regola (la stella scavalca la soglia, il flag no) una funzione
+  // condivisa diventerebbe un albero di `if`.
+  const flagga = useCallback(async (prossimaId) => {
+    if (!isAdmin || !currentUser) return
+    const mio = flag.some(f => f.prossima_id === prossimaId && f.user_id === currentUser.id)
+    const prima = flag
+    const dopo = mio
+      ? flag.filter(f => !(f.prossima_id === prossimaId && f.user_id === currentUser.id))
+      : [...flag, { prossima_id: prossimaId, user_id: currentUser.id }]
+    setFlag(dopo)
+    if (memoria) memoria.flag = dopo
+    const { error } = mio
+      ? await supabase.from('flag_partite').delete().eq('prossima_id', prossimaId).eq('user_id', currentUser.id)
+      : await supabase.from('flag_partite').insert({ prossima_id: prossimaId, user_id: currentUser.id })
+    if (error) {
+      setFlag(prima)
+      if (memoria) memoria.flag = prima
+      setErrore(`Flag non salvato: ${error.message}`)
+    }
+  }, [isAdmin, currentUser, flag])
+  const flagDi = useCallback((id) => flag.filter(f => f.prossima_id === id).length, [flag])
+  const mioFlag = useCallback((id) =>
+    !!currentUser && flag.some(f => f.prossima_id === id && f.user_id === currentUser.id), [flag, currentUser])
   const mioVoto = useCallback((id) =>
     !!currentUser && voti.some(v => v.prossima_id === id && v.user_id === currentUser.id), [currentUser, voti])
 
-  return { righe, voti, vota, votiDi, mioVoto, caricamento, errore, ricarica }
+  return { righe, voti, vota, votiDi, mioVoto, flag, flagga, flagDi, mioFlag, caricamento, errore, ricarica }
 }

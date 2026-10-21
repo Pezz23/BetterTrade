@@ -54,7 +54,11 @@ export const COLONNA = 720
 const TABS_BASE = [
   { id:'dashboard',   label:'Dashboard', icona:'dashboard' },
   { id:'slot',        label:'Slot',      icona:'slot' },
-  { id:'scalata',     label:'Weekend',   icona:'scalata', soloAdmin:true },
+  // ⚠️ **Weekend non è più soloAdmin** (Mattia, 22/10/2026): la road map del
+  // weekend la guardano tutti, e dal 22/10 `sql/34` apre la lettura delle
+  // tabelle della scalata. A scrivere resta solo chi è admin, e il controllo
+  // è nelle policy — qui si decide solo chi vede il tasto.
+  { id:'scalata',     label:'Weekend',   icona:'scalata' },
   // ⚠️ `colore` lo porta **solo l'icona**, non l'etichetta (scelta di Mattia):
   // il campo è verde, la scritta resta oro da accesa e spenta da spenta come
   // gli altri tre tasti. È il verde del tema — quello delle vincite — non una

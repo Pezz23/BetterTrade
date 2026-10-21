@@ -138,6 +138,26 @@ if (partitaProva && uA && pA) {
   console.log('\n  · voti: nessuna partita futura in tabella, controlli saltati');
 }
 
+// ── ⚑ I flag della scalata (flag_partite, sql/33) ───────────────────────────
+// ⚠️ Stesse policy delle stelle, e vanno provate **dall'API**: dal ruolo
+// postgres RLS non si vede, quindi una tabella nuova sembra sempre a posto.
+if (partitaProva && uA && pA) {
+  const A = await entra(uA, pA);
+  console.log(`\nFLAG — ${A.me.username} (admin) e ${N.me.username} (utente)`);
+  let r = await A.s.from('flag_partite').insert({ prossima_id: partitaProva.id, user_id: A.me.id });
+  esito(true, !r.error, 'admin flagga a nome proprio');
+  r = await A.s.from('flag_partite').insert({ prossima_id: partitaProva.id, user_id: N.me.id });
+  esito(false, !r.error, 'admin flagga a nome di un altro');
+  const { data: visti } = await N.s.from('flag_partite').select('prossima_id');
+  esito(true, !!(visti && visti.length), 'utente vede i flag (servono al contatore)');
+  r = await N.s.from('flag_partite').insert({ prossima_id: partitaProva.id, user_id: N.me.id });
+  esito(false, !r.error, 'utente flagga');
+  const { data: delN } = await N.s.from('flag_partite').delete().eq('prossima_id', partitaProva.id).eq('user_id', A.me.id).select();
+  esito(false, !!(delN && delN.length), 'utente cancella il flag di un admin');
+  const { data: delA } = await A.s.from('flag_partite').delete().eq('prossima_id', partitaProva.id).eq('user_id', A.me.id).select();
+  esito(true, !!(delA && delA.length), 'admin toglie il proprio flag');
+}
+
 // ── La gestione degli account (sql/16) ──────────────────────────────────────
 // Le tre funzioni sono riservate al superadmin: qui si controlla che chi
 // superadmin non è venga respinto. Il percorso felice lo prova chi ha le

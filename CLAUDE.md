@@ -2041,6 +2041,74 @@ cui 6 già sopra 1,70** (col 62 erano 14 e 8, di cui 4).
 ⚠️ Il tasto sta **in testa alla card SELEZIONE, a destra**: accanto ai tasti
 delle regole sembrava una terza regola.
 
+### ⚑ Le partite FLAGGATE — il segno della scalata (22/10/2026)
+
+`flag_partite` (`sql/33`): **la stessa forma di `voti_partite`** — una riga per
+admin per partita, chiave composta, tre policy, lettura aperta a chi è entrato
+perché serve al contatore. Nell'hook `usaProssime` ci sono `flagga`, `flagDi`,
+`mioFlag`, gemelli di `vota`, `votiDi`, `mioVoto`.
+
+⚠️⚠️ **La differenza fra flag e stella è il SIGNIFICATO, non la forma**, ed è
+voluta (*"così da non confondere con le stelle"*): la **stella** dice *questa
+entra nella spin* e **scavalca la soglia** (`candidate()` in `lib/spin.js`); il
+**flag** dice *questa mi piace per la scalata* e **non scavalca niente**. Il
+motivo è misurabile: le soglie di Road to weekend alimentano anche il taglio
+automatico delle schedine a 2,00, quindi una gamba corta entrata di straforo
+abbasserebbe la qualità del passo **in silenzio**.
+⚠️ **Non si uniscono in una funzione sola** con i voti: sono due tabelle e due
+domande, e il giorno in cui una delle due cambia regola una funzione condivisa
+diventerebbe un albero di `if`.
+⚠️ **Flaggate e votate restano nell'elenco anche quando i filtri le tagliano**,
+marcate `fuori filtri` in ambra — ma **non entrano nella scaletta**: un segno
+che sparisce alzando una soglia è il difetto peggiore, e una gamba che entra
+senza passare i filtri è l'altro.
+⚠️ **I due segni stanno incolonnati a sinistra, staccati dal resto**: nella
+riga il colore dice già *in quale passo sta* la partita, e un flag verde dentro
+una riga verde (il passo 1) non si leggerebbe. **La bandiera si tocca, la
+stella no** — la stella si mette nella pagina Partite e qui è informazione.
+⚠️ `Icona.bandiera` è la seconda icona con `pieno`, dopo la stella, e per lo
+stesso motivo: dice *mia / non mia*.
+
+### «+ aggiungi partita manuale» e la pagina aperta a tutti (22/10/2026)
+
+**Il tasto sta sotto quello della consigliata, dentro la card del passo**, con
+un'aria diversa di proposito: quello sopra **accetta** la proposta dell'app e
+dice quale partita sarebbe, questo **la scavalca** aprendo il calendario
+intero. Lo stesso aspetto per entrambi direbbe che anche il secondo è
+consigliato, e non è vero. ⚠️ C'è **anche quando non c'è niente da
+consigliare**: è il caso in cui serve di più, la fascia è finita e il passo è
+sotto quota.
+
+La finestra è `components/ScegliGamba.jsx`: testo libero più i filtri **⚑
+flaggate · ★ con stelle · tutte**, in ordine di **data e ora** (un passo è un
+blocco di orari vicini: ordinando per bontà le partite giuste finirebbero
+sparse fra quelle di un altro giorno).
+⚠️ **Non riusa `ScegliCasella`**, che è la gemella delle spin: quella parla di
+*caselle* — ruolo della posizione, categorie, *"già nella spin 2"*, *"svuota la
+casella"*. Sono uguali solo a guardarle.
+⚠️⚠️ **Nel piano le aggiunte a mano si cercano in `valutate`, non in
+`candidate`**: da qui può arrivare una partita che i filtri non prendono, e
+cercandola fra le candidate sparirebbe **in silenzio** — il tasto avrebbe fatto
+finta di funzionare.
+
+**La pagina è aperta a tutti, in sola lettura** (`sql/34`): `Weekend` non è più
+`soloAdmin` e le tre `select` delle tabelle della scalata valgono per chiunque
+abbia fatto login. Le scritture restano com'erano.
+⚠️⚠️ **E `usaScalate` ha un secondo parametro, `tutte`**: con il filtro
+`user_id` uno spettatore avrebbe letto **il proprio** registro, cioè niente —
+pagina vuota e policy aperta inutile. Ogni admin continua a vedere **il suo**
+(due admin con una scalata aperta sono due capitali diversi, e mescolarli
+vorrebbe dire segnare un esito su quella di un altro); lo spettatore vede la
+più recente, e non segna niente.
+⚠️ Per chi guarda e basta i tasti **non ci sono**, né spenti: un tasto
+disabilitato racconta una cosa che si potrebbe fare. Restano leggibili i campi
+(`readOnly`, non `disabled`: `fantasma` è 2,27:1, un campo disabilitato qui
+sparisce).
+⚠️ **Conseguenza da sapere**: un utente normale vede anche le **casse** e
+l'archivio. Se un giorno dovranno restare privati, la strada non è richiudere
+la lettura — la pagina tornerebbe vuota — ma togliere quella card a chi non è
+admin.
+
 ### La scheda della partita si apre anche da qui (22/10/2026)
 
 Toccando **i nomi** di una gamba — nel passo o nell'elenco in fondo — si apre

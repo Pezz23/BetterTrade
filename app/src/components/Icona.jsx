@@ -38,6 +38,11 @@ const SEGNI = {
     <rect x="2.5" y="4.5" width="19" height="15" rx="2" /><path d="M12 4.5v15" /><circle cx="12" cy="12" r="3.2" />
   </>,
   stella: <path d="M12 3.5l2.6 5.3 5.9.9-4.25 4.15 1 5.85L12 16.9l-5.25 2.8 1-5.85L3.5 9.7l5.9-.9z" />,
+  // ⚑ il flag della scalata: l'asta resta un contorno anche da pieno, o
+  // riempiendo il tracciato intero diventerebbe una macchia senza forma.
+  bandiera: <>
+    <path d="M6 21V3.5" /><path d="M6 4.5h11.5l-2.3 3.8 2.3 3.8H6z" />
+  </>,
   // i fogli impilati dell'archivio
   storico: <>
     <path d="M12 3L3 7.5 12 12l9-4.5z" /><path d="M3 16.5L12 21l9-4.5" /><path d="M3 12l9 4.5 9-4.5" />
@@ -117,9 +122,13 @@ const SEGNI = {
 }
 
 /**
- * ⚠️ `pieno` esiste per **una** icona: la stella del voto, che dice due stati
- * — votata e non votata — e deve distinguerli come facevano `★` e `☆`. Il
- * resto del set è di soli contorni, e va tenuto così.
+ * ⚠️ `pieno` esiste per **due** icone, e per lo stesso motivo: la **stella**
+ * del voto e la **bandiera** della scalata dicono ciascuna due stati — mia o
+ * non mia — e devono distinguerli come facevano `★` e `☆`. Il resto del set è
+ * di soli contorni, e va tenuto così.
+ * ⚠️ Sulla bandiera il riempimento prende **il drappo e anche l'asta**, che
+ * resta visibile perché è disegnata come linea a parte: è il tratto che la fa
+ * leggere come bandiera a 14px invece che come un rettangolo.
  */
 export default function Icona({ nome, misura = 18, pieno = false, style }) {
   const segno = SEGNI[nome]
