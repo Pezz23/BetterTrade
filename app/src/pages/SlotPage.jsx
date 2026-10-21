@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../supabase'
 import { C, F, alpha, TIPO, S } from '../theme'
+import Icona from '../components/Icona'
 import { stileCard } from '../components/ui'
 import { DISPOSIZIONE, cellaDa } from '../lib/spin'
 import { usaProssime } from '../hooks/usaProssime'
@@ -496,11 +497,12 @@ export default function SlotPage() {
         ))}
       </div>
       <div style={{display:'flex',gap:6,marginBottom:16}}>
-        {[{id:'griglia',label:'🎰 Griglia'},{id:'schedine',label:'📋 Schedine'}].map(t=>(
+        {[{id:'griglia',label:'Griglia',icona:'slot'},{id:'schedine',label:'Schedine',icona:'elenco'}].map(t=>(
           <button key={t.id} onClick={()=>setActiveTab(t.id)} style={{flex:1,padding:'8px',borderRadius:8,cursor:'pointer',fontFamily:F.sans,fontSize:S.media,fontWeight:600,
             background:activeTab===t.id?alpha(C.oro,0.08):'transparent',
             border:`1px solid ${activeTab===t.id?alpha(C.oro,0.25):C.bordo}`,
-            color:activeTab===t.id?C.oro:C.spento}}>{t.label}</button>
+            display:'flex',alignItems:'center',justifyContent:'center',gap:7,
+            color:activeTab===t.id?C.oro:C.spento}}><Icona nome={t.icona} misura={16} />{t.label}</button>
         ))}
       </div>
       {activeTab==='griglia'

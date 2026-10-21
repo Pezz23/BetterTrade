@@ -152,7 +152,7 @@ export default function PartitePage() {
           return (
             <button key={f.id} onClick={() => setFinestra(f.id)} style={pillola(finestra === f.id)} title={nienteInPiu ? 'Nessuna partita in più: i bookmaker non hanno ancora quotato oltre' : ''}>
               {f.label}
-              <span style={{ color: C.fantasma, fontWeight: 400 }}> {f.id === 'tutte' ? '' : giorno(f.fine()).slice(0, 9) + ' · '}{n}{nienteInPiu ? ' =' : ''}</span>
+              <span style={{ color: C.spento, fontWeight: 400 }}> {f.id === 'tutte' ? '' : giorno(f.fine()).slice(0, 9) + ' · '}{n}{nienteInPiu ? ' =' : ''}</span>
             </button>
           )
         })}
@@ -175,7 +175,7 @@ export default function PartitePage() {
         </button>
         {attivi.map(f => (
           <button key={f.id} onClick={f.togli} title="togli questo filtro" style={{ ...pillola(true, f.colore || C.oro), fontWeight: 600 }}>
-            {f.label} <span style={{ color: C.fantasma }}>✕</span>
+            {f.label} <span style={{ color: C.spento }}>✕</span>
           </button>
         ))}
         {attivi.length > 1 && (

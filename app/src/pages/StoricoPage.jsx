@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabase'
 import { C, F, alpha, S } from '../theme'
+import Icona from '../components/Icona'
 import { Card, Etichetta, Attesa } from '../components/ui'
 import { CATEGORIE, pct, giorno } from '../components/TestataPartita'
 import { valuta, categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
@@ -25,10 +26,19 @@ const Riquadro = ({ label, valore, sub, colore }) => (
   </Card>
 )
 
-const Sezione = ({ titolo, extra, children }) => (
+const Sezione = ({ titolo, icona, extra, children }) => (
   <div style={{ marginTop: 18 }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 9 }}>
-      <Etichetta colore={C.testo} style={{ fontSize: S.media, letterSpacing: '0.12em', fontWeight: 700 }}>{titolo}</Etichetta>
+    {/* ⚠️ `flexWrap`: su un telefono il titolo e il suo `extra` non ci stanno
+        in riga — "LE PROSSIME, PER CAMPIONATO" accanto a "0 centro · 0 gialle
+        · 11 blu" fa **due blocchi che vanno a capo l'uno dentro l'altro**, e
+        si legge come un testo sbriciolato. Andando a capo, l'extra prende la
+        sua riga e il titolo resta intero. */}
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+      flexWrap: 'wrap', gap: 4, marginBottom: 9 }}>
+      <Etichetta colore={C.testo} style={{ fontSize: S.media, letterSpacing: '0.12em', fontWeight: 700,
+        display: 'flex', alignItems: 'center', gap: 7 }}>
+        {icona && <Icona nome={icona} misura={16} style={{ color: C.spento }} />}{titolo}
+      </Etichetta>
       {extra && <Etichetta style={{ fontSize: S.base }}>{extra}</Etichetta>}
     </div>
     {children}
@@ -124,7 +134,7 @@ export default function StoricoPage() {
       <div style={{ fontSize: S.evidenza, fontWeight: 700, color: C.testo, fontFamily: F.sans, marginBottom: 14 }}>L'archivio e come stiamo andando</div>
       {errore && <Card colore={C.rosso}><div style={{ color: C.rosso, fontSize: S.media, fontFamily: F.sans }}>⚠️ {errore}</div></Card>}
 
-      <Sezione titolo="📚 L'archivio">
+      <Sezione titolo="L'archivio" icona="storico">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
           <Riquadro label="partite in archivio" valore={archivio?.totale?.toLocaleString('it-IT') ?? '—'} sub="tutte con quote e risultato" />
           <Riquadro label="ultima giocata" valore={archivio?.ultima ? giorno(archivio.ultima.data) : '—'}
@@ -135,7 +145,7 @@ export default function StoricoPage() {
         </div>
       </Sezione>
 
-      <Sezione titolo="⚽ Le prossime, per campionato" extra={`${catFuture.centro} centro · ${catFuture.giallo} gialle · ${catFuture.blu} blu`}>
+      <Sezione titolo="Le prossime, per campionato" icona="gol" extra={`${catFuture.centro} centro · ${catFuture.giallo} gialle · ${catFuture.blu} blu`}>
         <Card style={{ padding: '10px 14px' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {perCampionato.map(([div, n]) => (
@@ -148,7 +158,7 @@ export default function StoricoPage() {
         </Card>
       </Sezione>
 
-      <Sezione titolo="🎯 Le nostre proposte" extra={`${giocate.length} future poi giocate`}>
+      <Sezione titolo="Le nostre proposte" icona="bersaglio" extra={`${giocate.length} future poi giocate`}>
         {sopra.length === 0
           ? <Card><div style={{ fontSize: S.corpo, color: C.spento, fontFamily: F.sans }}>Nessuna proposta ancora giocata.</div></Card>
           : <>
@@ -173,7 +183,7 @@ export default function StoricoPage() {
       {/* ⚠️ Niente `extra` col conteggio (richiesta di Mattia, 15/10/2026):
           diceva "10 di 42" e quei due numeri li dice già il tasto in fondo
           all'elenco, dove servono — accanto al titolo erano un doppione. */}
-      <Sezione titolo="📋 Le ultime chiuse">
+      <Sezione titolo="Le ultime chiuse" icona="elenco">
         <Card style={{ padding: '6px 12px' }}>
           {(tutte ? ultime : ultime.slice(0, VISIBILI)).map((r, i, arr) => {
             const ok = vinta(r.giocata, r)

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { C, F, alpha, S } from '../theme'
+import Icona from '../components/Icona'
 // ⚠️ `Input` e `Badge` vengono da qui e non più riscritti in questa pagina
 // (15/10/2026): erano tre copie dello stesso campo di testo — ui.jsx, qui e
 // LoginPage — con tre raggi e tre riempimenti diversi.
@@ -30,7 +31,7 @@ const ST = {
   bkInp: { background:'transparent', border:'none', outline:'none', color:C.oro, fontSize:S.media, fontFamily:F.mono, width:75, padding:'0 8px', fontWeight:600 },
   delBtn:{ background:alpha(C.rosso,0.08), border:`1px solid ${alpha(C.rosso,0.18)}`, borderRadius:6, color:C.rosso, fontSize:S.base, cursor:'pointer', padding:'5px 10px', fontFamily:F.sans },
   empty: { padding:40, textAlign:'center', color:C.spento, fontSize:S.grande, fontFamily:F.sans },
-  pwBtn: { background:alpha(C.oro,0.10), border:`1px solid ${alpha(C.oro,0.3)}`, borderRadius:6, color:C.oro, fontSize:S.base, cursor:'pointer', padding:'5px 10px', fontFamily:F.sans },
+  pwBtn: { background:alpha(C.oro,0.10), border:`1px solid ${alpha(C.oro,0.3)}`, borderRadius:6, color:C.oro, fontSize:S.base, cursor:'pointer', padding:'5px 10px', fontFamily:F.sans, display:'flex', alignItems:'center' },
   select:{ background:C.pozzo, border:`1px solid ${C.bordo}`, borderRadius:7, padding:'9px 12px', color:C.testo, fontSize:S.grande, fontFamily:F.sans, outline:'none', width:'100%' },
 }
 
@@ -102,8 +103,9 @@ export default function UtentiPage() {
       <p style={ST.sub}>{users.length} utenti nel database</p>
 
       <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-        <button style={ST.addBtn} onClick={() => { setShowPw(v=>!v); setErr(''); setPwOk('') }}>
-          {showPw ? '✕ Annulla' : '🔑 Cambia la mia password'}
+        <button style={{ ...ST.addBtn, display:'flex', alignItems:'center', gap:7 }}
+          onClick={() => { setShowPw(v=>!v); setErr(''); setPwOk('') }}>
+          {showPw ? '✕ Annulla' : <><Icona nome="chiave" misura={15} />Cambia la mia password</>}
         </button>
         {isSuperAdmin && (
           <button style={ST.addBtn} onClick={() => { setNuovo(n => n ? null : { ...VUOTO }); setErr(''); setOk('') }}>
@@ -196,7 +198,7 @@ export default function UtentiPage() {
                 </div>
                 {isSuperAdmin && (
                   <button style={ST.pwBtn} title="Assegna una password"
-                    onClick={()=>{ setErr(''); setOk(''); setCambio(c => c?.username === u.username ? null : { username:u.username, password:'' }) }}>🔑</button>
+                    onClick={()=>{ setErr(''); setOk(''); setCambio(c => c?.username === u.username ? null : { username:u.username, password:'' }) }}><Icona nome="chiave" misura={15} /></button>
                 )}
                 {isSuperAdmin && u.role !== 'superadmin' && (
                   <button style={ST.delBtn} onClick={()=>elimina(u)}>✕</button>

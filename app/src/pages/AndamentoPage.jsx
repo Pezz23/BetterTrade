@@ -412,7 +412,13 @@ export default function AndamentoPage() {
         </div>
       </CardPiega>
 
-      <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+      {/* ⚠️ `flexWrap` per **1,8 pixel**: i due tasti misurano 159,8 l'uno e
+          con lo spazio fanno 325,6, cioè escono da uno schermo da 320. Il
+          testo è `nowrap` di proposito — "prime 36" tagliato non direbbe
+          niente — quindi a schermo stretto il secondo va a capo invece di
+          spingere fuori la pagina. A 375 restano in riga. Misurato con
+          `guarda.mjs --larghezze=320`, che ora conta i pixel che escono. */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
         {AMBITI.map(a => (
           <Tasto key={a.id} attivo={ambito === a.id} onClick={() => { setAmbito(a.id); setAperta(null) }}>
             {a.label} · prime {a.quante}

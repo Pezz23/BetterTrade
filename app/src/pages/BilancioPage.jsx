@@ -140,7 +140,7 @@ export default function BilancioPage() {
       {/* ── Selettore % ── */}
       <div style={stileCard({marginBottom:12})}>
         <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:10}}>
-          % Bankroll da giocare {!isAdmin&&<span style={{color:C.fantasma}}> · impostato da SuperAdmin</span>}
+          % Bankroll da giocare {!isAdmin&&<span style={{color:C.spento}}> · impostato da SuperAdmin</span>}
         </div>
         <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
           {PERCENTUALI.map(p=>(
@@ -160,7 +160,7 @@ export default function BilancioPage() {
       {/* ── Selettore slot ── */}
       <div style={stileCard({marginBottom:16})}>
         <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:10}}>
-          Slot da giocare {!isAdmin&&<span style={{color:C.fantasma}}> · impostato da SuperAdmin</span>}
+          Slot da giocare {!isAdmin&&<span style={{color:C.spento}}> · impostato da SuperAdmin</span>}
         </div>
         <div style={{display:'flex',gap:8}}>
           {NUM_SLOT_OPTIONS.map(n=>(

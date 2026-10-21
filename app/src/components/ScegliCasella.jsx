@@ -71,7 +71,7 @@ export default function ScegliCasella({ pos, partite, votiDi, usate = [], altrov
                   padding: '5px 10px', borderRadius: 20, cursor: 'pointer', fontFamily: F.mono, fontSize: S.base, fontWeight: 600,
                   background: on ? alpha(f.colore, 0.16) : 'transparent',
                   border: `1px solid ${on ? alpha(f.colore, 0.5) : C.bordo}`, color: on ? f.colore : C.fioco,
-                }}>{f.label} <span style={{ color: on ? C.testo : C.fantasma }}>{conta(f.id)}</span></button>
+                }}>{f.label} <span style={{ color: on ? C.testo : C.spento }}>{conta(f.id)}</span></button>
               )
             })}
           </div>

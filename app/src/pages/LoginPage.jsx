@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { C, F, alpha, S } from '../theme'
+import Icona from '../components/Icona'
 // ⚠️ Il campo di testo è quello di `ui.jsx`: tre copie dello stesso stile con
 // tre misure diverse erano il modo di ritrovarsi con tre aspetti (15/10/2026).
 import { Input } from '../components/ui'
@@ -63,7 +64,13 @@ export default function LoginPage() {
             <label style={ST.label}>Password</label>
             <div style={{ position:'relative' }}>
               <Input style={{ paddingRight:42 }} type={show?'text':'password'} value={p} onChange={e=>setP(e.target.value)} placeholder="••••••••" required autoComplete="current-password" />
-              <button type="button" onClick={()=>setShow(v=>!v)} style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', fontSize:S.titolo, padding:2 }}>{show?'🙈':'👁️'}</button>
+              <button type="button" onClick={()=>setShow(v=>!v)} style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', padding:2, color:C.spento, display:'flex' }}
+                aria-label={show ? 'Nascondi la password' : 'Mostra la password'}>
+                {/* ⚠️ Erano `🙈` e `👁️`: due emoji, cioè due figure che le
+                    disegna il sistema e restano a colori su un campo spento —
+                    e la scimmietta non dice "nascondi", dice un'altra cosa. */}
+                <Icona nome={show ? 'occhioChiuso' : 'occhio'} misura={17} />
+              </button>
             </div>
           </div>
           {err && <div style={ST.err}>⚠️ {err}</div>}

@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { usaProssime } from '../hooks/usaProssime'
 import { C, F, alpha, S } from '../theme'
+import Icona from '../components/Icona'
 import { Card, Etichetta, Btn } from '../components/ui'
 import { CATEGORIE, pct, giorno } from '../components/RigaPartita'
 import { categoria, SOGLIE_DEFAULT, martediChiusura } from '../lib/attendibilita'
@@ -54,7 +55,7 @@ function Cella({ pos, partita, votiDi, diversa, onClic, inAltre }) {
           <div style={{ fontSize: S.base, color: C.spento, whiteSpace: 'nowrap' }}>
             {partita.quotaGiocata ? `@${partita.quotaGiocata.toFixed(2)}` : 'sul book'} · <b style={{ color: colore }}>{pct(partita.probGiocata)}</b>
           </div>
-          <div style={{ fontSize: S.minuta, color: C.fantasma, whiteSpace: 'nowrap' }}>{sigla(partita.div)} · {giorno(partita.data)}</div>
+          <div style={{ fontSize: S.minuta, color: C.spento, whiteSpace: 'nowrap' }}>{sigla(partita.div)} · {giorno(partita.data)}</div>
         </>
       ) : <div style={{ fontSize: S.corpo, color: C.fantasma }}>—</div>}
     </div>
@@ -213,7 +214,7 @@ export default function SpinProvvisoriePage() {
         background: `linear-gradient(${alpha(C.oro, 0.07)},${alpha(C.oro, 0.07)}), ${C.card}`,
         border: `1px solid ${alpha(C.oro, 0.3)}`, borderRadius: 8, flexWrap: 'wrap',
       }}>
-        <span style={{ fontSize: S.titolo, lineHeight: 1 }}>🔒</span>
+        <span style={{ display: 'flex', color: C.oro }}><Icona nome="lucchetto" misura={17} /></span>
         <span style={{ fontSize: S.corpo, color: C.testo, fontFamily: F.sans, lineHeight: 1.5 }}>
           Solo le partite di questo weekend, <b style={{ color: C.oro }}>fino a martedì {gm(limite)}</b>.
           Oltre non entra niente, <b style={{ color: C.testo }}>nemmeno se votato</b>: una spin che mescola
@@ -333,7 +334,7 @@ export default function SpinProvvisoriePage() {
                     <span style={{ flexShrink: 0 }}>{sigla(p.div)} · {giorno(p.data)}</span>
                     <span style={{ flexShrink: 0 }}>{p.quotaGiocata ? `@${p.quotaGiocata.toFixed(2)}` : 'sul book'}</span>
                     <b style={{ color: colore, flexShrink: 0 }}>{pct(p.probGiocata)}</b>
-                    <span style={{ marginLeft: 'auto', textAlign: 'right', color: dove ? C.verde : p.data > limite ? C.rosso : C.fantasma, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span style={{ marginLeft: 'auto', textAlign: 'right', color: dove ? C.verde : p.data > limite ? C.rosso : C.spento, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {dove ? `spin ${dove.spin} · pos ${dove.pos}` : p.data > limite ? '⛔ oltre martedì' : cat === 'no' ? 'sotto soglia' : 'non entra'}
                     </span>
                   </div>

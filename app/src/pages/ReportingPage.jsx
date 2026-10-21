@@ -379,7 +379,7 @@ export default function ReportingPage() {
 
                       {stagione===stagioneCorrente&&(
                         <button onClick={()=>confirmIdx===g.week_number?eliminaGiornata(g.id):setConfirmIdx(g.week_number)}
-                          style={{fontSize:S.micro,color:confirmIdx===g.week_number?C.rosso:C.fantasma,background:'none',border:'none',cursor:'pointer',marginTop:2}}>
+                          style={{fontSize:S.micro,color:confirmIdx===g.week_number?C.rosso:C.spento,background:'none',border:'none',cursor:'pointer',marginTop:2}}>
                           {confirmIdx===g.week_number?'⚠️ Conferma':'✕'}
                         </button>
                       )}
@@ -467,6 +467,6 @@ function TH({sticky,color}={}) {
     ...(sticky?{position:'sticky',left:0,zIndex:2,background:C.barra,textAlign:'left'}:{})}
 }
 function TD({label,bold,color,muted}={}) {
-  return {padding:'7px 10px',fontSize:bold?13:12,fontWeight:bold?700:400,color:muted?C.fantasma:color||C.grigio,fontFamily:F.mono,borderBottom:`1px solid ${C.bordoTenue}`,textAlign:label?'left':'center',whiteSpace:'nowrap',
+  return {padding:'7px 10px',fontSize:bold?13:12,fontWeight:bold?700:400,color:muted?C.spento:color||C.grigio,fontFamily:F.mono,borderBottom:`1px solid ${C.bordoTenue}`,textAlign:label?'left':'center',whiteSpace:'nowrap',
     ...(label?{position:'sticky',left:0,background:C.card,zIndex:1,minWidth:100}:{})}
 }
