@@ -2232,6 +2232,33 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   conto `visibili/totali`. Rifatti così il 2/10/2026 perché in fila non si
   capivano: una pagina con più di tre filtri li mette in un pannello, non in
   riga.
+- ⚠️⚠️ **Ogni pagina è un pezzo a parte, e una pagina nuova va aggiunta così**
+  (21/10/2026): in `App.jsx` con `lazy(() => import('./pages/…'))`, non con un
+  `import` in testa. Prima stavano tutte in un file solo da **437 kB** —
+  aprendo l'app si scaricavano e si compilavano anche Andamento, Reporting,
+  Bilancio e Road to weekend, cioè quattro pagine che in una sessione normale
+  non si aprono. Il pezzo principale è passato a **236 kB** (116 → 63 kB
+  compressi). ⚠️ **Dashboard e Login restano statiche**: sono le prime due cose
+  che si vedono, e metterle in un pezzo a parte vorrebbe dire una seconda
+  richiesta prima di poter disegnare qualcosa.
+- ⚠️⚠️ **Un hook che legge dati condivisi ha la memoria di modulo.**
+  `usaVpm`, `usaClassifiche` e — **dal 21/10/2026** — `usaProssime` tengono il
+  risultato in una variabile del modulo con la richiesta in volo accanto
+  (`memoria` / `inCorso`), quindi la chiamata si fa **una volta per sessione**
+  anche se sei pagine montano lo stesso hook. Senza, cambiare pagina quattro
+  volte scaricava quattro volte le stesse 67 partite. ⚠️ **E la memoria deve
+  avere un modo di buttarla** (`ricarica()`): il calendario cambia quando gira
+  l'importazione, e una cache senza invalidazione è il difetto peggiore di una
+  cache. ⚠️ Chi scrive (il voto) aggiorna **anche la memoria**, o la stellina
+  sparisce tornando sulla pagina.
+- **I formattatori stanno in `src/lib/formato.js`** — `pct`, `eur`, `gg`,
+  `ggAnno`, `giorno` — e non si riscrivono nelle pagine. ⚠️ Sono nati da tre
+  copie di `pct` con **due nomi** (`pct` in `TestataPartita`, `pct1` in
+  `BarraPartita`, una locale in `ScalataPage`) che **erano già divergute**: due
+  guardavano il valore nullo e la terza scriveva `NaN%`. Stessa storia della
+  data breve, in tre pagine, una con l'anno e due senza. È lo stesso difetto del
+  campo di testo e della chiave del giorno negli script: **una copia che nessuno
+  confronta non si accorge di essere sbagliata.**
 - **Pezzi ricorrenti** in `src/components/ui.jsx`: `Card`, `Etichetta`,
   `StatCard`, `Btn`, `Input`, `Badge`. Prima di riscrivere una card a mano,
   guarda se c'è già.

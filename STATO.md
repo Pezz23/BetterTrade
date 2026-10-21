@@ -3,7 +3,31 @@
 > To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 18 ottobre 2026 · app alla versione **1.28.07**
+**Ultimo aggiornamento:** 21 ottobre 2026 · app alla versione **1.29.00**
+
+## Il 21 ottobre: il tagliando prima della grafica
+
+Mattia vuole rifare l'aspetto dell'app (*"mi pare una pagina del gestionale
+AS400"*) e ha chiesto di **pulire e ottimizzare prima di toccare le grafiche**.
+Giusto in quest'ordine: il lavoro sull'aspetto tocca gli stessi file, e farlo su
+tre copie divergenti dello stesso formattatore vuol dire rifarlo tre volte.
+
+**Il difetto più grosso era l'avvio, e non era nei dati.** Le dodici pagine
+stavano in **un pezzo solo da 437 kB**: aprire l'app scaricava e compilava anche
+le quattro pagine che in una sessione normale non si aprono. Ora ogni pagina è
+un pezzo a parte (`React.lazy`) e il principale è **236 kB**, da 116 a **63 kB
+compressi**. Road to weekend arriva quando la apri, e sono 10 kB.
+
+**Gli altri tre:** `usaProssime` non aveva memoria, quindi ogni cambio di pagina
+rifaceva le due richieste (e le faceva **in fila**, non insieme); VPM si
+ricalcolava a ogni ridisegno in due punti; e c'erano **tre copie di `pct` con
+due nomi**, già divergute — due guardavano il nullo, la terza scriveva `NaN%`.
+
+⚠️ **Quello che il tagliando NON ha trovato, e vale saperlo:** nessun file
+morto, nessun export orfano (tranne `theme.TIPO`, che era duplicato in
+`SlotPage`), nessuna dipendenza inutile — sono tre — e tutte le tabelle sono
+lontanissime dal tetto delle 1000 righe (movimenti **3**, giornate **275**,
+future **67**). **Il codice non era sporco: era mal distribuito.**
 
 ## La giornata del 18 ottobre, in una riga: non vietare, togliere il secondo numero
 
@@ -69,7 +93,8 @@ numeri scritti qui, perché alcuni sono stati corretti.
 
 | | |
 |---|---|
-| app | **1.28.07**, commit `f3384b8`, lint 0 errori (8 avvisi noti), build ok |
+| app | **1.29.00**, commit `5f738c9`, lint 0 errori (8 avvisi noti), build ok |
+| peso del primo paint | **381 kB / 110 kB compressi** (era 582 / 163) · le pagine arrivano a richiesta |
 | Road to weekend | in piedi · **registro vuoto**: la #16 era un collaudo, azzerata da Mattia col tasto il 19/10 |
 | archivio | **54.125** partite con risultato, l'ultima del **14/10** |
 | future | **192** da giocare · **189** con la quota over 2,5 · **0 con Bet365** |
