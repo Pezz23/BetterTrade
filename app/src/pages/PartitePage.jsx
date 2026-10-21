@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { usaProssime } from '../hooks/usaProssime'
 import { usaVpm } from '../hooks/usaVpm'
 import { useAuth } from '../context/AuthContext'
@@ -12,6 +12,14 @@ import { etichetta, sigla } from '../lib/campionati'
 import { valutaPartita, VPM_NETTO } from '../lib/vpm'
 import { ORDINI, ORDINE_DEFAULT, confronto } from '../lib/ordine'
 import LegendaPartite from '../components/LegendaPartite'
+// ⚠️⚠️ **Le soglie e il confronto arrivano da Andamento, non riscritti qui.**
+// Sono gli stessi quattro numeri misurati su 33.141 partite (VPM 7,0 · att 60%
+// · scelta 62% · voto 100%) e la stessa funzione `sopra()`, che confronta sul
+// **numero arrotondato come si vede**: scritto a mano qui, un valore mostrato
+// `60%` ma che dentro è 0,5996 sarebbe escluso dal filtro mentre nella pagina
+// Andamento risulta sopra soglia — due schermate che dicono il contrario
+// sulla stessa partita.
+import { METODI, SOGLIE_BASE, sopra } from '../hooks/usaAndamento'
 
 // La lista delle partite future, ordinata per attendibilità.
 // I calcoli stanno in lib/attendibilita.js, la riga in components/RigaPartita.jsx:
@@ -50,6 +58,7 @@ export default function PartitePage() {
   const [soloSopraSoglia, setSoloSopraSoglia] = useState(false)
   const [votoMin, setVotoMin] = useState('')
   const [soloVpmContro, setSoloVpmContro] = useState(false)
+  const [daccordo, setDaccordo] = useState(false)
   const [ordine, setOrdine] = useState(ORDINE_DEFAULT)
   const [crescente, setCrescente] = useState(false)   // secondo tocco: si inverte
   const [pannello, setPannello] = useState(false)   // i filtri, chiusi di default
@@ -94,6 +103,22 @@ export default function PartitePage() {
     return m
   }, [datiVpm, righe])
 
+  /**
+   * Tutti e quattro gli indicatori sopra la loro soglia.
+   *
+   * ⚠️ **Misurato su 33.141 partite, otto stagioni**: con zero indicatori
+   * sopra soglia la giocata arriva il 45,7% delle volte, con quattro il
+   * **74,1%** (su 1.118 partite). ⚠️ Ma il guadagno sulla sola attendibilità
+   * **non è dimostrabile**: 74,1% ±2,6 contro 71,6% ±1,1 su 5,6 volte più
+   * partite. È un controllo, non un metodo di selezione — e quasi tutto il
+   * merito è dell'attendibilità: le altre tre senza di lei fanno 44,7%.
+   */
+  const tuttiDaccordo = useCallback(r => {
+    const v = vpmDi.get(r.id)
+    const riga = { att: r.probGiocata, vpm: v?.punti, scelta: v?.scelta, voto: v?.voto }
+    return METODI.every(m => sopra(riga, m.id, SOGLIE_BASE))
+  }, [vpmDi])
+
   const visibili = useMemo(() => {
     const qMin = numero(quotaMin), qMax = numero(quotaMax), vMin = numero(votoMin)
     return inFinestra
@@ -109,11 +134,12 @@ export default function PartitePage() {
       // Un campo indeciso (sotto VPM_NETTO) non è un disaccordo.
       .filter(r => { if (!soloVpmContro) return true
         const v = vpmDi.get(r.id); return v?.accordo === false && v.punti >= VPM_NETTO })
+      .filter(r => daccordo ? tuttiDaccordo(r) : true)
       // L'ordine si applica **dopo** i filtri, nello stesso passaggio: così
       // funziona sempre su quello che è rimasto, senza un secondo elenco da
       // tenere allineato. Il confronto sta in lib/ordine.js.
       .sort(confronto(ordine, vpmDi, crescente))
-  }, [inFinestra, campionato, quotaMin, quotaMax, soloSopraSoglia, soglie, votoMin, soloVpmContro, vpmDi, ordine, crescente])
+  }, [inFinestra, campionato, quotaMin, quotaMax, soloSopraSoglia, soglie, votoMin, soloVpmContro, daccordo, tuttiDaccordo, vpmDi, ordine, crescente])
 
   const conteggi = useMemo(() => {
     const c = { centro: 0, giallo: 0, blu: 0 }
@@ -121,9 +147,17 @@ export default function PartitePage() {
     return c
   }, [inFinestra, soglie])
 
+  // ⚠️ Il numero sta **sul tasto**, come sulle finestre temporali: un filtro
+  // che non dice quante partite lascerebbe costringe a premerlo per saperlo.
+  const nDaccordo = useMemo(() => inFinestra.filter(tuttiDaccordo).length, [inFinestra, tuttiDaccordo])
+
   const ultimaData = inFinestra.reduce((m, r) => (r.data > m ? r.data : m), '')
 
   // I filtri accesi, per mostrarli e poterli togliere uno a uno.
+  // ⚠️ «tutti d'accordo» **non sta qui**, pur essendo un filtro: le targhette
+  // servono a far vedere quello che è acceso **dentro il pannello chiuso**, e
+  // quel tasto è già in vista e già acceso. Metterlo avrebbe mostrato la stessa
+  // cosa due volte a tre centimetri di distanza. Resta però in `azzera`.
   const attivi = [
     campionato && { id: 'camp', label: sigla(campionato), colore: C.blu, togli: () => setCampionato('') },
     quotaMin && { id: 'qmin', label: `quota ≥ ${quotaMin}`, togli: () => setQuotaMin('') },
@@ -132,7 +166,7 @@ export default function PartitePage() {
     soloSopraSoglia && { id: 'soglia', label: 'sopra soglia', togli: () => setSoloSopraSoglia(false) },
     soloVpmContro && { id: 'vpm', label: 'campo contro mercato', colore: C.rosso, togli: () => setSoloVpmContro(false) },
   ].filter(Boolean)
-  const azzera = () => { setCampionato(''); setQuotaMin(''); setQuotaMax(''); setVotoMin(''); setSoloSopraSoglia(false); setSoloVpmContro(false) }
+  const azzera = () => { setCampionato(''); setQuotaMin(''); setQuotaMax(''); setVotoMin(''); setSoloSopraSoglia(false); setSoloVpmContro(false); setDaccordo(false) }
 
   // La scheda di una partita prende tutta la pagina: sul telefono è l'unico
   // modo di leggerla, e la lista resta dov'era quando si torna indietro.
@@ -185,6 +219,13 @@ export default function PartitePage() {
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
         <button onClick={() => setPannello(v => !v)} style={pillola(pannello || attivi.length > 0)}>
           ⚙ filtri{attivi.length > 0 ? ` · ${attivi.length}` : ''}
+        </button>
+        {/* ⚠️ Accanto ai filtri e **fuori** dal pannello, come i tasti
+            dell'ordine: è una lente che si accende e si spegne di continuo,
+            non un filtro che si imposta una volta. */}
+        <button onClick={() => setDaccordo(v => !v)} style={pillola(daccordo, C.verde)}
+          title="Solo le partite dove VPM, attendibilità, scelta e voto stanno tutti e quattro sopra la loro soglia. Misurato su otto stagioni: lì la giocata è arrivata il 74,1% delle volte contro il 45,7% di quando nessuno è sopra soglia.">
+          tutti d&apos;accordo<span style={{ color: C.spento, fontWeight: 400 }}> {nDaccordo}</span>
         </button>
         {attivi.map(f => (
           <button key={f.id} onClick={f.togli} title="togli questo filtro" style={{ ...pillola(true, f.colore || C.oro), fontWeight: 600 }}>
