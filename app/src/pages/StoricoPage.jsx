@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabase'
-import { C, F, alpha } from '../theme'
+import { C, F, alpha, S } from '../theme'
 import { Card, Etichetta } from '../components/ui'
 import { CATEGORIE, pct, giorno } from '../components/TestataPartita'
 import { valuta, categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
@@ -20,16 +20,16 @@ import { sigla } from '../lib/campionati'
 const Riquadro = ({ label, valore, sub, colore }) => (
   <Card style={{ padding: '12px 14px' }}>
     <Etichetta style={{ marginBottom: 6 }}>{label}</Etichetta>
-    <div style={{ fontSize: 22, fontWeight: 700, fontFamily: F.mono, color: colore || C.testo, lineHeight: 1 }}>{valore}</div>
-    {sub && <div style={{ fontSize: 10, color: C.spento, fontFamily: F.mono, marginTop: 5 }}>{sub}</div>}
+    <div style={{ fontSize: S.evidenza, fontWeight: 700, fontFamily: F.mono, color: colore || C.testo, lineHeight: 1 }}>{valore}</div>
+    {sub && <div style={{ fontSize: S.minuta, color: C.spento, fontFamily: F.mono, marginTop: 5 }}>{sub}</div>}
   </Card>
 )
 
 const Sezione = ({ titolo, extra, children }) => (
   <div style={{ marginTop: 18 }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 9 }}>
-      <Etichetta colore={C.testo} style={{ fontSize: 13, letterSpacing: '0.12em', fontWeight: 700 }}>{titolo}</Etichetta>
-      {extra && <Etichetta style={{ fontSize: 11 }}>{extra}</Etichetta>}
+      <Etichetta colore={C.testo} style={{ fontSize: S.media, letterSpacing: '0.12em', fontWeight: 700 }}>{titolo}</Etichetta>
+      {extra && <Etichetta style={{ fontSize: S.base }}>{extra}</Etichetta>}
     </div>
     {children}
   </div>
@@ -116,13 +116,13 @@ export default function StoricoPage() {
   // ⚠️ Si aspettano **entrambe**: senza, per un istante la pagina scriveva
   // *"partite future 0"* con un periodo vuoto — un numero sbagliato mostrato
   // come se fosse quello giusto.
-  if (caricamento || caricaFuture) return <div style={{ padding: 16, color: C.spento, fontFamily: F.mono, fontSize: 12 }}>Carico…</div>
+  if (caricamento || caricaFuture) return <div style={{ padding: 16, color: C.spento, fontFamily: F.mono, fontSize: S.corpo }}>Carico…</div>
 
   return (
     <div style={{ padding: 16, maxWidth: 760, margin: '0 auto' }}>
       <Etichetta colore={C.oro} style={{ letterSpacing: 4, marginBottom: 4 }}>STORICO</Etichetta>
-      <div style={{ fontSize: 20, fontWeight: 700, color: C.testo, fontFamily: F.sans, marginBottom: 14 }}>L'archivio e come stiamo andando</div>
-      {errore && <Card colore={C.rosso}><div style={{ color: C.rosso, fontSize: 13, fontFamily: F.sans }}>⚠️ {errore}</div></Card>}
+      <div style={{ fontSize: S.evidenza, fontWeight: 700, color: C.testo, fontFamily: F.sans, marginBottom: 14 }}>L'archivio e come stiamo andando</div>
+      {errore && <Card colore={C.rosso}><div style={{ color: C.rosso, fontSize: S.media, fontFamily: F.sans }}>⚠️ {errore}</div></Card>}
 
       <Sezione titolo="📚 L'archivio">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
@@ -139,18 +139,18 @@ export default function StoricoPage() {
         <Card style={{ padding: '10px 14px' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {perCampionato.map(([div, n]) => (
-              <span key={div} style={{ fontSize: 11, fontFamily: F.mono, padding: '4px 10px', borderRadius: 20, background: alpha(C.bluPieno, 0.1), color: C.blu }}>
+              <span key={div} style={{ fontSize: S.base, fontFamily: F.mono, padding: '4px 10px', borderRadius: 20, background: alpha(C.bluPieno, 0.1), color: C.blu }}>
                 {sigla(div)} <b style={{ color: C.testo }}>{n}</b>
               </span>
             ))}
-            {!perCampionato.length && <span style={{ fontSize: 12, color: C.fantasma, fontFamily: F.sans }}>nessuna partita futura in tabella</span>}
+            {!perCampionato.length && <span style={{ fontSize: S.corpo, color: C.fantasma, fontFamily: F.sans }}>nessuna partita futura in tabella</span>}
           </div>
         </Card>
       </Sezione>
 
       <Sezione titolo="🎯 Le nostre proposte" extra={`${giocate.length} future poi giocate`}>
         {sopra.length === 0
-          ? <Card><div style={{ fontSize: 12, color: C.fantasma, fontFamily: F.sans }}>Nessuna proposta ancora giocata.</div></Card>
+          ? <Card><div style={{ fontSize: S.corpo, color: C.fantasma, fontFamily: F.sans }}>Nessuna proposta ancora giocata.</div></Card>
           : <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
               <Riquadro label="prese" valore={`${complessivo.prese}/${complessivo.tot}`} sub={`dichiarato ${pct(complessivo.atteso)}`}
@@ -163,7 +163,7 @@ export default function StoricoPage() {
                   sub={c.tot ? `${pct(c.reale)} · dichiarato ${pct(c.atteso)}` : 'nessuna'} colore={CATEGORIE[cat].colore} />
               })}
             </div>
-            <div style={{ marginTop: 10, fontSize: 11, color: C.spento, fontFamily: F.sans, lineHeight: 1.6 }}>
+            <div style={{ marginTop: 10, fontSize: S.base, color: C.spento, fontFamily: F.sans, lineHeight: 1.6 }}>
               Ricostruite con le regole di oggi: non è il registro di cosa avete giocato davvero.
               La calibrazione su tutto l'archivio sta in <span style={{ fontFamily: F.mono, color: C.grigio }}>btscout/scripts/rendiconto.js</span>.
             </div>
@@ -179,9 +179,9 @@ export default function StoricoPage() {
             const ok = vinta(r.giocata, r)
             const cat = categoria(r.probGiocata, SOGLIE_DEFAULT)
             return (
-              <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', fontFamily: F.mono, fontSize: 12,
+              <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', fontFamily: F.mono, fontSize: S.corpo,
                 borderBottom: i < arr.length - 1 ? `1px solid ${C.bordoTenue}` : 'none' }}>
-                <span style={{ color: ok ? C.verde : C.rosso, fontSize: 14, width: 14 }}>{ok ? '✓' : '✗'}</span>
+                <span style={{ color: ok ? C.verde : C.rosso, fontSize: S.grande, width: 14 }}>{ok ? '✓' : '✗'}</span>
                 <span style={{ color: C.fioco, width: 62, flexShrink: 0 }}>{giorno(r.data)}</span>
                 <span style={{ color: CATEGORIE[cat].colore, width: 38, flexShrink: 0 }}>{sigla(r.div)}</span>
                 <span style={{ color: C.testo, fontFamily: F.sans, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -200,7 +200,7 @@ export default function StoricoPage() {
             <button onClick={() => setTutte(v => !v)} style={{
               width: '100%', marginTop: 4, padding: '9px 0', background: 'transparent',
               border: 'none', borderTop: `1px solid ${C.bordoChiaro}`,
-              color: C.spento, fontFamily: F.mono, fontSize: 11, letterSpacing: '0.08em', cursor: 'pointer',
+              color: C.spento, fontFamily: F.mono, fontSize: S.base, letterSpacing: '0.08em', cursor: 'pointer',
             }}>
               {tutte
                 ? `⌃ mostra solo le ultime ${VISIBILI}`

@@ -1,4 +1,4 @@
-import { C, F, alpha } from '../theme'
+import { C, F, alpha, S } from '../theme'
 import { verso } from '../lib/vpm'
 import { pct } from '../lib/formato'
 
@@ -31,16 +31,16 @@ function Colonna({ valore, etichetta, colore, coloreEtichetta, divisore, prefiss
       <div style={{
         position: 'relative',
         height: ALTA_VALORE, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 14, fontWeight: 700, fontFamily: F.mono, color: colore, lineHeight: 1, whiteSpace: 'nowrap',
+        fontSize: S.grande, fontWeight: 700, fontFamily: F.mono, color: colore, lineHeight: 1, whiteSpace: 'nowrap',
       }}>
         {/* il prefisso è appoggiato al bordo sinistro, fuori dal flusso: accanto
             alla cifra la spostava fuori centro e si confondeva con lei */}
         {prefisso != null && (
-          <span style={{ position: 'absolute', left: 0, top: 0, bottom: 0, display: 'flex', alignItems: 'center', fontSize: 11, fontWeight: 700 }}>{prefisso}</span>
+          <span style={{ position: 'absolute', left: 0, top: 0, bottom: 0, display: 'flex', alignItems: 'center', fontSize: S.base, fontWeight: 700 }}>{prefisso}</span>
         )}
         {valore}
       </div>
-      <div style={{ fontSize: 7, fontFamily: F.mono, letterSpacing: '0.08em', marginTop: 2,
+      <div style={{ fontSize: S.nano, fontFamily: F.mono, letterSpacing: '0.08em', marginTop: 2,
         color: coloreEtichetta || C.spento, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {etichetta}
       </div>
@@ -64,7 +64,7 @@ export default function BarraPartita({ p, cat, vpm = null, colore }) {
         `controlla-dati.js`, che la stampa quando serve. A schermo, sopra una
         card, serve sapere *che* c'è un problema, non perché. */}
     {p.quoteIncoerenti && (
-      <div style={{ padding: '5px 8px', marginBottom: 4, fontSize: 10, fontFamily: F.mono,
+      <div style={{ padding: '5px 8px', marginBottom: 4, fontSize: S.minuta, fontFamily: F.mono,
         lineHeight: 1.4, color: C.rosso, letterSpacing: '0.02em',
         background: alpha(C.rosso, 0.1), border: `1px solid ${alpha(C.rosso, 0.4)}` }}>
         ⚠️ QUOTE IN CONFLITTO — Partita da verificare.

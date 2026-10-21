@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
-import { C, F, alpha } from '../theme'
+import { C, F, alpha, S } from '../theme'
 import { giorno, CATEGORIE } from './TestataPartita'
 import { categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
 import { pronosticoDa } from '../lib/spin'
@@ -45,7 +45,7 @@ export default function SceltaPartita({ casa, ospite, collegata, partite, onSceg
       <button disabled={disabled} onClick={() => { setAperto(v => !v); setTesto('') }} style={{
         width: '100%', textAlign: 'left', background: C.pozzo,
         border: `1px solid ${collegata ? alpha(C.verde, 0.35) : C.bordo}`, borderRadius: 5,
-        padding: '5px 6px', color: casa ? C.testo : C.fantasma, fontSize: 12, fontFamily: F.sans,
+        padding: '5px 6px', color: casa ? C.testo : C.fantasma, fontSize: S.corpo, fontFamily: F.sans,
         cursor: disabled ? 'default' : 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
       }}>
         {collegata && <span style={{ color: C.verde, marginRight: 4 }}>●</span>}{etichetta}
@@ -58,13 +58,13 @@ export default function SceltaPartita({ casa, ospite, collegata, partite, onSceg
           maxHeight: 320, overflowY: 'auto', padding: 6,
         }}>
           <input autoFocus={!tocco} value={testo} onChange={e => setTesto(e.target.value)} placeholder="cerca squadra o campionato…"
-            style={{ width: '100%', background: C.pozzo, border: `1px solid ${C.bordo}`, borderRadius: 6, padding: '7px 9px', color: C.testo, fontSize: 12, fontFamily: F.sans, outline: 'none', marginBottom: 6 }} />
+            style={{ width: '100%', background: C.pozzo, border: `1px solid ${C.bordo}`, borderRadius: 6, padding: '7px 9px', color: C.testo, fontSize: S.corpo, fontFamily: F.sans, outline: 'none', marginBottom: 6 }} />
           {(casa || ospite) && (
-            <button onClick={() => { onLibera(); setAperto(false) }} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 'none', color: C.rosso, fontSize: 11, fontFamily: F.sans, padding: '5px 6px', cursor: 'pointer' }}>
+            <button onClick={() => { onLibera(); setAperto(false) }} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 'none', color: C.rosso, fontSize: S.base, fontFamily: F.sans, padding: '5px 6px', cursor: 'pointer' }}>
               ✕ svuota la casella
             </button>
           )}
-          {trovate.length === 0 && <div style={{ padding: '8px 6px', fontSize: 11, color: C.fantasma, fontFamily: F.sans }}>nessuna partita trovata</div>}
+          {trovate.length === 0 && <div style={{ padding: '8px 6px', fontSize: S.base, color: C.fantasma, fontFamily: F.sans }}>nessuna partita trovata</div>}
           {trovate.map(p => {
             const cat = categoria(p.probGiocata, SOGLIE_DEFAULT)
             const col = CATEGORIE[cat].colore
@@ -72,7 +72,7 @@ export default function SceltaPartita({ casa, ospite, collegata, partite, onSceg
               <button key={p.id} onClick={() => { onScegli(p); setAperto(false) }} style={{
                 display: 'flex', alignItems: 'center', gap: 7, width: '100%', textAlign: 'left',
                 background: 'transparent', border: 'none', borderBottom: `1px solid ${C.bordoTenue}`,
-                padding: '6px 6px', cursor: 'pointer', fontFamily: F.mono, fontSize: 11, color: C.testo,
+                padding: '6px 6px', cursor: 'pointer', fontFamily: F.mono, fontSize: S.base, color: C.testo,
               }}>
                 <span style={{ color: C.blu, width: 34, flexShrink: 0 }}>{sigla(p.div)}</span>
                 <span style={{ color: C.fioco, width: 56, flexShrink: 0 }}>{giorno(p.data)}</span>

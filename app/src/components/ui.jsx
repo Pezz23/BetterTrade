@@ -6,7 +6,7 @@
 // cambiare l'aspetto significava rincorrerle tutte.
 
 import { useRef, useEffect } from 'react'
-import { C, F, alpha } from '../theme'
+import { C, F, alpha, S } from '../theme'
 
 // La card grigia standard: fondo, bordo, angoli tondi.
 export function Card({ children, style, colore, ...resto }) {
@@ -27,7 +27,7 @@ export function Card({ children, style, colore, ...resto }) {
 export function Etichetta({ children, colore = C.spento, style }) {
   return (
     <div style={{
-      fontSize: 9,
+      fontSize: S.micro,
       color: colore,
       fontFamily: F.mono,
       textTransform: 'uppercase',
@@ -51,7 +51,7 @@ export function StatCard({ label, value, sub, color, small }) {
         fontFamily: F.mono,
         marginBottom: sub ? 3 : 0,
       }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: C.spento, fontFamily: F.mono }}>{sub}</div>}
+      {sub && <div style={{ fontSize: S.base, color: C.spento, fontFamily: F.mono }}>{sub}</div>}
     </Card>
   )
 }
@@ -68,7 +68,7 @@ export function Btn({ children, variante = 'contorno', colore = C.oro, style, ..
     <button style={{
       borderRadius: 8,
       padding: '10px 18px',
-      fontSize: 13,
+      fontSize: S.media,
       fontWeight: 600,
       fontFamily: F.sans,
       cursor: resto.disabled ? 'default' : 'pointer',
@@ -90,7 +90,7 @@ export function Input({ style, ...resto }) {
       borderRadius: 8,
       padding: '10px 13px',
       color: C.testo,
-      fontSize: 14,
+      fontSize: S.grande,
       fontFamily: F.sans,
       outline: 'none',
       width: '100%',
@@ -113,7 +113,7 @@ export function Input({ style, ...resto }) {
 export function Badge({ children, colore = C.oro, sfondo, style }) {
   return (
     <span style={{
-      fontSize: 10,
+      fontSize: S.minuta,
       fontWeight: 700,
       padding: '3px 9px',
       borderRadius: 20,
@@ -173,7 +173,7 @@ export function TastoRipeti({ onScatto, colore = C.spento, children, style }) {
       onPointerUp={ferma} onPointerCancel={ferma} onPointerLeave={ferma}
       onContextMenu={e => e.preventDefault()}
       style={{
-        padding: '4px 12px', fontSize: 13, fontFamily: F.mono, cursor: 'pointer',
+        padding: '4px 12px', fontSize: S.media, fontFamily: F.mono, cursor: 'pointer',
         color: colore, background: C.card, border: `1px solid ${alpha(colore, 0.3)}`,
         // ⚠️ Tenere premuto su iOS seleziona il testo e apre il menù: queste
         // due righe sono quello che rende il gesto possibile su telefono.

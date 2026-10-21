@@ -2,7 +2,7 @@ import { useState, lazy, Suspense } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
-import { C, F, alpha } from './theme'
+import { C, F, alpha, S } from './theme'
 import { VERSIONE } from './versione'
 
 // ⚠️⚠️ **Ogni pagina è un pezzo a parte, scaricato quando la apri** (21/10/2026).
@@ -75,11 +75,11 @@ function TabBar({ active, onChange, isAdmin }) {
             flex:1, padding:'10px 2px 8px', background:'transparent', border:'none',
             borderTop:`2px solid ${on?C.oro:'transparent'}`,
             color: on?C.oro:C.inattivo,
-            fontFamily:F.mono, fontSize:9, letterSpacing:1,
+            fontFamily:F.mono, fontSize:S.micro, letterSpacing:1,
             cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3,
             transition:'all .15s',
           }}>
-            <span style={{ fontSize:17 }}>{t.icon}</span>
+            <span style={{ fontSize:S.icona }}>{t.icon}</span>
             {t.label.toUpperCase()}
           </button>
         )
@@ -126,10 +126,10 @@ function Menu({ aperto, onChiudi, onVai, attivo, isAdmin }) {
                 background: on ? alpha(C.oro, 0.1) : 'transparent',
                 borderLeft:`3px solid ${on ? C.oro : 'transparent'}`,
               }}>
-                <span style={{ fontSize:18, width:24, textAlign:'center', color: on ? C.oro : C.testo }}>{v.icon}</span>
+                <span style={{ fontSize:S.icona, width:24, textAlign:'center', color: on ? C.oro : C.testo }}>{v.icon}</span>
                 <span style={{ minWidth:0 }}>
-                  <div style={{ fontSize:14, fontWeight:600, color: on ? C.oro : C.testo, fontFamily:F.sans }}>{v.label}</div>
-                  <div style={{ fontSize:10, color:C.spento, fontFamily:F.sans, lineHeight:1.4 }}>{v.desc}</div>
+                  <div style={{ fontSize:S.grande, fontWeight:600, color: on ? C.oro : C.testo, fontFamily:F.sans }}>{v.label}</div>
+                  <div style={{ fontSize:S.minuta, color:C.spento, fontFamily:F.sans, lineHeight:1.4 }}>{v.desc}</div>
                 </span>
               </button>
             )
@@ -153,11 +153,11 @@ function Header({ currentUser, onLogout, onMenu, menuAperto }) {
           <rect x="2" y="16" width="10" height="10" rx="2" fill={C.oro} opacity=".5"/>
           <rect x="16" y="16" width="10" height="10" rx="2" fill={C.oro} opacity=".9"/>
         </svg>
-        <span style={{ fontSize:14, fontWeight:700, color:C.testo, fontFamily:F.sans, letterSpacing:'-0.3px' }}>BetterTrade</span>
+        <span style={{ fontSize:S.grande, fontWeight:700, color:C.testo, fontFamily:F.sans, letterSpacing:'-0.3px' }}>BetterTrade</span>
         {/* Il contatore dello sviluppo: dice quale versione si ha davanti.
             Sta attaccato al nome perché è un dato del programma, non dell'utente. */}
         <span style={{
-          fontSize:9, color:C.spento, fontFamily:F.mono, letterSpacing:'0.5px',
+          fontSize:S.micro, color:C.spento, fontFamily:F.mono, letterSpacing:'0.5px',
           border:`1px solid ${C.bordo}`, borderRadius:4, padding:'2px 4px', lineHeight:1,
         }}>{VERSIONE}</span>
       </div>
@@ -168,11 +168,11 @@ function Header({ currentUser, onLogout, onMenu, menuAperto }) {
           <button onClick={onLogout} title="Esci" style={{
             width:30, height:30, borderRadius:8, background:alpha(C.oro, 0.12), border:`1px solid ${alpha(C.oro, 0.4)}`,
             display:'flex', alignItems:'center', justifyContent:'center', color:C.oro, cursor:'pointer',
-            fontSize:14, fontFamily:F.mono, padding:0, lineHeight:1,
+            fontSize:S.grande, fontFamily:F.mono, padding:0, lineHeight:1,
           }}>⏻</button>
           <div>
-            <div style={{ fontSize:11, fontWeight:600, color:C.testo, fontFamily:F.sans, lineHeight:1.2 }}>{currentUser?.display_name||currentUser?.username}</div>
-            <div style={{ fontSize:9, color:rc, fontFamily:F.mono }}>{roleLabel[currentUser?.role]}</div>
+            <div style={{ fontSize:S.base, fontWeight:600, color:C.testo, fontFamily:F.sans, lineHeight:1.2 }}>{currentUser?.display_name||currentUser?.username}</div>
+            <div style={{ fontSize:S.micro, color:rc, fontFamily:F.mono }}>{roleLabel[currentUser?.role]}</div>
           </div>
         </div>
         <button onClick={onMenu} aria-label="Menu" aria-expanded={menuAperto} style={{
@@ -200,7 +200,7 @@ function AppShell() {
   // un lampo di schermata di login a ogni ricaricamento.
   if (booting) return (
     <div style={{ minHeight:'100vh', background:C.fondo, display:'flex', alignItems:'center', justifyContent:'center',
-                  color:C.inattivo, fontFamily:F.mono, fontSize:12, letterSpacing:2 }}>
+                  color:C.inattivo, fontFamily:F.mono, fontSize:S.corpo, letterSpacing:2 }}>
       CARICAMENTO…
     </div>
   )
@@ -240,7 +240,7 @@ function AppShell() {
             connessione di casa. Un'animazione che compare e sparisce in
             200 ms si legge come uno sfarfallio, non come un caricamento. */}
         <Suspense fallback={
-          <div style={{ padding: 24, fontFamily: F.mono, fontSize: 11, color: C.spento }}>carico…</div>
+          <div style={{ padding: 24, fontFamily: F.mono, fontSize: S.base, color: C.spento }}>carico…</div>
         }>
           {renderPage()}
         </Suspense>

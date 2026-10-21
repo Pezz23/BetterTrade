@@ -1,4 +1,4 @@
-import { C, F, alpha } from '../theme'
+import { C, F, alpha, S } from '../theme'
 import { pct, giorno } from '../lib/formato'
 import { pronosticoDa } from '../lib/spin'
 import { Etichetta } from './ui'
@@ -84,8 +84,8 @@ export function Stella({ voti, mio, puoVotare, onVota }) {
       style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20,
         background: voti ? alpha(C.oro, 0.10) : 'transparent', border: `1px solid ${voti ? alpha(C.oro, 0.3) : C.bordo}`,
         cursor: puoVotare ? 'pointer' : 'default' }}>
-      <span style={{ fontSize: 16, lineHeight: 1, color: mio ? C.oro : voti ? alpha(C.oro, 0.55) : C.fioco }}>{voti ? '★' : '☆'}</span>
-      <span style={{ fontSize: 11, fontFamily: F.mono, fontWeight: 700, color: voti ? C.oro : C.fioco }}>{voti}/3</span>
+      <span style={{ fontSize: S.titolo, lineHeight: 1, color: mio ? C.oro : voti ? alpha(C.oro, 0.55) : C.fioco }}>{voti ? '★' : '☆'}</span>
+      <span style={{ fontSize: S.base, fontFamily: F.mono, fontWeight: 700, color: voti ? C.oro : C.fioco }}>{voti}/3</span>
     </button>
   )
 }
@@ -107,7 +107,7 @@ export default function TestataPartita({ p, cat, compatta = false, gol = null })
                 sotto, con gli altri quattro numeri. */}
             {i === 1 && (
               <div style={{ alignSelf: 'center', textAlign: 'center', padding: '0 6px', minWidth: compatta ? 76 : 96 }}>
-                <Etichetta style={{ fontSize: 9, letterSpacing: '0.12em', marginBottom: 4 }}>giocata</Etichetta>
+                <Etichetta style={{ fontSize: S.micro, letterSpacing: '0.12em', marginBottom: 4 }}>giocata</Etichetta>
                 <div style={{ fontSize: compatta ? 19 : 24, fontWeight: 800, fontFamily: F.mono, color: c.colore, lineHeight: 1.1 }}>{pronosticoDa(p.giocata)}</div>
                 <div style={{ marginTop: compatta ? 5 : 7 }}><Barra frazione={p.probGiocata} colore={c.colore} altezza={compatta ? 5 : 6} /></div>
                 {/* ⚠️ **I due consigli sotto la giocata, in bianco** (scelta di

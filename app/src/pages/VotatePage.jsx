@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { usaProssime } from '../hooks/usaProssime'
 import { usaVpm } from '../hooks/usaVpm'
 import { useAuth } from '../context/AuthContext'
-import { C, F } from '../theme'
+import { C, F, S } from '../theme'
 import { Card, Etichetta } from '../components/ui'
 import RigaPartita, { CATEGORIE } from '../components/RigaPartita'
 import SchedaScorrevole from '../components/SchedaScorrevole'
@@ -49,8 +49,8 @@ export default function VotatePage() {
   return (
     <div style={{ padding: 16 }}>
       <Etichetta colore={C.oro} style={{ letterSpacing: 4, marginBottom: 4 }}>VOTATE</Etichetta>
-      <div style={{ fontSize: 20, fontWeight: 700, color: C.testo, fontFamily: F.sans, marginBottom: 4 }}>Le partite con la stellina</div>
-      <div style={{ fontSize: 12, color: C.spento, fontFamily: F.sans, marginBottom: 14, lineHeight: 1.6 }}>
+      <div style={{ fontSize: S.evidenza, fontWeight: 700, color: C.testo, fontFamily: F.sans, marginBottom: 4 }}>Le partite con la stellina</div>
+      <div style={{ fontSize: S.corpo, color: C.spento, fontFamily: F.sans, marginBottom: 14, lineHeight: 1.6 }}>
         {caricamento ? 'Caricamento…' : <>
           {votate.length} partite votate ·{' '}
           <span style={{ color: CATEGORIE.centro.colore }}>{conteggi.centro} centro</span> ·{' '}
@@ -61,10 +61,10 @@ export default function VotatePage() {
         </>}
       </div>
 
-      {errore && <Card colore={C.rosso}><div style={{ color: C.rosso, fontSize: 13, fontFamily: F.sans }}>⚠️ {errore}</div></Card>}
+      {errore && <Card colore={C.rosso}><div style={{ color: C.rosso, fontSize: S.media, fontFamily: F.sans }}>⚠️ {errore}</div></Card>}
 
       {!caricamento && votate.length === 0 && (
-        <Card><div style={{ fontSize: 13, color: C.spento, fontFamily: F.sans, lineHeight: 1.7 }}>
+        <Card><div style={{ fontSize: S.media, color: C.spento, fontFamily: F.sans, lineHeight: 1.7 }}>
           Nessuna partita votata. La stellina si tocca dalla pagina <b style={{ color: C.testo }}>Partite</b>,
           sulla riga o dentro la scheda: serve a dire "questa la voglio", e la porta dentro la spin
           scavalcando il criterio automatico.

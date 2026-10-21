@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { C, F, alpha } from '../theme'
+import { C, F, alpha, S } from '../theme'
 import { VPM_NETTO } from '../lib/vpm'
 
 // La spiegazione dei cinque numeri della barra, in una card che si apre solo se
@@ -25,7 +25,7 @@ export default function LegendaPartite() {
         width: '100%', textAlign: 'left', cursor: 'pointer',
         background: aperta ? `linear-gradient(${alpha(C.oro, 0.06)},${alpha(C.oro, 0.06)}), ${C.card}` : 'transparent',
         border: `1px solid ${aperta ? alpha(C.oro, 0.3) : C.bordo}`, borderRadius: 0,
-        padding: '9px 12px', color: C.spento, fontFamily: F.mono, fontSize: 11, letterSpacing: '0.08em',
+        padding: '9px 12px', color: C.spento, fontFamily: F.mono, fontSize: S.base, letterSpacing: '0.08em',
         display: 'flex', alignItems: 'center', gap: 8,
       }}>
         <span style={{ color: C.oro }}>{aperta ? '⌃' : '⌄'}</span>
@@ -36,11 +36,11 @@ export default function LegendaPartite() {
         <div style={{ border: `1px solid ${alpha(C.oro, 0.3)}`, borderTop: 'none', padding: '4px 12px 12px' }}>
           {VOCI.map(v => (
             <div key={v.nome} style={{ padding: '9px 0', borderBottom: `1px solid ${C.bordoTenue}` }}>
-              <div style={{ fontSize: 10, fontWeight: 700, fontFamily: F.mono, letterSpacing: '0.1em', color: v.colore, marginBottom: 4 }}>{v.nome}</div>
-              <div style={{ fontSize: 12, fontFamily: F.sans, color: C.fioco, lineHeight: 1.55 }}>{v.testo}</div>
+              <div style={{ fontSize: S.minuta, fontWeight: 700, fontFamily: F.mono, letterSpacing: '0.1em', color: v.colore, marginBottom: 4 }}>{v.nome}</div>
+              <div style={{ fontSize: S.corpo, fontFamily: F.sans, color: C.fioco, lineHeight: 1.55 }}>{v.testo}</div>
             </div>
           ))}
-          <div style={{ fontSize: 11, fontFamily: F.sans, color: C.fantasma, lineHeight: 1.55, marginTop: 10 }}>
+          <div style={{ fontSize: S.base, fontFamily: F.sans, color: C.fantasma, lineHeight: 1.55, marginTop: 10 }}>
             In mezzo alle due squadre c'è <b style={{ color: C.fioco }}>la giocata</b>: si gioca sempre il segno secco, 1 o 2,
             mai la X. Sotto quota 1,25 si aggiunge l'over 1,5, e l'attendibilità viene scontata del fattore misurato (0,908).
           </div>

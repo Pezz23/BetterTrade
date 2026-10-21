@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../supabase'
-import { C, F, alpha, TIPO } from '../theme'
+import { C, F, alpha, TIPO, S } from '../theme'
 import { DISPOSIZIONE, cellaDa } from '../lib/spin'
 import { usaProssime } from '../hooks/usaProssime'
 import SceltaPartita from '../components/SceltaPartita'
@@ -88,7 +88,7 @@ function comboOdds(tiles,pos) {
 }
 const cell=(extra={})=>({
   background:C.pozzo,border:`1px solid ${C.bordo}`,borderRadius:5,
-  padding:'5px 6px',color:C.testo,fontSize:12,
+  padding:'5px 6px',color:C.testo,fontSize:S.corpo,
   fontFamily:F.sans,outline:'none',width:'100%',...extra
 })
 
@@ -114,20 +114,20 @@ function TabellaGriglia({tiles,isAdmin,onUpdate,onCambia,onReset,syncing,libera,
   }
   return (
     <div>
-      {syncing&&<div style={{fontSize:10,color:C.spento,fontFamily:F.mono,marginBottom:8,textAlign:'right'}}>⟳ Sincronizzazione…</div>}
+      {syncing&&<div style={{fontSize:S.minuta,color:C.spento,fontFamily:F.mono,marginBottom:8,textAlign:'right'}}>⟳ Sincronizzazione…</div>}
       {(()=>{const a=ampiezzaSpin(tiles);return a&&(
         <div style={{background:`linear-gradient(${alpha(C.rosso,0.10)},${alpha(C.rosso,0.10)}), ${C.card}`,border:`1px solid ${alpha(C.rosso,0.45)}`,borderRadius:8,padding:'9px 12px',marginBottom:12,display:'flex',alignItems:'center',gap:8}}>
-          <span style={{fontSize:16,lineHeight:1}}>⚠️</span>
-          <span style={{fontSize:12,color:C.testo,fontFamily:F.sans,lineHeight:1.5}}>
+          <span style={{fontSize:S.titolo,lineHeight:1}}>⚠️</span>
+          <span style={{fontSize:S.corpo,color:C.testo,fontFamily:F.sans,lineHeight:1.5}}>
             <b style={{color:C.rosso}}>Questa spin mescola due weekend</b>: fra la prima partita e l'ultima
             passano <b style={{color:C.rosso}}>{a.giorni} giorni</b>. Le schedine restano aperte fino all'ultima.
           </span>
         </div>
       )})()}
-      {!isAdmin&&<div style={{background:alpha(C.bluPieno,0.08),border:`1px solid ${alpha(C.bluPieno,0.2)}`,borderRadius:8,padding:'9px 12px',fontSize:12,color:C.blu,fontFamily:F.sans,marginBottom:12}}>Modalità lettura</div>}
+      {!isAdmin&&<div style={{background:alpha(C.bluPieno,0.08),border:`1px solid ${alpha(C.bluPieno,0.2)}`,borderRadius:8,padding:'9px 12px',fontSize:S.corpo,color:C.blu,fontFamily:F.sans,marginBottom:12}}>Modalità lettura</div>}
       <div style={{display:'grid',gridTemplateColumns:COLS,gap:4,padding:'0 2px',marginBottom:4}}>
         {(libera?['Pron.','Casa','','Ospite','Quota','Data','Ris.']:['Pron.','Partita','Quota','Data','Ris.']).map((h,i)=>(
-          <div key={`col-${i}`} style={{fontSize:9,color:C.spento,fontFamily:F.mono,textTransform:'uppercase',letterSpacing:'0.07em',textAlign:'center',padding:'4px 0'}}>{h}</div>
+          <div key={`col-${i}`} style={{fontSize:S.micro,color:C.spento,fontFamily:F.mono,textTransform:'uppercase',letterSpacing:'0.07em',textAlign:'center',padding:'4px 0'}}>{h}</div>
         ))}
       </div>
       <div style={{display:'flex',flexDirection:'column',gap:4}}>
@@ -145,7 +145,7 @@ function TabellaGriglia({tiles,isAdmin,onUpdate,onCambia,onReset,syncing,libera,
               </select>
               {libera?<>
                 <input style={cell()} placeholder="Casa" value={t.casa} disabled={!isAdmin} onChange={e=>onUpdate(t.id,'casa',e.target.value)}/>
-                <div style={{fontSize:10,color:C.fantasma,textAlign:'center',fontFamily:F.mono}}>-</div>
+                <div style={{fontSize:S.minuta,color:C.fantasma,textAlign:'center',fontFamily:F.mono}}>-</div>
                 <input style={cell()} placeholder="Ospite" value={t.ospite} disabled={!isAdmin} onChange={e=>onUpdate(t.id,'ospite',e.target.value)}/>
               </>:
                 <SceltaPartita casa={t.casa} ospite={t.ospite} collegata={!!t.prossima_id} partite={partite}
@@ -156,7 +156,7 @@ function TabellaGriglia({tiles,isAdmin,onUpdate,onCambia,onReset,syncing,libera,
               <input style={cell({textAlign:'center',color:C.oro,padding:'5px 4px'})}
                 type="number" step="0.01" min="1" placeholder="@"
                 value={t.quota} disabled={!isAdmin} onChange={e=>onUpdate(t.id,'quota',e.target.value)}/>
-              <input style={cell({textAlign:'center',color:oggi?C.ambra:C.testo,fontSize:11,padding:'5px 3px'})}
+              <input style={cell({textAlign:'center',color:oggi?C.ambra:C.testo,fontSize:S.base,padding:'5px 3px'})}
                 placeholder="gg/mm" value={t.data} disabled={!isAdmin} onChange={e=>onUpdate(t.id,'data',e.target.value)}/>
               <select style={cell({
                 color:t.result==='win'?C.verde:t.result==='loss'?C.rosso:C.spento,
@@ -173,7 +173,7 @@ function TabellaGriglia({tiles,isAdmin,onUpdate,onCambia,onReset,syncing,libera,
       <SlotVisiva tiles={tiles}/>
       {isAdmin&&(
         <div style={{marginTop:16,display:'flex',justifyContent:'center'}}>
-          <button onClick={handleReset} style={{padding:'9px 28px',borderRadius:8,cursor:'pointer',fontFamily:F.sans,fontSize:13,fontWeight:600,
+          <button onClick={handleReset} style={{padding:'9px 28px',borderRadius:8,cursor:'pointer',fontFamily:F.sans,fontSize:S.media,fontWeight:600,
             border:`1px solid ${confirmReset?alpha(C.rosso,0.5):C.bordo}`,
             background:confirmReset?alpha(C.rosso,0.12):'transparent',
             color:confirmReset?C.rosso:C.inattivo,transition:'all .2s'}}>
@@ -201,7 +201,7 @@ function SlotVisiva({tiles}) {
   const winCombos=COMBOS.filter(c=>comboStatus(tiles,c.pos)==='win')
   return (
     <div style={{marginTop:20,paddingTop:16,borderTop:`1px solid ${C.bordoRiga}`}}>
-      <div style={{fontSize:9,color:C.spento,fontFamily:F.mono,letterSpacing:4,textTransform:'uppercase',marginBottom:12,textAlign:'center'}}>Slot</div>
+      <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.mono,letterSpacing:4,textTransform:'uppercase',marginBottom:12,textAlign:'center'}}>Slot</div>
       {/* Nove caselle attaccate: il bordo esterno è spesso, le righe interne
           sono solo lo sfondo che passa fra le celle (gap di 1px). */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:1,width:'100%',
@@ -214,7 +214,7 @@ function SlotVisiva({tiles}) {
           return (
             <div key={partita} style={{background:`linear-gradient(${ts.bg},${ts.bg}), ${C.card}`,padding:'14px 6px',textAlign:'center',
               boxShadow:ts.glow?`inset 0 0 14px ${ts.glowColor}`:'none',transition:'background 0.3s ease'}}>
-              <div style={{fontSize:11,fontWeight:700,color:ts.color,fontFamily:F.mono,marginBottom:2,opacity:0.65}}>{partita}</div>
+              <div style={{fontSize:S.base,fontWeight:700,color:ts.color,fontFamily:F.mono,marginBottom:2,opacity:0.65}}>{partita}</div>
               {/* L'esito prende il posto del pronostico sulla stessa riga: una
                   riga in più cambiava l'altezza della casella. */}
               {/* Altezza fissa: il ✓ è più grande del pronostico e senza questo
@@ -232,7 +232,7 @@ function SlotVisiva({tiles}) {
           pagina sotto le dita. */}
       <div style={{marginTop:14,minHeight:22,display:'flex',flexWrap:'wrap',gap:6,justifyContent:'center'}}>
         {winCombos.map(c=>(
-          <div key={c.id} style={{fontSize:10,fontWeight:600,padding:'3px 10px',borderRadius:20,background:TIPO_BG[c.tipo],color:TIPO_COLOR[c.tipo],border:`1px solid ${alpha(TIPO_COLOR[c.tipo],0.33)}`,fontFamily:F.mono,boxShadow:`0 0 8px ${alpha(TIPO_COLOR[c.tipo],0.27)}`}}>
+          <div key={c.id} style={{fontSize:S.minuta,fontWeight:600,padding:'3px 10px',borderRadius:20,background:TIPO_BG[c.tipo],color:TIPO_COLOR[c.tipo],border:`1px solid ${alpha(TIPO_COLOR[c.tipo],0.33)}`,fontFamily:F.mono,boxShadow:`0 0 8px ${alpha(TIPO_COLOR[c.tipo],0.27)}`}}>
             ✓ {c.nome}
           </div>
         ))}
@@ -284,8 +284,8 @@ function Schedine({tiles,isAdmin,sched,isWip,spinIdx}) {
           {label:'Tot. inv.',val:isWip?'WIP':`€${sched.totale}`,color:C.testo},
         ].map(({label,val,color})=>(
           <div key={label} style={{flex:1,minWidth:70,background:C.card,border:`1px solid ${C.bordo}`,borderRadius:8,padding:'8px 10px'}}>
-            <div style={{fontSize:9,color:C.spento,fontFamily:F.mono,marginBottom:3}}>{label}</div>
-            <div style={{fontSize:14,fontWeight:700,color,fontFamily:F.mono}}>{val}</div>
+            <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.mono,marginBottom:3}}>{label}</div>
+            <div style={{fontSize:S.grande,fontWeight:700,color,fontFamily:F.mono}}>{val}</div>
           </div>
         ))}
       </div>
@@ -296,20 +296,20 @@ function Schedine({tiles,isAdmin,sched,isWip,spinIdx}) {
           <div key={c.id} style={{background:isW?alpha(C.verde,0.06):isL?alpha(C.rosso,0.06):C.card,border:`1px solid ${isW?alpha(C.verde,0.25):isL?alpha(C.rosso,0.25):C.bordo}`,borderRadius:12,padding:'12px 14px',opacity:ins?0.75:1}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
               <div style={{display:'flex',alignItems:'center',gap:8}}>
-                <span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:20,background:TIPO_BG[c.tipo],color:TIPO_COLOR[c.tipo],fontFamily:F.mono}}>{c.tipo.toUpperCase()}</span>
-                <span style={{fontSize:13,fontWeight:600,color:C.testo,fontFamily:F.sans}}>{c.nome}</span>
+                <span style={{fontSize:S.minuta,fontWeight:700,padding:'2px 8px',borderRadius:20,background:TIPO_BG[c.tipo],color:TIPO_COLOR[c.tipo],fontFamily:F.mono}}>{c.tipo.toUpperCase()}</span>
+                <span style={{fontSize:S.media,fontWeight:600,color:C.testo,fontFamily:F.sans}}>{c.nome}</span>
               </div>
               <div style={{display:'flex',alignItems:'center',gap:8}}>
-                {isWip?<span style={{fontSize:12,color:C.ambra,background:alpha(C.ambra,0.1),border:`1px solid ${alpha(C.ambra,0.2)}`,borderRadius:20,padding:'2px 10px',fontFamily:F.mono}}>WIP</span>
-                :<span style={{fontSize:16,fontWeight:700,color:TIPO_COLOR[c.tipo],fontFamily:F.mono}}>€{punt}</span>}
-                {isAdmin&&<button onClick={()=>toggle(c.id)} style={{fontSize:11,padding:'4px 10px',borderRadius:6,cursor:'pointer',fontFamily:F.sans,border:`1px solid ${ins?alpha(C.verde,0.3):C.bordo}`,background:ins?alpha(C.verde,0.12):'transparent',color:ins?C.verde:C.spento}}>{ins?'✓ Inserita':'Inserisci'}</button>}
-                {!isAdmin&&ins&&<span style={{fontSize:11,color:C.verde}}>✓ Inserita</span>}
+                {isWip?<span style={{fontSize:S.corpo,color:C.ambra,background:alpha(C.ambra,0.1),border:`1px solid ${alpha(C.ambra,0.2)}`,borderRadius:20,padding:'2px 10px',fontFamily:F.mono}}>WIP</span>
+                :<span style={{fontSize:S.titolo,fontWeight:700,color:TIPO_COLOR[c.tipo],fontFamily:F.mono}}>€{punt}</span>}
+                {isAdmin&&<button onClick={()=>toggle(c.id)} style={{fontSize:S.base,padding:'4px 10px',borderRadius:6,cursor:'pointer',fontFamily:F.sans,border:`1px solid ${ins?alpha(C.verde,0.3):C.bordo}`,background:ins?alpha(C.verde,0.12):'transparent',color:ins?C.verde:C.spento}}>{ins?'✓ Inserita':'Inserisci'}</button>}
+                {!isAdmin&&ins&&<span style={{fontSize:S.base,color:C.verde}}>✓ Inserita</span>}
               </div>
             </div>
             {isW&&!isWip&&(
               <div style={{display:'flex',justifyContent:'space-between',background:alpha(C.verde,0.08),border:`1px solid ${alpha(C.verde,0.15)}`,borderRadius:7,padding:'6px 10px',marginBottom:8}}>
-                <span style={{fontSize:11,color:C.grigio,fontFamily:F.sans}}>Vincita potenziale</span>
-                <span style={{fontSize:14,fontWeight:700,color:C.verde,fontFamily:F.mono}}>€{vincita}</span>
+                <span style={{fontSize:S.base,color:C.grigio,fontFamily:F.sans}}>Vincita potenziale</span>
+                <span style={{fontSize:S.grande,fontWeight:700,color:C.verde,fontFamily:F.mono}}>€{vincita}</span>
               </div>
             )}
             <div style={{display:'flex',flexDirection:'column',gap:4}}>
@@ -319,13 +319,13 @@ function Schedine({tiles,isAdmin,sched,isWip,spinIdx}) {
                 return (
                   <div key={pos} style={{display:'flex',alignItems:'center',gap:8,padding:'4px 0',borderBottom:`1px solid ${C.bordoTenue}`}}>
                     <div style={{width:7,height:7,borderRadius:'50%',background:oggi?C.ambra:C.quasiNero,flexShrink:0,boxShadow:oggi?`0 0 6px ${alpha(C.ambra,0.6)}`:''}}/>
-                    <span style={{fontSize:11,color:C.oro,fontFamily:F.mono,fontWeight:700,minWidth:14}}>{t.pronostico||'-'}</span>
-                    <span style={{flex:1,fontSize:12,color:t.casa?C.testo:C.fantasma,fontFamily:F.sans}}>{t.casa||`Pos.${pos}`}{t.ospite?` - ${t.ospite}`:''}</span>
+                    <span style={{fontSize:S.base,color:C.oro,fontFamily:F.mono,fontWeight:700,minWidth:14}}>{t.pronostico||'-'}</span>
+                    <span style={{flex:1,fontSize:S.corpo,color:t.casa?C.testo:C.fantasma,fontFamily:F.sans}}>{t.casa||`Pos.${pos}`}{t.ospite?` - ${t.ospite}`:''}</span>
                     <div style={{display:'flex',gap:6,alignItems:'center',flexShrink:0}}>
-                      {t.quota&&<span style={{fontSize:10,color:C.oro,fontFamily:F.mono}}>@{t.quota}</span>}
-                      {t.data&&<span style={{fontSize:10,color:oggi?C.ambra:C.fioco,fontFamily:F.mono}}>{t.data}{oggi?' 🔴':''}</span>}
-                      {t.result==='win'&&<span style={{fontSize:10,color:C.verde}}>✓</span>}
-                      {t.result==='loss'&&<span style={{fontSize:10,color:C.rosso}}>✗</span>}
+                      {t.quota&&<span style={{fontSize:S.minuta,color:C.oro,fontFamily:F.mono}}>@{t.quota}</span>}
+                      {t.data&&<span style={{fontSize:S.minuta,color:oggi?C.ambra:C.fioco,fontFamily:F.mono}}>{t.data}{oggi?' 🔴':''}</span>}
+                      {t.result==='win'&&<span style={{fontSize:S.minuta,color:C.verde}}>✓</span>}
+                      {t.result==='loss'&&<span style={{fontSize:S.minuta,color:C.rosso}}>✗</span>}
                     </div>
                   </div>
                 )
@@ -360,15 +360,15 @@ function BottoneGiocata({attiva, isAdmin, onCambia, piena}) {
           aria-pressed={attiva}
           style={{width:26,height:26,flex:'0 0 26px',cursor:isAdmin?'pointer':'default',
             background:attiva?C.verde:'transparent', border:`2px solid ${attiva?C.verde:C.bordo}`,
-            borderRadius:5, color:C.fondo, fontSize:16, lineHeight:1, display:'flex',
+            borderRadius:5, color:C.fondo, fontSize:S.titolo, lineHeight:1, display:'flex',
             alignItems:'center', justifyContent:'center', fontFamily:F.mono}}>
           {attiva ? '✓' : ''}
         </button>
         <div style={{minWidth:0}}>
-          <div style={{fontFamily:F.mono,fontSize:13,fontWeight:700,letterSpacing:1,color:attiva?C.verde:C.testo}}>
+          <div style={{fontFamily:F.mono,fontSize:S.media,fontWeight:700,letterSpacing:1,color:attiva?C.verde:C.testo}}>
             GIOCATA
           </div>
-          <div style={{fontSize:11,fontFamily:F.sans,color:C.spento,lineHeight:1.4,marginTop:2}}>
+          <div style={{fontSize:S.base,fontFamily:F.sans,color:C.spento,lineHeight:1.4,marginTop:2}}>
             {attiva
               ? 'questa spin conta in Dashboard'
               : 'finché non la spunti, la Dashboard la lascia a zero'}
@@ -378,7 +378,7 @@ function BottoneGiocata({attiva, isAdmin, onCambia, piena}) {
       {/* ⚠️ Avviso, non blocco: può capitare di spuntare prima di finire di
           compilare, e impedirlo sarebbe peggio che segnalarlo. */}
       {attiva && !piena && (
-        <div style={{marginTop:8,fontSize:11,fontFamily:F.sans,color:C.ambra,lineHeight:1.4}}>
+        <div style={{marginTop:8,fontSize:S.base,fontFamily:F.sans,color:C.ambra,lineHeight:1.4}}>
           ⚠️ La griglia è vuota: in Dashboard risulterà investito senza partite.
         </div>
       )}
@@ -480,7 +480,7 @@ export default function SlotPage() {
     <div style={{padding:'16px'}}>
       <div style={{display:'flex',gap:6,marginBottom:14}}>
         {SPIN_LABELS.map((label,i)=>(
-          <button key={label} onClick={()=>setActiveSpin(i)} style={{flex:1,padding:'8px 4px',borderRadius:8,cursor:'pointer',fontFamily:F.mono,fontSize:11,fontWeight:600,letterSpacing:1,
+          <button key={label} onClick={()=>setActiveSpin(i)} style={{flex:1,padding:'8px 4px',borderRadius:8,cursor:'pointer',fontFamily:F.mono,fontSize:S.base,fontWeight:600,letterSpacing:1,
             background:activeSpin===i?alpha(C.oro,0.12):'transparent',
             border:`1px solid ${activeSpin===i?alpha(C.oro,0.4):C.bordo}`,
             color:activeSpin===i?C.oro:C.inattivo}}>{label.toUpperCase()}</button>
@@ -488,7 +488,7 @@ export default function SlotPage() {
       </div>
       <div style={{display:'flex',gap:6,marginBottom:16}}>
         {[{id:'griglia',label:'🎰 Griglia'},{id:'schedine',label:'📋 Schedine'}].map(t=>(
-          <button key={t.id} onClick={()=>setActiveTab(t.id)} style={{flex:1,padding:'8px',borderRadius:8,cursor:'pointer',fontFamily:F.sans,fontSize:13,fontWeight:600,
+          <button key={t.id} onClick={()=>setActiveTab(t.id)} style={{flex:1,padding:'8px',borderRadius:8,cursor:'pointer',fontFamily:F.sans,fontSize:S.media,fontWeight:600,
             background:activeTab===t.id?alpha(C.oro,0.08):'transparent',
             border:`1px solid ${activeTab===t.id?alpha(C.oro,0.25):C.bordo}`,
             color:activeTab===t.id?C.oro:C.spento}}>{t.label}</button>

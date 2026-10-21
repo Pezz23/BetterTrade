@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../supabase'
-import { C, F, alpha } from '../theme'
+import { C, F, alpha, S } from '../theme'
 
 const COMBOS = [
   { tipo:'tris',    pos:[1,5,2] },
@@ -102,29 +102,29 @@ export default function DashboardPage() {
 
   return (
     <div style={{ padding:'16px' }}>
-      <div style={{ fontSize:9, color:C.oro, fontFamily:F.mono, letterSpacing:4, marginBottom:4 }}>DASHBOARD</div>
-      <div style={{ fontSize:20, fontWeight:700, color:C.testo, fontFamily:F.sans, marginBottom:4 }}>
+      <div style={{ fontSize:S.micro, color:C.oro, fontFamily:F.mono, letterSpacing:4, marginBottom:4 }}>DASHBOARD</div>
+      <div style={{ fontSize:S.evidenza, fontWeight:700, color:C.testo, fontFamily:F.sans, marginBottom:4 }}>
         Andamento giornata
       </div>
-      <div style={{ fontSize:12, color:C.spento, fontFamily:F.sans, marginBottom:20 }}>
+      <div style={{ fontSize:S.corpo, color:C.spento, fontFamily:F.sans, marginBottom:20 }}>
         Live · aggiornamento ogni 15 secondi
       </div>
 
       {loading ? (
         <div style={{ textAlign:'center', padding:40, color:C.spento, fontFamily:F.sans }}>Caricamento…</div>
       ) : !hasAnyData ? (
-        <div style={{ textAlign:'center', padding:'60px 24px', color:C.fantasma, fontSize:14, fontFamily:F.sans, background:C.card, border:`1px solid ${C.bordo}`, borderRadius:10 }}>
+        <div style={{ textAlign:'center', padding:'60px 24px', color:C.fantasma, fontSize:S.grande, fontFamily:F.sans, background:C.card, border:`1px solid ${C.bordo}`, borderRadius:10 }}>
           {daSpuntare ? (
             <>
               {compilate === 1 ? 'Una spin è compilata' : `${compilate} spin sono compilate`}, ma nessuna è segnata come giocata.<br/>
-              <span style={{ fontSize:12, color:C.bordoChiaro }}>
+              <span style={{ fontSize:S.corpo, color:C.bordoChiaro }}>
                 Nella Slot, sotto l&apos;elenco, spunta <strong style={{ color:C.verde }}>GIOCATA</strong>: da lì la Dashboard comincia a contare.
               </span>
             </>
           ) : (
             <>
               Nessuna partita inserita oggi.<br/>
-              <span style={{ fontSize:12, color:C.bordoChiaro }}>Inserisci le partite nella Slot per vedere l&apos;andamento live.</span>
+              <span style={{ fontSize:S.corpo, color:C.bordoChiaro }}>Inserisci le partite nella Slot per vedere l&apos;andamento live.</span>
             </>
           )}
         </div>
@@ -132,13 +132,13 @@ export default function DashboardPage() {
         <>
           {/* Saldo principale */}
           <div style={{ background:C.card, border:`1px solid ${C.bordo}`, borderRadius:12, padding:'24px 16px', marginBottom:16, display:'flex', flexDirection:'column', alignItems:'center', gap:6 }}>
-            <div style={{ fontSize:9, color:C.spento, fontFamily:F.mono, letterSpacing:4, textTransform:'uppercase' }}>
+            <div style={{ fontSize:S.micro, color:C.spento, fontFamily:F.mono, letterSpacing:4, textTransform:'uppercase' }}>
               {isSuperAdmin ? 'Andamento aggregato' : `Andamento · ${currentUser?.display_name||currentUser?.username}`}
             </div>
-            <div style={{ fontSize:48, fontWeight:700, fontFamily:F.mono, color: totPct >= 0 ? C.verde : C.rosso, lineHeight:1, transition:'color 0.3s' }}>
+            <div style={{ fontSize:S.mega, fontWeight:700, fontFamily:F.mono, color: totPct >= 0 ? C.verde : C.rosso, lineHeight:1, transition:'color 0.3s' }}>
               {totPct > 0 ? '+' : ''}{totPct.toFixed(1)}%
             </div>
-            <div style={{ fontSize:13, color:C.spento, fontFamily:F.mono }}>
+            <div style={{ fontSize:S.media, color:C.spento, fontFamily:F.mono }}>
               {totSaldo >= 0 ? '+' : ''}€{Math.abs(totSaldo).toFixed(2)} sulla giornata
             </div>
           </div>
@@ -152,14 +152,14 @@ export default function DashboardPage() {
               { label:'Saldo %',    val: `${totPct>0?'+':''}${totPct.toFixed(1)}%`, color: pctColor(totPct) },
             ].map(({label,val,color}) => (
               <div key={label} style={{ background:C.card, border:`1px solid ${C.bordo}`, borderRadius:10, padding:'14px 16px' }}>
-                <div style={{ fontSize:9, color:C.spento, fontFamily:F.mono, textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:6 }}>{label}</div>
-                <div style={{ fontSize:20, fontWeight:700, color, fontFamily:F.mono }}>{val}</div>
+                <div style={{ fontSize:S.micro, color:C.spento, fontFamily:F.mono, textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:6 }}>{label}</div>
+                <div style={{ fontSize:S.evidenza, fontWeight:700, color, fontFamily:F.mono }}>{val}</div>
               </div>
             ))}
           </div>
 
           {/* Dettaglio per spin */}
-          <div style={{ fontSize:9, color:C.spento, fontFamily:F.mono, textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:8 }}>
+          <div style={{ fontSize:S.micro, color:C.spento, fontFamily:F.mono, textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:8 }}>
             Dettaglio spin
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
@@ -171,19 +171,19 @@ export default function DashboardPage() {
                 opacity: r ? 1 : 0.4,
               }}>
                 <div>
-                  <div style={{ fontSize:13, fontWeight:600, color:C.testo, fontFamily:F.sans }}>Spin {i+1}</div>
+                  <div style={{ fontSize:S.media, fontWeight:600, color:C.testo, fontFamily:F.sans }}>Spin {i+1}</div>
                   {r ? (
-                    <div style={{ fontSize:11, color:C.fioco, fontFamily:F.mono, marginTop:2 }}>
+                    <div style={{ fontSize:S.base, color:C.fioco, fontFamily:F.mono, marginTop:2 }}>
                       Inv: {fmt(r.investito)} · Inc: {fmt(r.incasso)}
                     </div>
                   ) : (
-                    <div style={{ fontSize:11, color:C.fantasma, fontFamily:F.mono, marginTop:2 }}>Nessuna partita</div>
+                    <div style={{ fontSize:S.base, color:C.fantasma, fontFamily:F.mono, marginTop:2 }}>Nessuna partita</div>
                   )}
                 </div>
                 {r && (
                   <div style={{ textAlign:'right' }}>
-                    <div style={{ fontSize:16, fontWeight:700, color:pctColor(r.saldo), fontFamily:F.mono }}>{fmt(r.saldo, true)}</div>
-                    <div style={{ fontSize:11, color:pctColor(r.pct), fontFamily:F.mono }}>{r.pct>0?'+':''}{r.pct.toFixed(1)}%</div>
+                    <div style={{ fontSize:S.titolo, fontWeight:700, color:pctColor(r.saldo), fontFamily:F.mono }}>{fmt(r.saldo, true)}</div>
+                    <div style={{ fontSize:S.base, color:pctColor(r.pct), fontFamily:F.mono }}>{r.pct>0?'+':''}{r.pct.toFixed(1)}%</div>
                   </div>
                 )}
               </div>

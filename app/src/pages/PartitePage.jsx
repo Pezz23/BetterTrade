@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { usaProssime } from '../hooks/usaProssime'
 import { usaVpm } from '../hooks/usaVpm'
 import { useAuth } from '../context/AuthContext'
-import { C, F, alpha } from '../theme'
+import { C, F, alpha, S } from '../theme'
 import { Card, Etichetta } from '../components/ui'
 import RigaPartita, { CATEGORIE, pct, giorno } from '../components/RigaPartita'
 import SchedaScorrevole from '../components/SchedaScorrevole'
@@ -18,12 +18,12 @@ import LegendaPartite from '../components/LegendaPartite'
 // qui solo caricamento, filtri e composizione.
 
 const pillola = (on, colore = C.oro) => ({
-  padding: '6px 12px', borderRadius: 20, cursor: 'pointer', fontFamily: F.mono, fontSize: 11, fontWeight: 600,
+  padding: '6px 12px', borderRadius: 20, cursor: 'pointer', fontFamily: F.mono, fontSize: S.base, fontWeight: 600,
   background: on ? alpha(colore, 0.15) : 'transparent',
   border: `1px solid ${on ? alpha(colore, 0.5) : C.bordo}`,
   color: on ? colore : C.fioco,
 })
-const campo = { padding: '6px 10px', borderRadius: 20, background: C.pozzo, border: `1px solid ${C.bordo}`, color: C.testo, fontFamily: F.mono, fontSize: 11, outline: 'none', width: 74 }
+const campo = { padding: '6px 10px', borderRadius: 20, background: C.pozzo, border: `1px solid ${C.bordo}`, color: C.testo, fontFamily: F.mono, fontSize: S.base, outline: 'none', width: 74 }
 
 export default function PartitePage() {
   const { isAdmin } = useAuth()
@@ -131,8 +131,8 @@ export default function PartitePage() {
       <LegendaPartite />
 
       <Etichetta colore={C.oro} style={{ letterSpacing: 4, marginBottom: 4 }}>PARTITE</Etichetta>
-      <div style={{ fontSize: 20, fontWeight: 700, color: C.testo, fontFamily: F.sans, marginBottom: 4 }}>Prossime partite</div>
-      <div style={{ fontSize: 12, color: C.spento, fontFamily: F.sans, marginBottom: 14, lineHeight: 1.6 }}>
+      <div style={{ fontSize: S.evidenza, fontWeight: 700, color: C.testo, fontFamily: F.sans, marginBottom: 4 }}>Prossime partite</div>
+      <div style={{ fontSize: S.corpo, color: C.spento, fontFamily: F.sans, marginBottom: 14, lineHeight: 1.6 }}>
         {caricamento ? 'Caricamento…' : (
           <>
             {inFinestra.length} partite{ultimaData && ` fino a ${giorno(ultimaData)}`} ·{' '}
@@ -160,7 +160,7 @@ export default function PartitePage() {
       {/* Solo per le finestre più larghe di "fino a lunedì": su "Oggi" il
           confronto non vuol dire niente, è una finestra più stretta. */}
       {['due', 'tutte'].includes(finestra) && perFinestra[finestra] === perFinestra.settimana && !caricamento && (
-        <div style={{ fontSize: 11, color: C.fioco, fontFamily: F.sans, marginBottom: 8 }}>
+        <div style={{ fontSize: S.base, color: C.fioco, fontFamily: F.sans, marginBottom: 8 }}>
           Nessuna partita in più rispetto a "fino a lunedì": i bookmaker non hanno ancora quotato quelle successive. Arrivano con i prossimi aggiornamenti.
         </div>
       )}
@@ -181,7 +181,7 @@ export default function PartitePage() {
         {attivi.length > 1 && (
           <button onClick={azzera} style={{ ...pillola(false), color: C.spento }}>azzera tutto</button>
         )}
-        <span style={{ marginLeft: 'auto', fontSize: 11, fontFamily: F.mono, color: C.spento }}>
+        <span style={{ marginLeft: 'auto', fontSize: S.base, fontFamily: F.mono, color: C.spento }}>
           {visibili.length}/{inFinestra.length}
         </span>
       </div>
@@ -238,7 +238,7 @@ export default function PartitePage() {
             <Etichetta style={{ marginBottom: 8 }}>soglie di probabilità — le aggiustate voi guardando le partite vere</Etichetta>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10 }}>
               {['centro', 'giallo', 'blu'].map(k => (
-                <label key={k} style={{ fontSize: 11, fontFamily: F.mono, color: CATEGORIE[k].colore }}>
+                <label key={k} style={{ fontSize: S.base, fontFamily: F.mono, color: CATEGORIE[k].colore }}>
                   {CATEGORIE[k].nome} ≥ {pct(soglie[k])}
                   <input type="range" min="40" max="95" step="1" value={Math.round(soglie[k] * 100)}
                     onChange={e => setSoglie(s => ({ ...s, [k]: Number(e.target.value) / 100 }))}
@@ -250,15 +250,15 @@ export default function PartitePage() {
         </Card>
       )}
 
-      {errore && <Card colore={C.rosso}><div style={{ color: C.rosso, fontSize: 13, fontFamily: F.sans }}>⚠️ {errore}</div></Card>}
+      {errore && <Card colore={C.rosso}><div style={{ color: C.rosso, fontSize: S.media, fontFamily: F.sans }}>⚠️ {errore}</div></Card>}
       {!caricamento && !errore && righe.length === 0 && (
-        <Card><div style={{ fontSize: 13, color: C.spento, fontFamily: F.sans, lineHeight: 1.7 }}>
+        <Card><div style={{ fontSize: S.media, color: C.spento, fontFamily: F.sans, lineHeight: 1.7 }}>
           Nessuna partita futura in archivio. Arrivano con l'aggiornamento:
-          <code style={{ display: 'block', marginTop: 8, color: C.oro, fontFamily: F.mono, fontSize: 11 }}>cd btscout && node --env-file=.env scripts/aggiorna.js --esegui</code>
+          <code style={{ display: 'block', marginTop: 8, color: C.oro, fontFamily: F.mono, fontSize: S.base }}>cd btscout && node --env-file=.env scripts/aggiorna.js --esegui</code>
         </div></Card>
       )}
       {!caricamento && righe.length > 0 && visibili.length === 0 && (
-        <Card><div style={{ fontSize: 13, color: C.spento, fontFamily: F.sans }}>Nessuna partita con questi filtri.</div></Card>
+        <Card><div style={{ fontSize: S.media, color: C.spento, fontFamily: F.sans }}>Nessuna partita con questi filtri.</div></Card>
       )}
 
       {/* ── L'ordine ──────────────────────────────────────────────────────
@@ -267,7 +267,7 @@ export default function PartitePage() {
           stessa lista da tre lati. Sta attaccato alla lista, non in cima alla
           pagina, perché è di lei che parla. */}
       <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
-        <span style={{ fontSize: 11, color: C.spento, fontFamily: F.mono }}>ordina</span>
+        <span style={{ fontSize: S.base, color: C.spento, fontFamily: F.mono }}>ordina</span>
         {ORDINI.map(o => (
           /* Un tasto per ogni colonna della barra. ⚠️ Il secondo tocco sullo
              stesso inverte il verso: sulla quota serve davvero, perché a volte
@@ -289,7 +289,7 @@ export default function PartitePage() {
       </div>
 
       {righe.length > 0 && (
-        <div style={{ marginTop: 20, fontSize: 11, color: C.fantasma, fontFamily: F.sans, lineHeight: 1.7 }}>
+        <div style={{ marginTop: 20, fontSize: S.base, color: C.fantasma, fontFamily: F.sans, lineHeight: 1.7 }}>
           <b style={{ color: C.fioco }}>Come leggere.</b> L'attendibilità è la probabilità che la giocata vinca, secondo il consenso
           del mercato (media di ~40 book, tolto il margine). Sui favoriti il mercato è calibrato: un 75% vince tre volte su quattro.
           La X secca non viene mai proposta, e nemmeno la doppia chance. Sotto 1,25 si aggiunge l'over 1,5.

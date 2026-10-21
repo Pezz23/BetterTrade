@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { C, F, alpha } from '../theme'
+import { C, F, alpha, S } from '../theme'
 import { Card } from './ui'
 import TestataPartita, { CATEGORIE, Stella, pct, giorno } from './TestataPartita'
 import BarraPartita from './BarraPartita'
@@ -34,8 +34,8 @@ function RigaPartita({ p, cat, vpm = null, voti = 0, mio = false, puoVotare = fa
           deve poter dare dalla lista, senza aprire la partita */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, fontFamily: F.mono, padding: '2px 8px', borderRadius: 20, background: alpha(C.bluPieno, 0.12), color: C.blu }}>{sigla(p.div)}</span>
-          {cat !== 'no' && <span style={{ fontSize: 10, fontWeight: 700, fontFamily: F.mono, padding: '2px 8px', borderRadius: 20, background: alpha(c.colore, 0.15), color: c.colore, textTransform: 'uppercase' }}>{c.nome}</span>}
+          <span style={{ fontSize: S.minuta, fontWeight: 700, fontFamily: F.mono, padding: '2px 8px', borderRadius: 20, background: alpha(C.bluPieno, 0.12), color: C.blu }}>{sigla(p.div)}</span>
+          {cat !== 'no' && <span style={{ fontSize: S.minuta, fontWeight: 700, fontFamily: F.mono, padding: '2px 8px', borderRadius: 20, background: alpha(c.colore, 0.15), color: c.colore, textTransform: 'uppercase' }}>{c.nome}</span>}
         </div>
         <Stella voti={voti} mio={mio} puoVotare={puoVotare} onVota={() => onVota?.(p.id)} />
       </div>

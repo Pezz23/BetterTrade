@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { C, F, alpha } from '../theme'
+import { C, F, alpha, S } from '../theme'
 import { giorno, CATEGORIE } from './TestataPartita'
 import { categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
 import { pronosticoDa } from '../lib/spin'
@@ -58,17 +58,17 @@ export default function ScegliCasella({ pos, partite, votiDi, usate = [], altrov
       }}>
         <div style={{ padding: '12px 14px', borderBottom: `1px solid ${C.bordoRiga}` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: C.testo, fontFamily: F.sans }}>
+            <span style={{ fontSize: S.media, fontWeight: 700, color: C.testo, fontFamily: F.sans }}>
               Casella {pos} · <span style={{ color: CATEGORIE[ruoloDi(pos)].colore }}>{RUOLO[ruoloDi(pos)]}</span>
             </span>
-            <button onClick={onChiudi} style={{ background: 'transparent', border: `1px solid ${C.bordo}`, borderRadius: 6, color: C.spento, cursor: 'pointer', fontSize: 13, padding: '2px 9px', fontFamily: F.mono }}>✕</button>
+            <button onClick={onChiudi} style={{ background: 'transparent', border: `1px solid ${C.bordo}`, borderRadius: 6, color: C.spento, cursor: 'pointer', fontSize: S.media, padding: '2px 9px', fontFamily: F.mono }}>✕</button>
           </div>
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
             {filtri.map(f => {
               const on = filtro === f.id
               return (
                 <button key={f.id} onClick={() => setFiltro(f.id)} style={{
-                  padding: '5px 10px', borderRadius: 20, cursor: 'pointer', fontFamily: F.mono, fontSize: 10.5, fontWeight: 600,
+                  padding: '5px 10px', borderRadius: 20, cursor: 'pointer', fontFamily: F.mono, fontSize: S.base, fontWeight: 600,
                   background: on ? alpha(f.colore, 0.16) : 'transparent',
                   border: `1px solid ${on ? alpha(f.colore, 0.5) : C.bordo}`, color: on ? f.colore : C.fioco,
                 }}>{f.label} <span style={{ color: on ? C.testo : C.fantasma }}>{conta(f.id)}</span></button>
@@ -76,17 +76,17 @@ export default function ScegliCasella({ pos, partite, votiDi, usate = [], altrov
             })}
           </div>
           {Object.keys(altrove).length > 0 && (
-            <div style={{ fontSize: 10, color: C.spento, fontFamily: F.sans, marginBottom: 7 }}>
+            <div style={{ fontSize: S.minuta, color: C.spento, fontFamily: F.sans, marginBottom: 7 }}>
               <span style={{ color: C.viola, fontFamily: F.mono, fontWeight: 700 }}>S2</span> = già in quella spin ·
               le barrate sono già in questa
             </div>
           )}
           <input autoFocus={!tocco} value={testo} onChange={e => setTesto(e.target.value)} placeholder="cerca squadra o campionato…"
-            style={{ width: '100%', background: C.pozzo, border: `1px solid ${C.bordo}`, borderRadius: 6, padding: '7px 9px', color: C.testo, fontSize: 12, fontFamily: F.sans, outline: 'none' }} />
+            style={{ width: '100%', background: C.pozzo, border: `1px solid ${C.bordo}`, borderRadius: 6, padding: '7px 9px', color: C.testo, fontSize: S.corpo, fontFamily: F.sans, outline: 'none' }} />
         </div>
 
         <div style={{ overflowY: 'auto', padding: 6 }}>
-          {trovate.length === 0 && <div style={{ padding: '14px 8px', fontSize: 12, color: C.fantasma, fontFamily: F.sans }}>Nessuna partita con questo filtro.</div>}
+          {trovate.length === 0 && <div style={{ padding: '14px 8px', fontSize: S.corpo, color: C.fantasma, fontFamily: F.sans }}>Nessuna partita con questo filtro.</div>}
           {trovate.map(p => {
             const cat = categoria(p.probGiocata, SOGLIE_DEFAULT)
             const col = CATEGORIE[cat].colore
@@ -99,7 +99,7 @@ export default function ScegliCasella({ pos, partite, votiDi, usate = [], altrov
               <button key={p.id} disabled={presa} onClick={() => onScegli(p)} style={{
                 display: 'flex', alignItems: 'center', gap: 7, width: '100%', textAlign: 'left',
                 background: 'transparent', border: 'none', borderBottom: `1px solid ${C.bordoTenue}`,
-                padding: '8px 6px', cursor: presa ? 'default' : 'pointer', fontFamily: F.mono, fontSize: 11,
+                padding: '8px 6px', cursor: presa ? 'default' : 'pointer', fontFamily: F.mono, fontSize: S.base,
                 opacity: presa ? 0.35 : 1, textDecoration: presa ? 'line-through' : 'none',
               }}>
                 <span style={{ color: C.oro, width: 22, flexShrink: 0 }}>{voti ? '★' + voti : ''}</span>
@@ -113,7 +113,7 @@ export default function ScegliCasella({ pos, partite, votiDi, usate = [], altrov
                 <span style={{ width: 30, flexShrink: 0, textAlign: 'center' }}>
                   {!presa && inAltre.length > 0 && (
                     <span title={`già nella spin ${inAltre.join(', ')}`} style={{
-                      display: 'inline-block', padding: '1px 5px', borderRadius: 4, fontSize: 9.5, fontWeight: 700,
+                      display: 'inline-block', padding: '1px 5px', borderRadius: 4, fontSize: S.micro, fontWeight: 700,
                       background: alpha(C.viola, 0.18), border: `1px solid ${alpha(C.viola, 0.45)}`, color: C.viola,
                     }}>S{inAltre.join(',')}</span>
                   )}
@@ -128,7 +128,7 @@ export default function ScegliCasella({ pos, partite, votiDi, usate = [], altrov
         <div style={{ padding: 8, borderTop: `1px solid ${C.bordoRiga}` }}>
           <button onClick={onSvuota} style={{
             width: '100%', background: alpha(C.rosso, 0.08), border: `1px solid ${alpha(C.rosso, 0.2)}`, borderRadius: 7,
-            color: C.rosso, fontSize: 12, fontFamily: F.sans, padding: '8px', cursor: 'pointer',
+            color: C.rosso, fontSize: S.corpo, fontFamily: F.sans, padding: '8px', cursor: 'pointer',
           }}>Svuota la casella</button>
         </div>
       </div>
