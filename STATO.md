@@ -3,9 +3,50 @@
 > To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 21 ottobre 2026 (notte) · app alla versione **1.37.01**
+**Ultimo aggiornamento:** 22 ottobre 2026 · app alla versione **1.45.01** ·
+ultimo commit `1edae37`
 
-## ▶️ IL RESTYLING È COMINCIATO — leggi questo per primo
+## ▶️ DOVE SIAMO — 22 ottobre 2026, leggi questo per primo
+
+**Tutto il lavoro del 21-22 ottobre sta su ROAD TO WEEKEND.** Il restyling è
+chiuso (il blocco più sotto è storia), e la pagina della scalata è diventata lo
+strumento principale del weekend.
+
+### Cos'è cambiato, in ordine
+
+| | commit |
+|---|---|
+| **Scalata madre**: un metodo solo (pavimenti), quota schedina **2,00**, schedine spezzate da sé appena superano 2,00, spezza a mano fra due gambe | `ea6fd16` |
+| **«quota gamba ≥»** come quarto filtro, e il ricarica rosso | `57a898e` |
+| **La scheda partita si apre dal Weekend**, toccando i nomi | `43af87b` |
+| **⚑ Flag**, **«+ aggiungi partita manuale»**, **pagina aperta a tutti in sola lettura** | `1edae37` |
+
+Le migrazioni applicate in questi due giorni: **`sql/31`** (numero del passo
+decimale, per inserirne uno in mezzo), **`sql/32`** (il metodo `madre`),
+**`sql/33`** (`flag_partite`), **`sql/34`** (lettura aperta + scrittura
+stretta). Tutte verificate dal database subito dopo.
+
+### ⚠️ Quello che resta aperto, e va deciso da Mattia
+
+| | |
+|---|---|
+| **le casse le vedono tutti** | aprendo la pagina agli utenti, bankroll, accumulo e archivio sono visibili a chi entra. Si toglie la card a chi non è admin — una riga — ma è una scelta sua |
+| **lo spezza a mano quasi non compare** | col taglio automatico a 2,00 i passi nascono già minimi, e un pezzo minimo non si divide in due pezzi che arrivino entrambi a 2,00. Riappare solo su un passo allungato a mano |
+| **un passo può avere 8 gambe** | `fasce()` raggruppa per orario e `MAX_GAMBE` vale solo per la proposta automatica. Mattia: *"decido io a mano"* |
+| **`prova-permessi.js` dall'API** | le policy nuove sono state verificate **simulando** una sessione utente dal database (ruolo `authenticated` + `request.jwt.claims`); il giro vero dall'API vuole due password che ha solo lui |
+
+### ⛔ Le regole di lavoro aggiunte in questi giorni
+
+- ⚠️⚠️ **Non si entra più nell'app col browser di propria iniziativa**
+  (22/10): niente `scripts/guarda.mjs` e niente script Playwright con
+  `E2E_USER` — **lo chiede Mattia quando serve**. Ogni giro è un login vero su
+  Supabase (che ha un limite di tentativi) e con una scalata aperta può
+  scrivere. Si verifica con lint, build e script da terminale; quando una
+  modifica si giudica **solo guardandola**, lo si dice e si chiede.
+- ⚠️ **I backtest si chiedono prima di lanciarli** (21/10), e quello della
+  Scalata madre è stato autorizzato e fatto: il risultato sta più sotto.
+
+## ✅ IL RESTYLING — chiuso il 21 ottobre 2026
 
 Mattia ha consegnato un **briefing sul restyling globale** (scritto da una
 sessione esterna che ha visto solo screenshot). La valutazione completa, con le
@@ -214,6 +255,48 @@ il 25% delle volte.
 | **B** | La regola «Madre» a **pavimenti** (`PAVIMENTI`, `percentualeConsigliata`) | ✅ **fatto il 21/10** · **misurata il 22/10**, vedi sotto |
 | **C** | La pagina: via la quota schedina e le due regole dai filtri, l'avviso sul passo | ✅ **fatto il 21/10** (`sql/32`) |
 | **D** | **Il Satellite** | ⏸️ **in attesa, priorità futura** |
+| **E** | ⚑ **Flag**, **«+ aggiungi partita manuale»**, **pagina in sola lettura per tutti** | ✅ **fatto il 22/10** (`sql/33`, `sql/34`) — nato strada facendo, non era nel briefing |
+
+### Il lotto E, cosa contiene (22 ottobre 2026)
+
+**⚑ I flag** (`flag_partite`, `sql/33`). Mattia: *"un flag verde per segnare
+quelle che mi piacciono, le chiameremo partite flaggate così da non confondere
+con le stelle"*. Stessa forma di `voti_partite`, **significato diverso**: la
+stella scavalca la soglia nelle spin, **il flag non scavalca niente** — le
+soglie della scalata alimentano anche il taglio automatico a 2,00, e una gamba
+corta entrata di straforo abbasserebbe il passo in silenzio. Flaggano tutti gli
+admin, il conto si vede.
+⚠️ **Flaggate e votate restano nell'elenco anche quando i filtri le tagliano**,
+marcate `fuori filtri`: un segno che sparisce alzando una soglia è il difetto
+peggiore. Ma **non entrano nella scaletta**: per quello c'è il tasto manuale.
+
+**«+ aggiungi partita manuale»** (`components/ScegliGamba.jsx`), sotto il tasto
+della consigliata: testo libero più i filtri ⚑/★, **tutto il calendario** anche
+sotto le soglie, in ordine di data e ora. Targhetta `P3` = già nel passo 3.
+⚠️ Il tasto sopra **accetta** la proposta dell'app, questo **la scavalca**: per
+questo hanno un aspetto diverso.
+
+**La pagina aperta a tutti in sola lettura** (`sql/34`). ⚠️⚠️ Due cose che si
+sono scoperte solo provandole:
+1. `usaScalate` filtrava per `user_id`, quindi uno spettatore avrebbe letto
+   **il proprio** registro — vuoto. Ora chi non è admin legge quello che c'è
+   (`usaScalate(userId, tutte)`); ogni admin continua a vedere il suo.
+2. **`scalate_write` era più largo di quanto dicesse**: `user_id = mio OR
+   admin` lasciava a *chiunque* creare una scalata a nome proprio. Non si
+   vedeva perché la lettura era chiusa; aprendola, un utente poteva farsi un
+   registro che sarebbe comparso agli spettatori. Ora è un **and**.
+   ⚠️ Trovato **simulando una sessione utente** contro le policy
+   (`set local role authenticated` + `request.jwt.claims` col suo `auth_id`),
+   non leggendo il codice: dal ruolo postgres RLS non si vede, e dal JSX
+   nemmeno. **È il modo di provare una policy senza password e senza browser,
+   e va riusato.**
+
+Verificato per ruolo, dentro una transazione annullata:
+
+| | legge scalate e passi | crea una scalata | tocca un passo | mette un flag |
+|---|---|---|---|---|
+| **utente** | ✅ sì | ✅ respinto | ✅ respinto | ✅ respinto |
+| **admin** | ✅ sì | ✅ può | ✅ può | ✅ può |
 
 ⚠️⚠️ **La tabella 7/6/15 del briefing non è una formula: sono tre numeri che
 valgono solo a quota 2,00 esatta.** Sotto però c'è una logica che si

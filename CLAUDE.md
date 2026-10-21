@@ -78,10 +78,34 @@ in `hooks/usaIndietro.js` agganciato a mano con `addEventListener('touchmove')`.
   postgres): `sql.unsafe(readFileSync(...))`. Provare la funzione o la colonna
   subito dopo, dall'API con un utente normale — la grant e le policy non si
   vedono dal ruolo postgres.
+  ⚠️⚠️ **E una policy si può provare SENZA password e senza browser**
+  (22/10/2026), simulando la sessione dentro una transazione che si annulla:
+  ```js
+  await sql.begin(async t => {
+    await t.unsafe(`set local role authenticated`)
+    await t.unsafe(`set local request.jwt.claims = '{"sub":"<auth_id>"}'`)
+    // … legge e scrive come quell'utente …
+    throw new Error('rollback')   // niente resta scritto
+  })
+  ```
+  `mio_user_id()` e `mio_ruolo()` leggono `auth.uid()`, cioè il `sub` del
+  claim: basta l'`auth_id` dell'utente, preso da `users`. **È così che il
+  22/10 si è scoperto che `scalate_write` aveva un `OR` al posto di un `AND`**
+  — `user_id = mio_user_id() OR admin` lasciava a *chiunque* avesse fatto
+  login creare una scalata a nome proprio. Dal ruolo postgres RLS non si vede,
+  dal JSX nemmeno, e nessun errore era mai comparso.
 - **Prova a vuoto prima di scrivere.** Ogni script che modifica dati ha una
   modalità di default che non scrive e mostra cosa cambierebbe; si scrive solo
   con `--esegui`. È la convenzione del progetto, va mantenuta.
 - **Backup prima di ogni modifica ai dati:** `node --env-file=.env scripts/backup.js`.
+- ⚠️⚠️ **Non si apre l'app nel browser di propria iniziativa** (22/10/2026).
+  Niente `scripts/guarda.mjs` e niente script Playwright con `E2E_USER`: **lo
+  chiede Mattia quando serve**. Ogni giro è un login vero su Supabase (che ha
+  un limite di tentativi) e con una scalata aperta può anche scrivere dati.
+  L'autorizzazione a cliccare è **per sessione e su richiesta**, mai una
+  delega permanente. Si verifica con lint, build e gli script da terminale;
+  quando una modifica si può giudicare **solo guardandola**, lo si dice e si
+  chiede — non si apre il browser da soli.
 - **Italiano** nel codice, nei commenti, nei commit e nella conversazione.
 
 ---
@@ -2080,7 +2104,9 @@ consigliare**: è il caso in cui serve di più, la fascia è finita e il passo �
 sotto quota.
 
 La finestra è `components/ScegliGamba.jsx`: testo libero più i filtri **⚑
-flaggate · ★ con stelle · tutte**, in ordine di **data e ora** (un passo è un
+flaggate · ★ con stelle · tutte**, con la targhetta **`P3`** (= già nel passo
+3) e le già prese in *questo* passo barrate e non cliccabili, in ordine di
+**data e ora** (un passo è un
 blocco di orari vicini: ordinando per bontà le partite giuste finirebbero
 sparse fra quelle di un altro giorno).
 ⚠️ **Non riusa `ScegliCasella`**, che è la gemella delle spin: quella parla di
@@ -2594,6 +2620,16 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
 
 ## Trappole già incontrate
 
+- ⚠️⚠️ **Una larghezza fissa va sempre con un `overflow`.** In
+  `ScegliGamba` la colonna della data era `width: 52, flexShrink: 0` e
+  conteneva `sab 24/10 15:00`, che ne chiede **~97**: con `flexShrink: 0` il
+  testo non si stringe, e senza `overflow` **non si taglia** — esce dalla
+  scatola e finisce **sotto il nome della partita**, che è quello che Mattia
+  ha fotografato (22/10/2026). Una misura fissa vale per la scatola, non per
+  quello che contiene: o si chiude l'`overflow` (con `ellipsis` o andando a
+  capo), o si misura il testo prima di scegliere la larghezza — come per i
+  nomi delle squadre. ⚠️ Vale per `flex` e per `grid` allo stesso modo: un
+  elemento di griglia **esce** dalla sua colonna, non viene ritagliato.
 - ⚠️⚠️ **Un commento `/* … */` fra due tag JSX diventa TESTO A SCHERMO**, e
   né il lint né `vite build` se ne accorgono: per loro è una stringa
   legittima. Ci sono cascato **due volte**, e la seconda la riga
@@ -2939,8 +2975,13 @@ node --env-file=.env scripts/prova-gg.js                   # il Goal/NoGoal: qua
 node --env-file=.env scripts/prova-consiglio-gol.js --stagioni=8   # i due consigli sotto la giocata
 #   con --mercato la riga 2,5 usa la quota invece del modello
 node --env-file=.env scripts/prova-dispersione.js --stagioni=8    # l'attendibilità vale meno se i book litigano?
-node --env-file=.env scripts/prova-scalata.js --stagioni=8 --quota=1.7   # Road to weekend: la scalata su 8 stagioni
-#   pomelli: --soglia=0.60 --bankroll=100
+node --env-file=.env scripts/prova-scalata.js --stagioni=8 --quota=2.0 --soglia=0.68 --scelta=0.66
+#   Road to weekend: la scalata su 8 stagioni, con la selezione di Mattia
+#   ⚠️ `--scelta` è una **OR** con `--soglia`: due modi di arrivare alla stessa
+#      fiducia, e chiederli insieme terrebbe fuori le partite dove il campo
+#      aggiunge qualcosa. Senza, resta il filtro sulla sola attendibilità.
+#   ⚠️⚠️ **I backtest si chiedono a Mattia prima di lanciarli** (21/10/2026).
+#   pomelli: --bankroll=100
 #   pomelli: --base=gol|tiri|misto --k=20 --stagioni=3
 node --env-file=.env scripts/misura-valore.js --riferimento=media   # il criterio, a fine stagione
 node --env-file=.env scripts/import-storico.js --campionati=P1,N1   # solo alcuni campionati
