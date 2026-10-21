@@ -125,8 +125,16 @@ export default function BarraPartita({ p, cat, vpm = null, colore }) {
 
       {/* Il voto è la resa corretta dal campo: verde sopra il pareggio, rosso
           sotto. È l'unico numero della barra che dice "conviene o no". */}
+      {/* ⚠️ **Due grigi diversi, perché sono due cose diverse** (21/10/2026).
+          Prima erano lo stesso: `fantasma` sia quando il voto **non c'è** sia
+          quando c'è ma non è confrontabile (quota dal consenso). Nel secondo
+          caso a schermo compare un numero vero — `100%` — scritto nel colore
+          del testo disabilitato, **2,27:1**, cioè un dato che si deve leggere
+          e non si legge. Adesso: `—` assente resta `fantasma`, un numero che
+          c'è è `spento` (6,97:1). Resta spento rispetto al verde e all'ambra,
+          ma la differenza la fa la **tinta**, non il buio. */}
       <Colonna divisore={c}
-        colore={p.quotaDaConsenso || vpm?.voto == null ? C.fantasma : vpm.voto >= 1 ? C.verde : C.ambra}
+        colore={vpm?.voto == null ? C.fantasma : p.quotaDaConsenso ? C.spento : vpm.voto >= 1 ? C.verde : C.ambra}
         valore={pct(vpm?.voto)} etichetta="VOTO" />
     </div>
     </>

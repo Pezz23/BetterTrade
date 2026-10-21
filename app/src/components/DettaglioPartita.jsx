@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { C, F, alpha, S } from '../theme'
+import Icona from './Icona'
 import { Etichetta, Attesa } from './ui'
 import { usaForma } from '../hooks/usaForma'
 import { striscia } from '../lib/forma'
@@ -38,7 +39,7 @@ const Confronto = ({ etichetta, nota, a, b, forte = false }) => {
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 52px 52px', alignItems: 'baseline', gap: 6, padding: '5px 0' }}>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: forte ? 12 : 11, fontWeight: forte ? 700 : 500, fontFamily: F.sans, color: forte ? C.testo : C.fioco }}>{etichetta}</div>
-        {nota && <div style={{ fontSize: S.micro, fontFamily: F.sans, color: C.fantasma }}>{nota}</div>}
+        {nota && <div style={{ fontSize: S.micro, fontFamily: F.sans, color: C.spento }}>{nota}</div>}
       </div>
       {[[a, ma], [b, mb]].map(([v, max], i) => (
         <div key={i} style={{
@@ -51,12 +52,20 @@ const Confronto = ({ etichetta, nota, a, b, forte = false }) => {
   )
 }
 
-const Blocco = ({ titolo, extra, children, style, sottolinea }) => (
+// ⚠️ `icona` è un nome del set (`components/Icona.jsx`) e ha preso il posto
+// dell'emoji che stava **dentro** la stringa del titolo (`"📈 Forma"`). Due
+// motivi: l'emoji la disegna il sistema operativo, quindi ogni telefono mostra
+// un'altra figura, e resta a colori pieni accanto a un titolo che ha il suo
+// colore. Qui il segno prende il colore del titolo, come una lettera.
+const Blocco = ({ titolo, icona, extra, children, style, sottolinea }) => (
   <div style={{ background: C.card, border: `1px solid ${C.bordo}`, borderRadius: 12, padding: '13px 14px', ...style }}>
     {titolo && (
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10,
         ...(sottolinea ? { paddingBottom: 9, borderBottom: `1px solid ${C.bordoChiaro}` } : {}) }}>
-        <Etichetta colore={C.testo} style={{ fontSize: S.corpo, letterSpacing: '0.12em', fontWeight: 700 }}>{titolo}</Etichetta>
+        <Etichetta colore={C.testo} style={{ fontSize: S.corpo, letterSpacing: '0.12em', fontWeight: 700,
+          display: 'flex', alignItems: 'center', gap: 7 }}>
+          {icona && <Icona nome={icona} misura={15} style={{ color: C.spento }} />}{titolo}
+        </Etichetta>
         {extra && <Etichetta colore={C.testo} style={{ fontSize: S.base, fontWeight: 600 }}>{extra}</Etichetta>}
       </div>
     )}
@@ -144,7 +153,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
 
       {forma && <>
         {/* ── 3. La forma ───────────────────────────────────────────── */}
-        <Blocco titolo="📈 Forma" extra="ultime 5" sottolinea>
+        <Blocco titolo="Forma" icona="andamento" extra="ultime 5" sottolinea>
           {squadre.map(sq => {
             const s = striscia(forma.ultimi5[sq], sq)
             const apri = i => setScelta(v => v === `${sq}|${i}` ? null : `${sq}|${i}`)
@@ -158,7 +167,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
                 <div style={{ padding: '6px 0 0' }}>
                   <div style={{ fontSize: S.media, fontWeight: 700, textTransform: 'uppercase', fontFamily: F.sans, color: C.testo, marginBottom: 6, overflowWrap: 'anywhere' }}>{sq}</div>
                   {s.length === 0
-                    ? <span style={{ fontSize: S.minuta, color: C.fantasma, fontFamily: F.sans }}>nessuna partita giocata</span>
+                    ? <span style={{ fontSize: S.minuta, color: C.spento, fontFamily: F.sans }}>nessuna partita giocata</span>
                     : <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ display: 'inline-flex', gap: 3 }}>
                           {s.map((x, i) => <Chip key={i} testo={x.esito} colore={ESITO[x.esito]} titolo={x.titolo} onClick={() => apri(i)} scelto={iScelto === i} />)}
@@ -204,7 +213,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
                   <b style={{ color: C.verde, fontSize: S.titolo }}>{g.fatti}</b><span style={{ color: C.spento, fontSize: S.base }}>fatti</span>
                   <span style={{ color: C.fantasma }}>|</span>
                   <b style={{ color: C.rosso, fontSize: S.titolo }}>{g.subiti}</b><span style={{ color: C.spento, fontSize: S.base }}>subiti</span>
-                  <span style={{ color: C.fantasma, fontSize: S.base }}>({g.partite})</span>
+                  <span style={{ color: C.spento, fontSize: S.base }}>({g.partite})</span>
                 </div>
               )
             })}
@@ -226,7 +235,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
           dell'informazione che ha il mercato. Si legge come un colore della
           partita, non come una previsione da giocare. */}
       {g && (
-        <Blocco titolo="⚽ Gol attesi" extra={`${g.totale.toFixed(2).replace('.', ',')} in tutto`} sottolinea>
+        <Blocco titolo="Gol attesi" icona="gol" extra={`${g.totale.toFixed(2).replace('.', ',')} in tutto`} sottolinea>
           {/* ⚠️ Prima qui c'erano i due numeri affiancati con "attesi" in mezzo, e
               il totale ripetuto nel titolo. Mattia (12/10/2026): *"non si
               capisce una mazza"* — aveva ragione due volte. Il totale era
@@ -352,12 +361,12 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
           <div style={{ marginTop: 10, fontSize: S.minuta, fontFamily: F.sans, color: C.spento, lineHeight: 1.6 }}>
             attacco {g.attacco.casa.toFixed(2).replace('.', ',')} · {g.attacco.trasferta.toFixed(2).replace('.', ',')}
             {'   '}difesa {g.difesa.casa.toFixed(2).replace('.', ',')} · {g.difesa.trasferta.toFixed(2).replace('.', ',')}
-            {'   '}<span style={{ color: C.fantasma }}>(1,00 = media del campionato, {g.media.toFixed(2).replace('.', ',')} gol)</span>
+            {'   '}<span style={{ color: C.spento }}>(1,00 = media del campionato, {g.media.toFixed(2).replace('.', ',')} gol)</span>
           </div>
           {/* ⚠️ Il colore senza la sua spiegazione è una decorazione: qui si dice
               cosa è successo DAVVERO sopra quelle soglie, misurato. Il `title`
               col mouse non esiste su telefono, quindi sta scritto. */}
-          <div style={{ marginTop: 6, fontSize: S.minuta, fontFamily: F.sans, color: C.fantasma, lineHeight: 1.5 }}>
+          <div style={{ marginTop: 6, fontSize: S.minuta, fontFamily: F.sans, color: C.spento, lineHeight: 1.5 }}>
             Il colore confronta il numero con quanto quell'esito arriva di solito:{' '}
             <span style={{ color: C.rosso, fontWeight: 700 }}>rosso</span> sotto il normale,{' '}
             <span style={{ color: C.giallo, fontWeight: 700 }}>giallo</span> attorno,{' '}
@@ -374,11 +383,11 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
       {forma && <>
 
         {/* ── 4. La classifica ──────────────────────────────────────── */}
-        <Blocco titolo="🏆 Classifica" extra={`su ${forma.classifica?.[p.casa]?.squadre ?? '—'} squadre`} sottolinea>
+        <Blocco titolo="Classifica" icona="classifica" extra={`su ${forma.classifica?.[p.casa]?.squadre ?? '—'} squadre`} sottolinea>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
             {squadre.map(sq => {
               const cl = forma.classifica?.[sq]
-              if (!cl) return <div key={sq} style={{ fontSize: S.base, color: C.fantasma, fontFamily: F.sans }}>{sq}: —</div>
+              if (!cl) return <div key={sq} style={{ fontSize: S.base, color: C.spento, fontFamily: F.sans }}>{sq}: —</div>
               const meglio = cl.posizione_forma < cl.posizione, peggio = cl.posizione_forma > cl.posizione
               const conti = (v, n, pe) => (
                 <div style={{ display: 'flex', gap: 5, fontFamily: F.mono, fontSize: S.corpo, fontWeight: 700 }}>
@@ -417,7 +426,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
         </Blocco>
 
         {/* ── 5. Gli scontri diretti ────────────────────────────────── */}
-        <Blocco titolo="⚔️ Scontri diretti" extra={forma.scontri.length ? `ultimi ${forma.scontri.length}` : null} sottolinea>
+        <Blocco titolo="Scontri diretti" icona="scontri" extra={forma.scontri.length ? `ultimi ${forma.scontri.length}` : null} sottolinea>
           {/* Le bandierine di VPM, sopra l'elenco: è qui che si viene a
               cercarle. ⚠️ Dicono su quante partite sono calcolate, e il numero
               **non coincide** con l'elenco sotto: lì ci sono gli ultimi 5
@@ -432,7 +441,11 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
                   background: `linear-gradient(${alpha(b.grave ? C.rosso : C.fioco, 0.10)},${alpha(b.grave ? C.rosso : C.fioco, 0.10)}), ${C.card}`,
                   border: `1px solid ${alpha(b.grave ? C.rosso : C.fioco, b.grave ? 0.45 : 0.25)}`,
                 }}>
-                  <span style={{ fontSize: S.corpo, lineHeight: 1 }}>{b.grave ? '🔴' : '⚪️'}</span>
+                  {/* ⚠️ Due emoji colorate diventano un pallino del tema: il
+                      rosso è quello dell'app, non quello di Apple, e su Android
+                      `⚪️` si disegnava grigio scuro su fondo scuro. */}
+                  <span style={{ width: 8, height: 8, borderRadius: 999, flexShrink: 0,
+                    background: b.grave ? C.rosso : C.grigio, display: 'inline-block' }} />
                   <span style={{ fontSize: S.base, fontFamily: F.sans, color: b.grave ? C.testo : C.fioco, lineHeight: 1.4 }}>
                     {b.testo}
                     {b.tipo === 'pari' && <span style={{ color: C.spento }}> — per noi il pareggio è una sconfitta</span>}
@@ -482,7 +495,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
                       <span style={{ color: s.gol_casa > s.gol_trasferta ? C.testo : C.spento, flex: 1, textAlign: 'right', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.casa}</span>
                       <b style={{ color: C.testo, flexShrink: 0 }}>{s.gol_casa}–{s.gol_trasferta}</b>
                       <span style={{ color: s.gol_trasferta > s.gol_casa ? C.testo : C.spento, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.trasferta}</span>
-                      {s.div !== p.div && <span style={{ color: C.fantasma, flexShrink: 0, fontSize: S.minuta }}>{sigla(s.div)}</span>}
+                      {s.div !== p.div && <span style={{ color: C.spento, flexShrink: 0, fontSize: S.minuta }}>{sigla(s.div)}</span>}
                     </div>
                   )
                 })}
@@ -506,7 +519,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
         const voci = forti.map(vociPesate)
         const vincente = v.segno === '1' ? p.casa : p.trasferta
         return (
-          <Blocco titolo="🧮 VPM" extra={`il campo dice ${v.segno}`} sottolinea>
+          <Blocco titolo="VPM" icona="vpm" extra={`il campo dice ${v.segno}`} sottolinea>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
               <div style={{ fontSize: S.base, fontFamily: F.sans, color: C.fioco, lineHeight: 1.5 }}>
                 <b style={{ color: COLORE_VPM[vs] }}>{vincente}</b>, e {PAROLA_VPM[vs]}.
@@ -544,7 +557,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
                 )
               })}
               {forti.some(f => f && f.pesi.ruolo < PESI_STRATI.ruolo - 0.001) && (
-                <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.fantasma, lineHeight: 1.5, marginTop: 4 }}>
+                <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.spento, lineHeight: 1.5, marginTop: 4 }}>
                   Lo strato nel ruolo vale meno del suo {Math.round(PESI_STRATI.ruolo * 100)}% perché le partite
                   giocate in quel ruolo sono meno di cinque: il peso che avanza torna alla stagione.
                 </div>
@@ -567,7 +580,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
           Per ultimo, prima dei dettagli (scelta di Mattia, 9/10/2026): sono le
           quote crude, cioè il materiale da cui nasce l'attendibilità, non una
           cosa da leggere per prima. */}
-      <Blocco titolo="📊 Consenso di mercato" extra={p.quotaFonte ? `quote ${p.quotaFonte}` : null} sottolinea>
+      <Blocco titolo="Consenso di mercato" icona="consenso" extra={p.quotaFonte ? `quote ${p.quotaFonte}` : null} sottolinea>
         {[['1', p.p.p1, p.casa, p.q1], ['X', p.p.px, 'pareggio', p.qx], ['2', p.p.p2, p.trasferta, p.q2]].map(([segno, prob, chi, quota]) => {
           const suo = segno === p.segno
           return (
@@ -588,7 +601,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
             </div>
           )
         })}
-        <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${C.bordoTenue}`, fontSize: S.minuta, color: C.fantasma, fontFamily: F.sans, lineHeight: 1.5 }}>
+        <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${C.bordoTenue}`, fontSize: S.minuta, color: C.spento, fontFamily: F.sans, lineHeight: 1.5 }}>
           Le percentuali vengono dalla media di ~40 bookmaker, tolto il margine. La X non si gioca mai.
         </div>
       </Blocco>

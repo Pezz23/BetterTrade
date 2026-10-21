@@ -1,7 +1,8 @@
-import { C, F, alpha, S } from '../theme'
+import { C, F, alpha, S, SP, R } from '../theme'
 import { pct, giorno } from '../lib/formato'
 import { pronosticoDa } from '../lib/spin'
 import { Etichetta } from './ui'
+import Icona from './Icona'
 import { usaClassifiche, postoDi, fasciaDi } from '../hooks/usaClassifiche'
 import { consiglioOver, consiglioGg, mercatoOver25, BASI_GOL } from '../lib/gol'
 
@@ -13,7 +14,13 @@ export const CATEGORIE = {
   centro: { nome: 'Centro', colore: C.menta,     desc: 'la partita perfetta' },
   giallo: { nome: 'Giallo', colore: C.oroChiaro, desc: 'i 4 angoli: le più attendibili' },
   blu:    { nome: 'Blu',    colore: C.celeste,   desc: 'i 4 lati: sacrificabili' },
-  no:     { nome: '—',      colore: C.fantasma,  desc: 'sotto soglia' },
+  // ⚠️ `spento` e non `fantasma` (21/10/2026): **sotto soglia non vuol dire
+  // illeggibile.** Questo colore veste il pronostico in mezzo alla card — il
+  // dato principale — la sua barra e i numeri della barra sotto, e a 2,27:1
+  // non si leggevano. A 6,97:1 sì, e restano comunque i più quieti dei
+  // quattro, perché gli altri tre sono **colori** e questo è un grigio: la
+  // differenza la fa la tinta, non il buio.
+  no:     { nome: '—',      colore: C.spento,    desc: 'sotto soglia' },
 }
 
 // ⚠️ Definite in `lib/formato.js` e ri-esportate qui **solo** perché mezzo
@@ -52,10 +59,10 @@ export function Posizione({ nome, colore, posto, compatta = false, style }) {
   return (
     <div title={posto ? `${posto.posizione}° su ${posto.squadre} · ${posto.punti} punti in ${posto.giocate}` : nome}
       style={{
-        flexShrink: 0, borderRadius: 5, padding: compatta ? '2px 4px' : '3px 7px',
+        flexShrink: 0, borderRadius: R.s, padding: compatta ? '2px 4px' : '2px 5px',
         background: alpha(tinta, 0.12), border: `1px solid ${alpha(tinta, 0.4)}`,
         color: tinta, fontFamily: F.mono, fontWeight: 700, lineHeight: 1.2,
-        fontSize: compatta ? 10 : 13, whiteSpace: 'nowrap',
+        fontSize: compatta ? S.minuta : S.corpo, whiteSpace: 'nowrap',
         ...style,
       }}>
       {/* ⚠️ Il denominatore è più piccolo e più tenue: la posizione è il dato,
@@ -86,10 +93,14 @@ export function Stella({ voti, mio, puoVotare, onVota }) {
          può premere — ma questo **mostra un dato a chi non lo può toccare**:
          un utente normale legge da qui quante stelline ha la partita.
          Spegnerlo vorrebbe dire nascondere l'informazione a metà del gruppo. */
-      style={{ opacity: 1, display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20,
+      style={{ opacity: 1, display: 'flex', alignItems: 'center', gap: SP.s, padding: `${SP.xs}px ${SP.m}px`, borderRadius: R.pastiglia,
         background: voti ? alpha(C.oro, 0.10) : 'transparent', border: `1px solid ${voti ? alpha(C.oro, 0.3) : C.bordo}`,
         cursor: puoVotare ? 'pointer' : 'default' }}>
-      <span style={{ fontSize: S.titolo, lineHeight: 1, color: mio ? C.oro : voti ? alpha(C.oro, 0.55) : C.fioco }}>{voti ? '★' : '☆'}</span>
+      {/* ⚠️ Piena quando qualcuno l'ha votata, vuota quando no: è la stessa
+          distinzione che facevano `★` e `☆`, con lo spessore del resto del set. */}
+      <span style={{ display: 'flex', color: mio ? C.oro : voti ? alpha(C.oro, 0.55) : C.fioco }}>
+        <Icona nome="stella" misura={15} pieno={!!voti} />
+      </span>
       <span style={{ fontSize: S.base, fontFamily: F.mono, fontWeight: 700, color: voti ? C.oro : C.fioco }}>{voti}/3</span>
     </button>
   )
@@ -114,7 +125,7 @@ export default function TestataPartita({ p, cat, compatta = false, gol = null })
                 quei 12px servivano al nome delle squadre, e qui dentro non li
                 usava nessuno — l'etichetta GIOCATA ne chiede una cinquantina. */}
             {i === 1 && (
-              <div style={{ alignSelf: 'center', textAlign: 'center', padding: '0 6px', minWidth: compatta ? 64 : 96 }}>
+              <div style={{ alignSelf: 'center', textAlign: 'center', padding: '0 6px', minWidth: compatta ? 64 : 84 }}>
                 <Etichetta style={{ fontSize: S.micro, letterSpacing: '0.12em', marginBottom: 4 }}>giocata</Etichetta>
                 <div style={{ fontSize: compatta ? 19 : 24, fontWeight: 700, fontFamily: F.mono, color: c.colore, lineHeight: 1.1 }}>{pronosticoDa(p.giocata)}</div>
                 <div style={{ marginTop: compatta ? 5 : 7 }}><Barra frazione={p.probGiocata} colore={c.colore} altezza={compatta ? 5 : 6} /></div>
@@ -200,10 +211,26 @@ export default function TestataPartita({ p, cat, compatta = false, gol = null })
                 blocchi non sono più specchiati. È quello che è stato chiesto:
                 "a destra del nome" vale per il nome, non per il lato della
                 card. */}
+            {/* ⚠️⚠️ **`flexWrap` è la cura di un difetto che nessun corpo di
+                carattere poteva risolvere** (21/10/2026). Misurato nel browser:
+                `BOURNEMOUTH` — la parola più lunga delle 132 squadre in
+                calendario — occupa **96,5px già a 11px**, e la colonna laterale
+                della scheda ne misura **104,5 targhetta compresa**. Accanto
+                alla targhetta non ci sta a nessuna misura leggibile, e infatti
+                `ASTON VILLA` si spezzava in **quattro righe da due lettere**:
+                `AST / ON / VILL / A`.
+                Andando a capo, la targhetta scende sotto il nome **solo quando
+                serve** e il nome si prende tutta la colonna: la regola "la
+                targhetta a destra della squadra" vale finché c'è spazio, e
+                dove non c'è degrada invece di rompersi.
+                ⚠️ Limite noto, misurato: sotto i ~355px di schermo nemmeno la
+                colonna intera basta a BOURNEMOUTH, e lì interviene
+                `break-word`. È l'ultima difesa, non il caso normale. */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexWrap: 'wrap',
               // ⚠️ 4px e non 6 in compatta: erano i tre pixel che mancavano a
               // FIORENTINA per stare su una riga. Misurato, non scelto.
-              gap: compatta ? 4 : 9, minWidth: 0 }}>
+              gap: compatta ? 4 : SP.s, minWidth: 0 }}>
               <div style={{
                 // ⚠️⚠️ **Misurato con il browser, non stimato** (21/10/2026).
                 // A 375px il nome aveva **68-74px** e a 12,75px parole come
@@ -214,7 +241,12 @@ export default function TestataPartita({ p, cat, compatta = false, gol = null })
                 // Il corpo scende di un filo **solo al minimo** (3,0vw: a
                 // 375px sono 11,25px invece di 12,75); sopra i 466px il
                 // massimo di 14px è identico a prima.
-                fontSize: compatta ? 'clamp(10px, 3.0vw, 14px)' : 'clamp(13px, 4.4vw, 19px)',
+                // ⚠️ Il massimo della scheda viene dal conto, non dal gusto:
+                // la colonna è ~112px e BOURNEMOUTH occupa 8,774px per ogni px
+                // di corpo, quindi oltre **12,8px** non ci sta. 3,4vw a 375px
+                // fa 12,75 — e su uno schermo più largo cresce insieme alla
+                // colonna, che è il motivo per cui resta un `clamp()`.
+                fontSize: compatta ? 'clamp(10px, 3.0vw, 14px)' : 'clamp(11px, 3.4vw, 17px)',
                 fontWeight: 700, fontFamily: F.sans, letterSpacing: '0.02em',
                 // ⚠️ `break-word` e non `anywhere`: spezza una parola solo se
                 // **da sola** non entra nella riga, mentre `anywhere` la
@@ -231,10 +263,25 @@ export default function TestataPartita({ p, cat, compatta = false, gol = null })
         ))}
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: compatta ? 9 : 14,
-        paddingTop: compatta ? 8 : 10, borderTop: `1px solid ${C.bordoTenue}` }}>
-        <span style={{ fontSize: compatta ? 12 : 14, fontWeight: 600, fontFamily: F.mono, color: C.testo }}>📅 {giorno(p.data).toUpperCase()}</span>
-        {p.ora && <span style={{ fontSize: compatta ? 12 : 14, fontWeight: 600, fontFamily: F.mono, color: C.testo }}>🕐 {p.ora.slice(0, 5)}</span>}
+      {/* ⚠️ Il calendario e l'orologio erano **emoji** (`📅` `🕐`): le disegna
+          il sistema operativo, quindi la stessa riga aveva tre aspetti su tre
+          telefoni, e restavano a colori pieni accanto a un testo spento. Qui
+          sono due segni del set, che prendono il colore del testo accanto. */}
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: SP.xl,
+        marginTop: compatta ? 9 : SP.xl, paddingTop: compatta ? SP.m : SP.l,
+        borderTop: `1px solid ${C.bordoTenue}` }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: SP.s, fontSize: compatta ? S.corpo : S.grande,
+          fontWeight: 600, fontFamily: F.mono, color: C.testo }}>
+          <Icona nome="calendario" misura={compatta ? 13 : 15} style={{ color: C.spento }} />
+          {giorno(p.data).toUpperCase()}
+        </span>
+        {p.ora && (
+          <span style={{ display: 'flex', alignItems: 'center', gap: SP.s, fontSize: compatta ? S.corpo : S.grande,
+            fontWeight: 600, fontFamily: F.mono, color: C.testo }}>
+            <Icona nome="ora" misura={compatta ? 13 : 15} style={{ color: C.spento }} />
+            {p.ora.slice(0, 5)}
+          </span>
+        )}
       </div>
     </>
   )
