@@ -1523,6 +1523,26 @@ sulla stessa tabella).
 ⚠️ Il filo comune: **erano tutti dati plausibili e sbagliati**, e nessuno
 chiedeva mai *"è andato bene?"*.
 
+⚠️⚠️ **E un controllo può sbagliare nello stesso modo di ciò che sorveglia.**
+Il 21/10/2026 il primo controllo diceva *"2 partite giocate da più di 2 giorni
+sono ancora senza risultato → football-data è indietro, recupera con ESPN"*.
+Erano **Levante-Ath Bilbao del 16/09** e **Vallecano-Ath Bilbao del 10/10**:
+**rinviate**, mai giocate, e la prima è ricomparsa in calendario il 21/10.
+Il controllo dava per scontato che una riga di calendario con data passata
+volesse dire *"partita disputata"*, e mandava a recuperare partite che non
+esistono — un dato plausibile e sbagliato, esattamente il difetto che lui
+stesso esiste per trovare.
+✅ Ora distingue, e il segnale sta nei nostri dati:
+- **quel giorno quel campionato non ha NESSUNA partita in archivio** → la fonte
+  non ha pubblicato: è indietro davvero, e l'allarme resta;
+- **le altre partite di quel giorno ci sono e questa no** → la fonte ha
+  pubblicato, quindi questa non si è giocata: rinviata o spostata, si stampa
+  come informazione e **non alza il contatore dei problemi**.
+⚠️ Verificato sui casi veri: il 16/09 e il 10/10 la Liga aveva **3 partite in
+archivio per giorno**, e quelle due non erano fra loro. E il ramo dell'allarme
+vero scatta ancora: Wolves-Portsmouth del 20/10 viene classificato come buco,
+perché quel giorno in archivio non c'è niente di nessun campionato.
+
 ## ESPN, la seconda fonte dei risultati
 
 **Aggiunta il 12/10/2026**, dopo che football-data è rimasto **tre settimane

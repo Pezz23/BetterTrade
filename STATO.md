@@ -64,11 +64,20 @@ spaziature**, cioè la voce qui sotto, e va fatta guardando lo schermo.
 
 ### Da dove ripartire adesso
 
-0. ⚠️⚠️ **PRIMA DI TUTTO: `cd btscout && node --env-file=.env scripts/aggiorna.js --esegui`.**
-   I dati sono fermi al **15 ottobre** (ultima partita in archivio: 14/10), e
-   da questo dipendono almeno due cose che sembrano difetti dell'app: le
-   **leghe minori che non si vedono** nel calendario e la pagina **Andamento**
-   vuota. Vedi *Le dieci idee di Mattia*, voce 8.
+0. ✅ **Dati aggiornati il 21/10/2026 (sera).** Archivio ai risultati del
+   **19/10** (54.249 partite), calendario a **208 partite su tutti e 15 i
+   campionati** — Serie B compresa — ultimo scarico quote 21/10 17:23,
+   Andamento ricalcolato. The Odds API: 45 crediti usati, **277 rimasti**.
+   ⚠️ Così è caduta la voce 8 delle dieci idee (*"non vedo le leghe minori"*):
+   non era il codice, era il calendario fermo al 15/10.
+   ⚠️ E anche l'**Andamento vuoto** che avevo segnalato due volte era mio: la
+   foto di `guarda.mjs` scattata prima che la pagina caricasse. Lo strumento
+   ora aspetta.
+   ⚠️ **Le 3 righe rimaste non agganciate sono spiegate, non sono un buco:**
+   Levante-Ath Bilbao (16/09) e Vallecano-Ath Bilbao (10/10) sono **rinviate**
+   — la prima è in calendario il 21/10 — e Wolves-Portsmouth (20/10) è il
+   normale ritardo della fonte (in archivio non c'è **nessuna** partita del
+   20/10). `controlla-dati.js` ora sa distinguere i due casi.
 1. **Le dieci idee del 21/10** stanno nella sezione qui sotto, verificate una
    per una. La **1 (Road to weekend a mano)** è la priorità dichiarata da lui.
 2. **Mattia guarda l'app** e dice se l'effetto AS/400 è passato. È la sola
