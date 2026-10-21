@@ -398,6 +398,15 @@ export default function ScalataPage() {
   const [attMin, setAttMin] = useState(CONSIGLIATO.att)
   const [sceMin, setSceMin] = useState(CONSIGLIATO.scelta)
   const [vpmMin, setVpmMin] = useState(0)
+  // ⚠️⚠️ **La quota della GAMBA è un filtro come gli altri tre** (Mattia,
+  // 22/10/2026), non una costante: sceglie **quali partite** entrano nella
+  // scaletta, esattamente come attendibilità, scelta e VPM. Da non confondere
+  // con `QUOTA_MINIMA_SCHEDINA`, che invece non si tocca — quella decide
+  // quando una schedina è chiusa, e il metodo la fissa a 2,00.
+  // ⚠️ Parte da **1,30 perché è misurato**: dentro `att ≥ 67%`, sotto 1,20 la
+  // resa è 88,5%, fra 1,20 e 1,30 il 95,1%, fra 1,30 e 1,45 il 99,0%. Si può
+  // abbassare, e la misura dice cosa si compra.
+  const [quotaGamba, setQuotaGamba] = useState(QUOTA_MINIMA_GAMBA)
   // ⚠️ `daOra` è il momento da cui ripartire: il tasto ricarica lo rimette ad
   // adesso, così le partite già cominciate escono dalla scaletta. `usaProssime`
   // filtra solo per giorno, quindi a metà pomeriggio la lista conterrebbe
@@ -461,8 +470,8 @@ export default function ScalataPage() {
       r.att != null && r.att * 100 >= attMin &&
       r.scelta != null && r.scelta * 100 >= sceMin &&
       (vpmMin <= 0 || (r.vpm != null && r.vpm >= vpmMin)) &&
-      (r.quota ?? 0) >= QUOTA_MINIMA_GAMBA)
-  }, [righe, valutate, attMin, sceMin, vpmMin, tolte, daOra])
+      (r.quota ?? 0) >= quotaGamba)
+  }, [righe, valutate, attMin, sceMin, vpmMin, quotaGamba, tolte, daOra])
 
   // ⚠️ Le fasce sono una **proposta**: stesso giorno, orari entro tre ore. Poi
   // si toglie a mano quello che non piace — è il motivo per cui la pagina esiste.
@@ -508,9 +517,9 @@ export default function ScalataPage() {
     const a = valutate.filter(r => r.att != null && r.att * 100 >= attMin)
     const b = a.filter(r => r.scelta != null && r.scelta * 100 >= sceMin)
     const c = b.filter(r => vpmMin <= 0 || (r.vpm != null && r.vpm >= vpmMin))
-    const d = c.filter(r => (r.quota ?? 0) >= QUOTA_MINIMA_GAMBA)
+    const d = c.filter(r => (r.quota ?? 0) >= quotaGamba)
     return { future: righe.length, att: a.length, scelta: b.length, vpm: c.length, quota: d.length }
-  }, [righe, valutate, attMin, sceMin, vpmMin])
+  }, [righe, valutate, attMin, sceMin, vpmMin, quotaGamba])
 
   // ⚠️⚠️ **"La prossima" è la prima partita dei passi SUCCESSIVI**, non una
   // partita libera: `fasce()` mette *ogni* candidata in un blocco, quindi di
@@ -774,13 +783,13 @@ export default function ScalataPage() {
             non va scritta. */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
           <Etichetta>SELEZIONE</Etichetta>
-          <button onClick={() => { setAttMin(CONSIGLIATO.att); setSceMin(CONSIGLIATO.scelta); setVpmMin(0) }}
+          <button onClick={() => { setAttMin(CONSIGLIATO.att); setSceMin(CONSIGLIATO.scelta); setVpmMin(0); setQuotaGamba(QUOTA_MINIMA_GAMBA) }}
             style={{
               textAlign: 'right', cursor: 'pointer', padding: '4px 8px', lineHeight: 1.35,
               color: C.testo, fontFamily: F.sans,
-              background: attMin === CONSIGLIATO.att && sceMin === CONSIGLIATO.scelta && !vpmMin
+              background: attMin === CONSIGLIATO.att && sceMin === CONSIGLIATO.scelta && !vpmMin && quotaGamba === QUOTA_MINIMA_GAMBA
                 ? `linear-gradient(${alpha(C.verde, .12)},${alpha(C.verde, .12)}), ${C.card}` : C.card,
-              border: `1px solid ${alpha(C.verde, attMin === CONSIGLIATO.att && sceMin === CONSIGLIATO.scelta && !vpmMin ? 0.5 : 0.2)}`,
+              border: `1px solid ${alpha(C.verde, attMin === CONSIGLIATO.att && sceMin === CONSIGLIATO.scelta && !vpmMin && quotaGamba === QUOTA_MINIMA_GAMBA ? 0.5 : 0.2)}`,
             }}>
             <div style={{ fontSize: S.micro, color: C.verde, letterSpacing: '0.08em' }}>✓ CONSIGLIATO</div>
             <div style={{ fontSize: S.corpo, fontWeight: 700, color: C.testo }}>
@@ -794,6 +803,10 @@ export default function ScalataPage() {
           <Numero label="attendibilità ≥" valore={attMin} passo={1} set={setAttMin} suffisso="%" />
           <Numero label="scelta ≥" valore={sceMin} passo={1} set={setSceMin} suffisso="%" />
           <Numero label="VPM ≥" valore={vpmMin ? vpmMin.toFixed(1).replace('.', ',') : 'tutti'} passo={0.5} set={setVpmMin} />
+          {/* ⚠️ **"quota gamba", non "quota"**: a due centimetri da qui c'è la
+              quota della schedina (2,00, fissa), e due filtri chiamati "quota"
+              nella stessa card sono il modo di girare la manopola sbagliata. */}
+          <Numero label="quota gamba ≥" valore={quotaGamba.toFixed(2).replace('.', ',')} passo={0.05} set={setQuotaGamba} />
         </div>
         {/* ⚠️⚠️ **Qui non ci sono più né la quota schedina né le due regole**
             (Mattia, 21/10/2026). La quota minima è **2,00 e basta**: era una
@@ -808,7 +821,16 @@ export default function ScalataPage() {
               soldi dove sono**: è la risposta di Mattia a *"cosa succede alle
               scalate dimenticate"* — il denaro è lo stato della scalata, il
               piano è settimanale. */}
-          <Tasto colore={C.oro} style={{ marginLeft: 'auto' }}
+          {/* ⚠️ **Rosso e acceso** (Mattia, 22/10/2026: *"lo voglio ben
+              evidente"*). `C.rosso` è il token già in uso per perdita,
+              prelievo ed errore — qui dice la stessa cosa in un altro modo:
+              **questo tasto butta via qualcosa** (il piano composto a mano, e
+              a scalata aperta i passi non giocati). In oro e spento sembrava
+              un ricarica qualunque, come quello di un browser.
+              ⚠️ `attivo` non vuol dire "selezionato": qui serve solo a dargli
+              fondo e bordo pieni, che è l'unico modo che ha `Tasto` di
+              gridare. */}
+          <Tasto colore={C.rosso} attivo style={{ marginLeft: 'auto' }}
             onClick={() => {
               setTolte([]); setAggiunte({}); setDaOra(Date.now())
               // ⚠️ **E rilegge davvero le partite.** Finché `usaProssime` non
@@ -825,7 +847,7 @@ export default function ScalataPage() {
         <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.spento, marginTop: 7, lineHeight: 1.5 }}>
           {METODO.desc}
           <br />posta <b style={{ color: C.testo }}>{posta}</b> (10% del bankroll, per difetto)
-          · schedina ≥ {QUOTA_MINIMA_SCHEDINA.toFixed(2).replace('.', ',')} · gamba ≥ {QUOTA_MINIMA_GAMBA} · massimo {MAX_GAMBE} gambe
+          · schedina ≥ {QUOTA_MINIMA_SCHEDINA.toFixed(2).replace('.', ',')} · massimo {MAX_GAMBE} gambe
         </div>
       </Card>
 
@@ -844,7 +866,7 @@ export default function ScalataPage() {
             {imbuto.future} future → <b>{imbuto.att}</b> sopra attendibilità {attMin}%
             {' '}→ <b>{imbuto.scelta}</b> sopra scelta {sceMin}%
             {vpmMin > 0 && <> → <b>{imbuto.vpm}</b> sopra VPM {vpmMin.toFixed(1).replace('.', ',')}</>}
-            {' '}→ <b>{imbuto.quota}</b> sopra quota {QUOTA_MINIMA_GAMBA}
+            {' '}→ <b>{imbuto.quota}</b> sopra quota {quotaGamba.toFixed(2).replace('.', ',')}
           </div>
           <div style={{ marginTop: 6 }}>
             ⚠️ Con le soglie strette capita spesso: misurato sull&apos;archivio, quasi un giorno su

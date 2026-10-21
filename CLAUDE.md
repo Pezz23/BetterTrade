@@ -1811,6 +1811,12 @@ arrivano a 2,00** (`puoSpezzare`): offerto dappertutto proponeva di fabbricare
 una schedina a 1,30, che non è un passo di questa scalata — trovato da Mattia
 il 21/10, il giorno dopo averlo fatto.
 
+⚠️ **Dal 22/10/2026 la quota della gamba è il QUARTO FILTRO** della card
+SELEZIONE, accanto ad attendibilità, scelta e VPM: sceglie *quali partite*
+entrano in scaletta, e `QUOTA_MINIMA_GAMBA` è solo il suo valore di partenza.
+Da non confondere con `QUOTA_MINIMA_SCHEDINA` (2,00, fissa): per questo a
+schermo si chiama **«quota gamba ≥»** e non «quota».
+
 ⚠️ **Il pavimento di quota per gamba è 1,30** (`QUOTA_MINIMA_GAMBA`) e non è
 prudenza: dentro `att ≥ 67%`, sotto 1,20 la resa è **88,5%**, fra 1,20 e 1,30 il
 **95,1%**, fra 1,30 e 1,45 il **99,0%**. **Le azzeccate salgono scendendo di
