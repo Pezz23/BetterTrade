@@ -52,7 +52,7 @@ export function Posizione({ nome, colore, posto, compatta = false, style }) {
   return (
     <div title={posto ? `${posto.posizione}° su ${posto.squadre} · ${posto.punti} punti in ${posto.giocate}` : nome}
       style={{
-        flexShrink: 0, borderRadius: 5, padding: compatta ? '2px 5px' : '3px 7px',
+        flexShrink: 0, borderRadius: 5, padding: compatta ? '2px 4px' : '3px 7px',
         background: alpha(tinta, 0.12), border: `1px solid ${alpha(tinta, 0.4)}`,
         color: tinta, fontFamily: F.mono, fontWeight: 700, lineHeight: 1.2,
         fontSize: compatta ? 10 : 13, whiteSpace: 'nowrap',
@@ -109,9 +109,12 @@ export default function TestataPartita({ p, cat, compatta = false, gol = null })
             {/* ⚠️ In mezzo alle squadre sta **la giocata** (10/10/2026, scelta di
                 Mattia): è la cosa che si decide, e deve stare dove l'occhio va
                 per primo. L'attendibilità era qui e si è spostata nella barra
-                sotto, con gli altri quattro numeri. */}
+                sotto, con gli altri quattro numeri.
+                ⚠️ La larghezza minima è **64 e non 76** in versione compatta:
+                quei 12px servivano al nome delle squadre, e qui dentro non li
+                usava nessuno — l'etichetta GIOCATA ne chiede una cinquantina. */}
             {i === 1 && (
-              <div style={{ alignSelf: 'center', textAlign: 'center', padding: '0 6px', minWidth: compatta ? 76 : 96 }}>
+              <div style={{ alignSelf: 'center', textAlign: 'center', padding: '0 6px', minWidth: compatta ? 64 : 96 }}>
                 <Etichetta style={{ fontSize: S.micro, letterSpacing: '0.12em', marginBottom: 4 }}>giocata</Etichetta>
                 <div style={{ fontSize: compatta ? 19 : 24, fontWeight: 700, fontFamily: F.mono, color: c.colore, lineHeight: 1.1 }}>{pronosticoDa(p.giocata)}</div>
                 <div style={{ marginTop: compatta ? 5 : 7 }}><Barra frazione={p.probGiocata} colore={c.colore} altezza={compatta ? 5 : 6} /></div>
@@ -198,11 +201,26 @@ export default function TestataPartita({ p, cat, compatta = false, gol = null })
                 "a destra del nome" vale per il nome, non per il lato della
                 card. */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
-              gap: compatta ? 6 : 9, minWidth: 0 }}>
+              // ⚠️ 4px e non 6 in compatta: erano i tre pixel che mancavano a
+              // FIORENTINA per stare su una riga. Misurato, non scelto.
+              gap: compatta ? 4 : 9, minWidth: 0 }}>
               <div style={{
-                fontSize: compatta ? 'clamp(11px, 3.4vw, 14px)' : 'clamp(13px, 4.4vw, 19px)',
+                // ⚠️⚠️ **Misurato con il browser, non stimato** (21/10/2026).
+                // A 375px il nome aveva **68-74px** e a 12,75px parole come
+                // DORTMUND, VALENCIA o FIORENTINA non ci stavano: andavano a
+                // capo **a metà parola**, lasciando una lettera sola sulla
+                // riga sotto — `DORTMUN` / `D`. Succedeva su sette partite
+                // delle prime dodici, e dal codice non si vedeva.
+                // Il corpo scende di un filo **solo al minimo** (3,0vw: a
+                // 375px sono 11,25px invece di 12,75); sopra i 466px il
+                // massimo di 14px è identico a prima.
+                fontSize: compatta ? 'clamp(10px, 3.0vw, 14px)' : 'clamp(13px, 4.4vw, 19px)',
                 fontWeight: 700, fontFamily: F.sans, letterSpacing: '0.02em',
-                textTransform: 'uppercase', lineHeight: 1.15, overflowWrap: 'anywhere',
+                // ⚠️ `break-word` e non `anywhere`: spezza una parola solo se
+                // **da sola** non entra nella riga, mentre `anywhere` la
+                // spezzava appena conveniva. Resta come ultima difesa per un
+                // nome davvero lungo — meglio spezzato che fuori dalla card.
+                textTransform: 'uppercase', lineHeight: 1.15, overflowWrap: 'break-word',
                 textAlign: 'center', minWidth: 0,
                 color: p.segno === segno ? C.testo : C.spento,
               }}>{sq}</div>

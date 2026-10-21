@@ -64,7 +64,7 @@ export default function SceltaPartita({ casa, ospite, collegata, partite, onSceg
               ✕ svuota la casella
             </button>
           )}
-          {trovate.length === 0 && <div style={{ padding: '8px 6px', fontSize: S.base, color: C.fantasma, fontFamily: F.sans }}>nessuna partita trovata</div>}
+          {trovate.length === 0 && <div style={{ padding: '8px 6px', fontSize: S.base, color: C.spento, fontFamily: F.sans }}>nessuna partita trovata</div>}
           {trovate.map(p => {
             const cat = categoria(p.probGiocata, SOGLIE_DEFAULT)
             const col = CATEGORIE[cat].colore

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { C, F, alpha, S } from '../theme'
+import { C, F, alpha, S, SP } from '../theme'
 import { Card, Etichetta, TastoRipeti, Attesa } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { usaProssime } from '../hooks/usaProssime'
@@ -588,25 +588,36 @@ export default function ScalataPage() {
         {/* ⚠️ Il bankroll iniziale sta **qui** e non fra i filtri (richiesta di
             Mattia): i filtri scelgono le partite, questo è un conto. Il valore
             che propone è quello vero del conto, e `↺` ci torna. */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'auto auto auto auto 1fr', gap: 6,
-          alignItems: 'center', marginTop: 10, paddingTop: 9, borderTop: `1px solid ${alpha(C.testo, 0.1)}` }}>
-          <div style={{ fontSize: S.base, fontFamily: F.sans, color: C.spento }}>bankroll iniziale</div>
-          {/* ⚠️ **Un euro per scatto, tenendo premuto** (Mattia, 18/10): a 10 € per
-              tocco il bankroll si poteva solo approssimare, e la puntata è il suo
-              10% — cioè il passo del bankroll decide il passo della puntata. */}
-          <TastoRipeti onScatto={() => setBankroll(Math.max(10, bankrollIniziale - 1))}>−</TastoRipeti>
-          <div style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700, color: C.testo, minWidth: 64, textAlign: 'center' }}>
-            {eur(bankrollIniziale)}
+        {/* ⚠️⚠️ **DUE righe e non una** (21/10/2026, visto in una schermata a
+            375px). Su una riga sola stavano sei cose — l'etichetta, i due
+            tasti, il valore, il ritorno al conto e la prossima puntata — e le
+            ultime due si accavallavano. È la regola che questo progetto ha già
+            scritto: *più di tre o quattro informazioni su una riga si dividono
+            in due righe invece di stringere*. Sopra il comando, sotto quello
+            che il comando produce. */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: SP.s,
+          marginTop: SP.l, paddingTop: SP.m, borderTop: `1px solid ${alpha(C.testo, 0.1)}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: SP.m }}>
+            <div style={{ fontSize: S.base, fontFamily: F.sans, color: C.spento }}>bankroll iniziale</div>
+            {/* ⚠️ **Un euro per scatto, tenendo premuto** (Mattia, 18/10): a 10 € per
+                tocco il bankroll si poteva solo approssimare, e la puntata è il suo
+                10% — cioè il passo del bankroll decide il passo della puntata. */}
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: SP.s }}>
+              <TastoRipeti onScatto={() => setBankroll(Math.max(10, bankrollIniziale - 1))}>−</TastoRipeti>
+              <div style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700, color: C.testo, minWidth: 64, textAlign: 'center' }}>
+                {eur(bankrollIniziale)}
+              </div>
+              <TastoRipeti onScatto={() => setBankroll(bankrollIniziale + 1)}>+</TastoRipeti>
+            </div>
           </div>
-          <TastoRipeti onScatto={() => setBankroll(bankrollIniziale + 1)}>+</TastoRipeti>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: SP.m, flexWrap: 'wrap' }}>
             {currentUser?.bankroll != null && Math.floor(Number(currentUser.bankroll)) !== bankrollIniziale && (
               <button onClick={() => setBankroll(null)} title="torna al bankroll vero del conto"
-                style={{ background: 'transparent', border: 'none', color: C.oro, cursor: 'pointer', fontFamily: F.sans, fontSize: S.minuta }}>
+                style={{ background: 'transparent', border: 'none', color: C.oro, cursor: 'pointer', fontFamily: F.sans, fontSize: S.minuta, padding: 0 }}>
                 ↺ conto: {eur(Math.floor(Number(currentUser.bankroll)))}
               </button>
             )}
-            <span style={{ fontFamily: F.sans, fontSize: S.base, color: C.spento }}>
+            <span style={{ marginLeft: 'auto', fontFamily: F.sans, fontSize: S.base, color: C.spento }}>
               prossima puntata <b style={{ color: C.oro }}>{eur(posta)}</b>
               <span style={{ fontSize: S.micro, color: C.fioco }}> (10%)</span>
             </span>

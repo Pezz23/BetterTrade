@@ -143,14 +143,14 @@ export default function StoricoPage() {
                 {sigla(div)} <b style={{ color: C.testo }}>{n}</b>
               </span>
             ))}
-            {!perCampionato.length && <span style={{ fontSize: S.corpo, color: C.fantasma, fontFamily: F.sans }}>nessuna partita futura in tabella</span>}
+            {!perCampionato.length && <span style={{ fontSize: S.corpo, color: C.spento, fontFamily: F.sans }}>nessuna partita futura in tabella</span>}
           </div>
         </Card>
       </Sezione>
 
       <Sezione titolo="🎯 Le nostre proposte" extra={`${giocate.length} future poi giocate`}>
         {sopra.length === 0
-          ? <Card><div style={{ fontSize: S.corpo, color: C.fantasma, fontFamily: F.sans }}>Nessuna proposta ancora giocata.</div></Card>
+          ? <Card><div style={{ fontSize: S.corpo, color: C.spento, fontFamily: F.sans }}>Nessuna proposta ancora giocata.</div></Card>
           : <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
               <Riquadro label="prese" valore={`${complessivo.prese}/${complessivo.tot}`} sub={`dichiarato ${pct(complessivo.atteso)}`}

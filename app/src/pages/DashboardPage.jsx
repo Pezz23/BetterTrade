@@ -114,18 +114,18 @@ export default function DashboardPage() {
       {loading ? (
         <div style={{ textAlign:'center', padding:40, color:C.spento, fontFamily:F.sans }}>Caricamento…</div>
       ) : !hasAnyData ? (
-        <div style={stileCard({ textAlign:'center', padding:'60px 24px', color:C.fantasma, fontSize:S.grande, fontFamily:F.sans })}>
+        <div style={stileCard({ textAlign:'center', padding:'60px 24px', color:C.spento, fontSize:S.grande, fontFamily:F.sans })}>
           {daSpuntare ? (
             <>
               {compilate === 1 ? 'Una spin è compilata' : `${compilate} spin sono compilate`}, ma nessuna è segnata come giocata.<br/>
-              <span style={{ fontSize:S.corpo, color:C.bordoChiaro }}>
+              <span style={{ fontSize:S.corpo, color:C.fioco }}>
                 Nella Slot, sotto l&apos;elenco, spunta <strong style={{ color:C.verde }}>GIOCATA</strong>: da lì la Dashboard comincia a contare.
               </span>
             </>
           ) : (
             <>
               Nessuna partita inserita oggi.<br/>
-              <span style={{ fontSize:S.corpo, color:C.bordoChiaro }}>Inserisci le partite nella Slot per vedere l&apos;andamento live.</span>
+              <span style={{ fontSize:S.corpo, color:C.fioco }}>Inserisci le partite nella Slot per vedere l&apos;andamento live.</span>
             </>
           )}
         </div>
@@ -184,7 +184,7 @@ export default function DashboardPage() {
                       Inv: {fmt(r.investito)} · Inc: {fmt(r.incasso)}
                     </div>
                   ) : (
-                    <div style={{ fontSize:S.base, color:C.fantasma, fontFamily:F.sans, marginTop:2 }}>Nessuna partita</div>
+                    <div style={{ fontSize:S.base, color:C.spento, fontFamily:F.sans, marginTop:2 }}>Nessuna partita</div>
                   )}
                 </div>
                 {r && (

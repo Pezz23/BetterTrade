@@ -29,7 +29,7 @@ const ST = {
   bkEur: { padding:'0 8px', fontSize:S.base, color:C.spento, borderRight:`1px solid ${C.bordo}`, fontFamily:F.mono },
   bkInp: { background:'transparent', border:'none', outline:'none', color:C.oro, fontSize:S.media, fontFamily:F.mono, width:75, padding:'0 8px', fontWeight:600 },
   delBtn:{ background:alpha(C.rosso,0.08), border:`1px solid ${alpha(C.rosso,0.18)}`, borderRadius:6, color:C.rosso, fontSize:S.base, cursor:'pointer', padding:'5px 10px', fontFamily:F.sans },
-  empty: { padding:40, textAlign:'center', color:C.fantasma, fontSize:S.grande, fontFamily:F.sans },
+  empty: { padding:40, textAlign:'center', color:C.spento, fontSize:S.grande, fontFamily:F.sans },
   pwBtn: { background:alpha(C.oro,0.10), border:`1px solid ${alpha(C.oro,0.3)}`, borderRadius:6, color:C.oro, fontSize:S.base, cursor:'pointer', padding:'5px 10px', fontFamily:F.sans },
   select:{ background:C.pozzo, border:`1px solid ${C.bordo}`, borderRadius:7, padding:'9px 12px', color:C.testo, fontSize:S.grande, fontFamily:F.sans, outline:'none', width:'100%' },
 }

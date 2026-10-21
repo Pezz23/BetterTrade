@@ -40,7 +40,7 @@ export default function LegendaPartite() {
               <div style={{ fontSize: S.corpo, fontFamily: F.sans, color: C.fioco, lineHeight: 1.55 }}>{v.testo}</div>
             </div>
           ))}
-          <div style={{ fontSize: S.base, fontFamily: F.sans, color: C.fantasma, lineHeight: 1.55, marginTop: 10 }}>
+          <div style={{ fontSize: S.base, fontFamily: F.sans, color: C.spento, lineHeight: 1.55, marginTop: 10 }}>
             In mezzo alle due squadre c'è <b style={{ color: C.fioco }}>la giocata</b>: si gioca sempre il segno secco, 1 o 2,
             mai la X. Sotto quota 1,25 si aggiunge l'over 1,5, e l'attendibilità viene scontata del fattore misurato (0,908).
           </div>

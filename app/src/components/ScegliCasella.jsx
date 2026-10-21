@@ -86,7 +86,7 @@ export default function ScegliCasella({ pos, partite, votiDi, usate = [], altrov
         </div>
 
         <div style={{ overflowY: 'auto', padding: 6 }}>
-          {trovate.length === 0 && <div style={{ padding: '14px 8px', fontSize: S.corpo, color: C.fantasma, fontFamily: F.sans }}>Nessuna partita con questo filtro.</div>}
+          {trovate.length === 0 && <div style={{ padding: '14px 8px', fontSize: S.corpo, color: C.spento, fontFamily: F.sans }}>Nessuna partita con questo filtro.</div>}
           {trovate.map(p => {
             const cat = categoria(p.probGiocata, SOGLIE_DEFAULT)
             const col = CATEGORIE[cat].colore

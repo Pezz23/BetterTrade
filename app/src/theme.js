@@ -31,6 +31,9 @@ export const C = {
   bordoTenue: '#1E242A',
   bordoRiga:  '#232930',
   bordo:      '#292F36',
+  // ⚠️ I bordi non si usano come **colore del testo**: il 21/10/2026
+  // `bordoChiaro` vestiva la seconda riga di tre stati vuoti — 1,6:1, cioè
+  // illeggibile. Per un testo terziario c'è `fioco`.
   bordoChiaro: '#343B43',
 
   // ── Testo ───────────────────────────────────────────────────────────────
@@ -42,7 +45,15 @@ export const C = {
   testo:      '#F1F2F3',
   spento:     '#9AA2AC',  // etichette, testo secondario
   fioco:      '#6B7480',  // testo terziario
-  fantasma:   '#4A525C',  // placeholder, testo disabilitato
+  // ⚠️⚠️ **`fantasma` è SOLO segnaposto e disabilitato**, mai un messaggio da
+  // leggere. Sta a **2,27:1**, sotto il minimo leggibile, ed è giusto così
+  // perché il testo disabilitato è escluso dal requisito — ma il 21/10/2026
+  // vestiva anche *"Nessuna partita inserita oggi"*, cioè l'unica cosa che la
+  // Dashboard aveva da dire, e quindici altri messaggi fra stati vuoti,
+  // spiegazioni e la legenda. **Trovato guardando una schermata**, non il
+  // codice: in mezzo a cinquanta usi, i due mestieri non si distinguevano.
+  // Uno stato vuoto, una spiegazione o un avviso usano `spento`.
+  fantasma:   '#4A525C',  // SOLO placeholder e testo disabilitato
   inattivo:   '#5A626C',  // icone tab non selezionate
 
   // Grigi neutri: caselle senza esito, linee, dettagli

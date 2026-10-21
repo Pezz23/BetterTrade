@@ -442,7 +442,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
             </div>
           )}
           {forma.scontri.length === 0
-            ? <div style={{ fontSize: S.base, color: C.fantasma, fontFamily: F.sans }}>nessun precedente in archivio (dal 2016)</div>
+            ? <div style={{ fontSize: S.base, color: C.spento, fontFamily: F.sans }}>nessun precedente in archivio (dal 2016)</div>
             : (() => {
               // Chi ha vinto, dal punto di vista delle due squadre di domani.
               const esitoPer = (s, squadra) =>
@@ -596,7 +596,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
       {/* Sul telefono si torna indietro anche trascinando: va detto, o il
           gesto resta nascosto. */}
       {tocco && onChiudi && (
-        <div style={{ textAlign: 'center', fontSize: S.minuta, color: C.fantasma, fontFamily: F.sans, marginTop: 2 }}>
+        <div style={{ textAlign: 'center', fontSize: S.minuta, color: C.spento, fontFamily: F.sans, marginTop: 2 }}>
           ‹ trascina da sinistra a destra per tornare alla lista
         </div>
       )}
@@ -654,7 +654,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
               <span style={{ color: C.spento }}>fonte · scaricato</span>
               <span style={{ color: C.grigio }}>{p.fonte || '—'} · {new Date(p.scaricato_il).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
             </div>
-            {forma && <div style={{ marginTop: 6, fontSize: S.minuta, fontFamily: F.sans, color: C.fantasma }}>forma e classifica: stagione {`20${forma.stagione.slice(0, 2)}/${forma.stagione.slice(2)}`}</div>}
+            {forma && <div style={{ marginTop: 6, fontSize: S.minuta, fontFamily: F.sans, color: C.spento }}>forma e classifica: stagione {`20${forma.stagione.slice(0, 2)}/${forma.stagione.slice(2)}`}</div>}
           </Blocco>
         )}
       </div>

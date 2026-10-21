@@ -266,7 +266,7 @@ export default function BilancioPage() {
           </div>
           {showAllMov&&(
             <div style={stileCard({overflow:'hidden',marginBottom:16})}>
-              {tuttiMovimenti.length===0&&<div style={{padding:24,textAlign:'center',color:C.fantasma,fontSize:S.media,fontFamily:F.sans}}>Nessun movimento</div>}
+              {tuttiMovimenti.length===0&&<div style={{padding:24,textAlign:'center',color:C.spento,fontSize:S.media,fontFamily:F.sans}}>Nessun movimento</div>}
               {tuttiMovimenti.map(m=>(
                 <div key={m.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 16px',borderBottom:`1px solid ${C.bordoTenue}`}}>
                   <div>
@@ -379,7 +379,7 @@ function StoricoPagina({storico}) {
     <>
       <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:8}}>Storico giornate</div>
       {storico.length===0?(
-        <div style={stileCard({padding:30,textAlign:'center',color:C.fantasma,fontSize:S.media,fontFamily:F.sans})}>
+        <div style={stileCard({padding:30,textAlign:'center',color:C.spento,fontSize:S.media,fontFamily:F.sans})}>
           Nessuna giornata registrata
         </div>
       ):(

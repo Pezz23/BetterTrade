@@ -289,7 +289,7 @@ export default function PartitePage() {
       </div>
 
       {righe.length > 0 && (
-        <div style={{ marginTop: 20, fontSize: S.base, color: C.fantasma, fontFamily: F.sans, lineHeight: 1.7 }}>
+        <div style={{ marginTop: 20, fontSize: S.base, color: C.spento, fontFamily: F.sans, lineHeight: 1.7 }}>
           <b style={{ color: C.fioco }}>Come leggere.</b> L'attendibilità è la probabilità che la giocata vinca, secondo il consenso
           del mercato (media di ~40 book, tolto il margine). Sui favoriti il mercato è calibrato: un 75% vince tre volte su quattro.
           La X secca non viene mai proposta, e nemmeno la doppia chance. Sotto 1,25 si aggiunge l'over 1,5.

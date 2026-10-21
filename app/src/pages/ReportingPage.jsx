@@ -355,9 +355,9 @@ export default function ReportingPage() {
       )}
 
       {giornate.length===0?(
-        <div style={stileCard({padding:'60px 24px',textAlign:'center',color:C.fantasma,fontSize:S.grande,fontFamily:F.sans})}>
+        <div style={stileCard({padding:'60px 24px',textAlign:'center',color:C.spento,fontSize:S.grande,fontFamily:F.sans})}>
           Nessuna giornata salvata.<br/>
-          <span style={{fontSize:S.corpo,color:C.bordoChiaro}}>Inserisci le partite nella Slot e premi "Salva giornata".</span>
+          <span style={{fontSize:S.corpo,color:C.fioco}}>Inserisci le partite nella Slot e premi "Salva giornata".</span>
         </div>
       ):(
         <div style={{overflowX:'auto',WebkitOverflowScrolling:'touch'}}>
