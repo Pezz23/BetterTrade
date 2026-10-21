@@ -361,7 +361,13 @@ function BottoneGiocata({attiva, isAdmin, onCambia, piena}) {
       <div style={{display:'flex',alignItems:'center',gap:12}}>
         <button onClick={()=>isAdmin&&onCambia(!attiva)} disabled={!isAdmin}
           aria-pressed={attiva}
-          style={{width:26,height:26,flex:'0 0 26px',cursor:isAdmin?'pointer':'default',
+      /* ⚠️⚠️ **`opacity: 1` scritta qui apposta.** `index.css` spegne al 45%
+         ogni `<button>` disabilitato, ed è giusto per un comando che non si
+         può premere — ma questo **mostra un dato a chi non lo può toccare**:
+         un utente normale legge da qui se la spin è già stata
+         giocata — ed è scritto in CLAUDE.md che la spunta la toccano solo gli
+         admin ma **la vedono tutti**. */
+        style={{opacity:1,width:26,height:26,flex:'0 0 26px',cursor:isAdmin?'pointer':'default',
             background:attiva?C.verde:'transparent', border:`2px solid ${attiva?C.verde:C.bordo}`,
             borderRadius:5, color:C.fondo, fontSize:S.titolo, lineHeight:1, display:'flex',
             alignItems:'center', justifyContent:'center', fontFamily:F.mono}}>

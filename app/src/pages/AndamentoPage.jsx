@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
-import { C, F, alpha, S } from '../theme'
-import { Card, Etichetta, TastoRipeti } from '../components/ui'
+import { C, F, alpha, S, SP } from '../theme'
+import { Card, Etichetta, TastoRipeti, Attesa } from '../components/ui'
 import { gg } from '../lib/formato'
 import {
   METODI, SOGLIE_BASE, FASCE_QUOTA, FASCIA_BASE, QUOTA_MIN, QUOTA_MAX, PASSO_QUOTA,
@@ -153,7 +153,7 @@ function CardPiega({ titolo, colore = C.oro, riassunto, aperta, onTocca, childre
  */
 function Risultato({ righe, ...resto }) {
   if (righe === null)
-    return <div style={{ fontSize: S.base, fontFamily: F.mono, color: C.spento, padding: '8px 0' }}>carico…</div>
+    return <Attesa style={{ padding: `${SP.m}px 0` }} />
   if (typeof righe === 'string')
     return <div style={{ fontSize: S.base, fontFamily: F.mono, color: C.rosso, padding: '8px 0' }}>non riesco a leggere le partite: {righe}</div>
   return <Elenco righe={righe} {...resto} />
@@ -504,7 +504,7 @@ export default function AndamentoPage() {
           titolo="LE PARTITE CON TUTTI E QUATTRO SOPRA SOGLIA" />
       </CardPiega>
 
-      {gruppi === null && <div style={{ fontSize: S.base, fontFamily: F.mono, color: C.spento }}>carico…</div>}
+      {gruppi === null && <Attesa style={{ padding: 0 }} />}
       {/* ⚠️ Un elenco tagliato va detto. È la stessa lezione del troncamento a
           1000: un limite che non si vede fa credere di guardare tutto. */}
       {chiavi?.length === 400 && (

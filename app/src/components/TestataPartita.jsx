@@ -81,7 +81,12 @@ export function Stella({ voti, mio, puoVotare, onVota }) {
   return (
     <button onClick={e => { e.stopPropagation(); if (puoVotare) onVota() }} disabled={!puoVotare}
       title={puoVotare ? (mio ? 'Togli il tuo voto' : 'Vota questa partita') : `${voti} voti`}
-      style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20,
+      /* ⚠️⚠️ **`opacity: 1` scritta qui apposta.** `index.css` spegne al 45%
+         ogni `<button>` disabilitato, ed è giusto per un comando che non si
+         può premere — ma questo **mostra un dato a chi non lo può toccare**:
+         un utente normale legge da qui quante stelline ha la partita.
+         Spegnerlo vorrebbe dire nascondere l'informazione a metà del gruppo. */
+      style={{ opacity: 1, display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20,
         background: voti ? alpha(C.oro, 0.10) : 'transparent', border: `1px solid ${voti ? alpha(C.oro, 0.3) : C.bordo}`,
         cursor: puoVotare ? 'pointer' : 'default' }}>
       <span style={{ fontSize: S.titolo, lineHeight: 1, color: mio ? C.oro : voti ? alpha(C.oro, 0.55) : C.fioco }}>{voti ? '★' : '☆'}</span>

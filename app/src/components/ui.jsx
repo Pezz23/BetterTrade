@@ -34,8 +34,51 @@ export const stileCard = (style, colore) => ({
   ...style,
 })
 
-export function Card({ children, style, colore, ...resto }) {
-  return <div style={stileCard(style, colore)} {...resto}>{children}</div>
+/**
+ * ⚠️⚠️ **Una card con `onClick` diventa un pulsante vero.** Prima era un
+ * `<div>` con un gestore sopra: col dito funzionava, ma **da tastiera non
+ * esisteva** — non si poteva raggiungere col tabulatore né premere con Invio,
+ * e nessuno strumento di lettura la annunciava come toccabile. La riga della
+ * lista delle partite è una di queste, cioè l'elemento più cliccato dell'app.
+ * ⚠️ `role` e `tabIndex` si mettono **solo** quando c'è `onClick`: metterli
+ * sempre riempirebbe il giro del tabulatore di riquadri che non fanno niente.
+ */
+export function Card({ children, style, colore, onClick, ...resto }) {
+  const tocca = typeof onClick === 'function'
+  return (
+    <div
+      style={stileCard(tocca ? { cursor: 'pointer', ...style } : style, colore)}
+      onClick={onClick}
+      {...(tocca ? {
+        role: 'button',
+        tabIndex: 0,
+        onKeyDown: (e) => {
+          // ⚠️ Invio **e** spazio: sono i due tasti che un pulsante accetta, e
+          // lo spazio va fermato o la pagina scorre sotto le dita.
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(e) }
+        },
+      } : {})}
+      {...resto}>
+      {children}
+    </div>
+  )
+}
+
+/**
+ * L'attesa, in un posto solo.
+ * ⚠️ Era scritta a mano in **cinque pagine** con tre testi diversi — *carico…*,
+ * *Caricamento…*, *carico i dati…* — e tre stili leggermente diversi. Una
+ * schermata che aspetta è la prima cosa che si vede quando qualcosa va piano:
+ * se dice tre parole diverse sembrano tre cose diverse.
+ * ⚠️ **Non è un'animazione**: un giro che ruota su una lettura da 150 ms è
+ * sfarfallio, non informazione.
+ */
+export function Attesa({ children = 'carico…', style }) {
+  return (
+    <div style={{ fontSize: S.base, fontFamily: F.mono, color: C.spento, padding: SP.xxl, ...style }}>
+      {children}
+    </div>
+  )
 }
 
 // L'etichetta piccola in maiuscolo che intesta ogni sezione.
@@ -58,13 +101,13 @@ export function Etichetta({ children, colore = C.spento, style }) {
 export function StatCard({ label, value, sub, color, small }) {
   return (
     <Card>
-      <Etichetta style={{ marginBottom: 6 }}>{label}</Etichetta>
+      <Etichetta style={{ marginBottom: SP.s }}>{label}</Etichetta>
       <div style={{
-        fontSize: small ? 18 : 22,
+        fontSize: small ? S.titolo : S.evidenza,
         fontWeight: 700,
         color: color || C.testo,
         fontFamily: F.mono,
-        marginBottom: sub ? 3 : 0,
+        marginBottom: sub ? SP.xs : 0,
       }}>{value}</div>
       {sub && <div style={{ fontSize: S.base, color: C.spento, fontFamily: F.mono }}>{sub}</div>}
     </Card>
@@ -80,14 +123,16 @@ export function Btn({ children, variante = 'contorno', colore = C.oro, style, ..
     pericolo: { background: alpha(C.rosso, 0.08), border: `1px solid ${alpha(C.rosso,0.2)}`, color: C.rosso },
   }[variante]
   return (
+    /* ⚠️ Il colore spento e il cursore del disabilitato **non sono più qui**:
+       li dà `index.css` a ogni `<button>` dell'app, così i 58 tasti scritti a
+       mano nelle pagine si comportano come questo invece di ognuno a modo suo. */
     <button style={{
-      borderRadius: 8,
-      padding: '10px 18px',
+      borderRadius: R.m,
+      padding: `${SP.l}px ${SP.sez - SP.s}px`,
       fontSize: S.media,
       fontWeight: 600,
       fontFamily: F.sans,
-      cursor: resto.disabled ? 'default' : 'pointer',
-      opacity: resto.disabled ? 0.5 : 1,
+      cursor: 'pointer',
       ...stili,
       ...style,
     }} {...resto}>
@@ -102,8 +147,8 @@ export function Input({ style, ...resto }) {
     <input style={{
       background: C.pozzo,
       border: `1px solid ${C.bordo}`,
-      borderRadius: 8,
-      padding: '10px 13px',
+      borderRadius: R.m,
+      padding: `${SP.l}px ${SP.l + SP.xs}px`,
       color: C.testo,
       fontSize: S.grande,
       fontFamily: F.sans,
@@ -130,8 +175,10 @@ export function Badge({ children, colore = C.oro, sfondo, style }) {
     <span style={{
       fontSize: S.minuta,
       fontWeight: 700,
-      padding: '3px 9px',
-      borderRadius: 20,
+      padding: `${SP.xs - 1}px ${SP.l - 1}px`,
+      // ⚠️ `R.pastiglia` (999) e non 20: su una targhetta bassa 20 è già un
+      // mezzo cerchio, ma con due righe di testo tornerebbe uno spigolo.
+      borderRadius: R.pastiglia,
       background: sfondo || alpha(colore, 0.12),
       color: colore,
       fontFamily: F.mono,

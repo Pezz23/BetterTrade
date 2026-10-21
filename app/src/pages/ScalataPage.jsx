@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { C, F, alpha, S } from '../theme'
-import { Card, Etichetta, TastoRipeti } from '../components/ui'
+import { Card, Etichetta, TastoRipeti, Attesa } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { usaProssime } from '../hooks/usaProssime'
 import { usaVpm } from '../hooks/usaVpm'
@@ -290,7 +290,7 @@ function Riparti({ quante, onAzzera }) {
 
 function Archivio({ storico, onAzzera }) {
   const chiuse = (storico || []).filter(s => s.stato === 'chiusa')
-  if (!storico) return <Card><div style={{ fontSize: S.base, fontFamily: F.mono, color: C.spento }}>carico…</div></Card>
+  if (!storico) return <Card><Attesa style={{ padding: 0 }} /></Card>
   if (!chiuse.length) return (
     <div>
       <Card><div style={{ fontSize: S.base, fontFamily: F.mono, color: C.spento, lineHeight: 1.6 }}>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabase'
 import { C, F, alpha, S } from '../theme'
-import { Card, Etichetta } from '../components/ui'
+import { Card, Etichetta, Attesa } from '../components/ui'
 import { CATEGORIE, pct, giorno } from '../components/TestataPartita'
 import { valuta, categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
 import { usaProssime } from '../hooks/usaProssime'
@@ -116,7 +116,7 @@ export default function StoricoPage() {
   // ⚠️ Si aspettano **entrambe**: senza, per un istante la pagina scriveva
   // *"partite future 0"* con un periodo vuoto — un numero sbagliato mostrato
   // come se fosse quello giusto.
-  if (caricamento || caricaFuture) return <div style={{ padding: 16, color: C.spento, fontFamily: F.mono, fontSize: S.corpo }}>Carico…</div>
+  if (caricamento || caricaFuture) return <Attesa />
 
   return (
     <div style={{ padding: 16, maxWidth: 760, margin: '0 auto' }}>

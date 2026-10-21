@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../supabase'
 import { C, F, alpha, S } from '../theme'
-import { Card, Etichetta } from '../components/ui'
+import { Card, Etichetta, Attesa } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { sigla } from '../lib/campionati'
 // ⚠️ `ggAnno` e non `gg`: questa coda attraversa gli anni, e una data senza
@@ -87,7 +87,7 @@ export default function ImportazioniPage() {
         <div style={{ color: C.rosso, fontSize: S.corpo }}>{errore}</div>
       </Card>}
 
-      {righe === null && <div style={{ fontSize: S.base, fontFamily: F.mono, color: C.spento }}>carico…</div>}
+      {righe === null && <Attesa style={{ padding: 0 }} />}
       {righe?.length === 0 && (
         <Card><div style={{ fontSize: S.media, color: C.spento, textAlign: 'center', padding: '24px 8px' }}>
           {stato === 'da_verificare' ? 'Niente in sospeso: tutto si è agganciato da solo.' : 'Nessuna.'}
