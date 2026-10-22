@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import { C, F, alpha, S, SP, R } from './theme'
 import Icona from './components/Icona'
+import { COLONNA } from './lib/layout'
 import { VERSIONE } from './versione'
 
 // ⚠️⚠️ **Ogni pagina è un pezzo a parte, scaricato quando la apri** (21/10/2026).
@@ -28,13 +29,9 @@ const AndamentoPage = lazy(() => import('./pages/AndamentoPage'))
 const ImportazioniPage = lazy(() => import('./pages/ImportazioniPage'))
 const ScalataPage = lazy(() => import('./pages/ScalataPage'))
 
-// ⚠️⚠️ **Una colonna sola per tutta l'app** (21/10/2026). Il contenuto era già
-// incolonnato a 720, ma header e tab bar restavano larghi quanto la finestra:
-// su un portatile il nome dell'utente finiva all'estremo destro, il logo
-// all'estremo sinistro e la pagina in mezzo — **tre allineamenti diversi**, e
-// quattro tasti larghi 320 px con la riga d'oro lunga un terzo di schermo.
-// Su telefono non cambia niente, perché 375 è sotto il limite.
-export const COLONNA = 720
+// ⚠️ `COLONNA` è salita in `lib/layout.js`: dal 22/10/2026 la legge anche
+// `BarraCampionati`, e un componente che importa da `App.jsx` chiude un anello
+// con il `lazy` delle pagine. Il perché dei 720 è scritto là.
 
 // ── Tab bar bottom ────────────────────────────────────────────────────────────
 // ⚠️ **Rifatta il 12/10/2026, scelta di Mattia**: in basso stanno le pagine del

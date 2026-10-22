@@ -4,11 +4,12 @@ import { usaVpm } from '../hooks/usaVpm'
 import { useAuth } from '../context/AuthContext'
 import { C, F, alpha, S, R } from '../theme'
 import { Card, Etichetta, TastoRipeti, stileCard } from '../components/ui'
-import RigaPartita, { CATEGORIE, pct, giorno } from '../components/RigaPartita'
+import RigaPartita, { CATEGORIE, giorno } from '../components/RigaPartita'
 import SchedaScorrevole from '../components/SchedaScorrevole'
 import DettaglioPartita from '../components/DettaglioPartita'
 import { categoria, FINESTRE, SOGLIE_DEFAULT } from '../lib/attendibilita'
 import { etichetta, sigla } from '../lib/campionati'
+import BarraCampionati, { LARGHEZZA_BARRA } from '../components/BarraCampionati'
 import { valutaPartita, VPM_NETTO } from '../lib/vpm'
 import { ORDINI, ORDINE_DEFAULT, confronto } from '../lib/ordine'
 import LegendaPartite from '../components/LegendaPartite'
@@ -44,18 +45,51 @@ const pillola = (on, colore = C.oro) => ({
   border: `1px solid ${on ? alpha(colore, 0.5) : 'transparent'}`,
   color: on ? colore : C.spento,
 })
+// Un decimale con la virgola: lo usano le targhette di VPM e voto, che sulla
+// loro scala contano i decimi (`7,5`) e non le unità.
+const n1 = (v) => Number(v).toFixed(1).replace('.', ',')
+/**
+ * Le quattro manopole dei filtri: un minimo per indicatore.
+ *
+ * ⚠️ **In un elenco e non quattro blocchi copiati**: sono la stessa domanda su
+ * quattro numeri, e scritte a mano sarebbero quattro posti dove cambiare un
+ * passo o un colore. ⚠️ I colori sono quelli con cui lo stesso indicatore è
+ * scritto nella riga e nei tasti dell'ordine: un numero che cambia tinta fra
+ * due schermate si impara due volte.
+ * ⚠️ `voto` arriva a **10** e non a 100: dal 22/10/2026 è una pagella, non una
+ * percentuale.
+ */
+const MANOPOLE = [
+  { id: 'att',    label: 'attendibilità ≥', passo: 1,   max: 100, colore: C.menta,   mostra: v => `${v}%` },
+  { id: 'vpm',    label: 'VPM ≥',           passo: 0.5, max: 30,  colore: C.celeste, mostra: v => n1(v) },
+  { id: 'scelta', label: 'scelta ≥',        passo: 1,   max: 100, colore: C.verde,   mostra: v => `${v}%` },
+  { id: 'voto',   label: 'voto ≥',          passo: 0.5, max: 10,  colore: C.verde,   mostra: v => n1(v) },
+]
+
 const campo = { padding: '6px 10px', borderRadius: R.pastiglia, background: C.pozzo, border: `1px solid ${C.bordo}`, color: C.testo, fontFamily: F.mono, fontSize: S.base, outline: 'none', width: 74 }
 
 export default function PartitePage() {
   const { isAdmin } = useAuth()
   const { righe, vota, votiDi, mioVoto, caricamento, errore } = usaProssime()
   const datiVpm = usaVpm()
-  const [soglie, setSoglie] = useState(SOGLIE_DEFAULT)
+  // ⚠️ Non è più uno stato: dal 22/10/2026 le slitte non ci sono, e nessuno
+  // può muoverlo. Resta perché decide il **colore** delle card e il conteggio
+  // in cima — la categoria si legge ancora su ogni riga.
+  const soglie = SOGLIE_DEFAULT
   const [finestra, setFinestra] = useState('settimana')
   const [campionato, setCampionato] = useState('')
   const [quotaMin, setQuotaMin] = useState('')
   const [quotaMax, setQuotaMax] = useState('')
-  const [soloSopraSoglia, setSoloSopraSoglia] = useState(false)
+  // ⚠️⚠️ **Quattro minimi, uno per indicatore** (Mattia, 22/10/2026): stessa
+  // forma e stesso gesto, perché sono la stessa domanda fatta su quattro
+  // numeri. `0` vuol dire spento in tutti e quattro.
+  // ⚠️ Il confronto si fa sul numero **arrotondato come si vede**: col valore
+  // pieno una riga che mostra `62%` resterebbe fuori da una soglia di 62
+  // perché sotto c'è 0,6249. È la trappola già pagata in Andamento, nelle
+  // caselle dei gol e qui accanto con «scelta».
+  const [attMin, setAttMin] = useState(0)
+  const [vpmMin, setVpmMin] = useState(0)
+  const [votoMin, setVotoMin] = useState(0)
   // ⚠️⚠️ **«scelta» ha preso il posto di «voto minimo»** (Mattia, 22/10/2026),
   // ed è un numero e non un campo di testo: si muove col `+`/`−` come le
   // soglie di Andamento e della scalata. `0` vuol dire spento.
@@ -100,6 +134,12 @@ export default function PartitePage() {
   // in Italia, e parseFloat da solo lo leggerebbe come 1.
   const numero = t => { const n = parseFloat(String(t).replace(',', '.')); return Number.isFinite(n) ? n : null }
   const quotaMostrata = r => r.quotaGiocata ?? r.quota ?? null
+  const manopole = {
+    att: { valore: attMin, set: setAttMin },
+    vpm: { valore: vpmMin, set: setVpmMin },
+    scelta: { valore: sceltaMin, set: setSceltaMin },
+    voto: { valore: votoMin, set: setVotoMin },
+  }
 
   // VPM di ogni partita, una volta sola: il calcolo sta in lib/vpm.js, qui
   // solo la mappa id → valutazione, che serve alla riga e al filtro.
@@ -127,13 +167,25 @@ export default function PartitePage() {
     return METODI.every(m => sopra(riga, m.id, SOGLIE_BASE))
   }, [vpmDi])
 
-  const visibili = useMemo(() => {
+  // ⚠️⚠️ **Il filtro del campionato è uscito dalla catena**, e non è un
+  // riordino estetico: la barra a destra scrive accanto a ogni lega quante
+  // partite lascerebbe, e quel numero deve tenere conto di **tutti gli altri
+  // filtri accesi** ma non di sé stesso — altrimenti, scelta una lega, tutte
+  // le altre direbbero zero e la barra non servirebbe più a cambiare lega.
+  const filtrate = useMemo(() => {
     const qMin = numero(quotaMin), qMax = numero(quotaMax)
     return inFinestra
-      .filter(r => campionato ? r.div === campionato : true)
       .filter(r => qMin === null ? true : quotaMostrata(r) !== null && quotaMostrata(r) >= qMin)
       .filter(r => qMax === null ? true : quotaMostrata(r) !== null && quotaMostrata(r) <= qMax)
-      .filter(r => soloSopraSoglia ? categoria(r.probGiocata, soglie) !== 'no' : true)
+      .filter(r => attMin <= 0 || (r.probGiocata != null && Math.round(r.probGiocata * 100) >= attMin))
+      .filter(r => { if (vpmMin <= 0) return true
+        const p = vpmDi.get(r.id)?.punti; return p != null && Math.round(p * 100) / 100 >= vpmMin })
+      // ⚠️ Il voto è una **pagella da 0 a 10** dal 22/10/2026, non più una
+      // percentuale: un `votoMin` c'era già e si confrontava con `1,00`.
+      // Stesso nome, scala diversa — ed è il motivo per cui non è tornato
+      // com'era.
+      .filter(r => { if (votoMin <= 0) return true
+        const v = vpmDi.get(r.id)?.voto; return v != null && Math.round(v * 10) / 10 >= votoMin })
       // il voto è una percentuale: si scrive 100 e si confronta con 1,00
       // ⚠️ Il confronto si fa sul numero **arrotondato come si vede**: con il
       // valore pieno una riga che mostra `62%` resterebbe fuori da una soglia
@@ -151,7 +203,19 @@ export default function PartitePage() {
       // funziona sempre su quello che è rimasto, senza un secondo elenco da
       // tenere allineato. Il confronto sta in lib/ordine.js.
       .sort(confronto(ordine, vpmDi, crescente))
-  }, [inFinestra, campionato, quotaMin, quotaMax, soloSopraSoglia, soglie, sceltaMin, soloVpmContro, daccordo, tuttiDaccordo, vpmDi, ordine, crescente])
+  }, [inFinestra, quotaMin, quotaMax, attMin, vpmMin, votoMin, sceltaMin, soloVpmContro, daccordo, tuttiDaccordo, vpmDi, ordine, crescente])
+
+  const visibili = useMemo(
+    () => campionato ? filtrate.filter(r => r.div === campionato) : filtrate,
+    [filtrate, campionato])
+
+  // ⚠️ Una `Map` e non un oggetto: le sigle sono chiavi che arrivano dai dati,
+  // e un oggetto porta dietro le sue proprietà ereditate.
+  const perCampionato = useMemo(() => {
+    const m = new Map()
+    for (const r of filtrate) m.set(r.div, (m.get(r.div) ?? 0) + 1)
+    return m
+  }, [filtrate])
 
   const conteggi = useMemo(() => {
     const c = { centro: 0, giallo: 0, blu: 0 }
@@ -174,11 +238,14 @@ export default function PartitePage() {
     campionato && { id: 'camp', label: sigla(campionato), colore: C.blu, togli: () => setCampionato('') },
     quotaMin && { id: 'qmin', label: `quota ≥ ${quotaMin}`, togli: () => setQuotaMin('') },
     quotaMax && { id: 'qmax', label: `quota ≤ ${quotaMax}`, togli: () => setQuotaMax('') },
+    attMin > 0 && { id: 'att', label: `att ≥ ${attMin}%`, colore: C.menta, togli: () => setAttMin(0) },
+    vpmMin > 0 && { id: 'vpm', label: `VPM ≥ ${n1(vpmMin)}`, colore: C.celeste, togli: () => setVpmMin(0) },
     sceltaMin > 0 && { id: 'scelta', label: `scelta ≥ ${sceltaMin}%`, colore: C.verde, togli: () => setSceltaMin(0) },
-    soloSopraSoglia && { id: 'soglia', label: 'sopra soglia', togli: () => setSoloSopraSoglia(false) },
+    votoMin > 0 && { id: 'voto', label: `voto ≥ ${n1(votoMin)}`, colore: C.verde, togli: () => setVotoMin(0) },
     soloVpmContro && { id: 'vpm', label: 'campo contro mercato', colore: C.rosso, togli: () => setSoloVpmContro(false) },
   ].filter(Boolean)
-  const azzera = () => { setCampionato(''); setQuotaMin(''); setQuotaMax(''); setSceltaMin(0); setSoloSopraSoglia(false); setSoloVpmContro(false); setDaccordo(false) }
+  const azzera = () => { setCampionato(''); setQuotaMin(''); setQuotaMax(''); setAttMin(0); setVpmMin(0)
+    setSceltaMin(0); setVotoMin(0); setSoloVpmContro(false); setDaccordo(false) }
 
   // La scheda di una partita prende tutta la pagina: sul telefono è l'unico
   // modo di leggerla, e la lista resta dov'era quando si torna indietro.
@@ -186,7 +253,16 @@ export default function PartitePage() {
 
 
   return (
-    <div style={{ padding: '16px' }}>
+    // ⚠️⚠️ **Lo spazio per la barra si riserva, non si lascia coprire.** Una
+    // striscia `fixed` sopra la lista nasconderebbe la colonna di destra delle
+    // card — ed è il difetto che questo progetto ha già fotografato due volte.
+    // ⚠️ Riservato a **ogni larghezza**: su uno schermo largo la barra cade nel
+    // margine vuoto fuori dalla colonna e quei 40px sono solo aria, ma un conto
+    // che cambia col `vw` sarebbe una seconda definizione di dov'è il bordo.
+    <div style={{ padding: '16px', paddingRight: 16 + LARGHEZZA_BARRA }}>
+      <BarraCampionati campionati={campionati} conteggi={perCampionato}
+        attivo={campionato} totale={filtrate.length} onScegli={setCampionato} />
+
       <LegendaPartite />
 
       <Etichetta colore={C.oro} style={{ letterSpacing: 2, marginBottom: 4, fontFamily: F.sans }}>PARTITE</Etichetta>
@@ -279,13 +355,12 @@ export default function PartitePage() {
       {pannello && (
         <Card style={{ marginBottom: 12, padding: 14 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
-            <label>
-              <Etichetta style={{ marginBottom: 5 }}>campionato</Etichetta>
-              <select value={campionato} onChange={e => setCampionato(e.target.value)} style={{ ...campo, width: '100%', color: campionato ? C.testo : C.fioco }}>
-                <option value="">tutti</option>
-                {campionati.map(([d, nome]) => <option key={d} value={d}>{etichetta(d, nome)}</option>)}
-              </select>
-            </label>
+            {/* ⚠️ **Qui c'era la tendina del campionato, tolta il 22/10/2026**:
+                la barra a destra fa la stessa cosa con un tocco invece di
+                quattro, e due comandi per lo stesso filtro si allontanano —
+                uno dei due finisce per non essere più quello vero. Lo stato
+                `campionato` resta, lo scrive la barra, e la targhetta con la
+                ✕ continua a toglierlo da qui. */}
 
             <div>
               <Etichetta style={{ marginBottom: 5 }}>quota</Etichetta>
@@ -297,42 +372,42 @@ export default function PartitePage() {
               </div>
             </div>
 
-            <div>
-              {/* ⚠️ `TastoRipeti` si tiene premuto e accelera: è lo stesso
-                  pezzo di Andamento e del bankroll della scalata, e serve —
-                  da 0 a 62 sarebbero sessantadue tocchi. */}
-              <Etichetta style={{ marginBottom: 5 }}>scelta minima</Etichetta>
-              {/* ⚠️⚠️ **Qui c'erano anche due scorciatoie (61% · 62%) e
-                  USCIVANO DALLA CELLA DI 85px**, finendo disegnate sopra «solo
-                  sopra soglia» della colonna accanto — fotografato da Mattia
-                  il 22/10/2026. Il pannello è una griglia a due colonne: su
-                  375px ogni cella ha ~150px, e `−` + valore + `+` ne occupano
-                  già 146. **Non c'era spazio, e nessuno lo aveva misurato.**
-                  Le scorciatoie erano una mia aggiunta non richiesta: tolte,
-                  il comando resta quello che aveva chiesto lui.
-                  ⚠️ `flexWrap` e `minWidth: 0` restano come rete: se un giorno
-                  la riga ricresce, **va a capo invece di uscire**. Una misura
-                  fissa senza una via d'uscita non si stringe e non si taglia —
-                  esce, e si disegna sopra il vicino. */}
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', minWidth: 0 }}>
-                <TastoRipeti onScatto={() => setSceltaMin(v => Math.max(0, v - 1))}>−</TastoRipeti>
-                <div style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700,
-                  color: sceltaMin > 0 ? C.oro : C.spento, minWidth: 48, textAlign: 'center' }}>
-                  {sceltaMin > 0 ? `${sceltaMin}%` : 'tutte'}
+            {/* ⚠️⚠️ **I quattro indicatori, stessa forma e stesso gesto.**
+                Prima c'era solo «scelta minima», e il voto era stato tolto il
+                22/10 perché diceva `resa × fattore(VPM)`; adesso è una
+                pagella 0-10 e torna, con la sua scala.
+                ⚠️ `TastoRipeti` si tiene premuto e accelera: è lo stesso pezzo
+                di Andamento e del bankroll della scalata, e serve — da 0 a 62
+                sarebbero sessantadue tocchi.
+                ⚠️⚠️ **Qui dentro ci stanno `−`, il valore e `+`, e basta.**
+                Il 22/10 due scorciatoie (61% · 62%) uscivano dalla cella di
+                85px e finivano disegnate sopra la colonna accanto: su 375px
+                ogni cella ha ~150px e quei tre comandi ne occupano già 146.
+                `flexWrap` e `minWidth: 0` restano come rete — se la riga
+                ricresce **va a capo invece di uscire**. */}
+            {MANOPOLE.map(m => {
+              const v = manopole[m.id].valore
+              return (
+                <div key={m.id}>
+                  <Etichetta style={{ marginBottom: 5 }}>{m.label}</Etichetta>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', minWidth: 0 }}>
+                    <TastoRipeti onScatto={() => manopole[m.id].set(x => Math.max(0, Math.round((x - m.passo) * 10) / 10))}>−</TastoRipeti>
+                    <div style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700,
+                      color: v > 0 ? m.colore : C.spento, minWidth: 48, textAlign: 'center' }}>
+                      {v > 0 ? m.mostra(v) : 'tutte'}
+                    </div>
+                    <TastoRipeti onScatto={() => manopole[m.id].set(x => Math.min(m.max, Math.round((x + m.passo) * 10) / 10))}>+</TastoRipeti>
+                  </div>
                 </div>
-                <TastoRipeti onScatto={() => setSceltaMin(v => Math.min(100, v + 1))}>+</TastoRipeti>
-              </div>
-            </div>
+              )
+            })}
 
             <div>
-              <Etichetta style={{ marginBottom: 5 }}>categorie</Etichetta>
-              <button onClick={() => setSoloSopraSoglia(v => !v)} style={{ ...pillola(soloSopraSoglia), width: '100%' }}>
-                {soloSopraSoglia ? 'solo sopra soglia' : 'anche sotto soglia'}
-              </button>
-            </div>
-
-            <div>
-              <Etichetta style={{ marginBottom: 5 }}>VPM</Etichetta>
+              {/* ⚠️ Si chiamava «VPM», e adesso accanto c'è una manopola
+                  «VPM ≥»: due celle con la stessa etichetta e due comandi
+                  diversi sotto. Questo non è una soglia — è *quali* partite,
+                  non *quanto*. */}
+              <Etichetta style={{ marginBottom: 5 }}>campo contro mercato</Etichetta>
               <button onClick={() => setSoloVpmContro(v => !v)} disabled={!datiVpm}
                 style={{ ...pillola(soloVpmContro, C.rosso), width: '100%', opacity: datiVpm ? 1 : 0.4 }}>
                 {soloVpmContro ? 'solo campo ≠ mercato' : 'tutte'}
@@ -340,19 +415,15 @@ export default function PartitePage() {
             </div>
           </div>
 
-          <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C.bordoChiaro}` }}>
-            <Etichetta style={{ marginBottom: 8 }}>soglie di probabilità — le aggiustate voi guardando le partite vere</Etichetta>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10 }}>
-              {['centro', 'giallo', 'blu'].map(k => (
-                <label key={k} style={{ fontSize: S.base, fontFamily: F.mono, color: CATEGORIE[k].colore }}>
-                  {CATEGORIE[k].nome} ≥ {pct(soglie[k])}
-                  <input type="range" min="40" max="95" step="1" value={Math.round(soglie[k] * 100)}
-                    onChange={e => setSoglie(s => ({ ...s, [k]: Number(e.target.value) / 100 }))}
-                    style={{ width: '100%', accentColor: CATEGORIE[k].colore }} />
-                </label>
-              ))}
-            </div>
-          </div>
+          {/* ⚠️⚠️ **Le tre slitte delle soglie di probabilità sono state tolte
+              il 22/10/2026** (Mattia: *"le spin stanno passando in secondo
+              piano"*): erano il comando con cui si tarava la spin, e qui
+              dentro non c'è più una spin da tarare.
+              ⚠️ **I numeri restano**: `SOGLIE_DEFAULT` continua a decidere il
+              colore delle card (CENTRO · GIALLA · BLU) e il conteggio in cima.
+              Quello che se ne va è la possibilità di muoverli da questa
+              pagina, non le categorie — che sono ancora la prima cosa che si
+              legge su una riga. */}
         </Card>
       )}
 
