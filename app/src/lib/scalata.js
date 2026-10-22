@@ -299,10 +299,21 @@ export function incassa({ numero, posta, quota, ultimo = false, postaIniziale = 
  * le soglie strette quasi un giorno su due non ha nemmeno due gambe sopra
  * 1,30, e la pagina deve poterlo dire invece di mostrare un piano finto.
  */
-export function componiPasso(candidate, { quotaMinima, maxGambe = MAX_GAMBE, pavimento = QUOTA_MINIMA_GAMBA } = {}) {
+/**
+ * ⚠️⚠️ **La usa anche il BET BUILDER** (22/10/2026), e non è un riuso
+ * disinvolto: *un passo della scalata* e *una schedina a quota obiettivo* sono
+ * **la stessa cosa** — gambe prese dalle migliori finché il prodotto arriva a
+ * una quota. Scriverne due sarebbe stato il difetto di famiglia di questo
+ * progetto: due copie che prima o poi divergono.
+ * ⚠️ `ordina` dice **con che criterio** si prendono le migliori. La scalata
+ * usa l'attendibilità (il miglior selettore misurato); il Bet Builder lascia
+ * scegliere a Mattia schedina per schedina — voto, attendibilità, scelta o VPM.
+ */
+export function componiPasso(candidate, { quotaMinima, maxGambe = MAX_GAMBE,
+  pavimento = QUOTA_MINIMA_GAMBA, ordina = (c) => c.att ?? 0 } = {}) {
   const buone = (candidate || [])
     .filter(c => Number(c.quota) >= pavimento)
-    .sort((a, b) => (b.att ?? 0) - (a.att ?? 0))
+    .sort((a, b) => (ordina(b) ?? -1) - (ordina(a) ?? -1))
   if (!buone.length) return { gambe: null, quota: null, motivo: `nessuna partita sopra quota ${pavimento.toFixed(2)}` }
 
   const gambe = []

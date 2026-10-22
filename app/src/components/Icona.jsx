@@ -38,6 +38,13 @@ const SEGNI = {
     <rect x="2.5" y="4.5" width="19" height="15" rx="2" /><path d="M12 4.5v15" /><circle cx="12" cy="12" r="3.2" />
   </>,
   stella: <path d="M12 3.5l2.6 5.3 5.9.9-4.25 4.15 1 5.85L12 16.9l-5.25 2.8 1-5.85L3.5 9.7l5.9-.9z" />,
+  // 🎟️ il biglietto del Bet Builder: un rettangolo col tagliando staccabile.
+  // ⚠️ Non una forchetta di quote né un grafico: a 18px conta la **sagoma**,
+  // e un biglietto si riconosce dalla linea verticale che lo divide.
+  schedina: <>
+    <rect x="2.5" y="5.5" width="19" height="13" rx="2" /><path d="M9 5.5v13" />
+    <path d="M12.5 10h6" /><path d="M12.5 14h4" />
+  </>,
   // ⚑ il flag della scalata: l'asta resta un contorno anche da pieno, o
   // riempiendo il tracciato intero diventerebbe una macchia senza forma.
   bandiera: <>

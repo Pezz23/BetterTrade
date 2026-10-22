@@ -16,6 +16,7 @@ import { VERSIONE } from './versione'
 // qualcosa — l'opposto di quello che serve.
 // ⚠️ E **LoginPage nemmeno**: chi non ha fatto login vede solo quella.
 const SpinProvvisoriePage = lazy(() => import('./pages/SpinProvvisoriePage'))
+const BetBuilderPage = lazy(() => import('./pages/BetBuilderPage'))
 const VotatePage = lazy(() => import('./pages/VotatePage'))
 const StoricoPage = lazy(() => import('./pages/StoricoPage'))
 const UtentiPage = lazy(() => import('./pages/UtentiPage'))
@@ -53,7 +54,11 @@ export const COLONNA = 720
 // da 375. È la stessa ragione per cui Spin non si chiamava "Spin provvisorie".
 const TABS_BASE = [
   { id:'dashboard',   label:'Dashboard', icona:'dashboard' },
-  { id:'slot',        label:'Slot',      icona:'slot' },
+  // ⚠️ **Slot è scesa nel menu il 22/10/2026** e al suo posto c'è il Bet
+  // Builder: la griglia si compila una volta a settimana, la schedina a quota
+  // obiettivo si costruisce ogni volta che si gioca. In basso sta il **giro
+  // settimanale**, non l'importanza.
+  { id:'builder',     label:'Builder',   icona:'schedina' },
   // ⚠️ **Weekend non è più soloAdmin** (Mattia, 22/10/2026): la road map del
   // weekend la guardano tutti, e dal 22/10 `sql/34` apre la lettura delle
   // tabelle della scalata. A scrivere resta solo chi è admin, e il controllo
@@ -76,6 +81,7 @@ const VOCI_MENU = [
   { id:'storico',     label:'Storico',          icona:'storico', desc:'L\'archivio e come stanno andando le proposte' },
   // ⚠️ Scesa dalla barra in basso il 21/10/2026, dove ha preso il suo posto
   // Road to weekend.
+  { id:'slot',        label:'Slot',             icona:'slot', desc:'La griglia delle quattro spin', soloAdmin:true },
   { id:'provvisorie', label:'Spin',             icona:'spin', desc:'Le spin provvisorie: le candidate di questo weekend', soloAdmin:true },
   { id:'reporting',   label:'Reporting',        icona:'reporting', desc:'Le giornate registrate, per persona e per settimana' },
   { id:'bilancio',    label:'Bilancio',         icona:'bilancio', desc:'Saldi, movimenti e bankroll del gruppo' },
@@ -267,6 +273,7 @@ function AppShell() {
     switch(tab) {
       case 'dashboard': return <DashboardPage />
       case 'slot':      return <SlotPage />
+      case 'builder':   return <BetBuilderPage />
       case 'reporting': return <ReportingPage />
       case 'bilancio':  return <BilancioPage />
       case 'partite':   return <PartitePage />

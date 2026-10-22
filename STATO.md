@@ -44,14 +44,12 @@ stretta). Tutte verificate dal database subito dopo.
 | **le casse le vedono tutti** | aprendo la pagina agli utenti, bankroll, accumulo e archivio sono visibili a chi entra. Si toglie la card a chi non è admin — una riga — ma è una scelta sua |
 | **lo spezza a mano quasi non compare** | col taglio automatico a 2,00 i passi nascono già minimi, e un pezzo minimo non si divide in due pezzi che arrivino entrambi a 2,00. Riappare solo su un passo allungato a mano |
 | **un passo può avere 8 gambe** | `fasce()` raggruppa per orario e `MAX_GAMBE` vale solo per la proposta automatica. Mattia: *"decido io a mano"* |
-| **`prova-permessi.js` dall'API** | le policy nuove (`sql/33`, `34`, `35`) sono verificate **simulando** le sessioni dal database (ruolo `authenticated` + `request.jwt.claims`, dentro transazioni annullate); il giro vero dall'API vuole due password che ha solo lui |
 | ~~il lotto 1 non è stato guardato~~ | ✅ **guardato da Mattia il 22/10**, e il giro ha trovato una cosa: gli utenti vedevano *"ARCHIVIO 1"*. Corretto — l'archivio segue le casse |
 
 ### 📦 I LOTTI, nell'ordine concordato il 22/10
 
 | # | lotto | stato |
 |---|---|---|
-| **1** | **Chiudere la scalata**: soglia 61%, preferenze salvate, i soldi solo agli admin | ✅ **chiuso il 22/10** — resta solo `prova-permessi` dall'API |
 | **2** | **Le quattro rifiniture** (idee 2 · 4 · 5 · 7) | ✅ **fatto il 22/10** (`a542cf9`), più la testata rifatta su tre righe (`a095ce0`) e il difetto che Mattia ha fotografato nei filtri (`6bf1468`) |
 | **3** | **Gli indirizzi delle pagine** (lotto Q, routing) | da fare — **prima di aggiungere schermate nuove**, o si ricablano dopo. E toglie la trappola della mappa di `guarda.mjs` |
 | **4** | **La schedina a schermo** (idee 10 + 9): `schedina-weekend.js` esiste già, va portato in pagina; e `CompilaPerQuota` — ⚠️ **serve prima una risposta di Mattia**: compilare una spin **intera** o solo le caselle vuote? |

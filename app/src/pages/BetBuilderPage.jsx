@@ -1,0 +1,268 @@
+import { useState, useMemo } from 'react'
+import { C, F, alpha, S } from '../theme'
+import { Card, Etichetta, TastoRipeti, Attesa } from '../components/ui'
+import Icona from '../components/Icona'
+import { useAuth } from '../context/AuthContext'
+import { usaProssime } from '../hooks/usaProssime'
+import { usaVpm } from '../hooks/usaVpm'
+import { usaSchedine } from '../hooks/usaSchedine'
+import { valutaPartita } from '../lib/vpm'
+import { componiPasso, CONSIGLIATO, QUOTA_MINIMA_GAMBA } from '../lib/scalata'
+import { sigla } from '../lib/campionati'
+import { pct, gg, quando } from '../lib/formato'
+
+// 🎟️ BET BUILDER — la schedina a quota obiettivo.
+//
+// Mattia, 22/10/2026: *"voglio creare una schedina quota 5: lui deve
+// calcolarmi in automatico le partite per arrivare ad almeno quella quota, in
+// base ai filtri. E deve concedermi di creare più schedine, dove le nuove
+// escludono le partite già inserite — per non giocare due volte la stessa."*
+// E sul tono: ***"questa funzione deve essere più fanny che profittevole"***,
+// quindi qui dentro non ci sono prediche sul valore atteso. Il numero onesto
+// sta scritto una volta sola, in piccolo, e non torna a ogni schedina.
+//
+// ⚠️⚠️ **Non compone niente da sé**: la schedina la costruisce `componiPasso`
+// di `lib/scalata.js`, **la stessa funzione dei passi della scalata**. Un
+// passo e una schedina a quota obiettivo sono la stessa cosa — gambe prese
+// dalle migliori finché il prodotto arriva alla quota — e scriverne due
+// sarebbe il difetto di famiglia di questo progetto.
+// ⚠️ **Si ferma appena SUPERA la quota**, non appena ha abbastanza gambe: ogni
+// gamba moltiplica il margine del book, quindi la schedina giusta è la **più
+// corta** che arriva dove vuoi.
+
+/** I criteri con cui si scelgono le gambe. ⚠️ Si sceglie **schedina per
+ *  schedina** (richiesta di Mattia): il criterio finisce nel registro, così
+ *  fra due mesi si può confrontare quale sceglieva meglio. */
+const CRITERI = [
+  { id: 'voto',   label: 'voto',          val: (c) => c.voto },
+  { id: 'att',    label: 'attendibilità', val: (c) => c.att },
+  { id: 'scelta', label: 'scelta',        val: (c) => c.scelta },
+  { id: 'vpm',    label: 'VPM',           val: (c) => c.vpm },
+]
+
+const iniziaDopo = (p, istante) => {
+  const g = String(p.data).slice(0, 10)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(g)) return true
+  if (!p.ora) return new Date(`${g}T23:59:00`).getTime() >= istante
+  return new Date(`${g}T${String(p.ora).slice(0, 5)}:00`).getTime() >= istante
+}
+
+export default function BetBuilderPage() {
+  const { currentUser } = useAuth()
+  const { righe } = usaProssime()
+  const datiVpm = usaVpm()
+  const reg = usaSchedine(currentUser?.id)
+
+  const [attMin, setAttMin] = useState(CONSIGLIATO.att)
+  const [sceMin, setSceMin] = useState(0)
+  const [vpmMin, setVpmMin] = useState(0)
+  const [quotaGamba, setQuotaGamba] = useState(QUOTA_MINIMA_GAMBA)
+  const [obiettivo, setObiettivo] = useState(5)
+  const [criterio, setCriterio] = useState('voto')
+  const [avviso, setAvviso] = useState(null)
+  const [daOra] = useState(() => Date.now())
+
+  // ⚠️ VPM si calcola **una volta per partita**, non a ogni tocco di una
+  // soglia: è la cura che il 18/10 ha tolto i secondi alla scalata.
+  const valutate = useMemo(() => (righe || []).map(r => {
+    const v = datiVpm ? valutaPartita(datiVpm, r) : null
+    return { ...r, att: r.probGiocata, quota: r.quotaResa ?? r.quota,
+      scelta: v?.scelta ?? null, vpm: v?.punti ?? null, voto: v?.voto ?? null }
+  }), [righe, datiVpm])
+
+  // ⚠️⚠️ **Le già usate escono dalle candidate**, non dalla schedina dopo:
+  // è il senso della richiesta — *"non giocare due volte la stessa partita"*.
+  // Valgono tutte le schedine vive, bozze comprese.
+  const candidate = useMemo(() => valutate.filter(r =>
+    !reg.usate.has(r.id)
+    && !r.quoteIncoerenti
+    && iniziaDopo(r, daOra)
+    && r.att != null && r.att * 100 >= attMin
+    && (sceMin <= 0 || (r.scelta != null && r.scelta * 100 >= sceMin))
+    && (vpmMin <= 0 || (r.vpm != null && r.vpm >= vpmMin))
+    && (r.quota ?? 0) >= quotaGamba),
+    [valutate, reg.usate, attMin, sceMin, vpmMin, quotaGamba, daOra])
+
+  const proposta = useMemo(() => componiPasso(candidate, {
+    quotaMinima: obiettivo, maxGambe: 10, pavimento: quotaGamba,
+    ordina: CRITERI.find(c => c.id === criterio).val,
+  }), [candidate, obiettivo, criterio, quotaGamba])
+
+  if (!righe) return <Attesa>carico le partite…</Attesa>
+
+  const Tasto = ({ onClick, children, attivo, colore = C.oro, style }) => (
+    <button onClick={onClick} style={{ padding: '5px 10px', fontSize: S.base, fontFamily: F.sans, cursor: 'pointer',
+      color: attivo ? colore : C.spento, background: attivo ? `linear-gradient(${alpha(colore, .14)},${alpha(colore, .14)}), ${C.card}` : C.card,
+      border: `1px solid ${alpha(colore, attivo ? .5 : .18)}`, ...style }}>{children}</button>
+  )
+  const Numero = ({ label, valore, passo, set, min = 0 }) => (
+    <div style={{ display: 'contents' }}>
+      <div style={{ fontSize: S.corpo, fontFamily: F.sans, color: C.testo }}>{label}</div>
+      <TastoRipeti onScatto={() => set(v => Math.max(min, Math.round((v - passo) * 100) / 100))}>−</TastoRipeti>
+      <div style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700, color: C.oro, minWidth: 50, textAlign: 'center' }}>{valore}</div>
+      <TastoRipeti onScatto={() => set(v => Math.round((v + passo) * 100) / 100)}>+</TastoRipeti>
+    </div>
+  )
+
+  return (
+    <div style={{ padding: '12px 12px 90px' }}>
+      <h2 style={{ fontSize: S.titolo, fontFamily: F.sans, letterSpacing: '0.1em', color: C.testo, margin: '4px 0 10px' }}>BET BUILDER</h2>
+
+      {(avviso || reg.errore) && (
+        <Card onClick={() => setAvviso(null)} style={{ marginBottom: 10, borderColor: alpha(C.ambra, .45), cursor: 'pointer' }}>
+          <div style={{ color: C.ambra, fontSize: S.base, fontFamily: F.sans }}>{avviso || reg.errore}</div>
+        </Card>
+      )}
+
+      {/* ── Il materiale ────────────────────────────────────────────────── */}
+      <Card style={{ marginBottom: 10 }}>
+        <Etichetta>DA QUALI PARTITE</Etichetta>
+        <div style={{ display: 'grid', gridTemplateColumns: 'auto auto auto auto', gap: '4px 6px', alignItems: 'center', marginTop: 7 }}>
+          <Numero label="attendibilità ≥" valore={`${attMin}%`} passo={1} set={setAttMin} />
+          <Numero label="scelta ≥" valore={sceMin ? `${sceMin}%` : 'tutte'} passo={1} set={setSceMin} />
+          <Numero label="VPM ≥" valore={vpmMin ? vpmMin.toFixed(1).replace('.', ',') : 'tutti'} passo={0.5} set={setVpmMin} />
+          <Numero label="quota gamba ≥" valore={quotaGamba.toFixed(2).replace('.', ',')} passo={0.05} set={setQuotaGamba} min={1} />
+        </div>
+        <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.spento, marginTop: 7 }}>
+          <b style={{ color: C.testo }}>{candidate.length}</b> partite disponibili
+          {reg.usate.size > 0 && <> · <b style={{ color: C.testo }}>{reg.usate.size}</b> già in una schedina, escluse</>}
+        </div>
+      </Card>
+
+      {/* ── La schedina da costruire ────────────────────────────────────── */}
+      <Card style={{ marginBottom: 10, borderColor: alpha(C.oro, 0.45),
+        background: `linear-gradient(${alpha(C.oro, 0.045)},${alpha(C.oro, 0.045)}), ${C.card}` }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'auto auto auto auto', gap: '4px 6px', alignItems: 'center' }}>
+          <Numero label="quota da raggiungere" valore={obiettivo.toFixed(2).replace('.', ',')} passo={0.5} set={setObiettivo} min={1.1} />
+        </div>
+        {/* ⚠️ Il criterio si sceglie **per schedina** e finisce nel registro:
+            è l'unico modo per sapere, fra due mesi, quale sceglieva meglio. */}
+        <div style={{ display: 'flex', gap: 5, marginTop: 9, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Etichetta>LE MIGLIORI PER</Etichetta>
+          {CRITERI.map(c => (
+            <Tasto key={c.id} attivo={criterio === c.id} onClick={() => setCriterio(c.id)} colore={C.celestePieno}>{c.label}</Tasto>
+          ))}
+        </div>
+
+        {/* ⚠️ **La proposta si vede PRIMA di salvarla**: un tasto che scrive
+            nel registro qualcosa che non hai visto è il modo di riempirlo di
+            schedine buttate. */}
+        {proposta.gambe ? (
+          <div style={{ marginTop: 10 }}>
+            {proposta.gambe.map(g => <Gamba key={g.id} g={g} />)}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+              marginTop: 8, paddingTop: 8, borderTop: `1px solid ${alpha(C.testo, 0.1)}` }}>
+              <span style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.spento }}>
+                {proposta.gambe.length} gambe
+              </span>
+              <span style={{ fontFamily: F.mono, fontSize: S.titolo, fontWeight: 700, color: C.oro }}>
+                quota {proposta.quota.toFixed(2).replace('.', ',')}
+              </span>
+            </div>
+            <button disabled={reg.occupato}
+              onClick={async () => {
+                const r = await reg.crea({ quotaObiettivo: obiettivo, criterio, gambe: proposta.gambe })
+                setAvviso(r.errore ?? null)
+              }}
+              style={{ width: '100%', marginTop: 10, padding: '9px 0', cursor: 'pointer',
+                background: `linear-gradient(${alpha(C.verde, .12)},${alpha(C.verde, .12)}), ${C.card}`,
+                border: `1px solid ${alpha(C.verde, 0.5)}`, color: C.verde, fontFamily: F.sans, fontSize: S.base }}>
+              {reg.occupato ? 'salvo…' : '＋ TIENI QUESTA SCHEDINA'}
+            </button>
+          </div>
+        ) : (
+          <div style={{ marginTop: 10, fontSize: S.base, fontFamily: F.sans, color: C.spento, lineHeight: 1.6 }}>
+            {proposta.motivo}
+          </div>
+        )}
+      </Card>
+
+      {/* ── Le schedine tenute ──────────────────────────────────────────── */}
+      {reg.schedine === null ? <Attesa style={{ padding: 0 }} /> : reg.schedine.length === 0 ? (
+        <Card><div style={{ fontSize: S.base, fontFamily: F.sans, color: C.spento, lineHeight: 1.6 }}>
+          Nessuna schedina. Scegli la quota, guarda cosa propone e tienila: da lì in poi
+          quelle partite non torneranno nelle schedine dopo.
+        </div></Card>
+      ) : reg.schedine.map((s, i) => {
+        const quota = s.gambe.reduce((a, g) => a * Number(g.quota), 1)
+        const giocata = s.stato === 'giocata'
+        return (
+          <Card key={s.id} style={{ marginBottom: 8, borderColor: alpha(giocata ? C.verde : C.bordo, giocata ? 0.45 : 1) }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+              <Etichetta colore={giocata ? C.verde : C.oro}>
+                <Icona nome="schedina" misura={12} /> SCHEDINA {reg.schedine.length - i} · per {s.criterio}
+              </Etichetta>
+              <span style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700, color: C.oro }}>
+                quota {quota.toFixed(2).replace('.', ',')}
+              </span>
+            </div>
+            <div style={{ marginTop: 6 }}>{s.gambe.map(g => <Gamba key={g.id} g={g} />)}</div>
+            <div style={{ fontSize: S.micro, fontFamily: F.sans, color: C.fioco, marginTop: 6 }}>
+              obiettivo {Number(s.quota_obiettivo).toFixed(2).replace('.', ',')} · creata {quando(s.creata_il)}
+              {giocata && s.giocata_il && <> · <span style={{ color: C.verde }}>giocata {quando(s.giocata_il)}</span></>}
+            </div>
+            <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+              <button onClick={() => reg.segnaGiocata(s.id, !giocata)} style={{
+                flex: 1, padding: '6px 0', cursor: 'pointer', fontFamily: F.sans, fontSize: S.base,
+                color: giocata ? C.verde : C.spento,
+                background: giocata ? `linear-gradient(${alpha(C.verde, .14)},${alpha(C.verde, .14)}), ${C.card}` : C.card,
+                border: `1px solid ${alpha(C.verde, giocata ? 0.5 : 0.18)}`,
+              }}>{giocata ? '✓ giocata' : 'segna giocata'}</button>
+              <Cancella onCancella={() => reg.cancella(s.id)} />
+            </div>
+          </Card>
+        )
+      })}
+
+      {/* ⚠️ La frase onesta, **una volta sola e in fondo**: la resa di una
+          combinata è il prodotto delle rese, e una schedina da quota 5 vuole
+          quattro o cinque gambe. Mattia lo sa — *"più fanny che
+          profittevole"* — e ripeterlo a ogni schedina sarebbe una predica. */}
+      <div style={{ fontSize: S.micro, fontFamily: F.sans, color: C.fioco, textAlign: 'center', marginTop: 14, lineHeight: 1.5 }}>
+        una gamba nei favoriti corti rende ~98%, e in una combinata le rese si moltiplicano:
+        più gambe, più margine al banco. Qui si gioca per divertirsi.
+      </div>
+    </div>
+  )
+}
+
+/** Una gamba, uguale nella proposta e nel registro: **se fossero due pezzi,
+ *  prima o poi mostrerebbero due cose diverse.** */
+function Gamba({ g }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 30px 46px',
+      gap: 6, alignItems: 'center', padding: '5px 0', borderTop: `1px solid ${alpha(C.testo, 0.06)}` }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: S.micro, fontFamily: F.mono, color: C.spento, overflow: 'hidden', whiteSpace: 'nowrap' }}>
+          <b style={{ color: C.blu }}>{sigla(g.div)}</b> · {gg(g.data)} {String(g.ora || '').slice(0, 5)}
+          {g.att != null && <> · att <b style={{ color: C.testo }}>{pct(g.att)}</b></>}
+        </div>
+        <div style={{ fontSize: S.corpo, fontFamily: F.sans, color: C.testo, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {g.casa} — {g.trasferta}
+        </div>
+      </div>
+      <div style={{ fontFamily: F.mono, fontSize: S.corpo, fontWeight: 700, color: C.testo, textAlign: 'center' }}>{g.giocata}</div>
+      <div style={{ fontFamily: F.mono, fontSize: S.corpo, color: C.oro, textAlign: 'right' }}>
+        {Number(g.quota).toFixed(2).replace('.', ',')}
+      </div>
+    </div>
+  )
+}
+
+/** ⚠️ **La conferma è il tasto stesso**, come il «riparti da 0» della scalata:
+ *  un `confirm()` del browser si accetta senza leggerlo. Si disarma da solo
+ *  dopo tre secondi — un tasto rosso che resta armato è una trappola per il
+ *  tocco successivo. */
+function Cancella({ onCancella }) {
+  const [armato, setArmato] = useState(false)
+  return (
+    <button
+      onClick={() => { if (armato) { setArmato(false); onCancella() } else { setArmato(true); setTimeout(() => setArmato(false), 3000) } }}
+      style={{ padding: '6px 12px', cursor: 'pointer', fontFamily: F.sans, fontSize: S.base,
+        color: armato ? C.rosso : C.fioco,
+        background: armato ? `linear-gradient(${alpha(C.rosso, .14)},${alpha(C.rosso, .14)}), ${C.card}` : C.card,
+        border: `1px solid ${alpha(C.rosso, armato ? 0.5 : 0.18)}` }}>
+      {armato ? 'sicuro?' : '×'}
+    </button>
+  )
+}

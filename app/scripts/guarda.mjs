@@ -40,7 +40,11 @@ const PAGINE = [
   // chi apre l'app.
   { id: 'login',     via: 'prima' },
   { id: 'dashboard', via: 'tab',  testo: 'Dashboard' },
-  { id: 'slot',      via: 'tab',  testo: 'Slot' },
+  // ⚠️ **Slot è scesa nel menu il 22/10/2026** e in basso c'è il Bet Builder.
+  // Questa mappa va tenuta allineata alla navigazione: il 21/10 non l'ho fatto
+  // e due pagine sono andate in timeout di trenta secondi l'una.
+  { id: 'builder',   via: 'tab',  testo: 'Builder' },
+  { id: 'slot',      via: 'menu', testo: 'Slot',              admin: true },
   // ⚠️ Spin è scesa nel menu e Road to weekend è salita nella barra in basso
   // (21/10/2026). Questa mappa va tenuta allineata alla navigazione: il
   // 21/10 non l'ho fatto e due pagine sono andate in timeout per trenta
