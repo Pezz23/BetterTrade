@@ -1,0 +1,303 @@
+# I DATI — fonti, quote, import, controlli
+
+> Da dove arrivano le quote e i risultati, quando non ci si può fidare, e i controlli che girano dopo ogni aggiornamento.
+> Staccato da `CLAUDE.md` il 22/10/2026 per alleggerire ogni sessione:
+> **il testo è lo stesso, non è stato riassunto**.
+
+### ⚠️⚠️ Quando i bookmaker non sono d'accordo fra loro — 15 ottobre 2026
+
+**L'attendibilità *è* la media di mercato.** Ma una media di 34 opinioni
+allineate e una media di 34 opinioni sparse non sono lo stesso numero, e fino
+al 15/10 le mostravamo identiche. `DISPERSIONE` e `dispersioneBook()` in
+`lib/attendibilita.js` misurano la distanza fra la quota **più generosa** e la
+**media**, sul segno favorito.
+
+**Misurato su 8 stagioni e 38.084 partite** (`btscout/scripts/prova-dispersione.js`),
+fra quelle con attendibilità ≥ 60% e a livello dichiarato quasi identico:
+
+| disaccordo sopra | partite | dichiarato → avverato | resa |
+|---|---|---|---|
+| 4,2% | 521 | 66,2% → 67,4% (+1,1) | 95,1% |
+| 5,0% | 234 | 65,5% → 63,2% (−2,2) | 90,0% |
+| **6,0%** | **97** | **66,1% → 59,8% (−6,3)** | **84,6%** |
+| 8,0% | 26 | 64,6% → 53,8% (−10,8) | 78,6% |
+| *sotto 6,0%* | *6.191* | *68,3% → 71,8% (+3,5)* | *99,1%* |
+
+⚠️ **Quello che rende credibile la misura non è un numero, è che scende in modo
+monotòno su quattro tagli.** Il singolo gruppo ha ±9,8 di errore; quattro
+gruppi che peggiorano in fila nello stesso verso no.
+⚠️ **È un avviso, non un'esclusione**: 97 partite su 6.288, l'1,5%.
+`SCARTO_FONTI` esclude dalle spin perché là il **dato è rotto**; qui il dato è
+buono e dice che il mercato è incerto.
+⚠️ **A schermo: il marchio ambra `ATTEND. ~` in barra**, e il numero per esteso
+nei dettagli completi. Sta su ATTEND. perché è quel numero a valerne meno. **Non**
+una riga rossa sopra la barra: due avvisi con lo stesso peso rendono illeggibile
+quello grave.
+⚠️⚠️ **È discreto di proposito, e la decisione è stata confermata dopo una
+prova.** Il 15/10 Mattia non l'ha trovato — *"non vedo la scritta"* — e sono
+dieci partite su 192, quindi il più delle volte non c'è niente da vedere. Gli
+ho proposto una riga ambra nella scheda o un glifo più forte in barra:
+**"lascia così"**. ⚠️ Quindi **non va alzato credendo di correggere una
+dimenticanza**: la ragione per tenerlo basso è che l'avviso rosso delle quote in
+conflitto deve restare l'unica cosa che grida. Se un giorno si vuole cambiare,
+si cambia quello sapendo di spendere l'attenzione che oggi va al dato rotto.
+
+⚠️⚠️ **IL TRANELLO, e c'è mancato poco: le due fonti non hanno la stessa
+scala.** Stessa definizione, stesso segno — football-data mediana **2,9%** e 98°
+percentile **7,1%**; The Odds API mediana **4,0%** e 98° percentile **10,4%**.
+Il motivo è meccanico: la massima è il migliore fra **34** book invece che fra i
+pochi che football-data segue, e **il massimo di un insieme più grande è più
+estremo**. Applicare il 6% misurato alle righe di The Odds API segnalerebbe
+**187 partite su 192** invece di dieci.
+⚠️ Quindi la soglia dipende dalla fonte: **6% è MISURATO** (football-data),
+**10% è TRASPOSTO per percentile e NON misurato** — di storia con le massime di
+The Odds API non ne abbiamo (oggi ~300 partite già giocate, troppo poche). **Va
+rimisurato quando ce ne sarà.** Con queste soglie, 10 future su 192 sono
+segnalate.
+⚠️ **E `prossime_partite.fonte` dice chi ha scritto per ultimo**, non chi ha
+portato ogni colonna: The Odds API gira dopo football-data e sovrascrive
+`max_ap_*`, quindi `fonte = 'odds-api'` vuol dire *questa massima è di 34 book*.
+È per questo che la soglia si sceglie su quella colonna.
+
+⚠️⚠️ **E attenzione a una misura che sembra enorme e non lo è.** Prendendo le
+prime 9 di ogni giorno per attendibilità, i soli "book allineati" fanno
+**61,7%** e i soli "sparsi" **52,1%**: dieci punti, che è il numero più grande
+dell'intera misura. **È un artefatto.** Il disaccordo correla con la quota —
+dove i book litigano le quote sono più lunghe — quindi il gruppo "sparsi" ha
+attendibilità media 43,9% contro 55,7%: si sta misurando la quota, non il
+disaccordo. Il confronto onesto tiene l'attendibilità **fissa**, e lì l'effetto
+è 4-6 punti nel solo quartile estremo. **Quando una differenza è troppo bella,
+cercare cos'altro è cambiato fra i due gruppi.**
+
+### ⚠️⚠️ Quando le due fonti si contraddicono, non si gioca
+
+**Trovato da Mattia il 12/10/2026 guardando una card**: voto **200%**, con
+attendibilità 65% accanto a una quota 3,00 — due numeri che non possono stare
+insieme. Sotto c'era questo:
+
+```
+Bet365 (football-data)    2,40  3,10  3,00   partita equilibrata
+consenso (The Odds API)  11,88  3,39  1,40   trasferta straferita
+```
+
+⚠️ **Non era un book impazzito**: media, massima ed exchange del consenso
+concordavano fra loro, quindi erano più book su un evento che **non era quella
+partita**. ESPN conferma che l'accoppiamento Burgos-Granada esiste, e le altre
+dieci partite di Segunda di quei giorni hanno `b365 ≈ consenso`. **Dato
+sbagliato alla fonte, su un evento solo** — la chiave di conflitto
+dell'import è `(div, data, casa, trasferta)`, quindi non è un difetto di
+aggancio nostro.
+
+**La difesa, in tre punti** (`SCARTO_FONTI = 0,15` in `lib/attendibilita.js`):
+1. `scartoFonti(r)` confronta la probabilità del segno 1 **fra 1 e 2** (la X si
+   esclude da entrambe le parti, così il margine diverso non conta).
+2. Oltre 15 punti la partita è `quoteIncoerenti`: **non entra nelle spin**
+   (`candidate()`), e ⚠️ **questo lo scavalca anche una stellina** — la
+   stellina è un giudizio su una partita, qui il **dato** è rotto e nessun
+   giudizio lo ripara.
+3. A schermo lo dice **sopra la barra**, in rosso, in **una riga sola**:
+   *"⚠️ QUOTE IN CONFLITTO — Partita da verificare."* (scelta di Mattia). Il
+   dettaglio — quanti punti, quale fonte dice cosa — lo stampa
+   `controlla-dati.js`: sopra una card serve sapere **che** c'è un problema,
+   non perché.
+   ⚠️ **La partita resta visibile di proposito**: nasconderla vorrebbe dire che
+   il difetto non lo trova più nessuno.
+
+⚠️ **Non si indovina quale fonte ha ragione**, e non si deve: su 308 future con
+entrambe le quote **una sola** supera la soglia. Il costo del controllo è una
+partita; il costo di non averlo era un voto del 200% preso per buono.
+⚠️ **Il controllo vale solo su `prossime_partite`**, dove b365 e avg sono
+**entrambe di apertura**. In `partite` le `avg_*` sono di **chiusura**, quindi
+uno scarto grande può essere solo la linea che si è mossa.
+
+### I controlli dopo l'aggiornamento
+
+`scripts/controlla-dati.js`, chiamato in coda a `aggiorna.js` (**non ferma la
+routine**: dice cosa guardare, non impedisce l'aggiornamento). Quattro
+controlli, nati ciascuno da un difetto vero passato in silenzio:
+**risultati che non arrivano** (football-data fermo tre settimane rispondendo
+200) · **le due fonti che si contraddicono** (il voto 200%) · **importazioni in
+attesa** di una persona · **doppioni in archivio** (due fonti che scrivono
+sulla stessa tabella).
+⚠️ Il filo comune: **erano tutti dati plausibili e sbagliati**, e nessuno
+chiedeva mai *"è andato bene?"*.
+
+⚠️⚠️ **E un controllo può sbagliare nello stesso modo di ciò che sorveglia.**
+Il 21/10/2026 il primo controllo diceva *"2 partite giocate da più di 2 giorni
+sono ancora senza risultato → football-data è indietro, recupera con ESPN"*.
+Erano **Levante-Ath Bilbao del 16/09** e **Vallecano-Ath Bilbao del 10/10**:
+**rinviate**, mai giocate, e la prima è ricomparsa in calendario il 21/10.
+Il controllo dava per scontato che una riga di calendario con data passata
+volesse dire *"partita disputata"*, e mandava a recuperare partite che non
+esistono — un dato plausibile e sbagliato, esattamente il difetto che lui
+stesso esiste per trovare.
+✅ Ora distingue, e il segnale sta nei nostri dati:
+- **quel giorno quel campionato non ha NESSUNA partita in archivio** → la fonte
+  non ha pubblicato: è indietro davvero, e l'allarme resta;
+- **le altre partite di quel giorno ci sono e questa no** → la fonte ha
+  pubblicato, quindi questa non si è giocata: rinviata o spostata, si stampa
+  come informazione e **non alza il contatore dei problemi**.
+⚠️ Verificato sui casi veri: il 16/09 e il 10/10 la Liga aveva **3 partite in
+archivio per giorno**, e quelle due non erano fra loro. E il ramo dell'allarme
+vero scatta ancora: Wolves-Portsmouth del 20/10 viene classificato come buco,
+perché quel giorno in archivio non c'è niente di nessun campionato.
+
+## ESPN, la seconda fonte dei risultati
+
+**Aggiunta il 12/10/2026**, dopo che football-data è rimasto **tre settimane
+indietro** (fermo al 20 settembre, server che risponde 200, nessun errore da
+nessuna parte). ⚠️ **Il problema non era football-data: era avere una fonte
+sola senza allarme.** Ce ne siamo accorti solo perché Mattia ha chiesto di
+aggiornare.
+
+| | |
+|---|---|
+| **Cosa dà** | risultati **in giornata**, tiri in porta, tiri, angoli e **possesso palla**, su tutti e 15 i campionati (provati uno per uno) |
+| **Cosa non dà** | **le quote**: quelle restano football-data (Bet365) e The Odds API (consenso) |
+| **Costo** | gratis, nessuna chiave |
+| **Rischio** | **API non documentata**, è quella che alimenta il loro sito: nessun contratto, può cambiare o chiudere senza avviso |
+
+⚠️ **ESPN affianca, non sostituisce.** `partite.fonte` dice da dove viene ogni
+riga (`football-data` di default, `espn` per le altre): senza, una riga ESPN
+sarebbe indistinguibile — non si saprebbe perché le mancano le quote, e quando
+football-data pubblica si creerebbe un doppione invece di completarla.
+
+### La regola che tiene pulito l'archivio: non si indovina mai
+
+`scripts/importa-espn.js` scrive **solo** quando esiste **una e una sola**
+partita nostra che combacia su **campionato + data (±1 giorno) + tutt'e due le
+squadre**. Zero candidati, due candidati, un nome mai visto → la riga finisce
+in `importazioni` e **aspetta una persona** (pagina **Importazioni** nel menu).
+⚠️ **Un risultato messo sulla partita sbagliata non si vede e non si corregge**:
+sporca l'archivio e ogni misura che ci sta sopra.
+⚠️ **ESPN non riscrive mai quello che c'è**: tutti gli aggiornamenti passano da
+`coalesce`, quindi riempie i buchi (possesso, tiri) e lascia stare il
+risultato di football-data.
+
+**I nomi, 59 alias scritti a mano al 15/10/2026.** Due regole:
+⚠️ **Gli accenti li toglie la macchina**: `Almería` → `Almeria` non è
+indovinare, è normalizzare — la stessa stringa in due codifiche. Ha risolto da
+solo una decina di casi spagnoli.
+⚠️⚠️ **Tutto il resto è scritto a mano, e il motivo ha un nome: Paris.**
+Cercando "paris" in archivio escono **`Paris FC` e `Paris SG`**, due club
+diversi della stessa città — ed è esattamente l'abbinamento che un automatismo
+di somiglianza aveva sbagliato. Stessa trappola con `Sporting CP`, che è lo
+Sporting di **Lisbona** mentre in archivio c'è anche `Sp Braga`.
+⚠️ Alcuni alias sono **vecchi nomi di club** che football-data non ha mai
+aggiornato: `Istanbul Basaksehir` → `Buyuksehyr`, `Waasland-Beveren` →
+`Beveren`, `Deportivo` → `La Coruna`.
+⚠️ **E il confronto ignora già maiuscole e accenti** (`nostroNome`, il passaggio
+su `_piatti`): `SPAL` trova `Spal` da sé, come `Almería` trova `Almeria`. Il
+15/10 stavo per "aggiungere" quella correzione e c'era già da tre giorni —
+**le 15 righe ferme in `importazioni` erano solo più vecchie della correzione**,
+non la prova che mancasse. ⚠️ **Niente ripassa la coda quando si aggiunge un
+alias**: una riga messa in attesa resta in attesa per sempre, anche se il motivo
+nel frattempo è sparito. Se un giorno dà fastidio, si rilancia l'import sulle
+stesse date invece di aspettare che si sblocchi da sola.
+
+**I nomi**: ESPN espone cinque nomi per squadra (`displayName`,
+`shortDisplayName`, `name`, `location`, `abbreviation`) e `shortDisplayName` è
+praticamente lo stile di football-data — "Manchester City" → **"Man City"**.
+Misurato: **18 su 20** si agganciano da soli, in Premier come in Serie A. Le
+eccezioni stanno in `lib/nomi-espn.js`, **scritte a mano**: in Serie A sono
+`AS Roma → Roma` e `Internazionale → Inter`.
+⚠️⚠️ **Non si aggiungono alias con un automatismo di somiglianza**: il 5/10 un
+abbinamento automatico mise il **PSG sul Paris FC**.
+⚠️⚠️ **I nomi si leggono dalla partita, non dalla rosa del campionato.**
+Chiedendo `/teams` si conoscono solo le squadre di quest'anno, e tutto lo
+storico diventa "nome sconosciuto": provando il recupero del 2024, Empoli e
+Hellas Verona — oggi fuori dalla Serie A — risultavano sconosciute. Con i nomi
+presi dall'evento: **70 partite su 70 agganciate, zero dubbie**.
+
+⚠️⚠️ **Un intoppo della fonte non deve uccidere il lavoro, e il database è una
+fonte come le altre.** Il 12/10 un singolo `502` di ESPN ha fatto cadere un
+recupero da mezz'ora dopo 246 partite; il giorno dopo un `ECONNRESET` del
+database ne ha uccisi **due insieme** (li avevo lanciati in parallelo). Ora
+`tollera()` avvolge **tutto il giro di una partita**, non solo la chiamata a
+ESPN: quella partita si salta, si conta, si stampa in fondo, e il lavoro va
+avanti — postgres.js riapre la connessione da solo. ⚠️ **E i recuperi lunghi si
+fanno uno alla volta.**
+⚠️ **I giorni si chiedono all'archivio, non al calendario**: la Serie A gioca
+in ~130 giorni l'anno, e camminando sul calendario civile due richieste su tre
+cadono a vuoto (2.660 chiamate invece di 1.399).
+⚠️ **Si va piano di proposito**: `PAUSA_MS = 350` fra le chiamate. Non c'è un
+limite dichiarato, e proprio per questo non si corre — una fonte non
+documentata si tiene buona.
+⚠️ **La data di ESPN è UTC**; per gli orari europei non cambia giorno, ma la
+finestra di ±1 copre le partite spostate di poche ore. Il filtro vero sono le
+due squadre.
+⚠️ `prossime_partite` **non ha** la colonna `stagione` (ha un `fonte`, ma lì
+vuol dire "da quale book vengono le quote"): si ricava dalla data, da luglio in
+poi è l'anno nuovo. La stessa regola vive **due volte** — in JS nello script e
+in SQL in `decidi_importazione()` — e dà gli stessi valori sulle date provate.
+
+**Le decisioni passano da `decidi_importazione()`** (`sql/27`, `security
+definer` col controllo admin dentro) e non da due scritture dal browser:
+accettare tocca `partite` **e** `importazioni`, e le due devono riuscire o
+fallire insieme.
+
+### Il possesso palla: raccolto, non ancora usato
+
+⚠️⚠️ **VPM non lo usa, e non va aggiunto senza misurarlo.** Al suo posto c'è
+`dominio` (tiri in porta fatti / totali) per una ragione scritta: *il possesso
+misura chi tiene la palla, il dominio chi fa male*. Adesso il dato c'è —
+`partite.possesso_casa` / `possesso_trasf` — ma metterlo in un indice perché
+"c'è" vuol dire tornare a pesare a sentimento. **Prima si misura se aggiunge
+qualcosa, poi si decide.**
+⚠️ **In avanti costa niente** (~100 partite a weekend), **all'indietro costa**:
+una richiesta per partita, quindi ~34.000 per tutto l'archivio. Si fa un
+campionato per volta. **Serie A per prima**, il 12/10/2026.
+
+## Storico e calendario: due tabelle, due significati
+
+| Tabella | Contiene | Quote | Si cancella? |
+|---|---|---|---|
+| `partite` | Partite **giocate**, con risultato | `b365_*` apertura, `bfe_ap_*` apertura, `bfe_ch_*` chiusura, `avg_*`/`max_*` **chiusura** | Mai |
+| `prossime_partite` | Partite **da giocare**, senza risultato | tutte di **apertura**: `b365_*`, `bfe_ap_*`, `avg_ap_*`, `max_ap_*` | **Mai**: è la fotografia di cosa si vedeva prima |
+
+Entrambe hanno `bfe_ap_valido`. `prossime_partite` ha `scaricato_il`: una quota
+ha senso solo con l'istante in cui l'hai vista. L'app legge le future con
+`where data >= current_date`.
+
+⚠️ **L'ordine delle fonti della quota giocata, dal 12/10/2026: Bet365 → media
+di mercato** (`valuta()` in `lib/attendibilita.js`). Bet365 è il book su cui
+gioca Mattia; **Codere e la massima sono usciti**.
+⚠️ **La massima è uscita perché non è ottenibile**: è il miglior prezzo fra 40
+book, e usarla gonfiava resa e voto. La **media** invece è una buona stima di
+quanto pagherebbe Bet365 — misurato su 11.344 partite, il rapporto Bet365/media
+ha mediana **100,0%** sulle quote corte e 99,4-99,6% sul resto.
+⚠️⚠️ **Ma con la media resa e voto non discriminano più, e a schermo si
+spengono** (grigio, `quotaDaConsenso`). `resa = quota × attendibilità`, e
+l'attendibilità viene **già dalla media**: la formula si semplifica in
+`1/margine` — mediana **93,8%**, da 86% a 100,6% — quindi dice quanto margine
+ha preso il book su quella partita, non quanto conviene giocarla. **Non è un
+errore del calcolo, è la verità**: al prezzo medio di mercato non c'è vantaggio
+da nessuna parte, per costruzione. La resa discrimina solo quando il prezzo che
+prendi è **diverso** dal consenso.
+⚠️ **Misurato il 12/10 su 10 partite: Bet365 e Codere si equivalgono** (scarto
+medio di resa **−0,17 punti**, meglio su 4 e peggio su 5). **Il guadagno di
+questo cambio non è in punti, è in verità**: prima resa e voto si calcolavano
+su un prezzo di un book che Mattia non usa. ⚠️ Non confondere con l'altro
+numero: i **2,8 punti** misurati il 10/10 erano Codere contro la **massima di
+mercato**, che è il miglior prezzo fra 40 book e **non è ottenibile**.
+⚠️ **Bet365 copre solo il blocco imminente** (football-data): il 12/10 erano
+**11 future su 76**, il resto cadeva sulla media. L'etichetta della colonna
+QUOTA mostra sempre la fonte (`BET365` · `MEDIA`), e con `MEDIA` resa e voto
+sono grigi: vuol dire "questo numero non è confrontabile con gli altri".
+
+Le future arrivano da **due fonti** che si fondono sulla stessa riga:
+football-data (`fixtures.csv`, il prossimo blocco, l'unica con Bet365) e
+**The Odds API** (3-4 settimane, consenso di 40+ book, niente Bet365 — non
+sovrascrivere `b365_*` con null). I nomi di The Odds API passano da
+`lib/nomi-squadre.js`: un nome nuovo va aggiunto **a mano** dopo averlo
+verificato — l'automatico ha messo il PSG sul Paris FC. Chiave in
+`btscout/.env` (`ODDS_API_KEY`), 500 crediti/mese, 30 per giro, **anche la
+prova a vuoto li consuma**.
+
+Quando una futura si gioca, `riconcilia-prossime.js` le mette `partita_id` che
+punta alla riga di `partite`. Non si sposta e non si cancella: la futura resta
+la fotografia di cosa si vedeva prima, e il confronto con le quote registrate
+dice se era fedele. Tutto in un comando: `scripts/aggiorna.js --esegui`.
+
+---
+
