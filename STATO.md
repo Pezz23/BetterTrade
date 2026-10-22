@@ -4,7 +4,7 @@
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
 **Ultimo aggiornamento:** 22 ottobre 2026 (sera) · app alla versione
-**1.46.00** · ultimo commit `56240eb` + il lotto 1 da committare
+**1.46.02** · ultimo commit `ac4fe13`
 
 ## ▶️ DOVE SIAMO — 22 ottobre 2026, leggi questo per primo
 
@@ -20,7 +20,7 @@ strumento principale del weekend.
 | **«quota gamba ≥»** come quarto filtro, e il ricarica rosso | `57a898e` |
 | **La scheda partita si apre dal Weekend**, toccando i nomi | `43af87b` |
 | **⚑ Flag**, **«+ aggiungi partita manuale»**, **pagina aperta a tutti in sola lettura** | `1edae37` |
-| **Lotto 1**: soglia consigliata a **61%** (rimisurata) e **preferenze salvate** — gli admin condividono una riga, gli utenti hanno la loro | da committare |
+| **Lotto 1**: soglia consigliata a **61%** (rimisurata), **preferenze salvate** (gli admin condividono una riga, gli utenti hanno la loro), **casse e archivio solo agli admin** | `23fa6f9` · `ac4fe13` |
 
 Le migrazioni applicate in questi due giorni: **`sql/31`** (numero del passo
 decimale, per inserirne uno in mezzo), **`sql/32`** (il metodo `madre`),
@@ -35,13 +35,13 @@ stretta). Tutte verificate dal database subito dopo.
 | **lo spezza a mano quasi non compare** | col taglio automatico a 2,00 i passi nascono già minimi, e un pezzo minimo non si divide in due pezzi che arrivino entrambi a 2,00. Riappare solo su un passo allungato a mano |
 | **un passo può avere 8 gambe** | `fasce()` raggruppa per orario e `MAX_GAMBE` vale solo per la proposta automatica. Mattia: *"decido io a mano"* |
 | **`prova-permessi.js` dall'API** | le policy nuove (`sql/33`, `34`, `35`) sono verificate **simulando** le sessioni dal database (ruolo `authenticated` + `request.jwt.claims`, dentro transazioni annullate); il giro vero dall'API vuole due password che ha solo lui |
-| **il lotto 1 non è stato guardato** | soglia, tasto salva e riga *"salvata da…"* sono provati da terminale e dal database, **non a schermo**: serve il via di Mattia per aprire l'app |
+| ~~il lotto 1 non è stato guardato~~ | ✅ **guardato da Mattia il 22/10**, e il giro ha trovato una cosa: gli utenti vedevano *"ARCHIVIO 1"*. Corretto — l'archivio segue le casse |
 
 ### 📦 I LOTTI, nell'ordine concordato il 22/10
 
 | # | lotto | stato |
 |---|---|---|
-| **1** | **Chiudere la scalata**: soglia 61%, preferenze salvate | ✅ **fatto il 22/10** — resta `prova-permessi` dall'API |
+| **1** | **Chiudere la scalata**: soglia 61%, preferenze salvate, i soldi solo agli admin | ✅ **chiuso il 22/10** — resta solo `prova-permessi` dall'API |
 | **2** | **Le quattro rifiniture** (idee 2 · 4 · 5 · 7): linea spessa, filtri «scelta» al posto di «voto minimo», finestre a card con «Domani», campionato a sinistra nelle spin | da fare — **tutte visive, un giro solo di `/guarda` alla fine** |
 | **3** | **Gli indirizzi delle pagine** (lotto Q, routing) | da fare — **prima di aggiungere schermate nuove**, o si ricablano dopo. E toglie la trappola della mappa di `guarda.mjs` |
 | **4** | **La schedina a schermo** (idee 10 + 9): `schedina-weekend.js` esiste già, va portato in pagina; e `CompilaPerQuota` — ⚠️ **serve prima una risposta di Mattia**: compilare una spin **intera** o solo le caselle vuote? |
@@ -276,6 +276,41 @@ il 25% delle volte.
 | **C** | La pagina: via la quota schedina e le due regole dai filtri, l'avviso sul passo | ✅ **fatto il 21/10** (`sql/32`) |
 | **D** | **Il Satellite** | ⏸️ **in attesa, priorità futura** |
 | **E** | ⚑ **Flag**, **«+ aggiungi partita manuale»**, **pagina in sola lettura per tutti** | ✅ **fatto il 22/10** (`sql/33`, `sql/34`) — nato strada facendo, non era nel briefing |
+| **F** | **Soglia 61% rimisurata · preferenze salvate · i soldi solo agli admin** | ✅ **fatto il 22/10** (`sql/35`) — vedi sotto |
+
+### Il lotto F, cosa contiene (22 ottobre 2026)
+
+**La soglia consigliata passa da 58% a 61%**, e il come conta più del numero.
+Mattia aveva chiesto il **68%**; `btscout/scripts/prova-soglie-scalata.js` —
+**nuovo, perché la tabella di ottobre l'aveva prodotta un giro non conservato**
+— dice che lì la resa è la più alta della tabella ma **metà dei weekend non ha
+un passo componibile**, e **due passi (il suo vincolo: "in due giornate
+recupero il capitale") si compongono nel 13% dei weekend invece del 74%**.
+⚠️⚠️ **La colonna che decide è quella dei weekend, non la resa**: la scalata
+gioca una schedina da 2,00, non una partita singola. E il guadagno non era
+nemmeno dimostrabile — 100,2 ±3,1 contro 99,5 ±2,0.
+⚠️ Per questo il tasto scrive **anche i weekend**: a 68% avrebbe detto *"resa
+100,2% su 1.359 partite"*, la frase più bella della tabella, tacendo la cosa
+che conta.
+⚠️ **Una stagione sola non misura la resa** (Mattia: *"misura sulla 25/26"*):
+a 61% le otto stagioni vanno da **96,9 a 103,5** con ±5 ciascuna. Il
+**materiale** invece sì, e la 25/26 conferma (2,4 al giorno, 85% dei weekend
+con un passo, 78% con due).
+
+**Le preferenze salvate** (`sql/35`, `hooks/usaPreferenze.js`): una tabella
+sola, la riga con `user_id` **nullo** è quella condivisa degli admin. Catena di
+lettura **la mia → quella degli admin → i valori di fabbrica**. Si salva
+*tutta la situazione* — soglie, bankroll, tolte, aggiunte, tagli, quote,
+percentuali — **col tasto e non in automatico** (sei admin sulla stessa riga),
+con accanto **chi** ha salvato e **quando**.
+⚠️⚠️ E così è sparito un difetto che nessuno aveva visto: la percentuale
+«metti via» era **locale alla pagina anche a scalata aperta**, quindi due
+admin sullo stesso registro potevano vedere **casse diverse**.
+
+**I soldi solo agli admin**: la card del conto e l'interruttore
+`PIANO | ARCHIVIO` non esistono per chi non è admin — la road map si
+condivide, il registro dei soldi no. ⚠️ Fatto **togliendo le card**, non
+richiudendo la lettura delle tabelle: quella svuoterebbe la pagina per tutti.
 
 ### Il lotto E, cosa contiene (22 ottobre 2026)
 

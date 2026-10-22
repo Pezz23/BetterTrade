@@ -2643,7 +2643,8 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   cache. ⚠️ Chi scrive (il voto) aggiorna **anche la memoria**, o la stellina
   sparisce tornando sulla pagina.
 - **I formattatori stanno in `src/lib/formato.js`** — `pct`, `eur`, `gg`,
-  `ggAnno`, `giorno` — e non si riscrivono nelle pagine. ⚠️ Sono nati da tre
+  `ggAnno`, `giorno`, **`quando`** (un istante nell'ora locale, dal 22/10/2026)
+  — e non si riscrivono nelle pagine. ⚠️ Sono nati da tre
   copie di `pct` con **due nomi** (`pct` in `TestataPartita`, `pct1` in
   `BarraPartita`, una locale in `ScalataPage`) che **erano già divergute**: due
   guardavano il valore nullo e la terza scriveva `NaN%`. Stessa storia della
