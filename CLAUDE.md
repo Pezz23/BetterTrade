@@ -484,9 +484,19 @@ Mattia:
 
 ```
 Squadra 1  posizione  ·  GIOCATA  ·  Squadra 2  posizione
-O/U OVER 1,5                                  GG/NG  GOL
+                   O/U OVER 1,5 │ GG/NG GOL
                      ven 23/10 · 17:30
+                 ───────────────────────────
 ```
+⚠️ **Vicini e con un divisore, non ai due estremi** (correzione del 22/10,
+dopo averli visti): ai lati opposti sembravano due informazioni di due blocchi
+diversi, attaccati si leggono per quello che sono — due risposte alla stessa
+domanda. Il divisore è `stretch`, perché uno dei due può non avere la riga
+della percentuale (`IN BILICO`) e un trattino a metà altezza sembra un difetto.
+⚠️ Sopra la data c'è `SP.sez` (24) e non 8: consigli e data sono *cosa farei* e
+*quando si gioca*, due cose diverse. Sotto la data una riga `bordoTenue` e solo
+8 di spazio — **non è il ritorno della linea spessa tolta la mattina stessa**,
+che era `2px` del colore della categoria.
 
 ⚠️ **E la data prende lo stesso corpo del verdetto** (`CORPO_CONSIGLIO`, una
 costante sola: due numeri che devono restare uguali, scritti a mano in due

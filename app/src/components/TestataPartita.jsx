@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import { C, F, alpha, S, SP, R } from '../theme'
 import { pct, giorno } from '../lib/formato'
 import { pronosticoDa } from '../lib/spin'
@@ -140,8 +141,19 @@ const DUE_RIGHE = compatta => compatta
  */
 function Consigli({ p, gol, compatta }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-      gap: SP.m, marginBottom: compatta ? SP.s : SP.m }}>
+    /* ⚠️ **Vicini e separati da una riga verticale**, non ai due estremi
+       (correzione di Mattia, 22/10/2026). Ai lati opposti sembravano due
+       informazioni di due blocchi diversi; attaccati con un divisore si
+       leggono per quello che sono — **due risposte alla stessa domanda**,
+       *cosa farei*. ⚠️ `stretch` sul divisore: deve essere alto quanto il più
+       alto dei due, e uno dei due può non avere la riga della percentuale
+       (IN BILICO). */
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'stretch',
+      /* ⚠️ Lo spazio sotto i consigli è **più largo di prima** (Mattia,
+         22/10/2026): i consigli e la data sono due cose diverse — *cosa
+         farei* e *quando si gioca* — e stavano appiccicate come se fossero
+         la stessa riga. */
+      gap: compatta ? SP.m : SP.l, marginBottom: compatta ? SP.s : SP.sez }}>
       {[['O/U', consiglioOver(gol.over, mercatoOver25(p))], ['GG/NG', consiglioGg(gol.gg)]].map(([et, cons], i) => {
         // ⚠️⚠️ **Lo scarto dalla base è il numero che rende leggibile il
         // consiglio**, e senza di lui una parola sola mente per omissione:
@@ -156,7 +168,9 @@ function Consigli({ p, gol, compatta }) {
         const tinta = scarto == null ? C.fioco
           : scarto >= 0.10 ? C.verde : scarto >= 0.05 ? C.testo : C.spento
         return (
-          <div key={et} style={{ lineHeight: 1.25, textAlign: i === 0 ? 'left' : 'right' }}>
+          <Fragment key={et}>
+          {i > 0 && <div style={{ width: 1, background: alpha(C.testo, 0.12) }} />}
+          <div style={{ lineHeight: 1.25, textAlign: 'center' }}>
             {/* ⚠️ **Ogni riga porta il nome della domanda** (Mattia, 15/10:
                 *"in bilico da solo non si capisce"*): `IN BILICO` da solo non
                 dice **su cosa**, e il Goal tace nel 65% dei casi — cioè nella
@@ -185,6 +199,7 @@ function Consigli({ p, gol, compatta }) {
               </div>
             )}
           </div>
+          </Fragment>
         )
       })}
     </div>

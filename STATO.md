@@ -3,8 +3,8 @@
 > To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 22 ottobre 2026 (sera) · app alla versione
-**1.46.02** · ultimo commit `ac4fe13`
+**Ultimo aggiornamento:** 22 ottobre 2026 (notte) · app alla versione
+**1.48.02**
 
 ## ▶️ DOVE SIAMO — 22 ottobre 2026, leggi questo per primo
 
@@ -42,7 +42,7 @@ stretta). Tutte verificate dal database subito dopo.
 | # | lotto | stato |
 |---|---|---|
 | **1** | **Chiudere la scalata**: soglia 61%, preferenze salvate, i soldi solo agli admin | ✅ **chiuso il 22/10** — resta solo `prova-permessi` dall'API |
-| **2** | **Le quattro rifiniture** (idee 2 · 4 · 5 · 7): linea spessa, filtri «scelta» al posto di «voto minimo», finestre a card con «Domani», campionato a sinistra nelle spin | da fare — **tutte visive, un giro solo di `/guarda` alla fine** |
+| **2** | **Le quattro rifiniture** (idee 2 · 4 · 5 · 7) | ✅ **fatto il 22/10** (`a542cf9`), più la testata rifatta su tre righe (`a095ce0`) e il difetto che Mattia ha fotografato nei filtri (`6bf1468`) |
 | **3** | **Gli indirizzi delle pagine** (lotto Q, routing) | da fare — **prima di aggiungere schermate nuove**, o si ricablano dopo. E toglie la trappola della mappa di `guarda.mjs` |
 | **4** | **La schedina a schermo** (idee 10 + 9): `schedina-weekend.js` esiste già, va portato in pagina; e `CompilaPerQuota` — ⚠️ **serve prima una risposta di Mattia**: compilare una spin **intera** o solo le caselle vuote? |
 | **5** | **La barra dei campionati** (idea 3) | ⚠️ **da progettare prima**: su 375px toglie larghezza ai nomi, già tarati al pixel. Si decide **cosa si restringe** |
@@ -55,9 +55,27 @@ il colore dice già *in quale passo* sta la partita e due significati sullo
 stesso canale non si leggono; e le **casse visibili agli utenti**, che si
 tolgono con una riga quando Mattia vorrà.
 
+### Cosa ha prodotto il lotto 2, oltre alle quattro voci
+
+- **La testata della partita è su tre righe** (squadre · consigli · data), e la
+  card si è accorciata di una sessantina di pixel: i due consigli stavano
+  incolonnati dentro i **76px** della colonna della giocata.
+- ⚠️⚠️ **`guarda.mjs` ha imparato a misurare gli ACCAVALLAMENTI**, perché il
+  difetto che Mattia ha fotografato nei filtri — due pastiglie disegnate sopra
+  la colonna accanto — **non faceva uscire la pagina di un pixel**. Erano due
+  buchi: il pannello dei filtri **nasce chiuso** e non si fotografava mai, e la
+  misura guardava la pagina invece dei contenitori. Su tutta l'app riporta un
+  caso solo, quindi è una misura e non un allarme.
+- ⚠️ E nello script c'era un `Escape` con scritto accanto *"si richiude"*: la
+  scheda **non ascolta Escape**, restava aperta e copriva la barra in basso.
+
 ### ⛔ Le regole di lavoro aggiunte in questi giorni
 
-- ⚠️⚠️ **Non si entra più nell'app col browser di propria iniziativa**
+- ⚠️⚠️⚠️ **Il permesso di guardare vale per UN giro, non per la serata**
+  (22/10, detto due volte). La prima volta era la regola generale; la seconda
+  perché, avuto il via per *un* giro di `/guarda`, ne ho fatti sei — e ogni
+  giro costa un login vero e molti token. **Si chiede ogni volta.**
+- ⚠️⚠️ **Non si entra nell'app col browser di propria iniziativa**
   (22/10): niente `scripts/guarda.mjs` e niente script Playwright con
   `E2E_USER` — **lo chiede Mattia quando serve**. Ogni giro è un login vero su
   Supabase (che ha un limite di tentativi) e con una scalata aperta può

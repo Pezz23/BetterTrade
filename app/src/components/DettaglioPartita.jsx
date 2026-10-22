@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { C, F, alpha, S, R } from '../theme'
+import { C, F, alpha, S, SP, R } from '../theme'
 import Icona from './Icona'
 import { Etichetta, Attesa } from './ui'
 import { usaForma } from '../hooks/usaForma'
@@ -149,7 +149,13 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
             quel token veste anche il pronostico, che si deve leggere. **Quella
             correzione resta**: a cedere è la riga, che separava due cose già
             separate dallo spazio. */}
-        <div style={{ marginTop: 14, paddingTop: 14 }}>
+        {/* ⚠️ **Una riga sottile sotto la data, e poco spazio dopo** (Mattia,
+            22/10/2026). Non è il ritorno della linea spessa tolta stamattina:
+            quella era `2px` del colore della categoria — qui c'è `bordoTenue`,
+            che separa senza gridare. ⚠️ E lo spazio scende da 14 a 8: con una
+            linea a dividere non serve più anche il vuoto, e la card si
+            accorcia ancora. */}
+        <div style={{ marginTop: SP.m, paddingTop: SP.m, borderTop: `1px solid ${C.bordoTenue}` }}>
           <BarraPartita p={p} vpm={v} colore={c.colore} />
           {/* La nota resta: spiega la giocata, non il prezzo. */}
           {p.nota && <div style={{ marginTop: 9, fontSize: S.minuta, fontFamily: F.sans, color: C.fioco, lineHeight: 1.5 }}>{p.nota}</div>}
