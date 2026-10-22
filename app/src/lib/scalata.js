@@ -212,40 +212,57 @@ export function applicaIncasso(montante, percentuale, puntata, tutto = false) {
 }
 
 /**
- * ⚠️⚠️ **Le soglie consigliate, e stavolta sono MISURATE.** Il 15/10 il tasto
- * diceva "consigliato 62 · 62" su una proposta a occhio di Mattia, e lui
- * giustamente ha chiesto *"su cosa si basa?"*. Un'app che consiglia deve poter
- * dire perché, o quella parola non va scritta.
+ * ⚠️⚠️ **Le soglie consigliate, e sono MISURATE.** Il 15/10 il tasto diceva
+ * "consigliato 62 · 62" su una proposta a occhio di Mattia, e lui giustamente
+ * ha chiesto *"su cosa si basa?"*. Un'app che consiglia deve poter dire perché,
+ * o quella parola non va scritta.
  *
- * Misurato su **31.442 partite** con quota ≥ 1,30, otto stagioni, camminando
- * nel tempo (`btscout/lib/ricostruisci.js`), sul filtro vero della pagina:
+ * ⚠️ **Rimisurate il 22/10/2026** (`btscout/scripts/prova-soglie-scalata.js`,
+ * otto stagioni, camminando nel tempo, sul filtro vero della pagina: `att ≥ s`
+ * **e** `scelta ≥ s`, gamba ≥ 1,30). Lo script riproduce la riga del 58%
+ * scritta a ottobre — 67,4% di azzeccate, resa 98,2% contro 98,3% — quindi è
+ * la stessa misura, non una nuova.
  *
- * | soglia | partite | a giornata | azzeccate | resa |
- * |---|---|---|---|---|
- * | 50% | 11.489 | 7,0 | 61,3% | 97,3% ±1,4 |
- * | 54% | 8.269 | 5,0 | 64,5% | 98,2% ±1,6 |
- * | **58%** | **5.517** | **3,4** | **67,4%** | **98,3% ±1,8** |
- * | 62% | 3.526 | 2,1 | 70,6% | 99,3% ±2,1 |
- * | 65% | 2.373 | 1,4 | 73,0% | 100,3% ±2,5 |
- * | 70% | 767 | 0,5 | 73,9% | 97,9% ±4,1 |
+ * | soglia | partite | a giornata | azzeccate | resa | weekend con 1 passo | con 2 |
+ * |---|---|---|---|---|---|---|
+ * | 58% | 5.395 | 3,3 | 67,4% | 98,2% ±1,8 | 85% | **79%** |
+ * | **61%** | **3.915** | **2,4** | **70,2%** | **99,5% ±2,0** | **82%** | **74%** |
+ * | 65% | 2.345 | 1,4 | 73,1% | 100,3% ±2,5 | 73% | 48% |
+ * | 68% | 1.359 | 0,8 | 74,6% | 100,2% ±3,1 | **50%** | **13%** |
  *
- * ⚠️ **Fra 54% e 67% la resa non si distingue**: gli intervalli si
- * sovrappongono tutti. Sotto il 54% peggiora davvero (97,3%), sopra il 67%
- * anche (97,9%, perché si va a prendere i favoriti più corti).
- * ⚠️ **Quindi si sceglie la soglia più BASSA del pianoro**, non la più alta, e
- * la ragione è il materiale: a 58% ci sono **3,4 partite a giornata su 1.206
- * giorni**, a 62% sono 2,1 su 1.018. Per una scalata che vuole due gambe nello
- * stesso blocco, il doppio del materiale vale più di un punto di resa che non
- * è nemmeno dimostrabile.
- * ⚠️ `scelta` alla stessa soglia di `att` non alza l'asticella due volte:
- * `scelta = att + fino a 0,10`, quindi è già superata — **tranne quando è
- * nulla**, cioè quando il campo contraddice il mercato, e quelle sono le
- * partite da evitare (misurato: 27,2% di vittorie dove il book dava 29,5%).
+ * ⚠️⚠️ **La colonna che decide è quella dei WEEKEND, non la resa.** Mattia
+ * aveva chiesto il 68%: lì la resa è la più alta della tabella, ma **metà dei
+ * weekend non ha nemmeno un passo componibile** e **due passi — il suo vincolo,
+ * "in due giornate recupero il capitale" — si compongono nel 13% dei weekend**
+ * invece del 74%. La scalata non gioca partite singole: gioca una schedina da
+ * 2,00, cioè due o tre gambe nello stesso blocco. **Una soglia che azzecca di
+ * più e non lascia niente da comporre è la resa di una giocata che non
+ * esiste**, e il guadagno non è nemmeno dimostrabile (100,2 ±3,1 contro
+ * 99,5 ±2,0: intervalli sovrapposti).
+ * ⚠️ Per questo `perche` porta anche i weekend: a 68% il tasto avrebbe scritto
+ * *"resa 100,2% su 1.359 partite"*, la frase più bella della tabella, tacendo
+ * la cosa che conta.
+ *
+ * ⚠️ **Fra 54% e 67% la resa non si distingue**: gli intervalli si sovrappongono
+ * tutti, e fuori da quel pianoro peggiora da entrambe le parti. Il 61% è il
+ * punto più stretto che tiene in piedi il metodo, **non** il punto che rende di
+ * più — quello non esiste in modo dimostrabile.
+ *
+ * ⚠️⚠️ **E una stagione sola non può misurare la resa** (chiesto da Mattia il
+ * 22/10: *"misura sulla 25/26"*). A 61%, stagione per stagione: 97,3 · 101,9 ·
+ * **103,5** · 98,3 · 101,1 · 97,4 · **96,9** (25/26) · 95,0 — stesso filtro,
+ * stesso codice, **±5 su ognuna**: 96,9 e 103,5 sono lo stesso numero misurato
+ * due volte. Quello che regge il 99,5% è che **4 stagioni su 8 stanno sopra il
+ * 100 e la mediana è 99,7**: non è il merito di una stagione.
+ * ⚠️ **Il MATERIALE invece sì, e la 25/26 conferma**: 2,4 partite al giorno,
+ * 85% di weekend con un passo, 78% con due — quante partite e quanti weekend
+ * giocabili dipendono da quanti campionati e quante quote abbiamo, e *quello*
+ * cambia negli anni. ⚠️ La 26/27 non si legge: 7 weekend e 54 partite.
  */
 export const CONSIGLIATO = {
-  att: 58, scelta: 58,
-  resa: 98.3, partite: 5517, aGiornata: 3.4,
-  perche: 'resa 98,3% su 5.517 partite · 3,4 al giorno',
+  att: 61, scelta: 61,
+  resa: 99.5, partite: 3915, aGiornata: 2.4, weekend: 82,
+  perche: 'resa 99,5% su 3.915 partite · 2,4 al giorno',
 }
 
 /** La posta di partenza di una scalata: il 10% del bankroll, per difetto. */

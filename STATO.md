@@ -3,8 +3,8 @@
 > To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
-**Ultimo aggiornamento:** 22 ottobre 2026 · app alla versione **1.45.01** ·
-ultimo commit `1edae37`
+**Ultimo aggiornamento:** 22 ottobre 2026 (sera) · app alla versione
+**1.46.00** · ultimo commit `56240eb` + il lotto 1 da committare
 
 ## ▶️ DOVE SIAMO — 22 ottobre 2026, leggi questo per primo
 
@@ -20,6 +20,7 @@ strumento principale del weekend.
 | **«quota gamba ≥»** come quarto filtro, e il ricarica rosso | `57a898e` |
 | **La scheda partita si apre dal Weekend**, toccando i nomi | `43af87b` |
 | **⚑ Flag**, **«+ aggiungi partita manuale»**, **pagina aperta a tutti in sola lettura** | `1edae37` |
+| **Lotto 1**: soglia consigliata a **61%** (rimisurata) e **preferenze salvate** — gli admin condividono una riga, gli utenti hanno la loro | da committare |
 
 Le migrazioni applicate in questi due giorni: **`sql/31`** (numero del passo
 decimale, per inserirne uno in mezzo), **`sql/32`** (il metodo `madre`),
@@ -33,7 +34,26 @@ stretta). Tutte verificate dal database subito dopo.
 | **le casse le vedono tutti** | aprendo la pagina agli utenti, bankroll, accumulo e archivio sono visibili a chi entra. Si toglie la card a chi non è admin — una riga — ma è una scelta sua |
 | **lo spezza a mano quasi non compare** | col taglio automatico a 2,00 i passi nascono già minimi, e un pezzo minimo non si divide in due pezzi che arrivino entrambi a 2,00. Riappare solo su un passo allungato a mano |
 | **un passo può avere 8 gambe** | `fasce()` raggruppa per orario e `MAX_GAMBE` vale solo per la proposta automatica. Mattia: *"decido io a mano"* |
-| **`prova-permessi.js` dall'API** | le policy nuove sono state verificate **simulando** una sessione utente dal database (ruolo `authenticated` + `request.jwt.claims`); il giro vero dall'API vuole due password che ha solo lui |
+| **`prova-permessi.js` dall'API** | le policy nuove (`sql/33`, `34`, `35`) sono verificate **simulando** le sessioni dal database (ruolo `authenticated` + `request.jwt.claims`, dentro transazioni annullate); il giro vero dall'API vuole due password che ha solo lui |
+| **il lotto 1 non è stato guardato** | soglia, tasto salva e riga *"salvata da…"* sono provati da terminale e dal database, **non a schermo**: serve il via di Mattia per aprire l'app |
+
+### 📦 I LOTTI, nell'ordine concordato il 22/10
+
+| # | lotto | stato |
+|---|---|---|
+| **1** | **Chiudere la scalata**: soglia 61%, preferenze salvate | ✅ **fatto il 22/10** — resta `prova-permessi` dall'API |
+| **2** | **Le quattro rifiniture** (idee 2 · 4 · 5 · 7): linea spessa, filtri «scelta» al posto di «voto minimo», finestre a card con «Domani», campionato a sinistra nelle spin | da fare — **tutte visive, un giro solo di `/guarda` alla fine** |
+| **3** | **Gli indirizzi delle pagine** (lotto Q, routing) | da fare — **prima di aggiungere schermate nuove**, o si ricablano dopo. E toglie la trappola della mappa di `guarda.mjs` |
+| **4** | **La schedina a schermo** (idee 10 + 9): `schedina-weekend.js` esiste già, va portato in pagina; e `CompilaPerQuota` — ⚠️ **serve prima una risposta di Mattia**: compilare una spin **intera** o solo le caselle vuote? |
+| **5** | **La barra dei campionati** (idea 3) | ⚠️ **da progettare prima**: su 375px toglie larghezza ai nomi, già tarati al pixel. Si decide **cosa si restringe** |
+| **6** | **L'automazione** (lotto F): il `.plist` di launchd è pronto, due comandi | da fare |
+| **7** | **Quello che aspetta i dati**: il riepilogo della scalata (a 10-20 chiuse), il Satellite, la spin 2 sotto soglia, i backtest vecchi | non anticipabile |
+
+⚠️ Restano fuori dai lotti, **non dimenticate**: la **scala a sette colori per
+distanza nel tempo** (idea 1) — proposta e **non fatta**, perché nella pagina
+il colore dice già *in quale passo* sta la partita e due significati sullo
+stesso canale non si leggono; e le **casse visibili agli utenti**, che si
+tolgono con una riga quando Mattia vorrà.
 
 ### ⛔ Le regole di lavoro aggiunte in questi giorni
 

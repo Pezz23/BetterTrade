@@ -2035,37 +2035,105 @@ Il 15/10 il tasto diceva **"consigliato 62 · 62"**, e il 62 era una proposta a
 occhio di Mattia che io avevo trasformato in un tasto chiamandola *consigliata*.
 Lui ha chiesto **"su cosa si basa?"** — e non si basava su niente.
 ⚠️ **Un'app che consiglia deve poter dire perché, o quella parola non va
-scritta.** Adesso `CONSIGLIATO` in `lib/scalata.js` porta la misura con sé e il
-tasto la mostra: *"att 58% · scelta 58% — resa 98,3% su 5.517 partite, 3,4 al
-giorno"*.
+scritta.** `CONSIGLIATO` in `lib/scalata.js` porta la misura con sé e il tasto
+la mostra.
 
-Misurato su **31.442 partite** con quota ≥ 1,30, otto stagioni, camminando nel
-tempo, sul filtro vero della pagina:
+**Rimisurato il 22/10/2026** con `btscout/scripts/prova-soglie-scalata.js` —
+che prima **non esisteva**: la tabella di ottobre era stata prodotta da un giro
+non conservato, quindi spostando la soglia non si poteva più dire la verità sul
+tasto. Lo script riproduce la riga del 58% (67,4% di azzeccate, resa 98,2%
+contro 98,3%), quindi è la stessa misura.
 
-| soglia | partite | a giornata | azzeccate | resa |
-|---|---|---|---|---|
-| 50% | 11.489 | 7,0 | 61,3% | 97,3% ±1,4 |
-| 54% | 8.269 | 5,0 | 64,5% | 98,2% ±1,6 |
-| **58%** | **5.517** | **3,4** | **67,4%** | **98,3% ±1,8** |
-| 62% | 3.526 | 2,1 | 70,6% | 99,3% ±2,1 |
-| 65% | 2.373 | 1,4 | 73,0% | 100,3% ±2,5 |
-| 70% | 767 | 0,5 | 73,9% | 97,9% ±4,1 |
+| soglia | partite | a giornata | azzeccate | resa | weekend con 1 passo | con 2 |
+|---|---|---|---|---|---|---|
+| 58% | 5.395 | 3,3 | 67,4% | 98,2% ±1,8 | 85% | **79%** |
+| **61%** | **3.915** | **2,4** | **70,2%** | **99,5% ±2,0** | **82%** | **74%** |
+| 65% | 2.345 | 1,4 | 73,1% | 100,3% ±2,5 | 73% | 48% |
+| 68% | 1.359 | 0,8 | 74,6% | 100,2% ±3,1 | **50%** | **13%** |
 
-⚠️⚠️ **Fra 54% e 67% la resa non si distingue** — gli intervalli si
-sovrappongono tutti — e **fuori da quel pianoro peggiora da entrambe le parti**:
-sotto il 54% il 97,3%, sopra il 67% il 97,9%, perché lì si va a prendere i
-favoriti più corti. **La soglia più stretta non è la migliore**, ed è la terza
+⚠️⚠️ **La colonna che decide è quella dei WEEKEND, non la resa**, ed è la
+lezione del 22/10: Mattia aveva chiesto di passare al **68%**, dove la resa è
+la più alta della tabella. Lì però **metà dei weekend non ha nemmeno un passo
+componibile** e **due passi — il suo vincolo, *"in due giornate recupero il
+capitale"* — si compongono nel 13% dei weekend** invece del 74%. La scalata non
+gioca partite singole: gioca una **schedina da 2,00**, cioè due o tre gambe
+nello stesso blocco. **Una soglia che azzecca di più e non lascia niente da
+comporre è la resa di una giocata che non esiste.** E il guadagno non è
+nemmeno dimostrabile: 100,2 ±3,1 contro 99,5 ±2,0, intervalli sovrapposti.
+✅ Scelto **61%**: il punto più stretto che tiene in piedi il metodo.
+⚠️ Per questo il tasto scrive **anche i weekend** (`CONSIGLIATO.weekend`): a
+68% avrebbe detto *"resa 100,2% su 1.359 partite"*, la frase più bella della
+tabella, tacendo la cosa che conta.
+⚠️ **Fra 54% e 67% la resa non si distingue** e fuori da quel pianoro peggiora
+da entrambe le parti: la soglia più stretta non è la migliore, ed è la terza
 misura di questo progetto che lo dice.
-⚠️ **Quindi si prende la soglia più BASSA del pianoro, non la più alta**, e la
-ragione è il materiale: a 58% ci sono **3,4 partite a giornata su 1.206 giorni**,
-a 62% sono 2,1 su 1.018. Per una scalata che ha bisogno di due gambe nello
-stesso blocco, il doppio del materiale vale più di un punto di resa che non è
-nemmeno dimostrabile. Sul calendario del 18/10: **23 candidate e 10 passi, di
-cui 6 già sopra 1,70** (col 62 erano 14 e 8, di cui 4).
-⚠️ Il tasto sta **in testa alla card SELEZIONE, a destra**: accanto ai tasti
-delle regole sembrava una terza regola.
 
-### ⚑ Le partite FLAGGATE — il segno della scalata (22/10/2026)
+⚠️⚠️ **E una stagione sola non può misurare la resa** (Mattia, 22/10: *"misura
+sulla 25/26"*). A 61%, stagione per stagione: 97,3 · 101,9 · **103,5** · 98,3 ·
+101,1 · 97,4 · **96,9** (25/26) · 95,0 — stesso filtro, stesso codice, **±5 su
+ognuna**: 96,9 e 103,5 sono lo stesso numero misurato due volte, e tarare la
+soglia sull'ultima stagione vorrebbe dire ritararla ogni anno inseguendo il
+rumore. Quello che regge il 99,5% è che **4 stagioni su 8 stanno sopra il 100 e
+la mediana è 99,7**.
+⚠️ **Il MATERIALE invece si legge sulla stagione recente, e la 25/26
+conferma**: 2,4 partite al giorno, 85% di weekend con un passo, 78% con due —
+quante partite e quanti weekend giocabili dipendono da quanti campionati e
+quante quote abbiamo, e *quello* cambia negli anni. La 26/27 non si legge: 7
+weekend e 54 partite.
+⚠️ Il tasto sta **in testa alla card SELEZIONE, a destra**: accanto ai tasti
+del metodo sembrava una terza regola.
+
+### 💾 Le preferenze salvate — gli admin vedono la stessa cosa (22/10/2026)
+
+`preferenze` (`sql/35`) e `hooks/usaPreferenze.js`. Mattia: *"vorrei che gli
+admin vedano tutti la stessa schermata; gli utenti invece devono essere liberi
+di avere i loro filtri"*, e *"vorrei poter salvare i filtri selezione"*.
+
+⚠️⚠️ **Una tabella sola, e la riga con `user_id` NULLO È quella degli admin.**
+Due tabelle per la stessa cosa sarebbero due posti da tenere d'accordo. L'unicità
+sta in **due indici parziali** (una riga condivisa per ambito, una personale per
+persona): senza, due salvataggi quasi simultanei creerebbero due righe e la
+lettura ne prenderebbe una a caso. ⚠️ Il `primary key` non può contenere un
+NULL, ed è il motivo per cui l'unicità non è una chiave.
+⚠️ **La catena di lettura è: la mia riga → quella degli admin → i valori di
+fabbrica.** Chi non ha mai salvato eredita la selezione degli admin invece di
+partire da zero; un **admin legge sempre la condivisa**, anche se per caso ha
+una riga sua — è il senso di *"vediamo tutti la stessa schermata"*.
+⚠️ `dati` è **jsonb e non quattro colonne**: i filtri cambiano (il 21/10 è
+entrata «quota gamba»), e una migrazione per ogni manopola non è sostenibile. In
+cambio **chi legge deve reggere una chiave che non c'è** — ogni valore ha il suo
+predefinito e i numeri non finiti si scartano, che è la lezione del NaN delle
+soglie di Andamento.
+⚠️ **Si salva TUTTA la situazione**, non solo i filtri (richiesta di Mattia):
+soglie · bankroll · partite tolte · aggiunte a mano · tagli · quote modificate ·
+percentuali «metti via». ⚠️⚠️ E questo **sistema un difetto che c'era**: la
+percentuale «metti via» era locale alla pagina **anche a scalata aperta**,
+quindi due admin sullo stesso registro potevano vedere **casse diverse**.
+⚠️ **Col tasto, non in automatico**: siete **sei account admin sulla stessa
+riga**, e il salvataggio automatico riscriverebbe le soglie agli altri a ogni
+tocco del `+`, mentre guardano. E la riga sotto dice **chi** ha salvato e
+quando — con sei admin, una soglia cambiata da sola fra ieri e oggi è
+illeggibile senza un nome accanto.
+⚠️ **Non è in tempo reale, ed è una scelta confermata**: chi ha la pagina
+aperta vede il salvataggio di un altro al prossimo caricamento.
+⚠️ **Update e poi insert, non `upsert`**: gli indici sono **parziali** e
+PostgREST non sa esprimere un `on conflict … where`. Un upsert senza il
+bersaglio giusto creerebbe la seconda riga che gli indici esistono per
+impedire. ⚠️ E *"zero righe toccate"* vuol dire **che non c'era**, non che è
+fallita: RLS rifiuta in silenzio e una `update` a vuoto si comporta uguale.
+⚠️ **Si applica UNA VOLTA SOLA**, al primo caricamento (`useRef`): senza il
+guardiano, ogni ridisegno rimetterebbe i valori salvati sopra quelli che stai
+muovendo — le manopole tornerebbero indietro da sole.
+
+Verificato per ruolo, simulando le sessioni (ruolo `authenticated` +
+`request.jwt.claims`) dentro una transazione annullata:
+
+| | riga condivisa | la propria | per un altro | cosa legge |
+|---|---|---|---|---|
+| **admin** | ✅ scrive | ✅ | ✗ respinto | la condivisa (due admin diversi, stessa riga) |
+| **utente** | ✗ respinto | ✅ | ✗ respinto | la propria, se non c'è la condivisa |
+
+### ⚑ Le partite FLAGGATE### ⚑ Le partite FLAGGATE — il segno della scalata (22/10/2026)
 
 `flag_partite` (`sql/33`): **la stessa forma di `voti_partite`** — una riga per
 admin per partita, chiave composta, tre policy, lettura aperta a chi è entrato
@@ -2130,10 +2198,13 @@ più recente, e non segna niente.
 disabilitato racconta una cosa che si potrebbe fare. Restano leggibili i campi
 (`readOnly`, non `disabled`: `fantasma` è 2,27:1, un campo disabilitato qui
 sparisce).
-⚠️ **Conseguenza da sapere**: un utente normale vede anche le **casse** e
-l'archivio. Se un giorno dovranno restare privati, la strada non è richiudere
-la lettura — la pagina tornerebbe vuota — ma togliere quella card a chi non è
-admin.
+✅ **E le casse sono state nascoste il 22/10**, su richiesta di Mattia: la road
+map del weekend è una cosa da condividere, **i soldi no**. La card del conto
+(in gioco · accumulo · bankroll live · puntata) esiste solo per gli admin.
+⚠️ La strada è stata **togliere la card**, non richiudere la lettura delle
+tabelle: senza quelle righe la pagina tornerebbe vuota per tutti e gli
+spettatori non vedrebbero più nemmeno i passi. L'archivio delle scalate chiuse
+resta visibile.
 
 ### La scheda della partita si apre anche da qui (22/10/2026)
 
@@ -2620,6 +2691,16 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
 
 ## Trappole già incontrate
 
+- ⚠️⚠️ **Una `timestamptz` non si taglia a fette.** PostgREST la consegna
+  come `2026-10-22T16:30:00+00:00`, cioè in **UTC**: `slice(11,16)` dà *le
+  16:30* per un salvataggio fatto alle 18:30, e `slice(8,10)` sbaglia perfino
+  il **giorno** per tutto quello che succede dopo le 22 (verificato:
+  `22:30+00:00` è il **23** alle 00:30). `gg()` va bene sulle **date**, che
+  arrivano come `2026-10-25`; per gli istanti c'è `quando()` in
+  `lib/formato.js`, che passa da un `Date` vero e legge i componenti locali.
+  È la stessa famiglia di `new Date().toISOString().slice(0,10)` e delle date
+  dell'archivio: **in questo progetto ogni volta che si tagliano dieci
+  caratteri da una data si sbaglia.**
 - ⚠️⚠️ **Una larghezza fissa va sempre con un `overflow`.** In
   `ScegliGamba` la colonna della data era `width: 52, flexShrink: 0` e
   conteneva `sab 24/10 15:00`, che ne chiede **~97**: con `flexShrink: 0` il
@@ -2975,6 +3056,11 @@ node --env-file=.env scripts/prova-gg.js                   # il Goal/NoGoal: qua
 node --env-file=.env scripts/prova-consiglio-gol.js --stagioni=8   # i due consigli sotto la giocata
 #   con --mercato la riga 2,5 usa la quota invece del modello
 node --env-file=.env scripts/prova-dispersione.js --stagioni=8    # l'attendibilità vale meno se i book litigano?
+node --env-file=.env scripts/prova-soglie-scalata.js --dettaglio=61
+#   le soglie della card SELEZIONE: partite, a giornata, azzeccate, resa, e
+#   ⚠️ **quanti weekend reggono un passo e quanti ne reggono due** — che è la
+#      colonna che decide, non la resa.
+#   pomelli: --soglie=58,61,65,68 --quota=1.30 --stagioni=8
 node --env-file=.env scripts/prova-scalata.js --stagioni=8 --quota=2.0 --soglia=0.68 --scelta=0.66
 #   Road to weekend: la scalata su 8 stagioni, con la selezione di Mattia
 #   ⚠️ `--scelta` è una **OR** con `--soglia`: due modi di arrivare alla stessa

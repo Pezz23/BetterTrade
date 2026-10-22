@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { C, F, alpha, S, SP } from '../theme'
 import { Card, Etichetta, TastoRipeti, Attesa } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
@@ -6,6 +6,7 @@ import { usaProssime } from '../hooks/usaProssime'
 import { usaVpm } from '../hooks/usaVpm'
 import { usaClassifiche, postoDi } from '../hooks/usaClassifiche'
 import { usaScalate } from '../hooks/usaScalate'
+import { usaPreferenze } from '../hooks/usaPreferenze'
 import { Posizione } from '../components/TestataPartita'
 import SchedaScorrevole from '../components/SchedaScorrevole'
 import DettaglioPartita from '../components/DettaglioPartita'
@@ -14,7 +15,7 @@ import ScegliGamba from '../components/ScegliGamba'
 import { valutaPartita } from '../lib/vpm'
 import { sigla } from '../lib/campionati'
 import { weekendDi, categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
-import { pct, eur, gg } from '../lib/formato'
+import { pct, eur, gg, quando } from '../lib/formato'
 import {
   METODO, NOMI_REGOLA, MAX_GAMBE, QUOTA_MINIMA_GAMBA, QUOTA_MINIMA_SCHEDINA, CONSIGLIATO,
   postaDi, fasce, spezzaFasce, spezzaAlMinimo, giorno, casseDi, percentualeConsigliata, applicaIncasso,
@@ -431,6 +432,9 @@ export default function ScalataPage() {
   const classifiche = usaClassifiche()
   // ⚠️ Chi non è admin legge **il registro che c'è**, non il proprio (vuoto).
   const reg = usaScalate(currentUser?.id, !isAdmin)
+  // ⚠️ Gli admin condividono una riga sola, gli utenti ne hanno una loro: la
+  // differenza la fa l'hook, non questa pagina.
+  const pref = usaPreferenze('scalata')
   const [modo, setModo] = useState('piano')
   // la partita aperta a tutto schermo, come nella pagina Partite
   const [apertaId, setApertaId] = useState(null)
@@ -482,6 +486,40 @@ export default function ScalataPage() {
   // le gambe salvate portano una copia dei quattro numeri di quel giorno, non
   // le quote di mercato né il resto. Si risale per id.
   const partitaAperta = (righe || []).find(r => r.id === apertaId)
+  // ⚠️⚠️ **Si applica UNA VOLTA SOLA**, alla prima lettura. Senza il
+  // guardiano, ogni ridisegno rimetterebbe i valori salvati sopra quelli che
+  // stai muovendo adesso — cioè le manopole tornerebbero indietro da sole.
+  const applicato = useRef(false)
+  useEffect(() => {
+    if (applicato.current || !pref.pronte) return
+    applicato.current = true
+    const d = pref.dati
+    if (!d) return
+    // ⚠️ **Un valore che manca non dà errore, dà il predefinito di qualcun
+    // altro**: ogni chiave ha il suo valore di partenza e si scartano i numeri
+    // non finiti — è la lezione del NaN delle soglie di Andamento, dove uno
+    // `undefined` finito nello stato aveva inchiodato la pagina.
+    const n = (x, se) => (Number.isFinite(Number(x)) ? Number(x) : se)
+    const f = d.filtri || {}
+    setAttMin(n(f.att, CONSIGLIATO.att))
+    setSceMin(n(f.scelta, CONSIGLIATO.scelta))
+    setVpmMin(n(f.vpm, 0))
+    setQuotaGamba(n(f.quotaGamba, QUOTA_MINIMA_GAMBA))
+    if (d.bankroll != null && Number.isFinite(Number(d.bankroll))) setBankroll(Number(d.bankroll))
+    // ⚠️ E il **piano**: tolte, aggiunte, tagli, quote, percentuali ed esiti
+    // (Mattia, 22/10: *"gli admin devono vedere tutti la stessa situazione,
+    // bankroll e partite del passo x compreso"*). Le partite che nel frattempo
+    // sono sparite dal calendario non fanno danno: un taglio o un'aggiunta
+    // ancorati a un id che non c'è più semplicemente non trovano niente.
+    const pi = d.piano || {}
+    if (Array.isArray(pi.tolte)) setTolte(pi.tolte)
+    if (Array.isArray(pi.tagli)) setTagli(pi.tagli)
+    if (pi.aggiunte && typeof pi.aggiunte === 'object') setAggiunte(pi.aggiunte)
+    if (pi.quote && typeof pi.quote === 'object') setQuote(pi.quote)
+    if (pi.perc && typeof pi.perc === 'object') setPerc(pi.perc)
+    if (pi.esiti && typeof pi.esiti === 'object') setEsiti(pi.esiti)
+  }, [pref.pronte, pref.dati])
+
   const aperta = reg.aperta
   const bankrollIniziale = aperta ? Number(aperta.bankroll_iniziale) : (bankroll ?? Math.floor(reg.capitale))
   const posta = aperta ? Number(aperta.posta) : postaDi(bankrollIniziale)
@@ -731,6 +769,17 @@ export default function ScalataPage() {
 
 
       {/* ── Le casse ───────────────────────────────────────────────────── */}
+      {/* ⚠️⚠️ **Il conto lo vede solo chi lo gioca** (Mattia, 22/10/2026).
+          Aprendo la pagina a tutti, bankroll, accumulo e cassa in gioco erano
+          finiti sotto gli occhi di chiunque fosse entrato: la road map del
+          weekend è una cosa da condividere, **i soldi no**.
+          ⚠️ La strada giusta era questa e non richiudere la lettura delle
+          tabelle: senza quelle righe la pagina tornerebbe vuota per tutti, e
+          gli spettatori non vedrebbero più nemmeno i passi.
+          ⚠️ E resta un `if` che **nasconde**: a proteggere è la policy — ma qui
+          non c'è niente da proteggere, perché i passi e le gambe sono già
+          leggibili per scelta. Questo toglie solo il conto dalla vista. */}
+      {isAdmin && <>
       {/* ⚠️ **In cima e col bordo acceso** (richiesta di Mattia): è il conto, e
           un conto che sta in mezzo alla pagina si legge dopo le partite — cioè
           dopo aver già deciso. Il fondo è una tinta d'oro appena accesa su
@@ -876,6 +925,7 @@ export default function ScalataPage() {
           </div>
         )}
       </Card>
+      </>}
 
       {/* ── I tasti di selezione ───────────────────────────────────────── */}
       <Card style={{ marginBottom: 10 }}>
@@ -899,7 +949,14 @@ export default function ScalataPage() {
             <div style={{ fontSize: S.corpo, fontWeight: 700, color: C.testo }}>
               att {CONSIGLIATO.att}% · scelta {CONSIGLIATO.scelta}%
             </div>
+            {/* ⚠️ **Il numero dei weekend sta qui e non è un di più**: a
+                soglie più strette la resa sale e il materiale sparisce — a 68%
+                sarebbe stato *"resa 100,2%"*, la frase più bella della
+                tabella, con **metà dei weekend senza un passo componibile**.
+                Un consiglio che tace quanto spesso è giocabile non è un
+                consiglio. */}
             <div style={{ fontSize: S.micro, color: C.spento }}>{CONSIGLIATO.perche}</div>
+            <div style={{ fontSize: S.micro, color: C.spento }}>un passo in {CONSIGLIATO.weekend} weekend su 100</div>
           </button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'auto auto auto auto', gap: '4px 6px',
@@ -921,6 +978,28 @@ export default function ScalataPage() {
             bocciata è un modo di giocarla per sbaglio. */}
         <div style={{ display: 'flex', gap: 5, marginTop: 9, flexWrap: 'wrap', alignItems: 'center' }}>
           <Etichetta colore={C.celestePieno}>METODO · {METODO.nome.toUpperCase()}</Etichetta>
+          {/* ⚠️⚠️ **Salvataggio col tasto, non automatico** (scelta di Mattia,
+              22/10/2026), e la ragione è che siete **sei account admin sulla
+              stessa riga**: col salvataggio automatico ogni tocco del `+`
+              riscriverebbe le soglie anche agli altri, in diretta, mentre
+              stanno guardando. Col tasto si armeggia e poi si decide.
+              ⚠️ Salva **tutta la situazione**, non solo i filtri: bankroll,
+              partite tolte, aggiunte a mano, tagli, quote e percentuali. */}
+          {/* ⚠️ `attivo` acceso: un tasto grigio in questo tema si legge come
+              **disabilitato**, e qui invece è il gesto che tiene. Accanto al
+              rosso del ricarica si leggono come quello che sono — verde
+              conserva, rosso butta. */}
+          <Tasto colore={C.verde} attivo style={{ marginLeft: 'auto' }}
+            onClick={async () => {
+              const r = await pref.salva({
+                filtri: { att: attMin, scelta: sceMin, vpm: vpmMin, quotaGamba },
+                bankroll: aperta ? null : bankrollIniziale,
+                piano: { tolte, aggiunte, tagli, quote, perc, esiti },
+              })
+              setAvviso(r?.errore ?? null)
+            }}>
+            {pref.occupato ? 'salvo…' : 'salva'}
+          </Tasto>
           {/* ⚠️ A scalata aperta il ricarica **azzera il piano e lascia i
               soldi dove sono**: è la risposta di Mattia a *"cosa succede alle
               scalate dimenticate"* — il denaro è lo stato della scalata, il
@@ -934,7 +1013,7 @@ export default function ScalataPage() {
               ⚠️ `attivo` non vuol dire "selezionato": qui serve solo a dargli
               fondo e bordo pieni, che è l'unico modo che ha `Tasto` di
               gridare. */}
-          <Tasto colore={C.rosso} attivo style={{ marginLeft: 'auto' }}
+          <Tasto colore={C.rosso} attivo
             onClick={() => {
               setTolte([]); setAggiunte({}); setDaOra(Date.now())
               // ⚠️ **E rilegge davvero le partite.** Finché `usaProssime` non
@@ -948,7 +1027,19 @@ export default function ScalataPage() {
             ↻ {aperta ? 'nuovo piano' : 'ricarica'}
           </Tasto>
         </div>
+        {/* ⚠️ **Una selezione salvata deve dire da chi e da quando**: con sei
+            admin sulla stessa riga, una soglia cambiata da sola fra ieri e
+            oggi è illeggibile senza il nome accanto. E chi non ha mai salvato
+            lo deve sapere, o crede che le sue soglie restino. */}
         <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.spento, marginTop: 7, lineHeight: 1.5 }}>
+          {pref.info
+            ? <>selezione salvata{pref.info.chi ? <> da <b style={{ color: C.testo }}>{pref.info.chi}</b></> : ''}
+                {' · '}{quando(pref.info.quando)}
+                {' · '}{pref.info.condivisa ? 'condivisa fra gli admin' : 'solo tua'}</>
+            : <>nessuna selezione salvata{isAdmin ? ' — quella che salvi la vedono tutti gli admin' : ''}</>}
+          {pref.errore && <span style={{ color: C.ambra }}>{' · '}{pref.errore}</span>}
+        </div>
+        <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.spento, marginTop: 4, lineHeight: 1.5 }}>
           {METODO.desc}
           <br />posta <b style={{ color: C.testo }}>{posta}</b> (10% del bankroll, per difetto)
           · schedina ≥ {QUOTA_MINIMA_SCHEDINA.toFixed(2).replace('.', ',')} · massimo {MAX_GAMBE} gambe

@@ -20,6 +20,24 @@ export const eur = (v) => '€ ' + (Number(v) || 0).toFixed(2).replace('.', ',')
 /** `2026-10-25` → `25/10`. Lavora sulla stringa: niente fusi orari. */
 export const gg = (d) => d ? `${String(d).slice(8, 10)}/${String(d).slice(5, 7)}` : '—'
 
+/**
+ * Un **istante** → `22/10 18:30`, nell'ora di chi guarda.
+ *
+ * ⚠️⚠️ **Non si taglia a fette una `timestamptz`**, ed è la trappola di
+ * famiglia di questo progetto: PostgREST la consegna come
+ * `2026-10-22T16:30:00+00:00`, quindi `slice(11,16)` dà **le 16:30** per un
+ * salvataggio fatto alle 18:30, e `slice(8,10)` sbaglia perfino il giorno per
+ * tutto quello che succede dopo le 22. `gg()` va bene sulle **date** (che
+ * arrivano come `2026-10-25`), non sugli istanti.
+ */
+export const quando = (d) => {
+  if (!d) return '—'
+  const x = new Date(d)
+  if (Number.isNaN(x.getTime())) return '—'
+  const z = (n) => String(n).padStart(2, '0')
+  return `${z(x.getDate())}/${z(x.getMonth() + 1)} ${z(x.getHours())}:${z(x.getMinutes())}`
+}
+
 /** `2026-10-25` → `25/10/26`, per gli elenchi che attraversano gli anni. */
 export const ggAnno = (d) => d ? `${gg(d)}/${String(d).slice(2, 4)}` : '—'
 
