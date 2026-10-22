@@ -56,14 +56,28 @@ export default function BarraCampionati({ campionati, conteggi, attivo, totale, 
       // pagina sotto — il gesto partirebbe sulla barra e finirebbe altrove.
       overflowY: 'auto', overscrollBehavior: 'contain',
     }}>
-      {voci.map(v => {
+      {/* ⚠️⚠️ **Centrata in altezza con `margin: auto 0`, non con
+          `justifyContent: center`** (Mattia, 22/10/2026: *"ora è tutta in
+          cima su iOS, la vorrei al centro, con lo stesso spazio sopra e
+          sotto"*). Sembrano la stessa cosa e non lo sono: quando le voci
+          diventano più alte del contenitore, `center` **taglia quelle in
+          cima** e non si riesce più a raggiungerle scorrendo, perché
+          l'eccedenza finisce prima del punto di partenza. Il margine
+          automatico invece si annulla da sé appena lo spazio finisce, e la
+          barra torna a scorrere normalmente. */}
+      <div style={{ margin: 'auto 0', width: '100%' }}>
+      {voci.map((v, i) => {
         const on = attivo === v.div
         const vuoto = v.n === 0
+        // ⚠️ L'ultima non porta la riga sotto: finché la barra partiva dalla
+        // testata quel tratto moriva contro la tab bar e non si vedeva, ma da
+        // centrata resta appeso nel vuoto.
+        const ultima = i === voci.length - 1
         return (
           <button key={v.div || 'tutti'} onClick={() => onScegli(v.div)} disabled={vuoto && !on} title={v.titolo}
             style={{
               padding: `${SP.s}px 0 ${SP.xs}px`, background: on ? alpha(C.oro, 0.16) : 'transparent',
-              border: 'none', borderBottom: `1px solid ${C.bordoTenue}`,
+              border: 'none', borderBottom: ultima ? 'none' : `1px solid ${C.bordoTenue}`,
               // ⚠️ La riga d'oro **a destra e sempre presente**, trasparente da
               // spenta: comparendo solo da accesa sposterebbe di 2px il testo
               // di tutte le altre a ogni tocco. Stessa cura della tab bar.
@@ -77,6 +91,7 @@ export default function BarraCampionati({ campionati, conteggi, attivo, totale, 
           </button>
         )
       })}
+      </div>
     </div>
   )
 }

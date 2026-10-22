@@ -48,6 +48,10 @@ const pillola = (on, colore = C.oro) => ({
 // Un decimale con la virgola: lo usano le targhette di VPM e voto, che sulla
 // loro scala contano i decimi (`7,5`) e non le unità.
 const n1 = (v) => Number(v).toFixed(1).replace('.', ',')
+
+/** Un terzo della riga, gli spazi già tolti: è la larghezza di un tasto
+ *  dell'ordine, e vale **nelle due file** — è quello che le tiene uguali. */
+const TERZO = 'calc((100% - 10px) / 3)'
 /**
  * Le quattro manopole dei filtri: un minimo per indicatore.
  *
@@ -443,16 +447,52 @@ export default function PartitePage() {
           mette una volta, l'ordine si cambia continuamente per guardare la
           stessa lista da tre lati. Sta attaccato alla lista, non in cima alla
           pagina, perché è di lei che parla. */}
-      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
-        <span style={{ fontSize: S.base, color: C.spento, fontFamily: F.sans }}>ordina</span>
-        {ORDINI.map(o => (
-          /* Un tasto per ogni colonna della barra. ⚠️ Il secondo tocco sullo
-             stesso inverte il verso: sulla quota serve davvero, perché a volte
-             la vuoi bassa. */
-          <button key={o.id} onClick={() => { if (ordine === o.id) setCrescente(v => !v); else { setOrdine(o.id); setCrescente(false) } }}
-            style={{ ...pillola(ordine === o.id, o.colore), padding: '6px 10px' }}>
-            {ordine === o.id ? (crescente ? '↑ ' : '↓ ') : ''}{o.label}
-          </button>
+      {/* ⚠️⚠️ **Tre e due, in una griglia, e non cinque in fila che vanno a
+          capo** (Mattia, 22/10/2026: *"voto va a capo, mi dà molto
+          fastidio"*). In fila i cinque tasti chiedevano ~409px e ne avevano
+          303 — la barra dei campionati ne ha presi 40 — quindi l'ultimo
+          scendeva da solo, in una riga tutta sua e mezza vuota.
+          ⚠️ `minmax(0, 1fr)`: in una griglia `1fr` **non scende sotto il
+          contenuto**, e una colonna che si rifiuta di stringersi fa uscire la
+          riga invece di mandarla a capo.
+          ⚠️ «ordina» sale **sopra**: a sinistra si mangiava 50px dei 303, e
+          qui dentro ogni pixel è una lettera in più che ci sta. */}
+      <Etichetta style={{ marginBottom: 5 }}>ordina</Etichetta>
+      {/* ⚠️⚠️ **Tre sopra e due sotto, e i due in mezzo** — non una griglia,
+          che li avrebbe incollati a sinistra lasciando un buco a destra.
+          Ogni tasto è **largo un terzo esatto** (`TERZO`), quindi la fila di
+          sotto sta dentro le colonne di sopra ma sfalsata di mezza casella: è
+          quello che la fa sembrare una cosa sola invece di una riga avanzata.
+          ⚠️ `flex: 0 0` e non `1`: con `1` i due di sotto si allargherebbero
+          a metà schermo ciascuno e le due file non si assomiglierebbero più. */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 12 }}>
+        {[ORDINI.slice(0, 3), ORDINI.slice(3)].map((fila, i) => (
+          <div key={i} style={{ display: 'flex', gap: 5, justifyContent: 'center' }}>
+            {fila.map(o => {
+              const on = ordine === o.id
+              return (
+                /* Un tasto per ogni colonna della barra. ⚠️ Il secondo tocco
+                   sullo stesso inverte il verso: sulla quota serve davvero,
+                   perché a volte la vuoi bassa. */
+                <button key={o.id} onClick={() => { if (on) setCrescente(v => !v); else { setOrdine(o.id); setCrescente(false) } }}
+                  style={{
+                    ...pillola(on, o.colore), flex: `0 0 ${TERZO}`, padding: '8px 4px',
+                    fontSize: S.corpo, whiteSpace: 'nowrap',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3,
+                  }}>
+                  {/* ⚠️ La freccia in una casella a **larghezza fissa**, non
+                      attaccata alla parola: comparendo e sparendo sposterebbe
+                      il testo di nove pixel a ogni tocco, e cinque etichette
+                      che ballano si notano più dell'ordine che è cambiato. */}
+                  <span style={{ width: 9, textAlign: 'center', fontFamily: F.mono,
+                    fontSize: S.minuta, color: on ? 'inherit' : 'transparent' }}>
+                    {crescente ? '↑' : '↓'}
+                  </span>
+                  {o.label}
+                </button>
+              )
+            })}
+          </div>
         ))}
       </div>
 

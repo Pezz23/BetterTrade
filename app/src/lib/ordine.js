@@ -17,7 +17,13 @@ export const fondo = (a, b) => (a == null ? 1 : b == null ? -1 : 0)
 // la pagina costruisce una volta sola.
 export const ORDINI = [
   { id: 'quota',  label: 'quota',         colore: C.oro,     chiave: r => r.quotaGiocata ?? r.quota },
-  { id: 'att',    label: 'attendibilità', colore: C.menta,   chiave: r => r.probGiocata },
+  // ⚠️ `attend.` e non `attendibilità` (22/10/2026): da quando i cinque tasti
+  // stanno in una griglia 3+2, la colonna è larga ~98px e la parola intera con
+  // la freccia ne chiedeva ~96 — cioè passava per un pelo, che è il margine
+  // con cui in questo progetto ci si è già fatti male due volte. È anche
+  // l'abbreviazione che la card usa già sotto quel numero (`ATTEND.`), quindi
+  // non è una parola nuova da imparare.
+  { id: 'att',    label: 'attend.',       colore: C.menta,   chiave: r => r.probGiocata },
   { id: 'vpm',    label: 'VPM',           colore: C.celeste, chiave: (r, v) => v?.get(r.id)?.punti },
   // ⚠️ Si ordina per **scelta** e non più per resa (12/10/2026): la resa
   // ordinava male — `quota × attendibilità` vuol dire che in cima finiscono le
