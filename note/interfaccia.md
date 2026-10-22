@@ -197,6 +197,13 @@
   ⚠️ **`R` descrive 23 raggi su 94**, e i due più usati — 7 (×20) e 8 (×22) —
   non ci sono: all'occhio sono lo stesso raggio, scelto a caso 42 volte.
   **Unificarli è una decisione aperta**, non una pulizia da fare di slancio.
+- ⚠️⚠️ **Il tagliando cerca gli export senza usi in TUTTO il repo, e
+  distingue due cose.** Il **codice** che non chiama più nessuno si toglie —
+  il 22/10/2026 `fattoreVpm` e `FATTORE_SCALA`, orfani da quando il voto è
+  diventato una pagella — mentre le **costanti misurate** (`PAVIMENTI`,
+  `GG_MEDIO`, `DISPERSIONE`, `BASI_GOL`…) restano esportate anche senza usi
+  esterni: esistono per essere lette e provate da terminale, e sono la
+  documentazione dei numeri. Confondere le due vuol dire cancellarla.
 - ⚠️ **Un controllo del codice morto che guarda solo `app/` sbaglia.**
   `componiPasso` e `simula` in `lib/scalata.js` sembrano senza usi e li chiama
   `btscout/scripts/prova-scalata.js`: `app/src/lib/` è **condiviso col
