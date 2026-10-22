@@ -274,7 +274,14 @@ export default function BetBuilderPage() {
                 quota {quota.toFixed(2).replace('.', ',')}
               </span>
             </div>
-            <div style={{ marginTop: 6 }}>{s.gambe.map(g => <Gamba key={g.id} g={g} />)}</div>
+            {/* ⚠️ Le quote **si toccano**: la nostra è Bet365 o la media di
+                mercato, tu giochi su un altro book o con un bonus. E qui c'è
+                l'importo, quindi una quota sbagliata è una **vincita**
+                sbagliata. */}
+            <div style={{ marginTop: 6 }}>
+              {s.gambe.map(g => <Gamba key={g.id} g={g}
+                onQuota={(v) => reg.cambiaQuota(g.id, v).then(r => setAvviso(r.errore ?? null))} />)}
+            </div>
             {/* l'importo resta modificabile: si scrive quando si gioca, non
                 quando si compone */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
@@ -350,7 +357,7 @@ export default function BetBuilderPage() {
 
 /** Una gamba, uguale nella proposta e nel registro: **se fossero due pezzi,
  *  prima o poi mostrerebbero due cose diverse.** */
-function Gamba({ g, onScarta = null }) {
+function Gamba({ g, onScarta = null, onQuota = null }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: `minmax(0,1fr) 30px 46px${onScarta ? ' 18px' : ''}`,
       gap: 6, alignItems: 'center', padding: '5px 0', borderTop: `1px solid ${alpha(C.testo, 0.06)}` }}>
@@ -364,9 +371,19 @@ function Gamba({ g, onScarta = null }) {
         </div>
       </div>
       <div style={{ fontFamily: F.mono, fontSize: S.corpo, fontWeight: 700, color: C.testo, textAlign: 'center' }}>{g.giocata}</div>
-      <div style={{ fontFamily: F.mono, fontSize: S.corpo, color: C.oro, textAlign: 'right' }}>
-        {Number(g.quota).toFixed(2).replace('.', ',')}
-      </div>
+      {/* ⚠️ Si scrive **uscendo dal campo**, non a ogni tasto: altrimenti
+          "1,85" passerebbe per "1", "1," e "1,8" — e "1" non è una quota
+          valida, quindi il database la respingerebbe tre volte mentre scrivi. */}
+      {onQuota ? (
+        <input defaultValue={Number(g.quota).toFixed(2)} inputMode="decimal"
+          onBlur={e => { if (Number(e.target.value) !== Number(g.quota)) onQuota(e.target.value) }}
+          style={{ width: '100%', background: C.pozzo, color: C.oro, border: `1px solid ${alpha(C.oro, 0.3)}`,
+            borderRadius: 5, padding: '2px 4px', fontFamily: F.mono, fontSize: S.corpo, textAlign: 'right' }} />
+      ) : (
+        <div style={{ fontFamily: F.mono, fontSize: S.corpo, color: C.oro, textAlign: 'right' }}>
+          {Number(g.quota).toFixed(2).replace('.', ',')}
+        </div>
+      )}
       {onScarta && (
         <button onClick={onScarta} title="scartala: non tornerà fra le candidate"
           style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer',

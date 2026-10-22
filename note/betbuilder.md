@@ -99,6 +99,27 @@ nuova: è la tabella nata la mattina stessa per i filtri della scalata.
 flag un admin scriverebbe la **riga condivisa**, e le sue partite scartate le
 vedrebbe il gruppo: l'opposto di quello che è stato chiesto per il Builder.
 
+## ⚠️⚠️ Una schedina salvata NON si tocca mai più da sola
+
+Le gambe sono una **copia**, non un collegamento: squadre, giocata, quota e i
+numeri di quel giorno stanno in `schedina_gambe`. Quindi quando l'importazione
+aggiorna il calendario, o quando le partite si giocano e **escono** da
+`prossime_partite`, **la schedina resta identica** — si vede ancora
+*Venezia – Inter @1,30* con l'attendibilità che aveva il venerdì.
+È la condizione perché il registro valga qualcosa: una riga che cambia da sola
+non è una prova.
+
+**L'unica cosa che la cambia sei tu**: ⚠️ **la quota di ogni gamba è
+modificabile dopo il salvataggio** (Mattia, 22/10: *"la quota potrebbe essere
+diversa dalla media trovata da noi"*). La nostra viene da Bet365 o dalla media
+di mercato, lui gioca su altri book e con i bonus — e siccome qui c'è
+l'**importo**, una quota sbagliata sarebbe una **vincita sbagliata**. Verificato:
+correggendo una gamba da 1,30 a 1,55 la schedina passa da 1,82 a 2,17 e la
+vincita da 18,20 a 21,70 €; una quota sotto 1 la respinge il vincolo del
+database.
+⚠️ E `prossime_partite` **non si tocca**: resta la fotografia di cosa si vedeva
+prima, e lo scarto fra le due quote è un dato, non un errore.
+
 ## Quello che resta da fare
 
 - **L'esito automatico** dall'archivio, col vincolo scritto sopra.

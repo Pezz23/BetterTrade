@@ -111,6 +111,28 @@ export function usaSchedine(userId) {
     return {}
   }, [ricarica])
 
+  /**
+   * La quota di una gamba, **modificabile dopo il salvataggio** (Mattia,
+   * 22/10/2026: *"devo poter cambiare la quota salvata, la quota potrebbe
+   * essere diversa dalla media trovata da noi"*).
+   *
+   * ⚠️⚠️ È la stessa ragione per cui nella scalata le quote si toccano: la
+   * nostra viene da **Bet365 o dalla media di mercato**, e lui gioca su book
+   * diversi e con i bonus. Una schedina che mostra la quota del consenso
+   * racconta una giocata che non è la sua — e siccome qui c'è l'**importo**,
+   * racconterebbe anche una **vincita sbagliata**.
+   * ⚠️ Non si tocca `prossime_partite`: quella è la fotografia di cosa si
+   * vedeva prima, e il confronto fra le due quote è un dato, non un errore.
+   */
+  const cambiaQuota = useCallback(async (gambaId, quota) => {
+    const n = Number(String(quota).replace(',', '.'))
+    if (!(n > 1)) return { errore: 'la quota deve essere maggiore di 1' }
+    const { error } = await supabase.from('schedina_gambe').update({ quota: n }).eq('id', gambaId)
+    if (error) { setErrore(error.message); return { errore: error.message } }
+    await ricarica()
+    return {}
+  }, [ricarica])
+
   /** ⚠️ Le gambe se ne vanno con la `on delete cascade`: una sola scrittura. */
   const cancella = useCallback(async (id) => {
     const { error } = await supabase.from('schedine').delete().eq('id', id)
@@ -125,6 +147,6 @@ export function usaSchedine(userId) {
   // non la vuoi più.
   const usate = new Set((schedine || []).flatMap(s => s.gambe.map(g => g.prossima_id)))
 
-  return { schedine, usate, crea, segnaGiocata, segnaEsito, scriviImporto, cancella,
+  return { schedine, usate, crea, segnaGiocata, segnaEsito, scriviImporto, cambiaQuota, cancella,
     occupato, errore, ricarica }
 }
