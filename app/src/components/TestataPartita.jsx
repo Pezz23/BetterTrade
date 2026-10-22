@@ -6,6 +6,15 @@ import Icona from './Icona'
 import { usaClassifiche, postoDi, fasciaDi } from '../hooks/usaClassifiche'
 import { consiglioOver, consiglioGg, mercatoOver25, BASI_GOL } from '../lib/gol'
 
+/**
+ * Il corpo del verdetto dei consigli nella scheda — e **la data e l'ora
+ * prendono lo stesso** (Mattia, 22/10/2026: *"data e ora con la stessa
+ * grandezza del carattere esito OVER"*). Sta in una costante sola perché sono
+ * due numeri che devono restare uguali: scritti a mano in due posti, al primo
+ * ritocco divergono.
+ */
+const CORPO_CONSIGLIO = S.base
+
 // La testata di una partita: squadra sinistra — attendibilità — squadra destra,
 // con data e ora sotto. La usano sia la riga della lista (compatta) sia la
 // scheda (grande): stessa grafica, un posto solo, così non divergono.
@@ -107,6 +116,82 @@ const DUE_RIGHE = compatta => compatta
  * non dà errore**, e un conto aritmetico sull'altezza non lo scopre: bisogna
  * guardare la firma.
  */
+
+/**
+ * I due consigli — over/under e Goal/NoGoal — **su una riga loro**, uno a
+ * sinistra e uno a destra (disposizione chiesta da Mattia il 22/10/2026).
+ *
+ * ⚠️⚠️ **Perché non stanno più sotto la giocata.** Ci sono stati dal
+ * 15/10/2026, incolonnati dentro la colonna della giocata: larga 76px, quindi
+ * i due verdetti e le due percentuali facevano **quattro righe di testo** che
+ * allungavano la card di una sessantina di pixel, e per starci dentro erano a
+ * corpo 11 con `nowrap` — `UNDER 3,5` è 9 caratteri, cioè 5,4px per px di
+ * corpo, e oltre gli 11px sborderebbe in silenzio. Spostati sui due lati
+ * hanno **tutta la larghezza della card** e costano **una riga invece di
+ * quattro**.
+ * ⚠️ Restano dello stesso genere della giocata — *cosa farei* — mentre il
+ * blocco ⚽ più in basso dice *com'è messa la partita*: per questo il verdetto
+ * è bianco e non prende il colore della categoria, che lì vuol dire un'altra
+ * cosa (centro, giallo, blu).
+ * ⚠️ **Arrivano da fuori** (`gol`): la testata non calcola niente, e nella
+ * riga della lista quella proprietà non c'è — quindi lì questa riga non
+ * compare affatto. In lista i gol attesi non sono caricati, e inventarli per
+ * riempire uno spazio sarebbe peggio di lasciarlo vuoto.
+ */
+function Consigli({ p, gol, compatta }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+      gap: SP.m, marginBottom: compatta ? SP.s : SP.m }}>
+      {[['O/U', consiglioOver(gol.over, mercatoOver25(p))], ['GG/NG', consiglioGg(gol.gg)]].map(([et, cons], i) => {
+        // ⚠️⚠️ **Lo scarto dalla base è il numero che rende leggibile il
+        // consiglio**, e senza di lui una parola sola mente per omissione:
+        // `UNDER 3,5` si avvera il 75% delle volte ma **da solo** arriva il
+        // 71%, mentre `OVER 2,5` al 66% vale +15. Misurato, lo scarto sta fra
+        // +3 e +15 a seconda della riga: la percentuale nuda fa sembrare forte
+        // il consiglio debole e debole quello forte.
+        const base = cons?.chiave ? BASI_GOL[cons.chiave] : null
+        const scarto = cons?.p != null && base != null ? cons.p - base : null
+        // verde solo dove lo scarto è grande davvero: sotto i 5 punti il
+        // consiglio sta ripetendo quello che è già vero
+        const tinta = scarto == null ? C.fioco
+          : scarto >= 0.10 ? C.verde : scarto >= 0.05 ? C.testo : C.spento
+        return (
+          <div key={et} style={{ lineHeight: 1.25, textAlign: i === 0 ? 'left' : 'right' }}>
+            {/* ⚠️ **Ogni riga porta il nome della domanda** (Mattia, 15/10:
+                *"in bilico da solo non si capisce"*): `IN BILICO` da solo non
+                dice **su cosa**, e il Goal tace nel 65% dei casi — cioè nella
+                maggior parte delle partite quella riga era una parola senza
+                soggetto.
+                ⚠️ **E chi ha parlato va scritto**: sul 2,5 il consiglio può
+                venire dalle quote (71% di volte giuste) o dal nostro modello
+                (63%), e sono due cose di valore diverso. Stessa regola della
+                colonna QUOTA, che dice sempre `BET365` o `MEDIA`. */}
+            <Etichetta style={{ fontSize: compatta ? 7 : 8, letterSpacing: '0.1em' }}>
+              {et}{cons?.fonte === 'mercato' && <span style={{ color: C.oroChiaro }}> · quote</span>}
+            </Etichetta>
+            <div style={{
+              fontFamily: F.mono, fontWeight: 700, fontSize: compatta ? 10 : CORPO_CONSIGLIO,
+              letterSpacing: '0.03em', whiteSpace: 'nowrap',
+              // ⚠️ IN BILICO resta spento: un consiglio che non c'è non deve
+              // avere lo stesso peso di uno che c'è.
+              color: cons?.esito ? C.bianco : C.fioco,
+            }}>{cons?.esito || 'IN BILICO'}</div>
+            {cons?.esito && scarto != null && (
+              <div style={{ fontFamily: F.mono, fontSize: compatta ? 9 : 10, whiteSpace: 'nowrap', color: C.spento }}>
+                {(cons.p * 100).toFixed(0)}%{' '}
+                <span style={{ color: tinta, fontWeight: 700 }}>
+                  {scarto >= 0 ? '+' : ''}{(scarto * 100).toFixed(0)}
+                </span>
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+
 export function Posizione({ nome, colore, posto, compatta = false, style }) {
   const tinta = COLORE_FASCIA[fasciaDi(posto)] || colore
   const iniziali = nome.split(/[\s-]+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase()
@@ -222,67 +307,13 @@ export default function TestataPartita({ p, cat, compatta = false, gol = null })
                     quindi lì le due righe non compaiono. È voluto: in lista i
                     gol attesi non sono caricati, e inventarli per riempire uno
                     spazio sarebbe peggio di lasciarlo vuoto. */}
-                {gol && (
-                  <div style={{ marginTop: 9, display: 'flex', flexDirection: 'column', gap: 7 }}>
-                    {/* ⚠️ **Ogni riga porta il nome della domanda** (Mattia,
-                        15/10/2026: *"in bilico da solo non si capisce"*). Aveva
-                        ragione: `IN BILICO` da solo non dice **su cosa** sia in
-                        bilico, e il Goal tace nel 65% dei casi — cioè nella
-                        maggior parte delle partite quella riga era una parola
-                        senza soggetto. L'etichetta resta spenta e il verdetto
-                        bianco: il nome della domanda è contesto, la risposta è
-                        il dato. */}
-                    {[['O/U', consiglioOver(gol.over, mercatoOver25(p))], ['GG/NG', consiglioGg(gol.gg)]].map(([et, cons]) => {
-                      // ⚠️⚠️ **Lo scarto dalla base è il numero che rende
-                      // leggibile il consiglio**, e senza di lui una parola
-                      // sola mente per omissione: `UNDER 3,5` si avvera il 75%
-                      // delle volte ma **da solo** arriva il 71%, mentre
-                      // `OVER 2,5` al 66% vale +15. Misurato, lo scarto del
-                      // consiglio sta fra +3 e +15 a seconda della riga: la
-                      // percentuale nuda fa sembrare forte il consiglio debole
-                      // e debole quello forte.
-                      const base = cons?.chiave ? BASI_GOL[cons.chiave] : null
-                      const scarto = cons?.p != null && base != null ? cons.p - base : null
-                      // verde solo dove lo scarto è grande davvero: sotto i 5
-                      // punti il consiglio sta ripetendo quello che è già vero
-                      const tinta = scarto == null ? C.fioco
-                        : scarto >= 0.10 ? C.verde : scarto >= 0.05 ? C.testo : C.spento
-                      return (
-                        <div key={et} style={{ lineHeight: 1.25 }}>
-                          {/* ⚠️ **Chi ha parlato va scritto**: sul 2,5 il
-                              consiglio può venire dalle quote (71% di volte
-                              giuste) o dal nostro modello (63%), e sono due
-                              cose di valore diverso. È la stessa regola della
-                              colonna QUOTA, che dice sempre `BET365` o
-                              `MEDIA`: un numero senza la sua fonte non si può
-                              pesare. */}
-                          <Etichetta style={{ fontSize: compatta ? 7 : 8, letterSpacing: '0.1em' }}>
-                            {et}{cons?.fonte === 'mercato' && <span style={{ color: C.oroChiaro }}> · quote</span>}
-                          </Etichetta>
-                          <div style={{
-                            // ⚠️ `UNDER 3,5` è la riga più lunga: 9 caratteri,
-                            // cioè 5,4px per px di corpo. Dentro i 64px della
-                            // colonna sta fino a 11px, non oltre — e sono
-                            // `nowrap`, quindi oltre sborderebbero in silenzio.
-                            fontFamily: F.mono, fontWeight: 700, fontSize: compatta ? 10 : 11, letterSpacing: '0.03em',
-                            whiteSpace: 'nowrap',
-                            // ⚠️ IN BILICO resta spento: un consiglio che non
-                            // c'è non deve avere lo stesso peso di uno che c'è.
-                            color: cons?.esito ? C.bianco : C.fioco,
-                          }}>{cons?.esito || 'IN BILICO'}</div>
-                          {cons?.esito && scarto != null && (
-                            <div style={{ fontFamily: F.mono, fontSize: compatta ? 9 : 10, whiteSpace: 'nowrap', color: C.spento }}>
-                              {(cons.p * 100).toFixed(0)}%{' '}
-                              <span style={{ color: tinta, fontWeight: 700 }}>
-                                {scarto >= 0 ? '+' : ''}{(scarto * 100).toFixed(0)}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
+                {/* ⚠️⚠️ **I due consigli NON stanno più qui sotto** (Mattia,
+                    22/10/2026): incolonnati dentro i 76px della giocata
+                    facevano crescere la card di sessanta pixel, e per starci
+                    dentro erano a corpo 11 con `nowrap`. Sono scesi su una
+                    riga loro, larga quanto la card — vedi `Consigli` più
+                    sotto. Qui resta quello che la giocata **è**: l'etichetta,
+                    il pronostico e la barra. */}
               </div>
             )}
             {/* ⚠️ **Il tondo sta a DESTRA del nome, non sopra** (scelta di
@@ -332,21 +363,27 @@ export default function TestataPartita({ p, cat, compatta = false, gol = null })
           (Mattia, 22/10/2026): erano il testo più grande del blocco dopo i nomi
           delle squadre, e non sono il dato — sono il contesto. In lista
           restano come erano. */}
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: SP.xl,
-        marginTop: compatta ? 9 : SP.xl, paddingTop: compatta ? SP.m : SP.l,
+      {/* ⚠️ La linea separa **il blocco delle squadre** da quello che viene
+          dopo: i due consigli quando ci sono, e sempre la data. In lista i
+          consigli non esistono, quindi lì sotto la linea c'è solo la data —
+          com'era prima. */}
+      <div style={{ marginTop: compatta ? 9 : SP.xl, paddingTop: compatta ? SP.m : SP.l,
         borderTop: `1px solid ${C.bordoTenue}` }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: SP.s, fontSize: compatta ? S.corpo : S.media,
+      {gol && <Consigli p={p} gol={gol} compatta={compatta} />}
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: SP.xl }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: SP.s, fontSize: compatta ? S.corpo : CORPO_CONSIGLIO,
           fontWeight: 600, fontFamily: F.mono, color: C.testo }}>
-          <Icona nome="calendario" misura={compatta ? 13 : 14} style={{ color: C.spento }} />
+          <Icona nome="calendario" misura={compatta ? 13 : 13} style={{ color: C.spento }} />
           {giorno(p.data).toUpperCase()}
         </span>
         {p.ora && (
-          <span style={{ display: 'flex', alignItems: 'center', gap: SP.s, fontSize: compatta ? S.corpo : S.media,
+          <span style={{ display: 'flex', alignItems: 'center', gap: SP.s, fontSize: compatta ? S.corpo : CORPO_CONSIGLIO,
             fontWeight: 600, fontFamily: F.mono, color: C.testo }}>
-            <Icona nome="ora" misura={compatta ? 13 : 14} style={{ color: C.spento }} />
+            <Icona nome="ora" misura={compatta ? 13 : 13} style={{ color: C.spento }} />
             {p.ora.slice(0, 5)}
           </span>
         )}
+      </div>
       </div>
     </>
   )

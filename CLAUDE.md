@@ -468,12 +468,29 @@ l'evento binario butta via l'informazione di quanti gol) e la **correzione di
 correlazione** imparata dalle stagioni chiuse (invariata: +0,0005). La
 correlazione fra le due squadre esiste ma è già dentro la stretta.
 
-#### I due consigli sotto la giocata — 15 ottobre 2026
+#### I due consigli — 15 ottobre 2026, spostati il 22/10
 
 **Chiesti da Mattia**: *"sotto giocata un consigliatore di over/under e Goal /
-no goal, al centro, in bianco"*. Nella scheda, sotto il pronostico e la sua
-barra, due righe: `OVER 1,5` e `GOL`.
+no goal, al centro, in bianco"*. Nella scheda: `OVER 1,5` e `GOL`.
 
+⚠️⚠️ **Dal 22/10/2026 stanno su una RIGA LORO, uno a sinistra e uno a destra**
+(`Consigli` in `TestataPartita.jsx`), non più incolonnati sotto il pronostico.
+Il motivo è una misura: la colonna della giocata è larga **76px**, quindi i due
+verdetti con le due percentuali facevano **quattro righe di testo** e
+allungavano la card di una sessantina di pixel — e per starci dentro erano a
+corpo 11 con `nowrap`. Sulla riga loro costano **una riga invece di quattro** e
+hanno tutta la larghezza della card. La disposizione è quella disegnata da
+Mattia:
+
+```
+Squadra 1  posizione  ·  GIOCATA  ·  Squadra 2  posizione
+O/U OVER 1,5                                  GG/NG  GOL
+                     ven 23/10 · 17:30
+```
+
+⚠️ **E la data prende lo stesso corpo del verdetto** (`CORPO_CONSIGLIO`, una
+costante sola: due numeri che devono restare uguali, scritti a mano in due
+posti, al primo ritocco divergono).
 ⚠️ **Stanno lì perché sono dello stesso genere della giocata** — *cosa farei* —
 mentre il blocco ⚽ più sotto dice *com'è messa la partita*. Il bianco li lega
 fra loro e li separa dal colore della categoria, che sulla giocata vuol dire
