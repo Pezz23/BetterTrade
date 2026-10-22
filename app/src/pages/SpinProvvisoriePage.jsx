@@ -70,8 +70,13 @@ function Cella({ pos, partita, votiDi, diversa, onClic, inAltre }) {
           </div>
           {/* La giocata nella forma compatta della griglia: "1+O1,5" sta su una riga, "1 + over 1,5" no. */}
           <div style={{ fontSize: S.titolo, fontWeight: 700, color: colore, whiteSpace: 'nowrap', lineHeight: 1 }}>{pronosticoDa(partita.giocata)}</div>
+          {/* ⚠️ **`book` e non `sul book`**: nella cella quella riga usciva
+              dal riquadro di **9px** e il `70%` finiva sotto il bordo — vecchio
+              quanto la cella, trovato il 22/10/2026 dal controllo nuovo di
+              `guarda.mjs`, non a occhio. `@1.28` ci sta, `sul book · 70%` no.
+              Nell'elenco sotto, dove c'è spazio, resta per esteso. */}
           <div style={{ fontSize: S.base, color: C.spento, whiteSpace: 'nowrap' }}>
-            {partita.quotaGiocata ? `@${partita.quotaGiocata.toFixed(2)}` : 'sul book'} · <b style={{ color: colore }}>{pct(partita.probGiocata)}</b>
+            {partita.quotaGiocata ? `@${partita.quotaGiocata.toFixed(2)}` : 'book'} · <b style={{ color: colore }}>{pct(partita.probGiocata)}</b>
           </div>
         </>
       ) : <div style={{ fontSize: S.corpo, color: C.fantasma }}>—</div>}

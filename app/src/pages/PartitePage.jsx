@@ -302,18 +302,25 @@ export default function PartitePage() {
                   pezzo di Andamento e del bankroll della scalata, e serve —
                   da 0 a 62 sarebbero sessantadue tocchi. */}
               <Etichetta style={{ marginBottom: 5 }}>scelta minima</Etichetta>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              {/* ⚠️⚠️ **Qui c'erano anche due scorciatoie (61% · 62%) e
+                  USCIVANO DALLA CELLA DI 85px**, finendo disegnate sopra «solo
+                  sopra soglia» della colonna accanto — fotografato da Mattia
+                  il 22/10/2026. Il pannello è una griglia a due colonne: su
+                  375px ogni cella ha ~150px, e `−` + valore + `+` ne occupano
+                  già 146. **Non c'era spazio, e nessuno lo aveva misurato.**
+                  Le scorciatoie erano una mia aggiunta non richiesta: tolte,
+                  il comando resta quello che aveva chiesto lui.
+                  ⚠️ `flexWrap` e `minWidth: 0` restano come rete: se un giorno
+                  la riga ricresce, **va a capo invece di uscire**. Una misura
+                  fissa senza una via d'uscita non si stringe e non si taglia —
+                  esce, e si disegna sopra il vicino. */}
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', minWidth: 0 }}>
                 <TastoRipeti onScatto={() => setSceltaMin(v => Math.max(0, v - 1))}>−</TastoRipeti>
                 <div style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700,
-                  color: sceltaMin > 0 ? C.oro : C.spento, minWidth: 54, textAlign: 'center' }}>
+                  color: sceltaMin > 0 ? C.oro : C.spento, minWidth: 48, textAlign: 'center' }}>
                   {sceltaMin > 0 ? `${sceltaMin}%` : 'tutte'}
                 </div>
                 <TastoRipeti onScatto={() => setSceltaMin(v => Math.min(100, v + 1))}>+</TastoRipeti>
-                {/* le due soglie misurate, come scorciatoia: 61% è quella
-                    della scalata, 62% quella da cui parte Andamento */}
-                {[61, 62].map(g => (
-                  <button key={g} onClick={() => setSceltaMin(g)} style={{ ...pillola(sceltaMin === g), padding: '5px 9px' }}>{g}%</button>
-                ))}
               </div>
             </div>
 

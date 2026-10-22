@@ -2732,6 +2732,18 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   È la stessa famiglia di `new Date().toISOString().slice(0,10)` e delle date
   dell'archivio: **in questo progetto ogni volta che si tagliano dieci
   caratteri da una data si sbaglia.**
+- ⚠️⚠️ **Il contenuto che non ci sta NON si stringe e NON si taglia: esce, e
+  si disegna sopra il vicino.** Il 22/10/2026 nei filtri di Partite due
+  scorciatoie (`61%` `62%`) uscivano di **85px** dalla loro cella di griglia e
+  finivano sopra «solo sopra soglia» della colonna accanto. ⚠️ **La pagina non
+  usciva di un pixel**, quindi la misura dello sbordo di `guarda.mjs` diceva
+  tutto a posto: un accavallamento avviene **dentro** un contenitore.
+  ✅ Ora `guarda.mjs` misura anche quello, in due modi — i **fratelli** i cui
+  rettangoli si intersecano, e il contenuto che **esce dal suo riquadro**
+  (`scrollWidth > clientWidth` con `overflow: visible`). Su tutta l'app
+  riporta **un solo** caso, quindi è una misura e non un allarme continuo.
+  ⚠️ Il pannello dei filtri è una **griglia a due colonne**: su 375px ogni
+  cella ha ~150px, e `−` + valore + `+` ne occupano già 146.
 - ⚠️⚠️ **Una larghezza fissa va sempre con un `overflow`.** In
   `ScegliGamba` la colonna della data era `width: 52, flexShrink: 0` e
   conteneva `sab 24/10 15:00`, che ne chiede **~97**: con `flexShrink: 0` il
@@ -3054,11 +3066,15 @@ node --env-file=.env scripts/verifica-partite.js   # confronto con la sorgente
 # ⚠️ Questi quattro stanno in app/scripts, NON in btscout: importano src/lib/*
 # con un percorso relativo e da btscout non partono (MODULE_NOT_FOUND). Erano
 # elencati nel blocco sbagliato fino al 15/10/2026.
-node --env-file=.env scripts/guarda.mjs            # GUARDA: apre l'app a 375px e fotografa le 14 schermate
+node --env-file=.env scripts/guarda.mjs            # GUARDA: apre l'app a 375px e fotografa le 15 schermate
 #   pomelli: --largo (anche 1280) · --larghezze=320,430,768 · --intera · guarda.mjs partite scheda
 #   ⚠️ Fotografa anche **login** (prima di entrare), **scheda** (la partita aperta: foglio
 #      `fixed`, quindi a schermate successive e NON con fullPage) e **menu** aperto.
+#   ⚠️ Fotografa anche il **pannello dei filtri** (`filtri`), che nasce chiuso e
+#      quindi non si vedeva mai: è lì che il 22/10 c'erano due comandi sovrapposti.
 #   ⚠️ **Misura lo sbordo**: dice quante pagine escono dallo schermo e di quanti px.
+#   ⚠️⚠️ **E misura gli ACCAVALLAMENTI**, che lo sbordo di pagina non vede: due
+#      fratelli che si intersecano, o il contenuto che esce dal suo riquadro.
 #      Verificato il 21/10/2026: zero a 320, 375, 430, 768 e 1280.
 node --env-file=.env scripts/prova-vpm.js          # VPM sul weekend: dove campo e mercato litigano
 node --env-file=.env scripts/prova-ordine.js       # i criteri della lista, casi limite compresi

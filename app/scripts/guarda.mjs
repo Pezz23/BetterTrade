@@ -59,6 +59,13 @@ const PAGINE = [
   // tasto: si apre toccando una riga. Senza questa voce era l'unica cosa che
   // continuava a svilupparsi alla cieca.
   { id: 'scheda',    via: 'partita' },
+  // ⚠️⚠️ **Il pannello dei filtri è CHIUSO di default, quindi non si
+  // fotografava mai** — ed è dentro di lui che il 22/10/2026 Mattia ha
+  // trovato due comandi sovrapposti. È lo stesso buco del login, della scheda
+  // e del menu: **si restyla quello che si vede**, e quello che si apre con un
+  // tocco non si vedeva. Vale la regola di sempre: una superficie che esiste
+  // va fotografata, anche se nasce chiusa.
+  { id: 'filtri',    via: 'pannello' },
   // ⚠️ Il menu è una **superficie come le altre** — otto voci, un terzo dello
   // schermo — e fino al 21/10/2026 non si fotografava mai: si apriva solo per
   // attraversarlo. Si restyla quello che si vede.
@@ -104,6 +111,9 @@ const viste = chiesteLarghezze
 // scorrimento orizzontale — che su un telefono è il difetto più fastidioso e
 // il più facile da non notare in una schermata ferma.
 const sbordi = []
+// ⚠️ Gli elementi che si accavallano: un difetto che lo sbordo di pagina non
+// può vedere, perché avviene dentro un contenitore.
+const sovrapposti = []
 
 for (const vista of viste) {
   const suffisso = vista === LARGO ? '-largo' : (viste.length > 1 && vista.width !== TELEFONO.width ? `-${vista.width}` : '')
@@ -128,7 +138,12 @@ for (const vista of viste) {
   for (const p of pagine) {
     if (p.via === 'prima') continue   // già fatta sopra, prima di entrare
     try {
-      if (p.via === 'partita') {
+      if (p.via === 'pannello') {
+        await pagina.getByRole('button', { name: 'Partite' }).first().click()
+        const tasto = pagina.getByRole('button', { name: /filtri/ }).first()
+        await tasto.waitFor({ timeout: 20000 })
+        await tasto.click()
+      } else if (p.via === 'partita') {
         await pagina.getByRole('button', { name: 'Partite' }).first().click()
         // ⚠️⚠️ **Si aspetta la riga, non un tempo.** C'era un `waitForTimeout`
         // di 1,5 s: bastava con 67 partite in calendario, **non con 207** — il
@@ -158,8 +173,18 @@ for (const vista of viste) {
           await pagina.waitForTimeout(400)
           if (!avanti) break
         }
-        // si richiude, o la pagina dopo verrebbe scattata con il foglio davanti
-        await pagina.keyboard.press('Escape').catch(() => {})
+        // ⚠️⚠️ **Si richiude col SUO tasto, e si controlla che sia sparito.**
+        // Qui c'era `keyboard.press('Escape')` con scritto accanto *"si
+        // richiude"* — ma `SchedaScorrevole` **non ascolta Escape**: lo chiude
+        // il suo tasto o il gesto indietro. Quindi il foglio restava aperto e
+        // copriva la barra in basso: la prima pagina dopo la scheda che si
+        // raggiunge da un tab andava in **timeout di trenta secondi**
+        // (22/10/2026, è successo a `filtri`). **Un commento che dice "si
+        // chiude" non chiude niente**: dopo si aspetta che il foglio non ci
+        // sia più.
+        await foglio.getByRole('button').first().click().catch(() => {})
+        await foglio.waitFor({ state: 'detached', timeout: 5000 })
+          .catch(() => errori.push(`la scheda non si è richiusa in ${p.id}`))
         console.log(`  ✅ ${p.id}${suffisso}`)
         continue
       } else if (p.via === 'aperto') {
@@ -230,7 +255,64 @@ for (const vista of viste) {
       if (commenti) errori.push(`COMMENTO A SCHERMO in ${p.id}: ${commenti}`)
       const fuori = await pagina.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
       if (fuori > 1) sbordi.push(`${p.id} a ${vista.width}px esce di ${fuori}px`)
-      console.log(`  ✅ ${p.id}${suffisso}${fuori > 1 ? `  ⚠️ esce di ${fuori}px` : ''}`)
+
+      // ⚠️⚠️ **Lo sbordo della PAGINA non vede due comandi che si
+      // accavallano.** Il 22/10/2026 nei filtri il tasto «62%» era disegnato
+      // *sopra* «solo sopra soglia»: la pagina non usciva di un pixel —
+      // l'accavallamento avviene **dentro** una cella di griglia — quindi la
+      // misura di prima diceva tutto a posto. Qui si guardano i **fratelli**:
+      // due elementi che stanno uno accanto all'altro e i cui rettangoli si
+      // intersecano sono un difetto, sempre.
+      // ⚠️ Si saltano gli elementi **posizionati** (`absolute`/`fixed`) e
+      // quelli con `transform`: lì la sovrapposizione è il mestiere — i fogli,
+      // le finestre al centro, il segno di VPM appoggiato al bordo.
+      // ⚠️ E si chiede **un'intersezione vera di almeno 2px per lato**: un
+      // pixel di arrotondamento non è un difetto.
+      const accavallati = await pagina.evaluate(() => {
+        const fuoriFlusso = (el) => {
+          const st = getComputedStyle(el)
+          return st.position === 'absolute' || st.position === 'fixed'
+            || st.position === 'sticky' || st.transform !== 'none'
+            || st.visibility === 'hidden' || st.display === 'none'
+        }
+        const nome = (el) => (el.innerText || el.getAttribute('aria-label') || el.tagName)
+          .trim().replace(/\s+/g, ' ').slice(0, 24)
+        const out = []
+        for (const cont of document.querySelectorAll('div, form, section, main')) {
+          const st = getComputedStyle(cont)
+          if (!/flex|grid/.test(st.display)) continue
+          const figli = [...cont.children].filter(el => !fuoriFlusso(el))
+          for (let i = 0; i < figli.length; i++) {
+            for (let j = i + 1; j < figli.length; j++) {
+              const a = figli[i].getBoundingClientRect(), b = figli[j].getBoundingClientRect()
+              if (!a.width || !a.height || !b.width || !b.height) continue
+              const x = Math.min(a.right, b.right) - Math.max(a.left, b.left)
+              const y = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)
+              if (x > 2 && y > 2) out.push(`«${nome(figli[i])}» sopra «${nome(figli[j])}» (${Math.round(x)}×${Math.round(y)}px)`)
+            }
+          }
+        }
+        // ⚠️⚠️ **E i due elementi che Mattia ha fotografato NON erano
+        // fratelli**: la pastiglia «62%» usciva dalla *sua* cella di griglia e
+        // finiva sopra la cella accanto — cioè erano cugini, e il controllo
+        // qui sopra non poteva vederli. Quello che si misura allora è
+        // **il contenuto che esce dal suo contenitore**: `scrollWidth`
+        // maggiore di `clientWidth` con l'`overflow` a `visible` vuol dire che
+        // la roba dentro non ci sta **e non viene tagliata** — quindi finisce
+        // disegnata sopra qualcos'altro.
+        // ⚠️ Chi ha `overflow: hidden` o i puntini è escluso di proposito: lì
+        // il taglio è voluto, ed è la cura, non il difetto.
+        for (const el of document.querySelectorAll('div, span, button, label, section')) {
+          const st = getComputedStyle(el)
+          if (st.overflowX !== 'visible' || fuoriFlusso(el)) continue
+          const extra = el.scrollWidth - el.clientWidth
+          if (extra > 2 && el.clientWidth > 0) out.push(`«${nome(el)}» esce dal suo riquadro di ${extra}px`)
+        }
+        return [...new Set(out)].slice(0, 8)
+      })
+      for (const a of accavallati) sovrapposti.push(`${p.id} a ${vista.width}px: ${a}`)
+
+      console.log(`  ✅ ${p.id}${suffisso}${fuori > 1 ? `  ⚠️ esce di ${fuori}px` : ''}${accavallati.length ? `  ⚠️ ${accavallati.length} sovrapposizioni` : ''}`)
     } catch (e) {
       console.log(`  ❌ ${p.id}${suffisso}: ${String(e).split('\n')[0].slice(0, 90)}`)
     }
@@ -245,6 +327,12 @@ if (sbordi.length) {
   for (const r of sbordi) console.log('   ' + r)
 } else {
   console.log('Nessuna pagina esce dallo schermo.')
+}
+if (sovrapposti.length) {
+  console.log(`\n⚠️ ${sovrapposti.length} elementi si accavallano:`)
+  for (const r of sovrapposti) console.log('   ' + r)
+} else {
+  console.log('Nessun elemento si accavalla.')
 }
 if (errori.length) {
   console.log(`\n⚠️ ${errori.length} errori dal browser:`)
