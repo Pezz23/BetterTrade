@@ -328,18 +328,22 @@ export default function TestataPartita({ p, cat, compatta = false, gol = null })
           il sistema operativo, quindi la stessa riga aveva tre aspetti su tre
           telefoni, e restavano a colori pieni accanto a un testo spento. Qui
           sono due segni del set, che prendono il colore del testo accanto. */}
+      {/* ⚠️ **Nella scheda data e ora scendono da `S.grande` a `S.media`**
+          (Mattia, 22/10/2026): erano il testo più grande del blocco dopo i nomi
+          delle squadre, e non sono il dato — sono il contesto. In lista
+          restano come erano. */}
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: SP.xl,
         marginTop: compatta ? 9 : SP.xl, paddingTop: compatta ? SP.m : SP.l,
         borderTop: `1px solid ${C.bordoTenue}` }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: SP.s, fontSize: compatta ? S.corpo : S.grande,
+        <span style={{ display: 'flex', alignItems: 'center', gap: SP.s, fontSize: compatta ? S.corpo : S.media,
           fontWeight: 600, fontFamily: F.mono, color: C.testo }}>
-          <Icona nome="calendario" misura={compatta ? 13 : 15} style={{ color: C.spento }} />
+          <Icona nome="calendario" misura={compatta ? 13 : 14} style={{ color: C.spento }} />
           {giorno(p.data).toUpperCase()}
         </span>
         {p.ora && (
-          <span style={{ display: 'flex', alignItems: 'center', gap: SP.s, fontSize: compatta ? S.corpo : S.grande,
+          <span style={{ display: 'flex', alignItems: 'center', gap: SP.s, fontSize: compatta ? S.corpo : S.media,
             fontWeight: 600, fontFamily: F.mono, color: C.testo }}>
-            <Icona nome="ora" misura={compatta ? 13 : 15} style={{ color: C.spento }} />
+            <Icona nome="ora" misura={compatta ? 13 : 14} style={{ color: C.spento }} />
             {p.ora.slice(0, 5)}
           </span>
         )}

@@ -3,7 +3,7 @@ import { usaProssime } from '../hooks/usaProssime'
 import { usaVpm } from '../hooks/usaVpm'
 import { useAuth } from '../context/AuthContext'
 import { C, F, alpha, S, R } from '../theme'
-import { Card, Etichetta } from '../components/ui'
+import { Card, Etichetta, TastoRipeti, stileCard } from '../components/ui'
 import RigaPartita, { CATEGORIE, pct, giorno } from '../components/RigaPartita'
 import SchedaScorrevole from '../components/SchedaScorrevole'
 import DettaglioPartita from '../components/DettaglioPartita'
@@ -56,7 +56,15 @@ export default function PartitePage() {
   const [quotaMin, setQuotaMin] = useState('')
   const [quotaMax, setQuotaMax] = useState('')
   const [soloSopraSoglia, setSoloSopraSoglia] = useState(false)
-  const [votoMin, setVotoMin] = useState('')
+  // ⚠️⚠️ **«scelta» ha preso il posto di «voto minimo»** (Mattia, 22/10/2026),
+  // ed è un numero e non un campo di testo: si muove col `+`/`−` come le
+  // soglie di Andamento e della scalata. `0` vuol dire spento.
+  // ⚠️ **Taglia più di quanto sembri, ed è voluto**: `scelta` è **nulla**
+  // quando il campo contraddice il mercato, quindi qualunque soglia — anche
+  // 1% — butta fuori *tutti* i disaccordi. Sono le partite dove il segno del
+  // campo vince il 27,2% contro il 29,5% dato dal book, e giocarle rende
+  // 86,8%: toglierle è il senso del filtro, non un effetto collaterale.
+  const [sceltaMin, setSceltaMin] = useState(0)
   const [soloVpmContro, setSoloVpmContro] = useState(false)
   const [daccordo, setDaccordo] = useState(false)
   const [ordine, setOrdine] = useState(ORDINE_DEFAULT)
@@ -120,15 +128,19 @@ export default function PartitePage() {
   }, [vpmDi])
 
   const visibili = useMemo(() => {
-    const qMin = numero(quotaMin), qMax = numero(quotaMax), vMin = numero(votoMin)
+    const qMin = numero(quotaMin), qMax = numero(quotaMax)
     return inFinestra
       .filter(r => campionato ? r.div === campionato : true)
       .filter(r => qMin === null ? true : quotaMostrata(r) !== null && quotaMostrata(r) >= qMin)
       .filter(r => qMax === null ? true : quotaMostrata(r) !== null && quotaMostrata(r) <= qMax)
       .filter(r => soloSopraSoglia ? categoria(r.probGiocata, soglie) !== 'no' : true)
       // il voto è una percentuale: si scrive 100 e si confronta con 1,00
-      .filter(r => { if (vMin === null) return true
-        const v = vpmDi.get(r.id)?.voto; return v != null && v * 100 >= vMin })
+      // ⚠️ Il confronto si fa sul numero **arrotondato come si vede**: con il
+      // valore pieno una riga che mostra `62%` resterebbe fuori da una soglia
+      // di 62 perché sotto c'è 0,6249. Stessa trappola delle soglie di
+      // Andamento e delle caselle dei gol.
+      .filter(r => { if (sceltaMin <= 0) return true
+        const sc = vpmDi.get(r.id)?.scelta; return sc != null && Math.round(sc * 100) >= sceltaMin })
       // Le partite dove il campo dice il contrario del mercato, ed è **netto**:
       // è la lista che Mattia andava a cercare a mano in quattro schermate.
       // Un campo indeciso (sotto VPM_NETTO) non è un disaccordo.
@@ -139,7 +151,7 @@ export default function PartitePage() {
       // funziona sempre su quello che è rimasto, senza un secondo elenco da
       // tenere allineato. Il confronto sta in lib/ordine.js.
       .sort(confronto(ordine, vpmDi, crescente))
-  }, [inFinestra, campionato, quotaMin, quotaMax, soloSopraSoglia, soglie, votoMin, soloVpmContro, daccordo, tuttiDaccordo, vpmDi, ordine, crescente])
+  }, [inFinestra, campionato, quotaMin, quotaMax, soloSopraSoglia, soglie, sceltaMin, soloVpmContro, daccordo, tuttiDaccordo, vpmDi, ordine, crescente])
 
   const conteggi = useMemo(() => {
     const c = { centro: 0, giallo: 0, blu: 0 }
@@ -162,11 +174,11 @@ export default function PartitePage() {
     campionato && { id: 'camp', label: sigla(campionato), colore: C.blu, togli: () => setCampionato('') },
     quotaMin && { id: 'qmin', label: `quota ≥ ${quotaMin}`, togli: () => setQuotaMin('') },
     quotaMax && { id: 'qmax', label: `quota ≤ ${quotaMax}`, togli: () => setQuotaMax('') },
-    votoMin && { id: 'voto', label: `voto ≥ ${votoMin}%`, colore: C.verde, togli: () => setVotoMin('') },
+    sceltaMin > 0 && { id: 'scelta', label: `scelta ≥ ${sceltaMin}%`, colore: C.verde, togli: () => setSceltaMin(0) },
     soloSopraSoglia && { id: 'soglia', label: 'sopra soglia', togli: () => setSoloSopraSoglia(false) },
     soloVpmContro && { id: 'vpm', label: 'campo contro mercato', colore: C.rosso, togli: () => setSoloVpmContro(false) },
   ].filter(Boolean)
-  const azzera = () => { setCampionato(''); setQuotaMin(''); setQuotaMax(''); setVotoMin(''); setSoloSopraSoglia(false); setSoloVpmContro(false); setDaccordo(false) }
+  const azzera = () => { setCampionato(''); setQuotaMin(''); setQuotaMax(''); setSceltaMin(0); setSoloSopraSoglia(false); setSoloVpmContro(false); setDaccordo(false) }
 
   // La scheda di una partita prende tutta la pagina: sul telefono è l'unico
   // modo di leggerla, e la lista resta dov'era quando si torna indietro.
@@ -191,22 +203,46 @@ export default function PartitePage() {
         {ultimoDownload && <span style={{ color: C.fioco }}> · aggiornate {new Date(ultimoDownload).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>}
       </div>
 
-      {/* Finestra temporale */}
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+      {/* ── La finestra temporale, a card ─────────────────────────────── */}
+      {/* ⚠️⚠️ **Quattro card 2×2 invece di quattro pastiglie** (Mattia,
+          22/10/2026). Il guadagno non è la misura: è che **il numero di
+          partite diventa leggibile**. In pastiglia stava appiccicato
+          all'etichetta in corpo 10, e serve a decidere *se vale la pena
+          allargare* — che è l'unica domanda che fa quel comando.
+          ⚠️ Due per riga: con quattro in fila su 375px le etichette lunghe
+          («Anche la prossima») venivano tagliate.
+          ⚠️ **«Niente in più» si scrive nella card**, non più nel `title`: il
+          `title` col mouse sopra **su telefono non esiste**, ed era l'unico
+          posto dove quell'informazione viveva. */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 }}>
         {FINESTRE.map((f, i) => {
           const n = perFinestra[f.id], prec = i > 0 ? perFinestra[FINESTRE[i - 1].id] : null
           const nienteInPiu = prec !== null && n === prec
+          const on = finestra === f.id
           return (
-            <button key={f.id} onClick={() => setFinestra(f.id)} style={pillola(finestra === f.id)} title={nienteInPiu ? 'Nessuna partita in più: i bookmaker non hanno ancora quotato oltre' : ''}>
-              {f.label}
-              <span style={{ color: C.spento, fontWeight: 400 }}> {f.id === 'tutte' ? '' : giorno(f.fine()).slice(0, 9) + ' · '}{n}{nienteInPiu ? ' =' : ''}</span>
+            <button key={f.id} onClick={() => setFinestra(f.id)}
+              style={stileCard({ padding: '8px 10px', textAlign: 'left', cursor: 'pointer',
+                background: on ? `linear-gradient(${alpha(C.oro, .12)},${alpha(C.oro, .12)}), ${C.card}` : C.card,
+                border: `1px solid ${alpha(C.oro, on ? 0.5 : 0.14)}` })}>
+              <div style={{ fontFamily: F.sans, fontSize: S.base, color: on ? C.oro : C.testo }}>{f.label}</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, marginTop: 2 }}>
+                <span style={{ fontFamily: F.mono, fontSize: S.titolo, fontWeight: 700, color: on ? C.oro : C.testo }}>{n}</span>
+                <span style={{ fontFamily: F.sans, fontSize: S.micro, color: C.spento }}>
+                  partite · {giorno(f.fine()).slice(0, 9)}
+                </span>
+              </div>
+              {nienteInPiu && (
+                <div style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco, marginTop: 1 }}>
+                  niente in più
+                </div>
+              )}
             </button>
           )
         })}
       </div>
       {/* Solo per le finestre più larghe di "fino a lunedì": su "Oggi" il
           confronto non vuol dire niente, è una finestra più stretta. */}
-      {['due', 'tutte'].includes(finestra) && perFinestra[finestra] === perFinestra.settimana && !caricamento && (
+      {finestra === 'due' && perFinestra[finestra] === perFinestra.settimana && !caricamento && (
         <div style={{ fontSize: S.base, color: C.fioco, fontFamily: F.sans, marginBottom: 8 }}>
           Nessuna partita in più rispetto a "fino a lunedì": i bookmaker non hanno ancora quotato quelle successive. Arrivano con i prossimi aggiornamenti.
         </div>
@@ -262,12 +298,21 @@ export default function PartitePage() {
             </div>
 
             <div>
-              <Etichetta style={{ marginBottom: 5 }}>voto minimo</Etichetta>
+              {/* ⚠️ `TastoRipeti` si tiene premuto e accelera: è lo stesso
+                  pezzo di Andamento e del bankroll della scalata, e serve —
+                  da 0 a 62 sarebbero sessantadue tocchi. */}
+              <Etichetta style={{ marginBottom: 5 }}>scelta minima</Etichetta>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                <input style={{ ...campo, width: 64, borderColor: votoMin && numero(votoMin) === null ? C.rosso : C.bordo }}
-                  placeholder="%" inputMode="decimal" value={votoMin} onChange={e => setVotoMin(e.target.value)} />
-                {[6, 7, 8].map(g => (
-                  <button key={g} onClick={() => setVotoMin(String(g))} style={{ ...pillola(numero(votoMin) === g), padding: '5px 9px' }}>{g}%+</button>
+                <TastoRipeti onScatto={() => setSceltaMin(v => Math.max(0, v - 1))}>−</TastoRipeti>
+                <div style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700,
+                  color: sceltaMin > 0 ? C.oro : C.spento, minWidth: 54, textAlign: 'center' }}>
+                  {sceltaMin > 0 ? `${sceltaMin}%` : 'tutte'}
+                </div>
+                <TastoRipeti onScatto={() => setSceltaMin(v => Math.min(100, v + 1))}>+</TastoRipeti>
+                {/* le due soglie misurate, come scorciatoia: 61% è quella
+                    della scalata, 62% quella da cui parte Andamento */}
+                {[61, 62].map(g => (
+                  <button key={g} onClick={() => setSceltaMin(g)} style={{ ...pillola(sceltaMin === g), padding: '5px 9px' }}>{g}%</button>
                 ))}
               </div>
             </div>

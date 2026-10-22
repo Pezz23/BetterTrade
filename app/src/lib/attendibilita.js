@@ -258,11 +258,26 @@ export function oggiLocale(d = new Date()) {
   return x.toISOString().slice(0, 10)
 }
 
+/**
+ * Le finestre della pagina Partite.
+ *
+ * ⚠️ **«Domani» è entrata il 22/10/2026** su richiesta di Mattia: è la
+ * domanda più frequente del venerdì sera, e prima si poteva solo guardare
+ * *oggi* o *fino a lunedì*, cioè tre giorni insieme.
+ * ⚠️⚠️ **E «Tutte» è USCITA**, sempre per sua scelta. Conseguenza da sapere:
+ * **la finestra più larga adesso è il lunedì della settimana dopo**, quindi le
+ * partite oltre quell'orizzonte non si vedono più dalla pagina Partite — e
+ * The Odds API ne porta fino a tre o quattro settimane avanti. Non sono
+ * perse: Road to weekend le vede (lì il filtro è la soglia, non la data), e
+ * basta rimettere una riga qui per riaverle.
+ * ⚠️ `oggiLocale` passa da mezzogiorno, quindi «Domani» non cambia giorno col
+ * fuso o con l'ora legale.
+ */
 export const FINESTRE = [
   { id: 'oggi',      label: 'Oggi',              fine: () => oggiLocale() },
+  { id: 'domani',    label: 'Domani',            fine: () => oggiLocale(new Date(Date.now() + 24 * 3600 * 1000)) },
   { id: 'settimana', label: 'Fino a lunedì',     fine: () => lunediProssimo(0) },
   { id: 'due',       label: 'Anche la prossima', fine: () => lunediProssimo(1) },
-  { id: 'tutte',     label: 'Tutte',             fine: () => '9999-12-31' },
 ]
 
 /**

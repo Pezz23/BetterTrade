@@ -141,7 +141,15 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
             e la scheda deve mostrare **gli stessi cinque numeri della lista**,
             dallo stesso componente, così non possono divergere. Le quote per
             intero restano nei dettagli completi in fondo. */}
-        <div style={{ marginTop: 14, paddingTop: 14, borderTop: `2px solid ${alpha(c.colore, 0.35)}` }}>
+        {/* ⚠️⚠️ **La linea spessa è stata TOLTA** (Mattia, 22/10/2026), non
+            assottigliata. ⚠️ E il motivo per cui si era fatta notare proprio
+            allora non era lei: era **il colore che le è salito sotto** — il
+            21/10 `c.colore` per le partite senza categoria è passato da
+            `fantasma` (2,27:1, quasi invisibile) a `spento` (6,97:1), perché
+            quel token veste anche il pronostico, che si deve leggere. **Quella
+            correzione resta**: a cedere è la riga, che separava due cose già
+            separate dallo spazio. */}
+        <div style={{ marginTop: 14, paddingTop: 14 }}>
           <BarraPartita p={p} vpm={v} colore={c.colore} />
           {/* La nota resta: spiega la giocata, non il prezzo. */}
           {p.nota && <div style={{ marginTop: 9, fontSize: S.minuta, fontFamily: F.sans, color: C.fioco, lineHeight: 1.5 }}>{p.nota}</div>}

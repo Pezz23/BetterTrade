@@ -2497,6 +2497,28 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
   `max · media · equo` **non stanno più in cima** (9/10/2026) — erano numeri da
   consultare, non da guardare, e vivono nei dettagli completi con le terne
   intere. Prima di rimettere qualcosa in alto, chiedere.
+- ⚠️⚠️ **Le finestre sono quattro card 2×2** (22/10/2026), non più pastiglie
+  in fila: `Oggi · Domani · Fino a lunedì · Anche la prossima`. Il guadagno
+  non è la misura, è che **il numero di partite diventa leggibile** — serve a
+  decidere *se vale la pena allargare*, che è l'unica domanda di quel comando,
+  e in pastiglia stava appiccicato all'etichetta in corpo 10. ⚠️ Due per riga
+  perché quattro in fila su 375px tagliavano «Anche la prossima». ⚠️ E
+  *"niente in più"* si scrive **nella card**: prima viveva nel `title`, che
+  **su telefono non esiste**.
+  ⚠️⚠️ **«Tutte» è uscita** (scelta di Mattia): la finestra più larga è il
+  lunedì della settimana dopo, quindi **le partite oltre quell'orizzonte non
+  si vedono più dalla pagina Partite**. Misurato il giorno del cambio: 207
+  future in calendario, **zero** oltre il limite — ma The Odds API arriva a
+  tre o quattro settimane, quindi un giorno ce ne saranno. Non sono perse
+  (Road to weekend filtra per soglia, non per data) e basta rimettere una riga
+  in `FINESTRE`.
+- ⚠️⚠️ **«scelta minima» ha preso il posto di «voto minimo»** nei filtri
+  (22/10/2026), con `+`/`−` tenuti premuti (`TastoRipeti`) invece di un campo
+  di testo. ⚠️ **Taglia più di quanto sembri, ed è il suo senso**: `scelta` è
+  **nulla** quando il campo contraddice il mercato, quindi qualunque soglia —
+  anche 1% — butta fuori *tutti* i disaccordi, cioè le partite dove il segno
+  del campo vince il 27,2% contro il 29,5% del book e giocarle rende 86,8%.
+  ⚠️ Il confronto è sul numero **arrotondato come si vede**, come in Andamento.
 - **I filtri della lista** (`PartitePage`) stanno dietro un tasto `⚙ filtri`,
   con le **targhette di quelli accesi** fuori (si tolgono toccandole) e il
   conto `visibili/totali`. Rifatti così il 2/10/2026 perché in fila non si

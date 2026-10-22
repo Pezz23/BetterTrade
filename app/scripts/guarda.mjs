@@ -130,10 +130,15 @@ for (const vista of viste) {
     try {
       if (p.via === 'partita') {
         await pagina.getByRole('button', { name: 'Partite' }).first().click()
-        await pagina.waitForTimeout(1500)
-        // la prima riga della lista: l'unico `role=button` che contiene la
-        // parola della giocata
-        await pagina.locator('[role="button"]').filter({ hasText: /giocata/i }).first().click()
+        // ⚠️⚠️ **Si aspetta la riga, non un tempo.** C'era un `waitForTimeout`
+        // di 1,5 s: bastava con 67 partite in calendario, **non con 207** — il
+        // 22/10/2026 il clic è andato in timeout di trenta secondi e la riga
+        // `❌ scheda` sembrava un difetto della pagina, che invece stava solo
+        // ancora disegnando. Un'attesa a tempo è giusta finché i dati non
+        // crescono, e i dati crescono sempre.
+        const riga = pagina.locator('[role="button"]').filter({ hasText: /giocata/i }).first()
+        await riga.waitFor({ timeout: 20000 })
+        await riga.click()
         await pagina.waitForTimeout(1500)
         // ⚠️⚠️ **La scheda non si fotografa con `fullPage`**: è un foglio
         // `position: fixed` con uno scorrimento suo (`SchedaScorrevole`),

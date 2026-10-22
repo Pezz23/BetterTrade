@@ -4,6 +4,7 @@ import { C, F, alpha, S, R } from '../theme'
 import Icona from '../components/Icona'
 import { Card, Etichetta, Btn } from '../components/ui'
 import { CATEGORIE, pct, giorno } from '../components/RigaPartita'
+import { gg } from '../lib/formato'
 import { categoria, SOGLIE_DEFAULT, martediChiusura } from '../lib/attendibilita'
 import ScegliCasella from '../components/ScegliCasella'
 import CompilaPerQuota from '../components/CompilaPerQuota'
@@ -45,6 +46,23 @@ function Cella({ pos, partita, votiDi, diversa, onClic, inAltre }) {
       </div>
       {partita ? (
         <>
+          {/* ⚠️⚠️ **Campionato e giorno SOPRA le squadre** (Mattia,
+              22/10/2026: *"il campionato a sinistra"*). Erano in fondo alla
+              cella, dopo quota e attendibilità: per sapere *di che partita si
+              tratta* bisognava leggere fino in fondo e poi risalire.
+              ⚠️ **Sopra e non accanto al nome**: una colonna a sinistra
+              toglierebbe ~34px a nomi che su 375px sono già tarati al pixel
+              (`BOURNEMOUTH` occupa 8,774px per ogni px di corpo). Sopra non
+              ruba niente a nessuno. */}
+          {/* ⚠️ Qui la data è **senza il giorno della settimana**: la cella è
+              larga ~100px e `BEL1 · dom 25/10` ne chiede 96 a corpo 10 — si
+              tagliava a *"dom 25/"*. In una griglia che copre un weekend solo,
+              `25/10` basta; il giorno per esteso resta nell'elenco sotto, dove
+              c'è spazio. ⚠️ E l'`overflow` è chiuso lo stesso: una larghezza
+              fissa senza di lui non taglia, **esce**. */}
+          <div style={{ fontSize: S.minuta, color: C.spento, whiteSpace: 'nowrap', overflow: 'hidden', marginBottom: 1 }}>
+            <b style={{ color: C.blu }}>{sigla(partita.div)}</b> · {gg(partita.data)}
+          </div>
           {/* Le squadre su due righe, una ciascuna: i nomi lunghi si tagliano invece di rompere la cella. */}
           <div style={{ fontSize: S.corpo, color: C.testo, fontFamily: F.sans, fontWeight: 600, lineHeight: 1.3 }}>
             <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{partita.casa}</div>
@@ -55,7 +73,6 @@ function Cella({ pos, partita, votiDi, diversa, onClic, inAltre }) {
           <div style={{ fontSize: S.base, color: C.spento, whiteSpace: 'nowrap' }}>
             {partita.quotaGiocata ? `@${partita.quotaGiocata.toFixed(2)}` : 'sul book'} · <b style={{ color: colore }}>{pct(partita.probGiocata)}</b>
           </div>
-          <div style={{ fontSize: S.minuta, color: C.spento, whiteSpace: 'nowrap' }}>{sigla(partita.div)} · {giorno(partita.data)}</div>
         </>
       ) : <div style={{ fontSize: S.corpo, color: C.fantasma }}>—</div>}
     </div>
@@ -327,11 +344,17 @@ export default function SpinProvvisoriePage() {
                 <div key={p.id} style={{ padding: '8px 0', borderTop: `1px solid ${C.bordoTenue}`, fontFamily: F.mono, fontSize: S.media }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ color: C.oro, flexShrink: 0 }}>{'★'.repeat(votiDi(p.id))}</span>
+                    {/* ⚠️ Qui la sigla ci sta **sulla stessa riga**, perché la
+                        riga è larga quanto la pagina e non una cella della
+                        griglia. Larghezza fissa e `overflow` chiuso: una
+                        misura fissa vale per la scatola, non per quello che
+                        contiene. */}
+                    <span style={{ color: C.blu, flexShrink: 0, width: 34, overflow: 'hidden' }}>{sigla(p.div)}</span>
                     <span style={{ color: C.testo, fontFamily: F.sans, fontWeight: 600, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.casa} – {p.trasferta}</span>
                     <b style={{ color: colore, flexShrink: 0 }}>{pronosticoDa(p.giocata)}</b>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3, fontSize: S.base, color: C.spento }}>
-                    <span style={{ flexShrink: 0 }}>{sigla(p.div)} · {giorno(p.data)}</span>
+                    <span style={{ flexShrink: 0 }}>{giorno(p.data)}</span>
                     <span style={{ flexShrink: 0 }}>{p.quotaGiocata ? `@${p.quotaGiocata.toFixed(2)}` : 'sul book'}</span>
                     <b style={{ color: colore, flexShrink: 0 }}>{pct(p.probGiocata)}</b>
                     <span style={{ marginLeft: 'auto', textAlign: 'right', color: dove ? C.verde : p.data > limite ? C.rosso : C.spento, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
