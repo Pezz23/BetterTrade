@@ -9,7 +9,7 @@ import { usaSchedine } from '../hooks/usaSchedine'
 import { valutaPartita } from '../lib/vpm'
 import { componiPasso, CONSIGLIATO, QUOTA_MINIMA_GAMBA } from '../lib/scalata'
 import { sigla } from '../lib/campionati'
-import { pct, gg, quando } from '../lib/formato'
+import { pct, eur, gg, quando } from '../lib/formato'
 
 // 🎟️ BET BUILDER — la schedina a quota obiettivo.
 //
@@ -59,6 +59,7 @@ export default function BetBuilderPage() {
   const [quotaGamba, setQuotaGamba] = useState(QUOTA_MINIMA_GAMBA)
   const [obiettivo, setObiettivo] = useState(5)
   const [criterio, setCriterio] = useState('voto')
+  const [importo, setImporto] = useState('')
   const [avviso, setAvviso] = useState(null)
   const [daOra] = useState(() => Date.now())
 
@@ -159,10 +160,29 @@ export default function BetBuilderPage() {
                 quota {proposta.quota.toFixed(2).replace('.', ',')}
               </span>
             </div>
+            {/* ⚠️ **L'importo si scrive qui e la vincita si vede subito**
+                (richiesta di Mattia): è il numero che fa decidere se quella
+                quota vale la pena, e chiederlo dopo aver salvato vorrebbe dire
+                deciderlo senza. È **facoltativo**: vuoto vuol dire *non lo
+                dico*, non zero. */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+              <Etichetta>IMPORTO</Etichetta>
+              <input value={importo} onChange={e => setImporto(e.target.value.replace(',', '.'))}
+                placeholder="€" inputMode="decimal"
+                style={{ width: 70, background: C.pozzo, color: C.testo, border: `1px solid ${C.bordo}`,
+                  borderRadius: 6, padding: '4px 6px', fontFamily: F.mono, fontSize: S.media, textAlign: 'center' }} />
+              {Number(importo) > 0 && (
+                <span style={{ fontFamily: F.sans, fontSize: S.base, color: C.spento }}>
+                  vinci <b style={{ color: C.verde, fontFamily: F.mono, fontSize: S.media }}>
+                    {eur(Number(importo) * proposta.quota)}</b>
+                </span>
+              )}
+            </div>
             <button disabled={reg.occupato}
               onClick={async () => {
-                const r = await reg.crea({ quotaObiettivo: obiettivo, criterio, gambe: proposta.gambe })
+                const r = await reg.crea({ quotaObiettivo: obiettivo, criterio, gambe: proposta.gambe, importo })
                 setAvviso(r.errore ?? null)
+                if (!r.errore) setImporto('')
               }}
               style={{ width: '100%', marginTop: 10, padding: '9px 0', cursor: 'pointer',
                 background: `linear-gradient(${alpha(C.verde, .12)},${alpha(C.verde, .12)}), ${C.card}`,
@@ -178,6 +198,37 @@ export default function BetBuilderPage() {
       </Card>
 
       {/* ── Le schedine tenute ──────────────────────────────────────────── */}
+      {/* ⚠️ **L'andamento in una riga sola** — è lo scopo per cui si tracciano
+          (*"così da tracciare l'andamento nel tempo"*). ⚠️ Conta solo le
+          **giocate**: una bozza non è andata al banco, e includerla gonfierebbe
+          il conto. ⚠️ E il saldo compare solo se gli importi ci sono: un totale
+          costruito su campi vuoti sarebbe un numero falso.
+          ⚠️ **Il riepilogo con le domande vere arriverà più avanti**: con
+          cinque schedine qualunque percentuale è rumore, ed è la stessa regola
+          per cui il riassunto della scalata aspetta dieci o venti scalate. */}
+      {!!reg.schedine?.some(s => s.stato === 'giocata') && (() => {
+        const g = reg.schedine.filter(s => s.stato === 'giocata')
+        const vinte = g.filter(s => s.esito === 'vinta')
+        const conImporto = g.filter(s => Number(s.importo) > 0 && s.esito)
+        const speso = conImporto.reduce((a, s) => a + Number(s.importo), 0)
+        const incassato = conImporto.filter(s => s.esito === 'vinta')
+          .reduce((a, s) => a + Number(s.importo) * s.gambe.reduce((q, x) => q * Number(x.quota), 1), 0)
+        const saldo = incassato - speso
+        return (
+          <Card style={{ marginBottom: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+              <Etichetta>COME STANNO ANDANDO</Etichetta>
+              <span style={{ fontFamily: F.sans, fontSize: S.base, color: C.spento }}>
+                <b style={{ color: C.testo }}>{g.length}</b> giocate ·{' '}
+                <b style={{ color: C.verde }}>{vinte.length}</b> vinte
+                {speso > 0 && <> · saldo <b style={{ fontFamily: F.mono, color: saldo >= 0 ? C.verde : C.rosso }}>
+                  {saldo >= 0 ? '+' : ''}{eur(saldo)}</b></>}
+              </span>
+            </div>
+          </Card>
+        )
+      })()}
+
       {reg.schedine === null ? <Attesa style={{ padding: 0 }} /> : reg.schedine.length === 0 ? (
         <Card><div style={{ fontSize: S.base, fontFamily: F.sans, color: C.spento, lineHeight: 1.6 }}>
           Nessuna schedina. Scegli la quota, guarda cosa propone e tienila: da lì in poi
@@ -197,9 +248,26 @@ export default function BetBuilderPage() {
               </span>
             </div>
             <div style={{ marginTop: 6 }}>{s.gambe.map(g => <Gamba key={g.id} g={g} />)}</div>
+            {/* l'importo resta modificabile: si scrive quando si gioca, non
+                quando si compone */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+              <Etichetta>IMPORTO</Etichetta>
+              <input defaultValue={s.importo ?? ''} placeholder="€" inputMode="decimal"
+                onBlur={e => { if (String(e.target.value) !== String(s.importo ?? '')) reg.scriviImporto(s.id, e.target.value) }}
+                style={{ width: 66, background: C.pozzo, color: C.testo, border: `1px solid ${C.bordo}`,
+                  borderRadius: 6, padding: '3px 6px', fontFamily: F.mono, fontSize: S.base, textAlign: 'center' }} />
+              {Number(s.importo) > 0 && (
+                <span style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.spento }}>
+                  {s.esito === 'vinta' ? 'hai vinto' : s.esito === 'persa' ? 'avresti vinto' : 'vinci'}{' '}
+                  <b style={{ color: s.esito === 'persa' ? C.fioco : C.verde, fontFamily: F.mono, fontSize: S.base }}>
+                    {eur(Number(s.importo) * quota)}</b>
+                </span>
+              )}
+            </div>
             <div style={{ fontSize: S.micro, fontFamily: F.sans, color: C.fioco, marginTop: 6 }}>
               obiettivo {Number(s.quota_obiettivo).toFixed(2).replace('.', ',')} · creata {quando(s.creata_il)}
               {giocata && s.giocata_il && <> · <span style={{ color: C.verde }}>giocata {quando(s.giocata_il)}</span></>}
+              {s.esito && s.chiusa_il && <> · chiusa {quando(s.chiusa_il)}</>}
             </div>
             <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
               <button onClick={() => reg.segnaGiocata(s.id, !giocata)} style={{
@@ -210,6 +278,25 @@ export default function BetBuilderPage() {
               }}>{giocata ? '✓ giocata' : 'segna giocata'}</button>
               <Cancella onCancella={() => reg.cancella(s.id)} />
             </div>
+            {/* ⚠️⚠️ **L'esito compare solo DOPO «giocata»** (richiesta di
+                Mattia: *"una volta giocata vorrei un secondo menù"*), e non è
+                un vezzo: una schedina che non è andata al banco non ha un
+                esito da registrare — è la stessa distinzione della spunta
+                GIOCATA nella Slot, dove compilare non è giocare.
+                ⚠️ E si **annulla** ritoccando il tasto acceso: un esito
+                sbagliato e non togliibile è un registro che mente. */}
+            {giocata && (
+              <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                {[['vinta', C.verde], ['persa', C.rosso]].map(([e, col]) => (
+                  <button key={e} onClick={() => reg.segnaEsito(s.id, s.esito === e ? null : e)} style={{
+                    flex: 1, padding: '6px 0', cursor: 'pointer', fontFamily: F.sans, fontSize: S.base,
+                    color: s.esito === e ? col : C.spento,
+                    background: s.esito === e ? `linear-gradient(${alpha(col, .14)},${alpha(col, .14)}), ${C.card}` : C.card,
+                    border: `1px solid ${alpha(col, s.esito === e ? 0.5 : 0.18)}`,
+                  }}>{e === 'vinta' ? '✓ vinta' : '✗ persa'}</button>
+                ))}
+              </div>
+            )}
           </Card>
         )
       })}

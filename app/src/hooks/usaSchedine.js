@@ -15,8 +15,6 @@ import { supabase } from '../supabase'
 // la stessa cura che il 18/10 ha tolto i secondi all'apertura della scalata —
 // **il costo non sono i dati, sono i giri**.
 
-const primoErrore = (risposte) => risposte.find(r => r?.error)?.error?.message ?? null
-
 export function usaSchedine(userId) {
   const [schedine, setSchedine] = useState(null)   // null = non ancora lette
   const [errore, setErrore] = useState(null)
@@ -45,12 +43,13 @@ export function usaSchedine(userId) {
    * ⚠️ E se le gambe falliscono, la schedina si cancella: una schedina senza
    * gambe è una riga che non vuol dire niente, e resterebbe lì a confondere.
    */
-  const crea = useCallback(async ({ quotaObiettivo, criterio, gambe }) => {
+  const crea = useCallback(async ({ quotaObiettivo, criterio, gambe, importo }) => {
     if (!userId) return { errore: 'non sei entrato' }
     if (!gambe?.length) return { errore: 'non c’è nessuna gamba da salvare' }
     setOccupato(true)
     const { data: s, error } = await supabase.from('schedine')
-      .insert({ user_id: userId, quota_obiettivo: quotaObiettivo, criterio })
+      .insert({ user_id: userId, quota_obiettivo: quotaObiettivo, criterio,
+        importo: Number(importo) > 0 ? Number(importo) : null })
       .select('id').single()
     if (error) { setOccupato(false); setErrore(error.message); return { errore: error.message } }
     const { error: e2 } = await supabase.from('schedina_gambe').insert(
@@ -78,6 +77,35 @@ export function usaSchedine(userId) {
     return {}
   }, [ricarica])
 
+  /**
+   * L'esito, a mano (22/10/2026). ⚠️ Si può **annullare** passando `null`: un
+   * esito segnato per sbaglio e non più togliibile è un registro che mente, e
+   * qui il registro serve proprio a dire com'è andata davvero.
+   * ⚠️ Un domani si riempirà da sé — ogni gamba ha `prossima_id` e l'archivio
+   * ha il risultato — ma la regola che dice *se quella giocata è arrivata*
+   * vive nel motore (`btscout/lib/ricostruisci.js`): per usarla dall'app va
+   * **spostata** in `src/lib/`, non copiata.
+   */
+  const segnaEsito = useCallback(async (id, esito) => {
+    const { error } = await supabase.from('schedine')
+      .update({ esito, chiusa_il: esito ? new Date().toISOString() : null }).eq('id', id)
+    if (error) { setErrore(error.message); return { errore: error.message } }
+    await ricarica()
+    return {}
+  }, [ricarica])
+
+  /** L'importo giocato, facoltativo. ⚠️ Vuoto vuol dire **non lo dico**, non
+   *  zero: `null` e `0` sono due cose diverse, e un saldo costruito su uno
+   *  zero finto sarebbe falso. */
+  const scriviImporto = useCallback(async (id, importo) => {
+    const n = Number(String(importo).replace(',', '.'))
+    const { error } = await supabase.from('schedine')
+      .update({ importo: Number.isFinite(n) && n > 0 ? n : null }).eq('id', id)
+    if (error) { setErrore(error.message); return { errore: error.message } }
+    await ricarica()
+    return {}
+  }, [ricarica])
+
   /** ⚠️ Le gambe se ne vanno con la `on delete cascade`: una sola scrittura. */
   const cancella = useCallback(async (id) => {
     const { error } = await supabase.from('schedine').delete().eq('id', id)
@@ -92,6 +120,6 @@ export function usaSchedine(userId) {
   // non la vuoi più.
   const usate = new Set((schedine || []).flatMap(s => s.gambe.map(g => g.prossima_id)))
 
-  return { schedine, usate, crea, segnaGiocata, cancella, occupato, errore, ricarica,
-    primoErrore }
+  return { schedine, usate, crea, segnaGiocata, segnaEsito, scriviImporto, cancella,
+    occupato, errore, ricarica }
 }
