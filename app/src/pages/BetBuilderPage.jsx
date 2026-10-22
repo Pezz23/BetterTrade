@@ -9,6 +9,7 @@ import { usaSchedine } from '../hooks/usaSchedine'
 import { usaPreferenze } from '../hooks/usaPreferenze'
 import { valutaPartita } from '../lib/vpm'
 import { componiPasso, CONSIGLIATO, QUOTA_MINIMA_GAMBA } from '../lib/scalata'
+import { iniziaDopo } from '../lib/attendibilita'
 import { sigla } from '../lib/campionati'
 import { pct, eur, gg, quando } from '../lib/formato'
 
@@ -40,13 +41,6 @@ const CRITERI = [
   { id: 'scelta', label: 'scelta',        val: (c) => c.scelta },
   { id: 'vpm',    label: 'VPM',           val: (c) => c.vpm },
 ]
-
-const iniziaDopo = (p, istante) => {
-  const g = String(p.data).slice(0, 10)
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(g)) return true
-  if (!p.ora) return new Date(`${g}T23:59:00`).getTime() >= istante
-  return new Date(`${g}T${String(p.ora).slice(0, 5)}:00`).getTime() >= istante
-}
 
 export default function BetBuilderPage() {
   const { currentUser } = useAuth()

@@ -299,3 +299,22 @@ export function weekendDi(d) {
   x.setDate(x.getDate() + ((8 - x.getDay()) % 7))
   return oggiLocale(x)
 }
+
+/**
+ * La partita comincia **dopo** questo istante?
+ *
+ * ⚠️⚠️ **Stava in due pagine identica** (Road to weekend e Bet Builder) e il
+ * tagliando del 22/10/2026 l'ha trovata: due copie della stessa regola
+ * divergono sempre, ed è il difetto che questo progetto ha già pagato con
+ * `pct`, con la data breve e con la chiave del giorno negli script.
+ * ⚠️ Serve perché `usaProssime` filtra per **giorno** (`data >= current_date`),
+ * quindi alle 18 di sabato la lista contiene ancora le partite delle 13.
+ * ⚠️ Senza orario si tiene la partita: meglio mostrarla che nasconderla — la
+ * correzione a mano è prevista, l'invisibilità no.
+ */
+export function iniziaDopo(p, istante) {
+  const g = String(p?.data).slice(0, 10)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(g)) return true
+  if (!p.ora) return new Date(`${g}T23:59:00`).getTime() >= istante
+  return new Date(`${g}T${String(p.ora).slice(0, 5)}:00`).getTime() >= istante
+}

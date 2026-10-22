@@ -81,7 +81,30 @@ tolgono con una riga quando Mattia vorrà.
 - ⚠️ E nello script c'era un `Escape` con scritto accanto *"si richiude"*: la
   scheda **non ascolta Escape**, restava aperta e copriva la barra in basso.
 
+### 🧰 Tagliando del 22/10/2026 (sera)
+
+- **`fattoreVpm` e `FATTORE_SCALA` tolti**: erano il cuore del voto vecchio e
+  dal cambio di stamattina **non li chiamava più nessuno**. Trovati cercando
+  gli export senza usi **in tutto il repo** — `src/lib/` è condivisa col
+  motore, e un controllo che guarda solo `app/` sbaglia.
+- **`iniziaDopo` era in due copie** (Road to weekend e Bet Builder, identiche):
+  salita in `lib/attendibilita.js`, dove stanno le altre regole di tempo. È lo
+  stesso difetto già pagato con `pct`, la data breve e la chiave del giorno.
+- **`@anthropic-ai/sdk` tolto da `btscout/package.json`**: residuo della
+  vecchia fase PWA, e `btscout/api/` non esiste più.
+- Dipendenze dell'app: **tutte usate**, nessuna mancante. Pacchetto principale
+  **146 kB** (47,6 gzip) + 241 kB di `App` caricato a richiesta.
+- ⚠️ Gli altri 30 export "senza usi" **non sono codice morto**: sono le
+  costanti misurate (`PAVIMENTI`, `GG_MEDIO`, `DISPERSIONE`…), esportate
+  apposta per essere leggibili e provabili da terminale.
+
 ### 🎟️ Il Bet Builder, cosa è rimasto aperto
+
+- ⚠️ **Le schedine chiuse (vinte/perse) restano tutte in lista.** Mattia l'ha
+  notato il 22/10: *"non possiamo tenerle tutte"*. **Da fare: l'interruttore
+  `ATTIVE | ARCHIVIO`**, come in Road to weekend — e **non** una sparizione
+  dopo tot giorni, perché il criterio non è il tempo ma lo **stato**: una
+  schedina chiusa non ha più niente da fare, una aperta sì anche dopo un mese.
 
 - **L'esito automatico** dall'archivio: ogni gamba ha `prossima_id`, ma la
   regola che dice *"questa giocata è arrivata"* vive in

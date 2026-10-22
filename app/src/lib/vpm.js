@@ -298,28 +298,14 @@ export function verso(v) {
   return v.accordo ? 'conferma' : 'contro'
 }
 
-// ── Il VOTO: la resa corretta dal campo ──────────────────────────────────────
-// Deciso il 10/10/2026. `voto = attendibilità × quota × fattore(VPM)`, cioè la
-// **resa** (che è già quota × attendibilità) moltiplicata per un fattore che
-// vale 1,00 quando il campo non si pronuncia e 1,10 quando è netto al massimo.
-//
-// ⚠️ Il fattore è vicino a 1 **di proposito**: VPM va da 5,5 a 10, e
-// moltiplicare per quei numeri avrebbe reso il voto 5-10 volte più grande,
-// perdendo il significato di "quanto torna per ogni euro" — dove 100% è il
-// pareggio. Il tetto del +10% è anche la misura del peso che VPM si è
-// guadagnato: nel backtest sulla fascia dei favoriti corti conferma il mercato
-// nel 95% dei casi, quindi può correggere, non comandare.
-//
-// ⚠️ **Ha preso il posto del Grado** (che era la resa in scala 1-10 più il
-// livello della quota): due numeri costruiti sulla resa a schermo erano un
-// doppione, lo stesso difetto per cui il 2/10 la resa era stata togliere dalla
-// barra. Ora la resa si vede accanto al voto, e il Grado non c'è più.
-export const FATTORE_SCALA = 45     // (vpm − 5,5) / 45 → da 0 a +0,10
-
-export function fattoreVpm(punti) {
-  if (punti == null) return 1
-  return 1 + (punti - 5.5) / FATTORE_SCALA
-}
+// ── Il VOTO ─────────────────────────────────────────────────────────────────
+// ⚠️⚠️ **Qui c'erano `fattoreVpm` e `FATTORE_SCALA`**, il cuore del voto
+// vecchio (`resa × fattore(VPM)`), e il 22/10/2026 sono stati **tolti**: dal
+// momento in cui il voto è diventato una pagella nessuno li chiamava più.
+// Un pezzo di codice che non serve più non si lascia "per sicurezza" — si
+// toglie, e la storia resta scritta dove si legge, in `note/criterio.md`.
+// Trovato dal tagliando del 22/10 cercando gli export senza usi in tutto il
+// repo (⚠️ in tutto il repo: `src/lib/` è condivisa col motore).
 
 /** Il voto di una partita: null se manca la resa (combinata senza quota). */
 /**

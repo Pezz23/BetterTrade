@@ -14,7 +14,7 @@ import Icona from '../components/Icona'
 import ScegliGamba from '../components/ScegliGamba'
 import { valutaPartita } from '../lib/vpm'
 import { sigla } from '../lib/campionati'
-import { weekendDi, categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
+import { weekendDi, categoria, SOGLIE_DEFAULT, iniziaDopo } from '../lib/attendibilita'
 import { pct, eur, gg, quando } from '../lib/formato'
 import {
   METODO, NOMI_REGOLA, MAX_GAMBE, QUOTA_MINIMA_GAMBA, QUOTA_MINIMA_SCHEDINA, CONSIGLIATO,
@@ -54,19 +54,6 @@ const coloreDi = (i) => COLORI_PASSO[i % COLORI_PASSO.length]
 const GIORNI = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab']
 const nomeGiorno = (d) => d ? GIORNI[new Date(d + 'T12:00:00').getDay()] : ''
 
-/**
- * La partita comincia dopo questo istante?
- * ⚠️ `usaProssime` filtra per **giorno** (`data >= current_date`), quindi alle
- * 18 di sabato la lista contiene ancora le partite delle 13. Qui si guarda
- * l'orario, e si tiene la partita quando l'ora manca (meglio mostrarla che
- * nasconderla: la correzione a mano è prevista, l'invisibilità no).
- */
-const iniziaDopo = (p, istante) => {
-  const g = String(p.data).slice(0, 10)
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(g)) return true
-  if (!p.ora) return new Date(`${g}T23:59:00`).getTime() >= istante
-  return new Date(`${g}T${String(p.ora).slice(0, 5)}:00`).getTime() >= istante
-}
 
 function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumulato, colore, classifiche,
                 quote, setQuote, perc, setPerc, esito, setEsito, onToglie, prossima, onAggiunge,
