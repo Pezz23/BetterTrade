@@ -120,6 +120,71 @@ database.
 ⚠️ E `prossime_partite` **non si tocca**: resta la fotografia di cosa si vedeva
 prima, e lo scarto fra le due quote è un dato, non un errore.
 
+## 📁 L'archivio, e i dieci secondi (22/10/2026, sera)
+
+Mattia: *"non possiamo tenerle tutte in lista"*, e poi **"dopo 10 secondi che
+metto l'esito deve andare in archivio"**. Interruttore `ATTIVE | ARCHIVIO`,
+coi conteggi sui due tasti.
+
+⚠️⚠️ **Il criterio è lo STATO, non il tempo** — è il motivo per cui NON è
+*"dopo tot giorni non si vedono più"*: una schedina **chiusa** non ha più
+niente da fare, una **aperta** ne ha anche dopo un mese. I dieci secondi non
+sono una scadenza: sono il tempo per accorgersi di un tocco sbagliato, perché
+una card che sparisce nell'istante in cui la tocchi non lascia modo di
+rimediare. Nel frattempo la card scrive *"va in archivio tra 7s · ritocca
+vinta per annullare"* — ⚠️ **una cosa che sparisce da sola e non lo dice
+sembra un dato perso**.
+
+⚠️ `archiviata()` guarda `esito` **e** `chiusa_il`: annullando l'esito la
+riga risale fra le attive **da sé**, senza niente da disfare.
+⚠️ Il battito di un secondo gira **solo** finché c'è una schedina dentro la
+finestra, poi si spegne. Un `setInterval` sempre acceso ridisegnerebbe la
+pagina ogni secondo per niente.
+⚠️ Il numero è la posizione nel registro **intero**: la «SCHEDINA 7» resta la
+7 anche con le prime sei in archivio, o due schedine porterebbero lo stesso
+nome. E **COME STANNO ANDANDO conta tutto**, archivio compreso: è lo scopo per
+cui si tracciano.
+
+## I filtri che restano, e il «fino a lunedì»
+
+⚠️⚠️ **Si salvano da sé, senza tasto**, ed è l'opposto della scalata: lì la
+riga di `preferenze` è **condivisa** fra sei admin e il tasto serve a dire
+*"questo vale per tutti"*; qui è **personale**, quindi muovere una manopola
+riguarda solo te. Si scrive un attimo dopo l'ultimo tocco, perché
+`TastoRipeti` tiene il passo del dito e salvare a ogni scatto sarebbe una
+scrittura per unità.
+⚠️ **Chi apre e non tocca niente non scrive niente**: `partenza` tiene i valori
+con cui la pagina è partita, e senza quel confronto il primo caricamento
+salverebbe i valori di fabbrica — una riga nel database per un gesto mai fatto.
+
+**«fino a lunedì»** è `lunediProssimo(0)`: lo stesso confine che raggruppa le
+giornate nelle spin e che la pagina Partite chiama con quel nome, lunedì
+compreso. ⚠️ Due tasti (`tutte` · `fino a lunedì`) e non un interruttore:
+*"tutte"* è una scelta anche quella, e un bottone solo acceso o spento non dice
+cosa fa da spento.
+
+## ＋ aggiungi partita (22/10/2026, sera)
+
+⚠️ **La stessa finestra di Road to weekend** (`ScegliGamba`), coi suoi filtri
+⚑ e ★ e la ricerca a testo libero — con due parametri in più (`dove`,
+`prefisso`) invece di una gemella: là la targhetta è `P3` (passo), qui `S3`
+(schedina). Offre **tutto il calendario**, anche sotto le soglie: i filtri
+compongono, questa è la scorciatoia per la partita che i filtri non prendono.
+
+⚠️⚠️ **Le aggiunte a mano sono FISSE e il resto si compone intorno**: la parte
+automatica punta a `obiettivo ÷ quota delle aggiunte`. Appiccicarle in fondo
+avrebbe dato quota 9 a chi ne ha chieste 5 — e la quota è il senso della
+pagina. Con una gamba a mano da 1,80 dentro una schedina da 5, l'automatico
+arriva a 2,78.
+⚠️ Si tengono gli **id**, non le righe: una riga copiata lì invecchierebbe
+appena arriva una quota nuova.
+⚠️ **La × su una gamba a mano la TOGLIE, non la scarta**: scartarla la
+butterebbe fuori anche dalle candidate, cioè il contrario del gesto appena
+fatto. E le aggiunte si svuotano col salvataggio, o finirebbero anche nella
+schedina dopo.
+⚠️ Il tasto c'è **anche quando non c'è nessuna proposta**: se i filtri non
+lasciano passare niente, la via a mano è l'unica che resta.
+
 ## Quello che resta da fare
 
 - **L'esito automatico** dall'archivio, col vincolo scritto sopra.

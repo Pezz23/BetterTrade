@@ -348,6 +348,35 @@
   sola, probabilmente servirà di nuovo.
 - **I commenti spiegano il perché**, non il cosa. Se una riga è strana, dire
   quale problema evita vale più di descrivere cosa fa.
+- ⚠️⚠️ **Dove sta il bordo della pagina: `src/lib/layout.js`** (22/10/2026).
+  `COLONNA` (720) stava in `App.jsx` e la leggeva solo lui; dal momento in cui
+  l'ha chiesta anche un **componente** — `BarraCampionati`, ancorata al bordo
+  destro della colonna — importarla da lì avrebbe chiuso un anello, perché
+  `App` carica le pagine con `lazy` e una pagina che torna a importare `App` è
+  il ciclo che si rompe **solo in produzione**, dove i moduli vengono uniti in
+  un ordine diverso. ⚠️ Non sta in `theme.js` e non è una spaziatura: `theme`
+  dice **come sono fatte** le cose, `layout` **dove finiscono**. Lì c'è anche
+  `bordoDestro(scostamento)`, il conto che il menu faceva a mano.
+- ⚠️ **Le tre barre fisse si misurano con le stesse due variabili**
+  (`index.css`): `--barra-alta` (testata) e `--barra-bassa` (tab bar). Chi si
+  ancora in verticale — il menu, il foglio della scheda, la barra dei
+  campionati — parte da quelle, così quando una delle due cambia altezza gli
+  altri restano d'accordo. **Ed è appena successo**: il 22/10 la tab bar è
+  cresciuta due volte, e `--barra-bassa` è salita con lei (62 → 70 → 78).
+  ⚠️⚠️ Quel numero **è** l'altezza della barra, non un margine a piacere:
+  lasciarlo indietro nasconde le ultime righe di ogni pagina.
+- ⚠️⚠️ **`SOTTO_BARRA` (`App.jsx`) non viene da `SP`, ed è voluto.** È quanto
+  spazio resta sotto l'etichetta della tab bar, cioè la **distanza dei
+  bersagli dal bordo inferiore dell'iPhone**, dove stanno l'indicatore Home e
+  la risalita di sistema: un vincolo del telefono, non una scelta di stile.
+  Mattia l'ha alzata due volte il 22/10 (*"rischio di attivare Siri quando
+  clicco"*, poi *"è ancora troppo bassa"*): **6 → 12 → 20**. ⚠️ Solo il
+  riempimento **in basso** sposta i tasti: la barra è ancorata a `bottom: 0`,
+  quindi allargarla in modo simmetrico li lascerebbe dov'erano.
+- ⚠️ **Una striscia `fixed` sopra una lista si riserva lo spazio, non lo
+  prende**: `PartitePage` ha 40px di margine a destra per la barra dei
+  campionati. Lasciarla galleggiare avrebbe coperto la colonna del voto — ed è
+  il difetto che questo progetto ha già fotografato due volte.
 
 ---
 

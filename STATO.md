@@ -18,9 +18,19 @@
 
 ## ▶️ DOVE SIAMO — 22 ottobre 2026, leggi questo per primo
 
-**Tutto il lavoro del 21-22 ottobre sta su ROAD TO WEEKEND.** Il restyling è
-chiuso (il blocco più sotto è storia), e la pagina della scalata è diventata lo
-strumento principale del weekend.
+**Tutto il lavoro del 21-22 ottobre sta su ROAD TO WEEKEND**, e la sera del 22
+si è spostato su **BET BUILDER** e **PARTITE**. Il restyling è chiuso (il
+blocco più sotto è storia): la pagina della scalata è lo strumento del
+weekend, il Builder quello delle schedine personali, e Partite ha preso la
+barra dei campionati.
+
+⚠️ **Versione a schermo: `1.54.00`.** Il 22 sera sono passati sette commit
+senza che il contatore si alzasse — se succede di nuovo, sul telefono non si
+distingue il lavoro di oggi dalla cache di ieri.
+
+⚠️⚠️ **Ci sono 8 commit non pushati** (da `c5e4e95` a questo). **Il push è
+sempre di Mattia**: se la prossima sessione li trova lì, non sono dimenticati,
+aspettano lui.
 
 ### Cos'è cambiato, in ordine
 
@@ -35,6 +45,10 @@ strumento principale del weekend.
 | **Istruzioni alleggerite**: CLAUDE 202→23 kB, STATO 220→47 kB, lo storico in `STORICO.md` e gli approfondimenti in `note/` | `c6c0077` |
 | **Il VOTO diventa una pagella 0-10** coi pesi misurati, e `andamento` ricalcolata su 8 stagioni | `60ffca7` |
 | **🎟️ BET BUILDER**: schedine a quota obiettivo, **private per utente** (`sql/36`-`38`), con esito · importo e vincita · filtri nel registro · partite scartate · quota correggibile. Slot scende nel menu, il Builder prende il suo posto in basso | `946af5d` → `28322a1` |
+| **🧰 Tagliando**: via il codice orfano del voto vecchio e una copia di `iniziaDopo` | `c5e4e95` → `76b7c60` |
+| **🎟️ Bet Builder, il secondo giro**: `ATTIVE \| ARCHIVIO` coi dieci secondi, i **filtri che restano**, il filtro **«fino a lunedì»** e **＋ aggiungi partita** (la finestra di Road to weekend, con `S3` al posto di `P3`) | `3368fed` |
+| **Tab bar più alta due volte** (Siri sul bordo dell'iPhone): ~49 → ~65px, e `--barra-bassa` 62 → 78 | `60863c6` · `d291d7d` |
+| **🏴 LA BARRA DEI CAMPIONATI** a destra, fissa — e i filtri delle Partite rifatti sui **quattro indicatori** | `6bf18ae` |
 
 Le migrazioni applicate in questi due giorni: **`sql/31`** (numero del passo
 decimale, per inserirne uno in mezzo), **`sql/32`** (il metodo `madre`),
@@ -45,6 +59,9 @@ stretta). Tutte verificate dal database subito dopo.
 
 | | |
 |---|---|
+| **l'esito automatico del Bet Builder** | fattibile, ma prima la regola *"questa giocata è arrivata"* deve **spostarsi** da `btscout/lib/ricostruisci.js` a `app/src/lib/`, **non essere copiata**: due versioni direbbero prima o poi cose diverse sulla stessa schedina |
+| **idea 9** | `CompilaPerQuota` riempie le caselle **vuote** di una spin: va capito se Mattia voleva compilarne una **intera**. Domanda ancora senza risposta |
+| **«solo sopra soglia»** | tolto il 22/10 insieme alle slitte, **deciso da me**: diceva la stessa cosa di «attendibilità ≥» in lingua spin. Una riga per rimetterlo |
 | **le casse le vedono tutti** | aprendo la pagina agli utenti, bankroll, accumulo e archivio sono visibili a chi entra. Si toglie la card a chi non è admin — una riga — ma è una scelta sua |
 | **lo spezza a mano quasi non compare** | col taglio automatico a 2,00 i passi nascono già minimi, e un pezzo minimo non si divide in due pezzi che arrivino entrambi a 2,00. Riappare solo su un passo allungato a mano |
 | **un passo può avere 8 gambe** | `fasce()` raggruppa per orario e `MAX_GAMBE` vale solo per la proposta automatica. Mattia: *"decido io a mano"* |
@@ -57,7 +74,7 @@ stretta). Tutte verificate dal database subito dopo.
 | **2** | **Le quattro rifiniture** (idee 2 · 4 · 5 · 7) | ✅ **fatto il 22/10** (`a542cf9`), più la testata rifatta su tre righe (`a095ce0`) e il difetto che Mattia ha fotografato nei filtri (`6bf1468`) |
 | **3** | **Gli indirizzi delle pagine** (lotto Q, routing) | da fare — **prima di aggiungere schermate nuove**, o si ricablano dopo. E toglie la trappola della mappa di `guarda.mjs` |
 | **4** | ✅ **La schedina a schermo — fatta il 22/10 come 🎟️ BET BUILDER** (`sql/36`): schedine a quota obiettivo, private per utente, con «giocata» e «cancella», e le partite già usate escluse dalle successive. ⚠️ **Resta aperta solo l'idea 9**: `CompilaPerQuota` riempie le caselle **vuote** di una spin — va capito con Mattia se voleva compilarne una **intera**. |
-| **5** | **La barra dei campionati** (idea 3) | ⚠️ **da progettare prima**: su 375px toglie larghezza ai nomi, già tarati al pixel. Si decide **cosa si restringe** |
+| **5** | **La barra dei campionati** (idea 3) | ✅ **fatta il 22/10 sera** (`6bf18ae`), anticipata da Mattia prima del routing. La domanda *"cosa si restringe"* ha avuto risposta: **niente** — lo spazio si **riserva** (40px di margine a destra) invece di lasciar galleggiare la striscia sopra la lista |
 | **6** | **L'automazione** (lotto F): il `.plist` di launchd è pronto, due comandi | da fare |
 | **7** | **Quello che aspetta i dati**: il riepilogo della scalata (a 10-20 chiuse), il Satellite, la spin 2 sotto soglia, i backtest vecchi | non anticipabile |
 
@@ -100,24 +117,61 @@ tolgono con una riga quando Mattia vorrà.
 
 ### 🎟️ Il Bet Builder, cosa è rimasto aperto
 
-- ⚠️ **Le schedine chiuse (vinte/perse) restano tutte in lista.** Mattia l'ha
-  notato il 22/10: *"non possiamo tenerle tutte"*. **Da fare: l'interruttore
-  `ATTIVE | ARCHIVIO`**, come in Road to weekend — e **non** una sparizione
-  dopo tot giorni, perché il criterio non è il tempo ma lo **stato**: una
-  schedina chiusa non ha più niente da fare, una aperta sì anche dopo un mese.
+- ✅ **L'archivio c'è** (22/10 sera): interruttore `ATTIVE | ARCHIVIO`, e la
+  schedina ci scende **dieci secondi dopo l'esito** — richiesta di Mattia.
+  Il criterio è lo **stato**, non il tempo; i dieci secondi sono il tempo per
+  accorgersi di un tocco sbagliato, e la card lo scrive mentre scorrono.
+  Il dettaglio sta in `note/betbuilder.md`.
 
 - **L'esito automatico** dall'archivio: ogni gamba ha `prossima_id`, ma la
   regola che dice *"questa giocata è arrivata"* vive in
   `btscout/lib/ricostruisci.js` e va **spostata** in `app/src/lib/`, non
   copiata — due versioni direbbero prima o poi cose diverse sulla stessa
   schedina.
-- **I filtri non si salvano** fra una sessione e l'altra (le schedine e le
-  scartate sì): riaprendo, le manopole tornano ai valori di partenza. Offerto
-  a Mattia, non ancora chiesto — la riga di `preferenze` è già sua e già
-  **personale**, quindi lì il salvataggio può essere automatico, al contrario
-  della scalata dove il tasto serve perché la riga è condivisa fra sei admin.
+- ✅ **I filtri restano** (22/10 sera, chiesto da Mattia): si salvano da sé,
+  senza tasto, perché la riga di `preferenze` è **personale** — al contrario
+  della scalata, dove il tasto serve perché la riga è condivisa fra sei admin.
+  ⚠️ Chi apre e non tocca niente **non scrive niente**.
+- ⚠️ **Non si salvano `quota da raggiungere` e il criterio**: non stanno nella
+  card dei filtri. Offerto a Mattia, due righe quando vorrà.
 - **Il riassunto con le domande vere** (quale criterio sceglie meglio, quanto
   rende davvero) arriva a **dieci o venti schedine**: prima direbbe rumore.
+
+### 🏴 La barra dei campionati e i filtri delle Partite (22/10/2026, sera)
+
+**La barra.** Striscia `fixed` larga 40px sul bordo destro, fra testata e tab
+bar: non si muove mai. Ancorata al bordo della **colonna** e non della
+finestra — attaccata allo schermo, su un portatile starebbe a un palmo dalla
+lista che filtra.
+
+⚠️⚠️ **Filtra, non salta**, ed è la domanda che ha deciso il lotto. Un indice
+che porta a un *punto* della lista vorrebbe dire raggrupparla per campionato,
+ma la lista è ordinata per voto (o attendibilità, o quota) **attraverso tutte
+le leghe**: è il motivo per cui la pagina esiste. Raggrupparla avrebbe tolto
+quello per far funzionare la barra. Mattia ha scelto **A** (filtra).
+
+⚠️⚠️ **I numeri accanto alle sigle contano tutti gli altri filtri accesi ma
+non sé stessi** — per ottenerlo il filtro del campionato è **uscito dalla
+catena** (`filtrate` → `visibili`). Senza, scelta una lega tutte le altre
+direbbero zero e la barra non servirebbe più a cambiare lega.
+⚠️ Le leghe a zero **restano al loro posto, spente**: sparendo farebbero
+saltare in su quelle sotto a ogni tocco di una manopola, e il bersaglio
+cambierebbe posto sotto il dito.
+
+**I filtri**, rifatti subito dopo su richiesta di Mattia:
+- **via la tendina del campionato**, superflua — due comandi per lo stesso
+  filtro si allontanano, e uno dei due finisce per non essere più quello vero.
+  Lo stato resta, lo scrive la barra, e la targhetta con la ✕ lo toglie;
+- **quattro manopole**: `attendibilità ≥` · `VPM ≥` · `scelta ≥` · `voto ≥`,
+  scritte come un **elenco** (`MANOPOLE`) e non come quattro blocchi copiati.
+  ⚠️ Il voto arriva a **10**, non a 100: è una pagella da stamattina, e il
+  vecchio `votoMin` si confrontava con `1,00`;
+- ⚠️⚠️ **via le tre slitte delle soglie di probabilità** (*"le spin stanno
+  passando in secondo piano"*). **I numeri restano**: `SOGLIE_DEFAULT` decide
+  ancora il colore delle card e il conteggio in cima — se ne va la possibilità
+  di muoverli da lì, non le categorie. ⚠️ Via con loro **«solo sopra soglia»**,
+  che diceva la stessa cosa di «attendibilità ≥» in lingua spin: **deciso da
+  me**, Mattia può rivolerlo.
 
 ### ⛔ Le regole di lavoro aggiunte in questi giorni
 
