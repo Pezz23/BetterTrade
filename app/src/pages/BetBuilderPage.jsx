@@ -119,6 +119,8 @@ export default function BetBuilderPage() {
     <div style={{ padding: '12px 12px 90px' }}>
       <h2 style={{ fontSize: S.titolo, fontFamily: F.sans, letterSpacing: '0.1em', color: C.testo, margin: '4px 0 10px' }}>BET BUILDER</h2>
 
+      <ComeFunziona />
+
       {(avviso || reg.errore) && (
         <Card onClick={() => setAvviso(null)} style={{ marginBottom: 10, borderColor: alpha(C.ambra, .45), cursor: 'pointer' }}>
           <div style={{ color: C.ambra, fontSize: S.base, fontFamily: F.sans }}>{avviso || reg.errore}</div>
@@ -351,6 +353,66 @@ export default function BetBuilderPage() {
         una gamba nei favoriti corti rende ~98%, e in una combinata le rese si moltiplicano:
         più gambe, più margine al banco. Qui si gioca per divertirsi.
       </div>
+    </div>
+  )
+}
+
+/**
+ * Le istruzioni, in parole semplici e **chiuse di default**.
+ *
+ * ⚠️ Stessa forma della legenda della pagina Partite (`LegendaPartite`): una
+ * riga che si apre, senza scatola quando è chiusa. Chi la pagina la conosce
+ * non deve scorrerla ogni volta, e chi entra la prima volta trova **dove**
+ * chiedere. ⚠️ Non è un `title` col mouse sopra: **su telefono non esiste**,
+ * ed è la regola già scritta in questo progetto.
+ * ⚠️ Niente numeri e niente avvertenze sul valore atteso qui dentro: è una
+ * spiegazione di **cosa fanno i tasti**, non una lezione — *"più fanny che
+ * profittevole"*. La frase onesta sta in fondo alla pagina, una volta sola.
+ */
+function ComeFunziona() {
+  const [aperta, setAperta] = useState(false)
+  const passi = [
+    ['1', 'Scegli da quali partite pescare', <>Le quattro manopole in alto tengono solo le partite che passano quei valori. Più stringi, meno ne restano — il numero delle <b>partite disponibili</b> te lo dice subito.</>],
+    ['2', 'Dì che quota vuoi raggiungere', <>Scrivi la quota (per esempio <b>5,00</b>) e scegli con che criterio ordinare le migliori: <b>voto</b>, attendibilità, scelta o VPM. Lui prende le prime finché il prodotto arriva a quella quota, usando <b>meno gambe possibile</b>.</>],
+    ['3', 'Guarda la proposta prima di tenerla', <>Se una partita non ti convince, la <b>×</b> la scarta: esce dall&apos;elenco e lui ne pesca un&apos;altra al suo posto. Se cambi idea, <b>rimettile</b> con un tocco.</>],
+    ['4', 'Tienila, e diventa tua', <>Con <b>TIENI QUESTA SCHEDINA</b> finisce nel tuo registro e resta lì anche se chiudi l&apos;app. Le sue partite <b>non torneranno</b> nelle schedine successive, così non giochi due volte la stessa.</>],
+    ['5', 'Poi segna com&apos;è andata', <>Quando la porti al banco premi <b>segna giocata</b>; a risultati arrivati, <b>vinta</b> o <b>persa</b>. L&apos;<b>importo</b> è facoltativo: se lo scrivi, vedi subito quanto vinci e in cima compare come stai andando.</>],
+  ]
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <button onClick={() => setAperta(v => !v)} style={{
+        width: '100%', textAlign: 'left', cursor: 'pointer',
+        background: aperta ? `linear-gradient(${alpha(C.oro, 0.06)},${alpha(C.oro, 0.06)}), ${C.card}` : C.card,
+        border: `1px solid ${aperta ? alpha(C.oro, 0.3) : 'transparent'}`, borderRadius: 10,
+        padding: '10px 13px', color: C.spento, fontFamily: F.sans, fontSize: S.corpo, letterSpacing: '0.02em',
+        display: 'flex', alignItems: 'center', gap: 8,
+      }}>
+        <span style={{ color: C.oro }}>{aperta ? '⌃' : '⌄'}</span>
+        <span>COME FUNZIONA</span>
+      </button>
+      {aperta && (
+        <div style={{ border: `1px solid ${alpha(C.oro, 0.3)}`, borderTop: 'none', padding: '4px 12px 12px' }}>
+          {passi.map(([n, titolo, testo]) => (
+            <div key={n} style={{ display: 'flex', gap: 10, padding: '8px 0', borderTop: `1px solid ${alpha(C.testo, 0.06)}` }}>
+              <span style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700, color: C.oro, flexShrink: 0 }}>{n}</span>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontFamily: F.sans, fontSize: S.corpo, fontWeight: 700, color: C.testo }}>{titolo}</div>
+                <div style={{ fontFamily: F.sans, fontSize: S.base, color: C.spento, lineHeight: 1.55, marginTop: 2 }}>{testo}</div>
+              </div>
+            </div>
+          ))}
+          {/* ⚠️ Due cose che le persone chiedono per prime, e che non si
+              vedono guardando lo schermo: dove finiscono i dati e chi li
+              vede. */}
+          <div style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.fioco, lineHeight: 1.6,
+            marginTop: 8, paddingTop: 8, borderTop: `1px solid ${alpha(C.testo, 0.06)}` }}>
+            Le tue schedine sono <b>solo tue</b>: nessun altro le vede, nemmeno chi è admin.
+            Una volta tenuta, una schedina <b>non cambia più</b> da sola — nemmeno quando
+            arrivano le partite nuove. L&apos;unica cosa che puoi correggere è la <b>quota</b>
+            {' '}di una gamba, se sul tuo book è diversa dalla nostra.
+          </div>
+        </div>
+      )}
     </div>
   )
 }
