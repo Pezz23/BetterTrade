@@ -2200,7 +2200,15 @@ disabilitato racconta una cosa che si potrebbe fare. Restano leggibili i campi
 sparisce).
 ✅ **E le casse sono state nascoste il 22/10**, su richiesta di Mattia: la road
 map del weekend è una cosa da condividere, **i soldi no**. La card del conto
-(in gioco · accumulo · bankroll live · puntata) esiste solo per gli admin.
+(in gioco · accumulo · bankroll live · puntata) esiste solo per gli admin, e
+**con lei l'interruttore PIANO | ARCHIVIO**: l'archivio è il registro dei
+soldi — capitale, accumulo, quanto ha reso ogni scalata — quindi segue le
+casse. Trovato da Mattia provando con un utente vero: in PIANO si comportava
+bene, ma in cima leggeva *"ARCHIVIO 1"*.
+⚠️ Sparisce **l'interruttore intero**, non il solo tasto: con una vista sola
+non c'è niente da commutare. E la vista è legata a `isAdmin`
+(`vista = isAdmin ? modo : 'piano'`), non alla sola assenza dei tasti — così è
+vera per costruzione, e non per conseguenza del fatto che nessuno può premerli.
 ⚠️ La strada è stata **togliere la card**, non richiudere la lettura delle
 tabelle: senza quelle righe la pagina tornerebbe vuota per tutti e gli
 spettatori non vedrebbero più nemmeno i passi. L'archivio delle scalate chiuse

@@ -520,6 +520,13 @@ export default function ScalataPage() {
     if (pi.esiti && typeof pi.esiti === 'object') setEsiti(pi.esiti)
   }, [pref.pronte, pref.dati])
 
+  // ⚠️ **La vista la decide il ruolo, non solo i tasti.** Nascondere
+  // l'interruttore basterebbe — `modo` parte da 'piano' e lo cambiano solo
+  // quei due tasti — ma legare la vista a `isAdmin` rende la cosa vera per
+  // costruzione invece che per conseguenza: domani qualcuno aggiunge un terzo
+  // posto da cui si cambia modo e non deve ricordarsi di questo.
+  const vista = isAdmin ? modo : 'piano'
+
   const aperta = reg.aperta
   const bankrollIniziale = aperta ? Number(aperta.bankroll_iniziale) : (bankroll ?? Math.floor(reg.capitale))
   const posta = aperta ? Number(aperta.posta) : postaDi(bankrollIniziale)
@@ -734,12 +741,21 @@ export default function ScalataPage() {
         <h2 style={{ fontSize: S.titolo, fontFamily: F.sans, letterSpacing: '0.1em', color: C.testo, margin: 0 }}>ROAD TO WEEKEND</h2>
         {/* ⚠️ Un **interruttore**, non una voce di menu: il menu è per le
             pagine, questa è un'altra vista della stessa cosa — e ci si passa
-            dentro continuamente mentre si gioca. */}
-        <div style={{ display: 'flex', gap: 4 }}>
-          {[['piano', 'PIANO'], ['archivio', `ARCHIVIO${reg.storico?.length ? ` ${reg.storico.filter(x => x.stato === 'chiusa').length}` : ''}`]].map(([k, l]) => (
-            <Tasto key={k} attivo={modo === k} onClick={() => setModo(k)} colore={C.celestePieno}>{l}</Tasto>
-          ))}
-        </div>
+            dentro continuamente mentre si gioca.
+            ⚠️⚠️ **E non c'è per chi non è admin** (Mattia, 22/10/2026, dopo
+            averlo provato con un utente vero): l'archivio è il **registro dei
+            soldi** — capitale, accumulo, quanto ha reso ogni scalata — quindi
+            segue le casse, che sono già nascoste. Sparisce l'interruttore
+            intero e non il solo tasto: con una vista sola non c'è niente da
+            commutare, e un interruttore con un bottone solo è un comando che
+            non comanda. */}
+        {isAdmin && (
+          <div style={{ display: 'flex', gap: 4 }}>
+            {[['piano', 'PIANO'], ['archivio', `ARCHIVIO${reg.storico?.length ? ` ${reg.storico.filter(x => x.stato === 'chiusa').length}` : ''}`]].map(([k, l]) => (
+              <Tasto key={k} attivo={modo === k} onClick={() => setModo(k)} colore={C.celestePieno}>{l}</Tasto>
+            ))}
+          </div>
+        )}
       </div>
 
       {reg.errore && (
@@ -758,13 +774,13 @@ export default function ScalataPage() {
 
       {/* ⚠️ Azzerare il registro azzera anche lo stato della pagina: esiti e
           percentuali sono indicizzati per passo, e passi non ce ne sono più. */}
-      {modo === 'archivio' && (
+      {vista === 'archivio' && (
         <Archivio storico={reg.storico} tocca={isAdmin} onAzzera={async () => {
           await reg.azzeraTutto()
           setEsiti({}); setPerc({}); setTolte([]); setAggiunte({}); setQuote({}); setBankroll(null)
         }} />
       )}
-      {modo === 'piano' && <>
+      {vista === 'piano' && <>
 
 
 
