@@ -134,19 +134,20 @@ export default function BarraPartita({ p, cat, vpm = null, colore }) {
       <Colonna divisore={c} colore={vpm?.scelta == null ? C.fantasma : C.testo}
         valore={pct(vpm?.scelta)} etichetta="SCELTA" />
 
-      {/* Il voto è la resa corretta dal campo: verde sopra il pareggio, rosso
-          sotto. È l'unico numero della barra che dice "conviene o no". */}
-      {/* ⚠️ **Due grigi diversi, perché sono due cose diverse** (21/10/2026).
-          Prima erano lo stesso: `fantasma` sia quando il voto **non c'è** sia
-          quando c'è ma non è confrontabile (quota dal consenso). Nel secondo
-          caso a schermo compare un numero vero — `100%` — scritto nel colore
-          del testo disabilitato, **2,27:1**, cioè un dato che si deve leggere
-          e non si legge. Adesso: `—` assente resta `fantasma`, un numero che
-          c'è è `spento` (6,97:1). Resta spento rispetto al verde e all'ambra,
-          ma la differenza la fa la **tinta**, non il buio. */}
+      {/* ⚠️⚠️ **Il VOTO è una PAGELLA da 22/10/2026, non più una resa**: dieci
+          per l'attendibilità, meno la penalità se il campo contraddice il
+          mercato, più un bonus limitato se il prezzo paga sopra il consenso.
+          Serve a **ordinare e filtrare**, e non promette una percentuale.
+          ⚠️ Quindi **non si spegne più con la quota dal consenso**: il vecchio
+          voto lì diventava `1/margine` e quel grigio diceva *"questo numero
+          non è confrontabile"*. Adesso il prezzo pesa al massimo mezzo punto,
+          e il resto del voto è attendibilità — che è confrontabile sempre.
+          ⚠️ Le soglie del colore vengono dalla tabella misurata: sopra **7,0**
+          la giocata arriva il 72% delle volte, sotto **5,5** siamo nella zona
+          dove arriva meno della metà. */}
       <Colonna divisore={c}
-        colore={vpm?.voto == null ? C.fantasma : p.quotaDaConsenso ? C.spento : vpm.voto >= 1 ? C.verde : C.ambra}
-        valore={pct(vpm?.voto)} etichetta="VOTO" />
+        colore={vpm?.voto == null ? C.fantasma : vpm.voto >= 7 ? C.verde : vpm.voto >= 5.5 ? C.testo : C.ambra}
+        valore={vpm?.voto == null ? '—' : vpm.voto.toFixed(1).replace('.', ',')} etichetta="VOTO" />
     </div>
     </>
   )

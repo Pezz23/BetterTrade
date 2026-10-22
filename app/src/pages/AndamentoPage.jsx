@@ -45,7 +45,7 @@ function Tasto({ attivo, onClick, children, colore = C.oro, style }) {
 function Elenco({ righe, metodo, soglie, titolo, evidenzia = true }) {
   const ok = righe.filter(r => r.azzeccata).length
   // ⚠️ Le larghezze seguono **quanto scrive ogni indicatore**, non una misura
-  // uguale per tutti: VPM è "7,3" (3 caratteri) e il voto "100,25%" (7). Con
+  // uguale per tutti: VPM è "7,3" (3 caratteri) e l'attendibilità "60%". Con
   // le colonne vecchie — pensate per l'ordine ATT VPM VOTO RESA — il voto
   // finito in ultima posizione aveva 34px per 7 cifre e sbordava.
   const griglia = '1fr 26px 32px 32px 52px 14px'

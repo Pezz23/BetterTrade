@@ -101,8 +101,12 @@ riassunto(`le prime ${PRIME_WEEKEND} di ogni weekend`, perWeekend, PRIME_WEEKEND
       liv: [0.60, 0.65, 0.70, 0.75, 0.80, 0.85], nota: 'la giocata proposta (segno, e over 1,5 se combinata)' },
     { label: 'VPM',           val: x => x.vpm,     esito: x => x.vinta,   fmt: v => v.toFixed(1).replace('.', ','),
       liv: [6, 6.5, 7, 7.5, 8, 8.5], nota: 'la giocata proposta' },
-    { label: 'voto',          val: x => x.voto,    esito: x => x.vinta,   fmt: v => `${(v * 100).toFixed(0)}%`,
-      liv: [0.90, 0.95, 1.00, 1.05, 1.10], nota: 'la giocata proposta' },
+    // ⚠️⚠️ **Scala nuova dal 22/10/2026**: il voto è una **pagella 0-10**, non
+    // più `resa × fattore(VPM)` in percentuale. I livelli vecchi (0,90-1,10)
+    // qui non selezionerebbero più niente, e una riga che seleziona zero
+    // partite sembra un indicatore inutile invece di una scala sbagliata.
+    { label: 'voto',          val: x => x.voto,    esito: x => x.vinta,   fmt: v => v.toFixed(1).replace('.', ','),
+      liv: [5.5, 6, 6.5, 7, 7.5], nota: 'la giocata proposta' },
     { label: 'resa',          val: x => x.resa,    esito: x => x.vinta,   fmt: v => `${(v * 100).toFixed(0)}%`,
       liv: [0.90, 0.95, 1.00, 1.05, 1.10], nota: 'la giocata proposta' },
     // ⚠️ OGNI RIGA HA LA SUA SCALA, e non si possono colorare con la stessa:

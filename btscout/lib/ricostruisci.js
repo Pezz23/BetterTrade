@@ -107,7 +107,7 @@ export async function ricostruisci({ stagioni: quante = 3, daGiornata = 5 } = {}
           const a = Number(segno === 'H' ? r.avg_ap_1 : r.avg_ap_2)
           return m > 1 && a > 1 ? m / a - 1 : null
         })(),
-        vpm: v?.punti ?? null, voto: voto(resa, v?.punti ?? null),
+        vpm: v?.punti ?? null, voto: voto({ att: probGiocata, resa, accordo: accordoVpm }),
         // ⚠️ `scelta` è **null** quando il campo contraddice il mercato: non è
         // un dato che manca, è la formula che dice "questa non si sceglie".
         scelta: scelta(probGiocata, { punti: v?.punti ?? null, accordo: accordoVpm }),

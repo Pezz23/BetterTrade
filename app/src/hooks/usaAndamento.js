@@ -37,7 +37,13 @@ export const METODI = [
   // barra il 12/10. La resa ordina per quota, quindi mette in cima le partite
   // meno probabili: 51,2% di azzeccate contro il 60,3% dell'attendibilità.
   { id: 'scelta', label: 'Scelta',      breve: 'SCELTA', soglia: 0.62, passo: 0.01, tipo: '%', decimali: 0 },
-  { id: 'voto', label: 'Voto',          breve: 'VOTO', soglia: 1.00, passo: 0.0025, tipo: '%', decimali: 2 },
+  // ⚠️⚠️ **Il voto è una PAGELLA 0-10 dal 22/10/2026**, non più una resa in
+  // percentuale: quindi `tipo: 'n'` e non `'%'`, passo 0,1 e non 0,0025.
+  // ⚠️ La soglia di partenza è **6,5**: con la scala nuova seleziona 3.780
+  // partite in otto stagioni, cioè un volume confrontabile con le altre tre
+  // card. Il vecchio 100% non vuol più dire niente — era il pareggio di una
+  // resa, e la resa non c'è più dentro il voto.
+  { id: 'voto', label: 'Voto',          breve: 'VOTO', soglia: 6.5,  passo: 0.10,   tipo: 'n', decimali: 1 },
 ]
 
 // ⚠️⚠️ **Le fasce di quota, e perché sono il filtro più importante della

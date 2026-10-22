@@ -42,7 +42,28 @@ qui dentro: è la stima del mercato, non la verità.
 voto (prima stava solo nei dettagli completi, perché diceva la stessa cosa del
 Grado — ma il Grado non c'è più).
 
-**Il VOTO** (`voto()` in `lib/vpm.js`) è il numero che riassume tutto:
+### ⚠️⚠️ IL VOTO È CAMBIATO IL 22/10/2026 — adesso è una pagella
+
+**Quello che segue descrive il voto VECCHIO**, `resa × fattore(VPM)`, e si
+tiene perché spiega *perché* è stato sostituito. Oggi:
+
+    voto = 10 × attendibilità
+         − 0,6 se il campo contraddice il mercato
+         + bonus del prezzo, tagliato a ±0,5
+
+⚠️ **Non è una probabilità**: è una pagella da 0 a 10 per **ordinare e
+filtrare**, e non torna mai nulla (il disaccordo è un voto basso, non un
+`null`). ⚠️ I pesi sono **misurati** (`btscout/scripts/prova-pagella.js`,
+otto stagioni, verificati su due mai viste): **VPM come addendo pesa ZERO** —
+il Brier peggiora in modo monotòno appena lo si alza — ma come **bandierina**
+vale dieci punti (43,1% contro 53,2%). Il bonus del prezzo è **gratis**
+(60,4% contro 60,1% sulle prime 9, dentro il rumore).
+⚠️ **Perché il vecchio è morto**: con la quota dalla media di mercato
+`resa = quota × att` si semplifica in `1/margine`, quindi il voto diceva
+*quanto margine si è preso il book*. Misurato, ordinando per lui si azzeccava
+il **49,0%** contro il 60,5% dell'attendibilità: il peggiore di tutti.
+
+**Il VOTO vecchio** (storia, non più vero):
 
 ```
 voto = attendibilità × quota × fattore(VPM) = resa × fattore(VPM)

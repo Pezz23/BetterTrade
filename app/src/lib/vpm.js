@@ -281,7 +281,7 @@ export function valutaPartita(dati, riga) {
     scelta: scelta(riga.probGiocata, { punti: v?.punti ?? null, accordo }),
     // il voto sta qui e non in attendibilita.js perché ha bisogno di VPM, che
     // arriva dal database: la riga da sola non può calcolarlo
-    voto: voto(riga.resa, v?.punti ?? null),
+    voto: voto({ att: riga.probGiocata, resa: riga.resa, accordo }),
     // ⚠️ L'accordo si misura sul **segno**, non sul numero: la giocata
     // consigliata può essere "1 + over 1,5", e lì conta solo l'1.
     accordo,
@@ -322,9 +322,76 @@ export function fattoreVpm(punti) {
 }
 
 /** Il voto di una partita: null se manca la resa (combinata senza quota). */
-export function voto(resa, punti) {
-  if (resa == null) return null
-  return resa * fattoreVpm(punti)
+/**
+ * ⚠️⚠️ **Il VOTO, rifatto il 22/10/2026: una PAGELLA, non più una resa.**
+ *
+ * Fino a ieri era `resa × fattore(VPM)`, e Mattia l'ha dichiarato inutile
+ * avendo ragione: la quota giocata viene dalla **media di mercato** tutte le
+ * volte che Bet365 non copre la partita, e lì `resa = quota × attendibilità`
+ * si semplifica in **`1/margine`** — cioè il voto diceva *quanto margine si è
+ * preso il book*, non quanto vale la partita. Misurato, come selettore era il
+ * peggiore di tutti: ordinando per lui le prime 9 del giorno si azzeccava il
+ * **49,0%** contro il 60,5% dell'attendibilità.
+ *
+ * Adesso risponde a **"quanto vale questa partita, tutto compreso"**, in
+ * decimi, e serve a **ordinare e filtrare** (richiesta di Mattia: *"voglio un
+ * riassunto dei 3 voti, non un quarto indicatore"*).
+ *
+ *     voto = 10 × attendibilità
+ *          − PENALITÀ se il campo contraddice il mercato
+ *          + bonus limitato quando il prezzo paga sopra il consenso
+ *
+ * ⚠️⚠️ **I pesi sono misurati, non scelti** (`btscout/scripts/prova-pagella.js`,
+ * otto stagioni, tarato sulle prime sei e verificato sulle ultime due):
+ *
+ * - **VPM come addendo pesa ZERO.** Cercando il peso del campo dentro il
+ *   riassunto, il Brier è migliore a `w = 0` e peggiora in modo monotòno
+ *   salendo (0,23492 → 0,23516 a 0,10 → 0,23614 a 0,30), **sia in taratura
+ *   sia fuori campione**. L'attendibilità contiene già quello che VPM sa — il
+ *   mercato si aggiusta entro cinque partite, ed è scritto da settembre.
+ * - **Ma VPM conta come BANDIERINA**: dove il campo contraddice il mercato si
+ *   arriva il **43,1%** delle volte contro il **53,2%** delle altre. Dieci
+ *   punti. Per questo entra come penalità e non come addendo — *il disaccordo
+ *   è il colore, non il numero*.
+ * - **Il bonus del prezzo è gratis**: ordinando le prime 9, con o senza bonus
+ *   si azzecca lo stesso (60,4% contro 60,1%, dentro il rumore). Quindi il
+ *   tie-break che Mattia ha chiesto — *"a pari ATT e VPM, chi paga di più vale
+ *   di più"* — si può avere senza pagarlo.
+ *
+ * ⚠️⚠️ **E il prezzo entra LIMITATO, non moltiplicando.** `resa = quota × att`
+ * lascia che la quota **compensi** una probabilità più bassa, e così in cima
+ * finiscono le partite meno probabili: è il difetto che ha ucciso il voto
+ * vecchio. Qui il termine è tagliato a ±`CAP_PREZZO`, quindi può spostare due
+ * partite già quasi pari e **non può mai** promuovere una partita meno
+ * probabile sopra una più probabile.
+ *
+ * ⚠️ **Non è calibrato, di proposito**: `voto 7,2` non vuol dire *"arriva 72
+ * volte su 100"*. È una pagella — per la probabilità c'è ATTEND., che quella
+ * promessa la mantiene.
+ * ⚠️ **E non torna mai nullo**: serve a ordinare, e un valore nullo non si
+ * ordina. Il disaccordo, che in `scelta` è un `null`, qui è un voto basso —
+ * sono il **23%** delle partite in archivio.
+ */
+/** Quanto rende una giocata al prezzo medio di mercato: `1/margine`, misurato
+ *  su 11.344 partite. È il punto zero del bonus — sopra, il book paga più del
+ *  consenso; sotto, meno. */
+export const RESA_TIPICA = 0.938
+/** Quanto può spostare il prezzo, in decimi di voto. ⚠️ È un tetto, non un
+ *  peso: oltre, la quota tornerebbe a comandare. */
+export const CAP_PREZZO = 0.5
+/** Quanto si perde quando il campo contraddice il mercato. ⚠️ Lo scarto
+ *  **misurato** fra i due gruppi è di dieci punti di probabilità (43,1% contro
+ *  53,2%): qui se ne scontano sei, perché quel confronto non è a parità di
+ *  attendibilità e una penalità più dura di quanto si sia misurato davvero
+ *  sarebbe un'opinione travestita da numero. */
+export const PENALITA_DISACCORDO = 0.6
+
+export function voto({ att, resa, accordo }) {
+  if (att == null) return null
+  const prezzo = resa == null ? 0
+    : Math.max(-CAP_PREZZO, Math.min(CAP_PREZZO, 4 * (resa - RESA_TIPICA)))
+  const penalita = accordo === false ? PENALITA_DISACCORDO : 0
+  return Math.max(0, Math.min(10, att * 10 + prezzo - penalita))
 }
 
 // ── LA SCELTA: attendibilità corretta dal campo ─────────────────────────────
