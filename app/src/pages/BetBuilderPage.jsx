@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import { usaProssime } from '../hooks/usaProssime'
 import { usaVpm } from '../hooks/usaVpm'
 import { usaSchedine } from '../hooks/usaSchedine'
+import { usaPreferenze } from '../hooks/usaPreferenze'
 import { valutaPartita } from '../lib/vpm'
 import { componiPasso, CONSIGLIATO, QUOTA_MINIMA_GAMBA } from '../lib/scalata'
 import { sigla } from '../lib/campionati'
@@ -52,6 +53,14 @@ export default function BetBuilderPage() {
   const { righe } = usaProssime()
   const datiVpm = usaVpm()
   const reg = usaSchedine(currentUser?.id)
+  // ⚠️⚠️ **Le partite scartate stanno in `preferenze`, riga PERSONALE**: è la
+  // tabella di stamattina, e scartare una partita non vale una tabella nuova.
+  // ⚠️ `personale: true` perché il Bet Builder è privato: senza quel flag un
+  // admin scriverebbe la riga **condivisa**, e le sue partite scartate le
+  // vedrebbe il gruppo.
+  const pref = usaPreferenze('betbuilder', { personale: true })
+  const scartate = useMemo(() => new Set(pref.dati?.scartate ?? []), [pref.dati])
+  const scarta = (id) => pref.salva({ ...(pref.dati ?? {}), scartate: [...scartate, id] })
 
   const [attMin, setAttMin] = useState(CONSIGLIATO.att)
   const [sceMin, setSceMin] = useState(0)
@@ -76,13 +85,14 @@ export default function BetBuilderPage() {
   // Valgono tutte le schedine vive, bozze comprese.
   const candidate = useMemo(() => valutate.filter(r =>
     !reg.usate.has(r.id)
+    && !scartate.has(r.id)
     && !r.quoteIncoerenti
     && iniziaDopo(r, daOra)
     && r.att != null && r.att * 100 >= attMin
     && (sceMin <= 0 || (r.scelta != null && r.scelta * 100 >= sceMin))
     && (vpmMin <= 0 || (r.vpm != null && r.vpm >= vpmMin))
     && (r.quota ?? 0) >= quotaGamba),
-    [valutate, reg.usate, attMin, sceMin, vpmMin, quotaGamba, daOra])
+    [valutate, reg.usate, scartate, attMin, sceMin, vpmMin, quotaGamba, daOra])
 
   const proposta = useMemo(() => componiPasso(candidate, {
     quotaMinima: obiettivo, maxGambe: 10, pavimento: quotaGamba,
@@ -127,6 +137,17 @@ export default function BetBuilderPage() {
         <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.spento, marginTop: 7 }}>
           <b style={{ color: C.testo }}>{candidate.length}</b> partite disponibili
           {reg.usate.size > 0 && <> · <b style={{ color: C.testo }}>{reg.usate.size}</b> già in una schedina, escluse</>}
+          {/* ⚠️ Quello che hai scartato si può **rimettere**: un gesto che
+              toglie per sempre e non si disfa è una trappola per il tocco
+              sbagliato. */}
+          {scartate.size > 0 && <>
+            {' · '}<b style={{ color: C.testo }}>{scartate.size}</b> scartate{' '}
+            <button onClick={() => pref.salva({ ...(pref.dati ?? {}), scartate: [] })}
+              style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer',
+                color: C.verde, fontFamily: F.sans, fontSize: S.minuta, textDecoration: 'underline' }}>
+              rimettile
+            </button>
+          </>}
         </div>
       </Card>
 
@@ -150,7 +171,12 @@ export default function BetBuilderPage() {
             schedine buttate. */}
         {proposta.gambe ? (
           <div style={{ marginTop: 10 }}>
-            {proposta.gambe.map(g => <Gamba key={g.id} g={g} />)}
+            {/* ⚠️⚠️ **La × scarta la partita, non toglie la gamba** (Mattia,
+                22/10: *"non devono tornare nella selezione"*): esce dalle
+                candidate, quindi la schedina **si ricompone da sé** pescando
+                la prossima migliore e resta alla quota che hai chiesto. Due
+                richieste risolte con un gesto solo. */}
+            {proposta.gambe.map(g => <Gamba key={g.id} g={g} onScarta={() => scarta(g.id)} />)}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
               marginTop: 8, paddingTop: 8, borderTop: `1px solid ${alpha(C.testo, 0.1)}` }}>
               <span style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.spento }}>
@@ -180,7 +206,8 @@ export default function BetBuilderPage() {
             </div>
             <button disabled={reg.occupato}
               onClick={async () => {
-                const r = await reg.crea({ quotaObiettivo: obiettivo, criterio, gambe: proposta.gambe, importo })
+                const r = await reg.crea({ quotaObiettivo: obiettivo, criterio, gambe: proposta.gambe, importo,
+                  filtri: { att: attMin, scelta: sceMin, vpm: vpmMin, quotaGamba } })
                 setAvviso(r.errore ?? null)
                 if (!r.errore) setImporto('')
               }}
@@ -265,6 +292,14 @@ export default function BetBuilderPage() {
               )}
             </div>
             <div style={{ fontSize: S.micro, fontFamily: F.sans, color: C.fioco, marginTop: 6 }}>
+              {/* ⚠️ **Con quali filtri è stata costruita** (richiesta di
+                  Mattia): `criterio` dice *come* si ordinavano le candidate,
+                  questi dicono *da quali partite* si pescava. Due schedine
+                  «per voto» con filtri diversi sono due esperimenti diversi. */}
+              {s.filtri && <>att ≥ {s.filtri.att}%
+                {s.filtri.scelta > 0 && <> · scelta ≥ {s.filtri.scelta}%</>}
+                {s.filtri.vpm > 0 && <> · VPM ≥ {Number(s.filtri.vpm).toFixed(1).replace('.', ',')}</>}
+                {' · '}gamba ≥ {Number(s.filtri.quotaGamba).toFixed(2).replace('.', ',')}<br /></>}
               obiettivo {Number(s.quota_obiettivo).toFixed(2).replace('.', ',')} · creata {quando(s.creata_il)}
               {giocata && s.giocata_il && <> · <span style={{ color: C.verde }}>giocata {quando(s.giocata_il)}</span></>}
               {s.esito && s.chiusa_il && <> · chiusa {quando(s.chiusa_il)}</>}
@@ -315,9 +350,9 @@ export default function BetBuilderPage() {
 
 /** Una gamba, uguale nella proposta e nel registro: **se fossero due pezzi,
  *  prima o poi mostrerebbero due cose diverse.** */
-function Gamba({ g }) {
+function Gamba({ g, onScarta = null }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 30px 46px',
+    <div style={{ display: 'grid', gridTemplateColumns: `minmax(0,1fr) 30px 46px${onScarta ? ' 18px' : ''}`,
       gap: 6, alignItems: 'center', padding: '5px 0', borderTop: `1px solid ${alpha(C.testo, 0.06)}` }}>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: S.micro, fontFamily: F.mono, color: C.spento, overflow: 'hidden', whiteSpace: 'nowrap' }}>
@@ -332,6 +367,11 @@ function Gamba({ g }) {
       <div style={{ fontFamily: F.mono, fontSize: S.corpo, color: C.oro, textAlign: 'right' }}>
         {Number(g.quota).toFixed(2).replace('.', ',')}
       </div>
+      {onScarta && (
+        <button onClick={onScarta} title="scartala: non tornerà fra le candidate"
+          style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer',
+            color: C.fioco, fontSize: S.media }}>×</button>
+      )}
     </div>
   )
 }

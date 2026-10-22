@@ -43,13 +43,18 @@ export function usaSchedine(userId) {
    * ⚠️ E se le gambe falliscono, la schedina si cancella: una schedina senza
    * gambe è una riga che non vuol dire niente, e resterebbe lì a confondere.
    */
-  const crea = useCallback(async ({ quotaObiettivo, criterio, gambe, importo }) => {
+  const crea = useCallback(async ({ quotaObiettivo, criterio, gambe, importo, filtri }) => {
     if (!userId) return { errore: 'non sei entrato' }
     if (!gambe?.length) return { errore: 'non c’è nessuna gamba da salvare' }
     setOccupato(true)
     const { data: s, error } = await supabase.from('schedine')
       .insert({ user_id: userId, quota_obiettivo: quotaObiettivo, criterio,
-        importo: Number(importo) > 0 ? Number(importo) : null })
+        importo: Number(importo) > 0 ? Number(importo) : null,
+        // ⚠️ I filtri di quel momento: `criterio` dice *come* si ordinava,
+        // questi dicono *da quali partite* si pescava. Senza, due schedine
+        // «per voto» sarebbero indistinguibili pur essendo due esperimenti
+        // diversi.
+        filtri: filtri ?? null })
       .select('id').single()
     if (error) { setOccupato(false); setErrore(error.message); return { errore: error.message } }
     const { error: e2 } = await supabase.from('schedina_gambe').insert(

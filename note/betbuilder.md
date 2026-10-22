@@ -77,7 +77,28 @@ importi ci sono**. ⚠️ Il riassunto con le domande vere (quale criterio scegl
 meglio, quanto rende davvero) arriva **quando ci saranno dieci o venti
 schedine**: prima direbbe rumore, ed è la stessa regola della scalata.
 
+## I filtri nel registro, e le partite scartate (22/10/2026)
+
+**`sql/38` aggiunge `filtri jsonb`** alla schedina: `criterio` dice *come* si
+ordinavano le candidate, questi dicono **da quali partite si pescava**. Due
+schedine «per voto» con filtri diversi sono **due esperimenti diversi**, e
+senza questa colonna l'archivio non saprebbe distinguerli.
+
+⚠️⚠️ **La `×` su una gamba della proposta SCARTA la partita, non toglie la
+gamba** (*"non devono tornare nella selezione"*): esce dalle candidate, quindi
+la schedina **si ricompone da sé** pescando la prossima migliore e resta alla
+quota chiesta. Verificato sui dati veri: scartando la prima gamba la schedina
+passa da 5,45 a 5,69, sempre sei gambe, e la scartata non torna. **Due
+richieste risolte con un gesto solo.**
+⚠️ E si **rimettono** (*"rimettile"* accanto al conto): un gesto che toglie per
+sempre e non si disfa è una trappola per il tocco sbagliato.
+
+⚠️⚠️ **Le scartate vivono in `preferenze`, riga PERSONALE**, non in una tabella
+nuova: è la tabella nata la mattina stessa per i filtri della scalata.
+`usaPreferenze(ambito, { personale: true })` esiste **per questo** — senza quel
+flag un admin scriverebbe la **riga condivisa**, e le sue partite scartate le
+vedrebbe il gruppo: l'opposto di quello che è stato chiesto per il Builder.
+
 ## Quello che resta da fare
 
-- **Togliere una gamba dalla proposta** prima di tenerla (una `×` per riga).
 - **L'esito automatico** dall'archivio, col vincolo scritto sopra.

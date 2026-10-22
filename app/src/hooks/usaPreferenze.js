@@ -22,7 +22,7 @@ import { useAuth } from '../context/AuthContext'
 // caricamento. Il tempo reale è un altro meccanismo, e qui si cambiano quattro
 // soglie, non si gioca in due sulla stessa schedina.
 
-export function usaPreferenze(ambito) {
+export function usaPreferenze(ambito, { personale = false } = {}) {
   const { currentUser, isAdmin, users } = useAuth()
   const [righe, setRighe] = useState(null)      // null = non ancora lette
   const [errore, setErrore] = useState(null)
@@ -47,7 +47,11 @@ export function usaPreferenze(ambito) {
 
   const condivisa = (righe || []).find(r => r.user_id === null) || null
   const mia = (righe || []).find(r => r.user_id === currentUser?.id) || null
-  const riga = isAdmin ? condivisa : (mia || condivisa)
+  // ⚠️⚠️ `personale` serve al **Bet Builder**, che è privato per richiesta:
+  // lì un admin non deve scrivere la riga condivisa, perché quella la leggono
+  // tutti. Senza questa opzione, "le mie partite scartate" sarebbero finite
+  // sotto gli occhi del gruppo — l'opposto di quello che è stato chiesto.
+  const riga = personale ? mia : (isAdmin ? condivisa : (mia || condivisa))
 
   /**
    * Salva **a nome del ruolo**: un admin scrive la riga condivisa, un utente
@@ -63,7 +67,7 @@ export function usaPreferenze(ambito) {
   const salva = useCallback(async (dati) => {
     if (!currentUser) return { errore: 'non sei entrato' }
     setOccupato(true)
-    const chi = isAdmin ? null : currentUser.id
+    const chi = (isAdmin && !personale) ? null : currentUser.id
     const campi = { dati, aggiornato_il: new Date().toISOString(), aggiornato_da: currentUser.id }
     const base = supabase.from('preferenze').update(campi).eq('ambito', ambito)
     const { data, error } = await (chi === null ? base.is('user_id', null) : base.eq('user_id', chi)).select('user_id')
@@ -80,7 +84,7 @@ export function usaPreferenze(ambito) {
     if (err) { setErrore(`Preferenze non salvate: ${err}`); return { errore: err } }
     await leggi()
     return {}
-  }, [ambito, currentUser, isAdmin, leggi])
+  }, [ambito, currentUser, isAdmin, personale, leggi])
 
   return {
     // ⚠️ `pronte` e non `dati !== null`: *"non ho ancora letto"* e *"ho letto e
