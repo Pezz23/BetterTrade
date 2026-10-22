@@ -1,7 +1,12 @@
 /* Quanto spazio occupa la tab bar fissa in basso: le pagine ci lasciano
    sotto questo margine, o le ultime righe finiscono nascoste. */
 :root {
-  --barra-bassa: calc(62px + env(safe-area-inset-bottom));
+  /* ⚠️ **Cresce con la barra**: dal 22/10/2026 la tab bar è ~15% più alta
+     (il riempimento in basso tiene i tasti lontani dall'indicatore Home
+     dell'iPhone), ed erano 62px. Lasciarli avrebbe nascosto le ultime righe
+     di ogni pagina sotto la barra — questo numero **è** l'altezza della
+     barra, non un margine a piacere. */
+  --barra-bassa: calc(70px + env(safe-area-inset-bottom));
   /* Altezza della testata: il menu si apre sotto, senza coprirla. */
   --barra-alta: 51px;
 }

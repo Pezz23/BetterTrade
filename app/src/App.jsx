@@ -106,7 +106,18 @@ function TabBar({ active, onChange, isAdmin }) {
         const on = t.id === active
         return (
           <button key={t.id} onClick={()=>onChange(t.id)} aria-current={on ? 'page' : undefined} style={{
-            flex:1, padding:`${SP.m}px 2px ${SP.s}px`, background:'transparent', border:'none',
+            // ⚠️⚠️ **Più alta del 15% e con il riempimento sbilanciato in
+            // basso** (Mattia, 22/10/2026: *"è troppo bassa e rischio di
+            // attivare Siri su iPhone quando clicco"*). Non è una questione di
+            // estetica: sul bordo inferiore dell'iPhone ci sono l'indicatore
+            // Home e la risalita di sistema, e un bersaglio appoggiato lì
+            // prende il gesto del telefono invece del tocco. Quindi i pixel in
+            // più vanno **sotto** l'etichetta — spingere il bersaglio in alto è
+            // tutto il senso della modifica — e `SP.ml` sotto contro `SP.l`
+            // sopra viene da lì, non da uno sbaglio.
+            // ⚠️ Entrambi dalla scala di `theme.js`: una misura scritta a mano
+            // qui si allontanerebbe dal resto al primo ritocco.
+            flex:1, padding:`${SP.l}px 2px ${SP.ml}px`, background:'transparent', border:'none',
             // ⚠️ La riga d'oro sta SOPRA il tasto e c'è sempre, trasparente da
             // spenta: se comparisse solo da accesa, i 2px sposterebbero di
             // altrettanto l'icona di tutti gli altri tasti a ogni cambio pagina.
