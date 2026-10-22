@@ -89,6 +89,19 @@ const VOCI_MENU = [
   { id:'importazioni',label:'Importazioni',     icona:'importazioni', desc:'Partite da ESPN che non si agganciano da sole' },
 ]
 
+/**
+ * ⚠️⚠️ **Quanto spazio resta sotto l'etichetta della tab bar.** Non è una
+ * spaziatura come le altre, ed è il motivo per cui non viene da `SP`: è la
+ * **distanza dei bersagli dal bordo inferiore dell'iPhone**, dove stanno
+ * l'indicatore Home e la risalita di sistema. Mattia l'ha alzata due volte il
+ * 22/10/2026 (*"rischio di attivare Siri quando clicco"*, poi *"è ancora
+ * troppo bassa"*): 6 → 12 → 20.
+ * ⚠️ Chi la ritocca ritocchi anche `--barra-bassa` in `index.css`: quello è lo
+ * spazio che le pagine lasciano sotto, e se resta indietro le ultime righe
+ * finiscono sotto la barra.
+ */
+const SOTTO_BARRA = 20
+
 function TabBar({ active, onChange, isAdmin }) {
   // ⚠️ Stesso filtro del menu: senza, un utente normale vedrebbe il tasto Spin
   // e finirebbe su una pagina che la RLS gli svuota. Con tre tasti invece di
@@ -117,7 +130,7 @@ function TabBar({ active, onChange, isAdmin }) {
             // sopra viene da lì, non da uno sbaglio.
             // ⚠️ Entrambi dalla scala di `theme.js`: una misura scritta a mano
             // qui si allontanerebbe dal resto al primo ritocco.
-            flex:1, padding:`${SP.l}px 2px ${SP.ml}px`, background:'transparent', border:'none',
+            flex:1, padding:`${SP.l}px 2px ${SOTTO_BARRA}px`, background:'transparent', border:'none',
             // ⚠️ La riga d'oro sta SOPRA il tasto e c'è sempre, trasparente da
             // spenta: se comparisse solo da accesa, i 2px sposterebbero di
             // altrettanto l'icona di tutti gli altri tasti a ogni cambio pagina.

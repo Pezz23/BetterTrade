@@ -5,8 +5,10 @@
      (il riempimento in basso tiene i tasti lontani dall'indicatore Home
      dell'iPhone), ed erano 62px. Lasciarli avrebbe nascosto le ultime righe
      di ogni pagina sotto la barra — questo numero **è** l'altezza della
-     barra, non un margine a piacere. */
-  --barra-bassa: calc(70px + env(safe-area-inset-bottom));
+     barra, non un margine a piacere.
+     ⚠️ Alzata una seconda volta lo stesso giorno (70 → 78): segue
+     `SOTTO_BARRA` in `App.jsx`, e i due numeri si muovono insieme. */
+  --barra-bassa: calc(78px + env(safe-area-inset-bottom));
   /* Altezza della testata: il menu si apre sotto, senza coprirla. */
   --barra-alta: 51px;
 }
