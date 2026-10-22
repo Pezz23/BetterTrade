@@ -23,7 +23,12 @@ import { tocco } from '../lib/schermo'
 // non si scelgono: la stessa partita due volte è una schedina che al banco non
 // esiste.
 
-export default function ScegliGamba({ partite, nelPasso = [], inPasso = {}, flagDi, votiDi, titolo, onScegli, onChiudi }) {
+// ⚠️ `dove` e `prefisso` esistono perché la finestra serve a **due pagine**: in
+// Road to weekend una partita sta «nel passo 3» (targhetta `P3`), nel Bet
+// Builder «nella schedina 3» (`S3`). Due componenti gemelli per cambiare una
+// lettera sarebbero la copia che questo progetto ha già pagato tre volte.
+export default function ScegliGamba({ partite, nelPasso = [], inPasso = {}, flagDi, votiDi, titolo,
+  dove = 'passo', prefisso = 'P', onScegli, onChiudi }) {
   // ⚠️ Si apre sul filtro che ha qualcosa da mostrare: se nessuno ha segnato
   // niente, partire su «⚑ flaggate» vorrebbe dire aprire una finestra vuota.
   const [filtro, setFiltro] = useState(() =>
@@ -141,11 +146,11 @@ export default function ScegliGamba({ partite, nelPasso = [], inPasso = {}, flag
                     nome: lì dentro verrebbe tagliata per prima. */}
                 <span style={{ width: 26, flexShrink: 0, textAlign: 'center' }}>
                   {!presa && inPasso[p.id] && (
-                    <span title={`già nel passo ${inPasso[p.id]}`} style={{
+                    <span title={`già nel${dove === 'passo' ? '' : 'la'} ${dove} ${inPasso[p.id]}`} style={{
                       display: 'inline-block', padding: '1px 4px', borderRadius: 4,
                       fontSize: S.micro, fontWeight: 700,
                       background: alpha(C.viola, 0.18), border: `1px solid ${alpha(C.viola, 0.45)}`, color: C.viola,
-                    }}>P{inPasso[p.id]}</span>
+                    }}>{prefisso}{inPasso[p.id]}</span>
                   )}
                 </span>
                 <span style={{ color: C.spento, width: 30, textAlign: 'right', flexShrink: 0 }}>{pct(p.att)}</span>

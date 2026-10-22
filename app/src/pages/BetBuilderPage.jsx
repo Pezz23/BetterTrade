@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { C, F, alpha, S } from '../theme'
 import { Card, Etichetta, TastoRipeti, Attesa } from '../components/ui'
 import Icona from '../components/Icona'
@@ -9,7 +9,8 @@ import { usaSchedine } from '../hooks/usaSchedine'
 import { usaPreferenze } from '../hooks/usaPreferenze'
 import { valutaPartita } from '../lib/vpm'
 import { componiPasso, CONSIGLIATO, QUOTA_MINIMA_GAMBA } from '../lib/scalata'
-import { iniziaDopo } from '../lib/attendibilita'
+import ScegliGamba from '../components/ScegliGamba'
+import { iniziaDopo, lunediProssimo } from '../lib/attendibilita'
 import { sigla } from '../lib/campionati'
 import { pct, eur, gg, quando } from '../lib/formato'
 
@@ -42,9 +43,22 @@ const CRITERI = [
   { id: 'vpm',    label: 'VPM',           val: (c) => c.vpm },
 ]
 
+/**
+ * ⏱️ **Quanto resta in lista una schedina dopo l'esito** (Mattia, 22/10/2026:
+ * *"dopo 10 secondi che metto l'esito deve andare in archivio"*).
+ *
+ * ⚠️ Non è un vezzo, ed è il motivo per cui non va in archivio **subito**: il
+ * tasto «vinta» si può anche sbagliare, e una card che sparisce nell'istante
+ * in cui la tocchi non lascia modo di accorgersene. Dieci secondi sono il
+ * tempo di leggere la vincita e, se serve, ritoccare il tasto per annullare.
+ * ⚠️ E il conto alla rovescia **si vede**: una cosa che spariva da sola senza
+ * dirlo sembrerebbe un dato perso.
+ */
+const ATTESA_ARCHIVIO = 10_000
+
 export default function BetBuilderPage() {
   const { currentUser } = useAuth()
-  const { righe } = usaProssime()
+  const { righe, flagDi, votiDi } = usaProssime()
   const datiVpm = usaVpm()
   const reg = usaSchedine(currentUser?.id)
   // ⚠️⚠️ **Le partite scartate stanno in `preferenze`, riga PERSONALE**: è la
@@ -60,11 +74,83 @@ export default function BetBuilderPage() {
   const [sceMin, setSceMin] = useState(0)
   const [vpmMin, setVpmMin] = useState(0)
   const [quotaGamba, setQuotaGamba] = useState(QUOTA_MINIMA_GAMBA)
+  // ⚠️⚠️ **Il lunedì che CHIUDE la settimana in corso, non "fra sette
+  // giorni"**: `lunediProssimo(0)` è lo stesso confine che raggruppa le
+  // giornate nelle spin e che la pagina Partite chiama «Fino a lunedì», e il
+  // lunedì stesso ci sta dentro. Scriverne un altro qui vorrebbe dire due idee
+  // diverse di *dove finisce questo weekend*.
+  const [finoLunedi, setFinoLunedi] = useState(false)
   const [obiettivo, setObiettivo] = useState(5)
   const [criterio, setCriterio] = useState('voto')
   const [importo, setImporto] = useState('')
   const [avviso, setAvviso] = useState(null)
   const [daOra] = useState(() => Date.now())
+  const [vista, setVista] = useState('attive')
+  // ⚠️ `adesso` esiste **solo** per far scadere i dieci secondi: senza un
+  // valore che cambia, React non ha motivo di ridisegnare e la schedina
+  // resterebbe in lista fino al tocco successivo.
+  const [adesso, setAdesso] = useState(() => Date.now())
+  // ── ＋ aggiungi partita (la stessa finestra di Road to weekend)
+  //
+  // ⚠️⚠️ **Le aggiunte a mano sono FISSE, e il resto si compone intorno**: la
+  // quota obiettivo resta quella che hai chiesto, quindi la parte automatica
+  // punta a `obiettivo ÷ quota delle aggiunte`. Appiccicarle in fondo
+  // porterebbe a quota 9 a chi ne ha chieste 5 — e la quota è il senso della
+  // pagina.
+  // ⚠️ Si tengono gli **id**, non le righe: una riga copiata qui invecchierebbe
+  // appena arriva una quota nuova, e la partita è la stessa.
+  const [aggiunteId, setAggiunteId] = useState([])
+  const [manuale, setManuale] = useState(false)
+  // ⚠️ Il confine si calcola **una volta per sessione**: dentro un `useMemo`
+  // delle candidate si rifarebbe a ogni tocco di una manopola.
+  const limiteLunedi = useMemo(() => lunediProssimo(0), [])
+
+  // ── I filtri che restano (Mattia, 22/10/2026: *"tieni in memoria i filtri"*)
+  //
+  // ⚠️⚠️ **Si salvano da sé, senza tasto**, al contrario della scalata: lì la
+  // riga di `preferenze` è **condivisa** fra sei admin e il tasto serve a dire
+  // *"questo vale per tutti"*; qui la riga è **personale** (`personale: true`),
+  // quindi muovere una manopola riguarda solo te e chiedere conferma sarebbe
+  // un passaggio a vuoto.
+  // ⚠️ Si scrive **un attimo dopo** l'ultimo tocco: `TastoRipeti` tiene il
+  // passo del dito, e salvare a ogni scatto sarebbe una scrittura per unità.
+  const [filtriLetti, setFiltriLetti] = useState(false)
+  // ⚠️ `salva` dentro un ref: `pref` è un oggetto nuovo a ogni ridisegno, e
+  // metterlo fra le dipendenze di un effetto è il ciclo infinito già pagato in
+  // questo progetto.
+  const salvaPref = useRef(pref.salva); salvaPref.current = pref.salva
+  const datiPref = useRef(pref.dati); datiPref.current = pref.dati
+  // ⚠️ I valori con cui la pagina è partita, per **non scrivere niente a chi
+  // apre e non tocca**: senza questo confronto il primo caricamento salverebbe
+  // i valori di fabbrica, cioè una riga nel database per un gesto mai fatto.
+  const partenza = useRef(null)
+
+  useEffect(() => {
+    if (filtriLetti || !pref.pronte) return
+    const f = pref.dati?.filtri
+    if (f) {
+      // ⚠️ Una manopola per volta e solo se c'è: un valore mancante nella riga
+      // salvata non deve diventare `undefined` in uno stato numerico.
+      if (Number.isFinite(f.att)) setAttMin(f.att)
+      if (Number.isFinite(f.scelta)) setSceMin(f.scelta)
+      if (Number.isFinite(f.vpm)) setVpmMin(f.vpm)
+      if (Number.isFinite(f.quotaGamba)) setQuotaGamba(f.quotaGamba)
+      if (typeof f.lunedi === 'boolean') setFinoLunedi(f.lunedi)
+    }
+    // ⚠️ I valori di fabbrica scritti **dalle costanti**, non dallo stato: qui
+    // lo stato vale ancora quello, ma leggerlo legherebbe questo effetto alle
+    // quattro manopole e lo rifarebbe a ogni tocco.
+    partenza.current = f ?? { att: CONSIGLIATO.att, scelta: 0, vpm: 0, quotaGamba: QUOTA_MINIMA_GAMBA, lunedi: false }
+    setFiltriLetti(true)
+  }, [filtriLetti, pref.pronte, pref.dati])
+
+  useEffect(() => {
+    if (!filtriLetti) return
+    const f = { att: attMin, scelta: sceMin, vpm: vpmMin, quotaGamba, lunedi: finoLunedi }
+    if (JSON.stringify(datiPref.current?.filtri ?? partenza.current) === JSON.stringify(f)) return
+    const t = setTimeout(() => salvaPref.current({ ...(datiPref.current ?? {}), filtri: f }), 800)
+    return () => clearTimeout(t)
+  }, [filtriLetti, attMin, sceMin, vpmMin, quotaGamba, finoLunedi, pref.dati])
 
   // ⚠️ VPM si calcola **una volta per partita**, non a ogni tocco di una
   // soglia: è la cura che il 18/10 ha tolto i secondi alla scalata.
@@ -82,16 +168,82 @@ export default function BetBuilderPage() {
     && !scartate.has(r.id)
     && !r.quoteIncoerenti
     && iniziaDopo(r, daOra)
+    // ⚠️ Il confine è sulla **data**, non su quanti giorni mancano: `data` è
+    // già una stringa `AAAA-MM-GG`, e confrontare due stringhe così è esatto
+    // senza passare da un fuso.
+    && (!finoLunedi || String(r.data).slice(0, 10) <= limiteLunedi)
     && r.att != null && r.att * 100 >= attMin
     && (sceMin <= 0 || (r.scelta != null && r.scelta * 100 >= sceMin))
     && (vpmMin <= 0 || (r.vpm != null && r.vpm >= vpmMin))
     && (r.quota ?? 0) >= quotaGamba),
-    [valutate, reg.usate, scartate, attMin, sceMin, vpmMin, quotaGamba, daOra])
+    [valutate, reg.usate, scartate, attMin, sceMin, vpmMin, quotaGamba, daOra, finoLunedi, limiteLunedi])
 
-  const proposta = useMemo(() => componiPasso(candidate, {
-    quotaMinima: obiettivo, maxGambe: 10, pavimento: quotaGamba,
-    ordina: CRITERI.find(c => c.id === criterio).val,
-  }), [candidate, obiettivo, criterio, quotaGamba])
+  // ⚠️⚠️ Le aggiunte a mano si ripescano da `valutate`, **non** dalle
+  // candidate: il senso del tasto è proprio prendere una partita che i filtri
+  // non prendono.
+  const aggiunte = useMemo(
+    () => aggiunteId.map(id => valutate.find(r => r.id === id)).filter(Boolean),
+    [aggiunteId, valutate])
+
+  // ⚠️ **Dove sta già**: la finestra offre tutto il calendario, comprese le
+  // partite che stanno in una schedina salvata. Senza la targhetta l'unico modo
+  // di saperlo sarebbe chiudere, scorrere il registro e riaprire.
+  const inSchedina = useMemo(() => {
+    const m = {}
+    const tutte = reg.schedine || []
+    tutte.forEach((s, i) => s.gambe.forEach(g => { m[g.prossima_id] = tutte.length - i }))
+    return m
+  }, [reg.schedine])
+
+  const proposta = useMemo(() => {
+    const qFisse = aggiunte.reduce((a, g) => a * Number(g.quota), 1)
+    // ⚠️ Quello che manca, non l'obiettivo intero: con una gamba a mano da
+    // 1,80 dentro una schedina da 5, la parte automatica deve arrivare a 2,78.
+    const resto = obiettivo / qFisse
+    const auto = resto > 1.001
+      ? componiPasso(candidate.filter(c => !aggiunteId.includes(c.id)), {
+        quotaMinima: resto, maxGambe: 10, pavimento: quotaGamba,
+        ordina: CRITERI.find(c => c.id === criterio).val,
+      })
+      : { gambe: [] }
+    const gambe = [...aggiunte, ...(auto.gambe || [])]
+    if (!gambe.length) return { gambe: null, motivo: auto.motivo }
+    return {
+      gambe, quota: gambe.reduce((a, g) => a * Number(g.quota), 1),
+      // ⚠️ Se le aggiunte da sole non bastano e l'automatico non trova niente,
+      // la schedina **si vede comunque** con la sua quota vera e il motivo
+      // scritto sotto: nascondere il lavoro a mano perché manca una gamba
+      // sarebbe perdere il gesto appena fatto.
+      manca: auto.gambe ? null : auto.motivo,
+    }
+  }, [candidate, aggiunte, aggiunteId, obiettivo, criterio, quotaGamba])
+
+  // ── 📁 ATTIVE | ARCHIVIO
+  //
+  // ⚠️⚠️ **Il criterio è lo STATO, non il tempo** (ed è la ragione per cui non
+  // è *"dopo tot giorni non si vedono più"*): una schedina **chiusa** non ha
+  // più niente da fare, una **aperta** ne ha anche dopo un mese. I dieci
+  // secondi non sono una scadenza, sono il tempo per accorgersi di un tocco
+  // sbagliato.
+  // ⚠️ L'esito **si annulla** ritoccando il tasto: `chiusa_il` torna nullo e
+  // la schedina risale fra le attive da sé, senza niente da disfare qui.
+  const archiviata = (s) => !!s.esito
+    && (!s.chiusa_il || adesso - new Date(s.chiusa_il).getTime() >= ATTESA_ARCHIVIO)
+  const attive = (reg.schedine || []).filter(s => !archiviata(s))
+  const archivio = (reg.schedine || []).filter(archiviata)
+
+  // ⚠️ Il battito gira **solo** finché c'è una schedina nei dieci secondi, e
+  // si spegne da sé: un `setInterval` sempre acceso ridisegnerebbe la pagina
+  // ogni secondo per niente.
+  useEffect(() => {
+    const attesa = (reg.schedine || [])
+      .filter(s => s.esito && s.chiusa_il)
+      .map(s => new Date(s.chiusa_il).getTime() + ATTESA_ARCHIVIO - Date.now())
+      .filter(ms => ms > 0)
+    if (!attesa.length) return
+    const t = setTimeout(() => setAdesso(Date.now()), Math.min(1000, ...attesa))
+    return () => clearTimeout(t)
+  }, [reg.schedine, adesso])
 
   if (!righe) return <Attesa>carico le partite…</Attesa>
 
@@ -107,6 +259,16 @@ export default function BetBuilderPage() {
       <div style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700, color: C.oro, minWidth: 50, textAlign: 'center' }}>{valore}</div>
       <TastoRipeti onScatto={() => set(v => Math.round((v + passo) * 100) / 100)}>+</TastoRipeti>
     </div>
+  )
+
+  // ⚠️ Definito **una volta**: compare sia sotto la proposta sia al posto suo
+  // quando non ce n'è una, e due copie dello stesso tasto prima o poi si
+  // comportano in due modi diversi.
+  const tastoAggiungi = (
+    <button onClick={() => setManuale(true)} style={{
+      width: '100%', marginTop: 8, padding: '7px 0', cursor: 'pointer', fontFamily: F.sans, fontSize: S.base,
+      color: C.celestePieno, background: C.card, border: `1px dashed ${alpha(C.celestePieno, 0.45)}`,
+    }}>＋ aggiungi partita</button>
   )
 
   return (
@@ -129,6 +291,14 @@ export default function BetBuilderPage() {
           <Numero label="scelta ≥" valore={sceMin ? `${sceMin}%` : 'tutte'} passo={1} set={setSceMin} />
           <Numero label="VPM ≥" valore={vpmMin ? vpmMin.toFixed(1).replace('.', ',') : 'tutti'} passo={0.5} set={setVpmMin} />
           <Numero label="quota gamba ≥" valore={quotaGamba.toFixed(2).replace('.', ',')} passo={0.05} set={setQuotaGamba} min={1} />
+        </div>
+        {/* ⚠️ Due tasti e non un interruttore: *"tutte"* è una scelta anche
+            quella, e un bottone solo acceso o spento non dice **cosa fa
+            quando è spento**. */}
+        <div style={{ display: 'flex', gap: 5, marginTop: 9, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Etichetta>QUANDO</Etichetta>
+          <Tasto attivo={!finoLunedi} onClick={() => setFinoLunedi(false)} colore={C.grigio}>tutte</Tasto>
+          <Tasto attivo={finoLunedi} onClick={() => setFinoLunedi(true)} colore={C.celestePieno}>fino a lunedì</Tasto>
         </div>
         <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.spento, marginTop: 7 }}>
           <b style={{ color: C.testo }}>{candidate.length}</b> partite disponibili
@@ -172,7 +342,14 @@ export default function BetBuilderPage() {
                 candidate, quindi la schedina **si ricompone da sé** pescando
                 la prossima migliore e resta alla quota che hai chiesto. Due
                 richieste risolte con un gesto solo. */}
-            {proposta.gambe.map(g => <Gamba key={g.id} g={g} onScarta={() => scarta(g.id)} />)}
+            {/* ⚠️ Sulle gambe messe a mano la **×** toglie l'aggiunta e non
+                scarta la partita: scartarla la butterebbe fuori anche dalle
+                candidate, cioè il contrario del gesto appena fatto. */}
+            {proposta.gambe.map(g => {
+              const aMano = aggiunteId.includes(g.id)
+              return <Gamba key={g.id} g={g} aMano={aMano}
+                onScarta={() => aMano ? setAggiunteId(a => a.filter(x => x !== g.id)) : scarta(g.id)} />
+            })}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
               marginTop: 8, paddingTop: 8, borderTop: `1px solid ${alpha(C.testo, 0.1)}` }}>
               <span style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.spento }}>
@@ -182,6 +359,12 @@ export default function BetBuilderPage() {
                 quota {proposta.quota.toFixed(2).replace('.', ',')}
               </span>
             </div>
+            {proposta.manca && (
+              <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.ambra, marginTop: 6, lineHeight: 1.5 }}>
+                {proposta.manca}
+              </div>
+            )}
+            {tastoAggiungi}
             {/* ⚠️ **L'importo si scrive qui e la vincita si vede subito**
                 (richiesta di Mattia): è il numero che fa decidere se quella
                 quota vale la pena, e chiederlo dopo aver salvato vorrebbe dire
@@ -203,9 +386,13 @@ export default function BetBuilderPage() {
             <button disabled={reg.occupato}
               onClick={async () => {
                 const r = await reg.crea({ quotaObiettivo: obiettivo, criterio, gambe: proposta.gambe, importo,
-                  filtri: { att: attMin, scelta: sceMin, vpm: vpmMin, quotaGamba } })
+                  filtri: { att: attMin, scelta: sceMin, vpm: vpmMin, quotaGamba, lunedi: finoLunedi,
+                    aMano: aggiunte.length || undefined } })
                 setAvviso(r.errore ?? null)
-                if (!r.errore) setImporto('')
+                // ⚠️ Le aggiunte si svuotano col salvataggio: restassero,
+                // finirebbero **anche** nella schedina dopo — e sono già
+                // escluse dalle candidate, quindi nessuno le ripescherebbe.
+                if (!r.errore) { setImporto(''); setAggiunteId([]) }
               }}
               style={{ width: '100%', marginTop: 10, padding: '9px 0', cursor: 'pointer',
                 background: `linear-gradient(${alpha(C.verde, .12)},${alpha(C.verde, .12)}), ${C.card}`,
@@ -214,8 +401,14 @@ export default function BetBuilderPage() {
             </button>
           </div>
         ) : (
-          <div style={{ marginTop: 10, fontSize: S.base, fontFamily: F.sans, color: C.spento, lineHeight: 1.6 }}>
-            {proposta.motivo}
+          <div style={{ marginTop: 10 }}>
+            <div style={{ fontSize: S.base, fontFamily: F.sans, color: C.spento, lineHeight: 1.6 }}>
+              {proposta.motivo}
+            </div>
+            {/* ⚠️ Il tasto resta **anche qui**: se i filtri non lasciano
+                passare niente, la via a mano è l'unica che c'è — e togliergliela
+                proprio in quel momento sarebbe il contrario del suo senso. */}
+            {tastoAggiungi}
           </div>
         )}
       </Card>
@@ -252,19 +445,45 @@ export default function BetBuilderPage() {
         )
       })()}
 
+      {/* ⚠️ L'interruttore compare **solo quando l'archivio ha qualcosa**: un
+          comando che porta a una lista vuota è rumore, e finché non chiudi la
+          prima schedina la pagina resta com'era. ⚠️ E il conteggio sta scritto
+          sui due tasti: è l'unica cosa che dice *dove è finita* quella che non
+          vedi più. */}
+      {archivio.length > 0 && (
+        <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+          {[['attive', `ATTIVE ${attive.length}`, C.oro], ['archivio', `ARCHIVIO ${archivio.length}`, C.spento]].map(([v, testo, col]) => (
+            <button key={v} onClick={() => setVista(v)} style={{
+              flex: 1, padding: '6px 0', cursor: 'pointer', fontFamily: F.sans, fontSize: S.base, letterSpacing: '0.06em',
+              color: vista === v ? col : C.fioco,
+              background: vista === v ? `linear-gradient(${alpha(col, .14)},${alpha(col, .14)}), ${C.card}` : C.card,
+              border: `1px solid ${alpha(col, vista === v ? 0.5 : 0.18)}`,
+            }}>{testo}</button>
+          ))}
+        </div>
+      )}
+
       {reg.schedine === null ? <Attesa style={{ padding: 0 }} /> : reg.schedine.length === 0 ? (
         <Card><div style={{ fontSize: S.base, fontFamily: F.sans, color: C.spento, lineHeight: 1.6 }}>
           Nessuna schedina. Scegli la quota, guarda cosa propone e tienila: da lì in poi
           quelle partite non torneranno nelle schedine dopo.
         </div></Card>
-      ) : reg.schedine.map((s, i) => {
+      ) : (vista === 'archivio' ? archivio : attive).length === 0 ? (
+        <Card><div style={{ fontSize: S.base, fontFamily: F.sans, color: C.spento, lineHeight: 1.6 }}>
+          Nessuna schedina aperta: quelle chiuse stanno in <b style={{ color: C.testo }}>ARCHIVIO</b>.
+        </div></Card>
+      ) : (vista === 'archivio' ? archivio : attive).map((s) => {
+        // ⚠️ Il numero è la posizione nel registro **intero**, non in questa
+        // vista: la «SCHEDINA 7» deve restare la 7 anche quando le prime sei
+        // sono in archivio, o due schedine diverse porterebbero lo stesso nome.
+        const numero = reg.schedine.length - reg.schedine.indexOf(s)
         const quota = s.gambe.reduce((a, g) => a * Number(g.quota), 1)
         const giocata = s.stato === 'giocata'
         return (
           <Card key={s.id} style={{ marginBottom: 8, borderColor: alpha(giocata ? C.verde : C.bordo, giocata ? 0.45 : 1) }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
               <Etichetta colore={giocata ? C.verde : C.oro}>
-                <Icona nome="schedina" misura={12} /> SCHEDINA {reg.schedine.length - i} · per {s.criterio}
+                <Icona nome="schedina" misura={12} /> SCHEDINA {numero} · per {s.criterio}
               </Etichetta>
               <span style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700, color: C.oro }}>
                 quota {quota.toFixed(2).replace('.', ',')}
@@ -302,7 +521,10 @@ export default function BetBuilderPage() {
               {s.filtri && <>att ≥ {s.filtri.att}%
                 {s.filtri.scelta > 0 && <> · scelta ≥ {s.filtri.scelta}%</>}
                 {s.filtri.vpm > 0 && <> · VPM ≥ {Number(s.filtri.vpm).toFixed(1).replace('.', ',')}</>}
-                {' · '}gamba ≥ {Number(s.filtri.quotaGamba).toFixed(2).replace('.', ',')}<br /></>}
+                {' · '}gamba ≥ {Number(s.filtri.quotaGamba).toFixed(2).replace('.', ',')}
+                {s.filtri.lunedi && <> · fino a lunedì</>}
+                {s.filtri.aMano > 0 && <> · <b style={{ color: C.viola }}>{s.filtri.aMano} a mano</b></>}
+                <br /></>}
               obiettivo {Number(s.quota_obiettivo).toFixed(2).replace('.', ',')} · creata {quando(s.creata_il)}
               {giocata && s.giocata_il && <> · <span style={{ color: C.verde }}>giocata {quando(s.giocata_il)}</span></>}
               {s.esito && s.chiusa_il && <> · chiusa {quando(s.chiusa_il)}</>}
@@ -335,6 +557,18 @@ export default function BetBuilderPage() {
                 ))}
               </div>
             )}
+            {/* ⚠️ Il conto alla rovescia **si dice**: una card che scompare da
+                sola dieci secondi dopo un tocco, senza una riga che lo spieghi,
+                sembra un dato perso. E dice anche **come tornare indietro**. */}
+            {s.esito && s.chiusa_il && !archiviata(s) && (
+              <div style={{ fontSize: S.micro, fontFamily: F.sans, color: C.fioco, marginTop: 6, textAlign: 'center' }}>
+                va in archivio tra{' '}
+                <b style={{ fontFamily: F.mono, color: C.spento }}>
+                  {Math.max(1, Math.ceil((new Date(s.chiusa_il).getTime() + ATTESA_ARCHIVIO - adesso) / 1000))}s
+                </b>
+                {' '}· ritocca <b style={{ color: C.spento }}>{s.esito}</b> per annullare
+              </div>
+            )}
           </Card>
         )
       })}
@@ -343,6 +577,26 @@ export default function BetBuilderPage() {
           combinata è il prodotto delle rese, e una schedina da quota 5 vuole
           quattro o cinque gambe. Mattia lo sa — *"più fanny che
           profittevole"* — e ripeterlo a ogni schedina sarebbe una predica. */}
+      {/* ⚠️⚠️ **La stessa finestra di Road to weekend**, coi suoi filtri ⚑ e
+          ★ e la ricerca a testo libero: una gemella scritta qui sarebbe una
+          seconda idea di *"quale partita aggiungo"*.
+          ⚠️ Offre **tutto il calendario**, anche sotto le soglie, ed è il
+          punto: i filtri compongono, questa è la scorciatoia per la partita
+          che i filtri non prendono. `iniziaDopo` resta — una partita già
+          cominciata non si aggiunge a una schedina, e quello non è un filtro
+          di qualità ma di tempo.
+          ⚠️ Le gambe già nella proposta si vedono **barrate**; quelle in una
+          schedina salvata portano la targhetta `S3` e si possono prendere
+          comunque: è un gesto esplicito, come nella scalata. */}
+      {manuale && (
+        <ScegliGamba titolo="questa schedina" dove="schedina" prefisso="S"
+          nelPasso={proposta.gambe?.map(g => g.id) ?? []} inPasso={inSchedina}
+          partite={valutate.filter(r => iniziaDopo(r, daOra) && !r.quoteIncoerenti)}
+          flagDi={flagDi} votiDi={votiDi}
+          onScegli={(p) => { setAggiunteId(a => a.includes(p.id) ? a : [...a, p.id]); setManuale(false) }}
+          onChiudi={() => setManuale(false)} />
+      )}
+
       <div style={{ fontSize: S.micro, fontFamily: F.sans, color: C.fioco, textAlign: 'center', marginTop: 14, lineHeight: 1.5 }}>
         una gamba nei favoriti corti rende ~98%, e in una combinata le rese si moltiplicano:
         più gambe, più margine al banco. Qui si gioca per divertirsi.
@@ -370,7 +624,7 @@ function ComeFunziona() {
     ['2', 'Dì che quota vuoi raggiungere', <>Scrivi la quota (per esempio <b>5,00</b>) e scegli con che criterio ordinare le migliori: <b>voto</b>, attendibilità, scelta o VPM. Lui prende le prime finché il prodotto arriva a quella quota, usando <b>meno gambe possibile</b>.</>],
     ['3', 'Guarda la proposta prima di tenerla', <>Se una partita non ti convince, la <b>×</b> la scarta: esce dall&apos;elenco e lui ne pesca un&apos;altra al suo posto. Se cambi idea, <b>rimettile</b> con un tocco.</>],
     ['4', 'Tienila, e diventa tua', <>Con <b>TIENI QUESTA SCHEDINA</b> finisce nel tuo registro e resta lì anche se chiudi l&apos;app. Le sue partite <b>non torneranno</b> nelle schedine successive, così non giochi due volte la stessa.</>],
-    ['5', 'Poi segna com&apos;è andata', <>Quando la porti al banco premi <b>segna giocata</b>; a risultati arrivati, <b>vinta</b> o <b>persa</b>. L&apos;<b>importo</b> è facoltativo: se lo scrivi, vedi subito quanto vinci e in cima compare come stai andando.</>],
+    ['5', 'Poi segna com&apos;è andata', <>Quando la porti al banco premi <b>segna giocata</b>; a risultati arrivati, <b>vinta</b> o <b>persa</b>. L&apos;<b>importo</b> è facoltativo: se lo scrivi, vedi subito quanto vinci e in cima compare come stai andando. Dieci secondi dopo l&apos;esito la schedina passa in <b>ARCHIVIO</b>, dove resta: in lista restano solo quelle ancora aperte.</>],
   ]
   return (
     <div style={{ marginBottom: 12 }}>
@@ -413,7 +667,7 @@ function ComeFunziona() {
 
 /** Una gamba, uguale nella proposta e nel registro: **se fossero due pezzi,
  *  prima o poi mostrerebbero due cose diverse.** */
-function Gamba({ g, onScarta = null, onQuota = null }) {
+function Gamba({ g, onScarta = null, onQuota = null, aMano = false }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: `minmax(0,1fr) 30px 46px${onScarta ? ' 18px' : ''}`,
       gap: 6, alignItems: 'center', padding: '5px 0', borderTop: `1px solid ${alpha(C.testo, 0.06)}` }}>
@@ -421,6 +675,9 @@ function Gamba({ g, onScarta = null, onQuota = null }) {
         <div style={{ fontSize: S.micro, fontFamily: F.mono, color: C.spento, overflow: 'hidden', whiteSpace: 'nowrap' }}>
           <b style={{ color: C.blu }}>{sigla(g.div)}</b> · {gg(g.data)} {String(g.ora || '').slice(0, 5)}
           {g.att != null && <> · att <b style={{ color: C.testo }}>{pct(g.att)}</b></>}
+          {/* ⚠️ Si **vede** che è tua: è l'unica gamba che resta ferma mentre
+              le altre si rifanno a ogni tocco di una manopola. */}
+          {aMano && <> · <b style={{ color: C.viola }}>a mano</b></>}
         </div>
         <div style={{ fontSize: S.corpo, fontFamily: F.sans, color: C.testo, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {g.casa} — {g.trasferta}
@@ -441,7 +698,7 @@ function Gamba({ g, onScarta = null, onQuota = null }) {
         </div>
       )}
       {onScarta && (
-        <button onClick={onScarta} title="scartala: non tornerà fra le candidate"
+        <button onClick={onScarta} title={aMano ? 'toglila dalla schedina' : 'scartala: non tornerà fra le candidate'}
           style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer',
             color: C.fioco, fontSize: S.media }}>×</button>
       )}
