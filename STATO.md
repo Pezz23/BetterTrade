@@ -52,7 +52,7 @@ stretta). Tutte verificate dal database subito dopo.
 |---|---|---|
 | **2** | **Le quattro rifiniture** (idee 2 · 4 · 5 · 7) | ✅ **fatto il 22/10** (`a542cf9`), più la testata rifatta su tre righe (`a095ce0`) e il difetto che Mattia ha fotografato nei filtri (`6bf1468`) |
 | **3** | **Gli indirizzi delle pagine** (lotto Q, routing) | da fare — **prima di aggiungere schermate nuove**, o si ricablano dopo. E toglie la trappola della mappa di `guarda.mjs` |
-| **4** | **La schedina a schermo** (idee 10 + 9): `schedina-weekend.js` esiste già, va portato in pagina; e `CompilaPerQuota` — ⚠️ **serve prima una risposta di Mattia**: compilare una spin **intera** o solo le caselle vuote? |
+| **4** | ✅ **La schedina a schermo — fatta il 22/10 come 🎟️ BET BUILDER** (`sql/36`): schedine a quota obiettivo, private per utente, con «giocata» e «cancella», e le partite già usate escluse dalle successive. ⚠️ **Resta aperta solo l'idea 9**: `CompilaPerQuota` riempie le caselle **vuote** di una spin — va capito con Mattia se voleva compilarne una **intera**. |
 | **5** | **La barra dei campionati** (idea 3) | ⚠️ **da progettare prima**: su 375px toglie larghezza ai nomi, già tarati al pixel. Si decide **cosa si restringe** |
 | **6** | **L'automazione** (lotto F): il `.plist` di launchd è pronto, due comandi | da fare |
 | **7** | **Quello che aspetta i dati**: il riepilogo della scalata (a 10-20 chiuse), il Satellite, la spin 2 sotto soglia, i backtest vecchi | non anticipabile |
@@ -319,7 +319,7 @@ esistevano già in tutto o in parte, e una non è un'idea ma un dato vecchio.
 | 7 | Il campionato a sinistra nelle spin | 🆕 c'è, ma dopo il nome |
 | 8 | Non si vedono le leghe minori (Serie B) | ⚠️ **non è il codice: i dati sono fermi al 15/10** |
 | 9 | Spin a quota minima | ✅ **esiste già** |
-| 10 | Creatore di schedina | ⚠️ **esiste da terminale**, non in app |
+| 10 | Creatore di schedina | ✅ **fatto il 22/10: è il BET BUILDER** |
 
 ### 1 · Road to weekend, partite a mano — la priorità
 
@@ -419,7 +419,15 @@ restano e da che attendibilità si parte.
 **Da capire con Mattia cosa manca**: forse che compili una spin **intera** da
 zero invece delle sole caselle vuote.
 
-### 10 · Creatore di schedina — esiste, ma da terminale
+### 10 · Creatore di schedina — ✅ diventato il Bet Builder il 22/10/2026
+
+⚠️ **Com'era previsto, il criterio non è stato inventato**: la pagina usa
+`componiPasso` di `lib/scalata.js` — la stessa funzione dei passi della
+scalata, perché *un passo* e *una schedina a quota obiettivo* sono la stessa
+cosa. Quello che è stato aggiunto è il parametro `ordina` (voto ·
+attendibilità · scelta · VPM, scelto schedina per schedina) e il registro.
+
+#### Com'era la voce
 
 ⚠️ `app/scripts/schedina-weekend.js --quota=5` fa **esattamente questo**: dalla
 quota desiderata sceglie le migliori del weekend e compone la schedina. Il
