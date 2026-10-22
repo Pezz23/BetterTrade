@@ -14,7 +14,7 @@
 > ogni sessione e aggiornare ogni volta che una task cambia stato.
 
 **Ultimo aggiornamento:** 22 ottobre 2026 (notte) · app alla versione
-**1.48.02**
+**1.52.01** · ultimo commit `28322a1`
 
 ## ▶️ DOVE SIAMO — 22 ottobre 2026, leggi questo per primo
 
@@ -31,6 +31,10 @@ strumento principale del weekend.
 | **La scheda partita si apre dal Weekend**, toccando i nomi | `43af87b` |
 | **⚑ Flag**, **«+ aggiungi partita manuale»**, **pagina aperta a tutti in sola lettura** | `1edae37` |
 | **Lotto 1**: soglia consigliata a **61%** (rimisurata), **preferenze salvate** (gli admin condividono una riga, gli utenti hanno la loro), **casse e archivio solo agli admin** | `23fa6f9` · `ac4fe13` |
+| **Lotto 2**: le quattro rifiniture viste, la testata della partita su tre righe, e `guarda.mjs` che impara a misurare gli **accavallamenti** | `a542cf9` · `a095ce0` · `6bf1468` · `ab682e1` |
+| **Istruzioni alleggerite**: CLAUDE 202→23 kB, STATO 220→47 kB, lo storico in `STORICO.md` e gli approfondimenti in `note/` | `c6c0077` |
+| **Il VOTO diventa una pagella 0-10** coi pesi misurati, e `andamento` ricalcolata su 8 stagioni | `60ffca7` |
+| **🎟️ BET BUILDER**: schedine a quota obiettivo, **private per utente** (`sql/36`-`38`), con esito · importo e vincita · filtri nel registro · partite scartate · quota correggibile. Slot scende nel menu, il Builder prende il suo posto in basso | `946af5d` → `28322a1` |
 
 Le migrazioni applicate in questi due giorni: **`sql/31`** (numero del passo
 decimale, per inserirne uno in mezzo), **`sql/32`** (il metodo `madre`),
@@ -76,6 +80,21 @@ tolgono con una riga quando Mattia vorrà.
   caso solo, quindi è una misura e non un allarme.
 - ⚠️ E nello script c'era un `Escape` con scritto accanto *"si richiude"*: la
   scheda **non ascolta Escape**, restava aperta e copriva la barra in basso.
+
+### 🎟️ Il Bet Builder, cosa è rimasto aperto
+
+- **L'esito automatico** dall'archivio: ogni gamba ha `prossima_id`, ma la
+  regola che dice *"questa giocata è arrivata"* vive in
+  `btscout/lib/ricostruisci.js` e va **spostata** in `app/src/lib/`, non
+  copiata — due versioni direbbero prima o poi cose diverse sulla stessa
+  schedina.
+- **I filtri non si salvano** fra una sessione e l'altra (le schedine e le
+  scartate sì): riaprendo, le manopole tornano ai valori di partenza. Offerto
+  a Mattia, non ancora chiesto — la riga di `preferenze` è già sua e già
+  **personale**, quindi lì il salvataggio può essere automatico, al contrario
+  della scalata dove il tasto serve perché la riga è condivisa fra sei admin.
+- **Il riassunto con le domande vere** (quale criterio sceglie meglio, quanto
+  rende davvero) arriva a **dieci o venti schedine**: prima direbbe rumore.
 
 ### ⛔ Le regole di lavoro aggiunte in questi giorni
 
