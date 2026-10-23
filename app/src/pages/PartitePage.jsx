@@ -376,6 +376,33 @@ export default function PartitePage() {
               </div>
             </div>
 
+            <div>
+              {/* ⚠️⚠️ **Sta qui, accanto alla quota, e non in fondo** (Mattia,
+                  23/10/2026). La griglia è a due colonne: con questo in coda
+                  le quattro manopole restavano spaiate — attendibilità con la
+                  quota, VPM con scelta, voto con questo. Messo secondo, le
+                  manopole si accoppiano come si leggono: **att · VPM** su una
+                  riga, **scelta · voto** sull'altra.
+                  ⚠️ Si chiamava «VPM», e accanto c'è una manopola «VPM ≥»:
+                  due celle con la stessa etichetta e due comandi diversi
+                  sotto. Questo non è una soglia — è *quali* partite, non
+                  *quanto*. */}
+              <Etichetta style={{ marginBottom: 5 }}>campo contro mercato</Etichetta>
+              <button onClick={() => setSoloVpmContro(v => !v)} disabled={!datiVpm}
+                style={{ ...pillola(soloVpmContro, C.rosso), width: '100%', opacity: datiVpm ? 1 : 0.4,
+                  // ⚠️⚠️ **Su una riga sola, e per questo il corpo scende a
+                  // `micro`.** Acceso il tasto dice «solo campo ≠ mercato»:
+                  // venti caratteri in una cella da ~150px, che a corpo 12
+                  // andavano a capo e alzavano la cella di una riga — cioè
+                  // spostavano in giù tutta la colonna accanto.
+                  // ⚠️ `nowrap` **insieme** al corpo più piccolo: il corpo da
+                  // solo è una misura che vale finché la parola non cambia,
+                  // `nowrap` è la garanzia che a capo non ci vada comunque.
+                  fontSize: S.micro, whiteSpace: 'nowrap' }}>
+                {soloVpmContro ? 'solo campo ≠ mercato' : 'tutte'}
+              </button>
+            </div>
+
             {/* ⚠️⚠️ **I quattro indicatori, stessa forma e stesso gesto.**
                 Prima c'era solo «scelta minima», e il voto era stato tolto il
                 22/10 perché diceva `resa × fattore(VPM)`; adesso è una
@@ -406,17 +433,6 @@ export default function PartitePage() {
               )
             })}
 
-            <div>
-              {/* ⚠️ Si chiamava «VPM», e adesso accanto c'è una manopola
-                  «VPM ≥»: due celle con la stessa etichetta e due comandi
-                  diversi sotto. Questo non è una soglia — è *quali* partite,
-                  non *quanto*. */}
-              <Etichetta style={{ marginBottom: 5 }}>campo contro mercato</Etichetta>
-              <button onClick={() => setSoloVpmContro(v => !v)} disabled={!datiVpm}
-                style={{ ...pillola(soloVpmContro, C.rosso), width: '100%', opacity: datiVpm ? 1 : 0.4 }}>
-                {soloVpmContro ? 'solo campo ≠ mercato' : 'tutte'}
-              </button>
-            </div>
           </div>
 
           {/* ⚠️⚠️ **Le tre slitte delle soglie di probabilità sono state tolte
