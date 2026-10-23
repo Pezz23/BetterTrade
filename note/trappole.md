@@ -321,4 +321,14 @@
   Sono token separati in `theme.js` (`bluPieno`, `giallo`, `celestePieno`).
 
 ---
+- **Una connessione a Postgres non sopravvive a un lavoro di ore.** La notte
+  del 22/10/2026 il recupero storico delle competizioni ESPN è **morto a metà
+  Europa League** con `ECONNRESET`, e Conference e Olanda 2 non sono mai
+  partite: dopo un'ora di scritture continue il pooler di Supabase ha chiuso
+  la connessione. ⚠️ Non era la fonte — ESPN rispondeva benissimo — ed è il
+  motivo per cui si guarda **quale** pezzo è caduto prima di accusare quello
+  che sta scaricando. ⚠️⚠️ Uno script che dura ore se lo deve aspettare: la
+  scrittura va dentro una ripetizione con attesa crescente, e si può riprovare
+  senza pensarci solo perché è **idempotente** (`on conflict do nothing`). Un
+  recupero che riparte da zero a ogni singhiozzo non finisce mai.
 

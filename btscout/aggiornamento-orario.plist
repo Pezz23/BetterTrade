@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- I RISULTATI, OGNI ORA.
+     Si affianca a `aggiornamento.plist` (martedì e venerdì 18:30), che è
+     un'altra cosa: quello scarica football-data, spende i crediti di The Odds
+     API e ricalcola `andamento`. Questo fa solo i risultati da ESPN, che è
+     gratis e senza chiave, e costa zero crediti.
+
+     Installazione (due comandi):
+       cp btscout/aggiornamento-orario.plist ~/Library/LaunchAgents/local.bettertrade.risultati.plist
+       launchctl load ~/Library/LaunchAgents/local.bettertrade.risultati.plist
+     Per fermarlo:
+       launchctl unload ~/Library/LaunchAgents/local.bettertrade.risultati.plist
+
+     Il log finisce in btscout/risultati.log. Se il Mac è spento all'ora
+     prevista, launchd lo esegue appena si riaccende. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>local.bettertrade.risultati</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/node</string>
+    <string>--env-file=.env</string>
+    <string>scripts/aggiorna-risultati.js</string>
+    <string>--esegui</string>
+  </array>
+  <key>WorkingDirectory</key><string>/Users/IA/Desktop/CW/Github/BetterTrade/btscout</string>
+  <key>StandardOutPath</key><string>/Users/IA/Desktop/CW/Github/BetterTrade/btscout/risultati.log</string>
+  <key>StandardErrorPath</key><string>/Users/IA/Desktop/CW/Github/BetterTrade/btscout/risultati.log</string>
+  <!-- ⚠️ Ogni ora, non a un minuto fisso di ogni ora: `StartInterval` conta
+       dall'avvio, quindi i giri non cadono tutti insieme se il Mac si
+       riaccende. 3600 secondi. -->
+  <key>StartInterval</key><integer>3600</integer>
+</dict>
+</plist>

@@ -19,6 +19,11 @@ const SIGLE = {
   T1: 'TUR1',
   B1: 'BEL1',
   SC0: 'SCO1',
+  // ⚠️ Le competizioni che football-data NON copre e che arrivano da ESPN
+  // (22/10/2026). La sigla qui è corta perché deve stare nella barra dei
+  // campionati, larga 40px: `UCL` e non `CHAMPIONS`.
+  UCL: 'UCL', UEL: 'UEL', UECL: 'UECL',
+  N2: 'NED2', JPN1: 'JPN1',
 }
 
 const NOMI = {
@@ -32,6 +37,8 @@ const NOMI = {
   T1: 'Süper Lig',
   B1: 'Pro League',
   SC0: 'Premiership',
+  UCL: 'Champions League', UEL: 'Europa League', UECL: 'Conference League',
+  N2: 'Eerste Divisie', JPN1: 'J1 League',
 }
 
 /** ITA1 da I1. Se non la conosciamo, torna la sigla originale. */

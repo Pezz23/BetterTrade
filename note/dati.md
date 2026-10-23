@@ -248,6 +248,112 @@ qualcosa, poi si decide.**
 una richiesta per partita, quindi ~34.000 per tutto l'archivio. Si fa un
 campionato per volta. **Serie A per prima**, il 12/10/2026.
 
+## 🏆 Le competizioni che football-data non copre (22/10/2026)
+
+Mattia: *"vorrei avere tutta la Champions e magari aggiungere qualche
+campionato — Olanda 2, Giappone, Serie B portoghese"*, più **una funzione che
+aggiorna l'app ogni ora con i risultati**.
+
+### ⚠️⚠️ Metà del lavoro era già in casa, e la ricerca l'ha spostata altrove
+
+Il briefing proponeva Python + `soccerdata` + FBref. **Si è scelto ESPN**, e
+non per pigrizia:
+
+| | |
+|---|---|
+| **`soccerdata` oggi** | versione 2026.43, vuole **Python ≥ 3.10** (sul Mac c'è il 3.9 di sistema) e si porta dietro **`seleniumbase`**, cioè un browser intero: FBref sta dietro Cloudflare e non si legge più con una richiesta semplice |
+| **ESPN** | è **già dentro il progetto** (`lib/espn.js`), gratis, senza chiave, e in una sola chiamata dà gol, tiri, **tiri in porta**, possesso, **angoli** e **cartellini** |
+| **la prova** | `uefa.champions` risponde dal **2016**; `ned.2` (Keuken Kampioen Divisie) e `jpn.1` pure. ⚠️ `por.2` **non esiste su ESPN** sotto nessuno slug provato |
+| **e i cartellini** | ESPN li espone come `yellowCards`/`redCards` in ogni riepilogo e la tabella ha `gialli_*`/`rossi_*` da sempre: **nessuno li leggeva**. Due righe in `statistiche()` |
+
+⚠️ **I tiri in porta esistevano già**: `tirip_*`, pieni fra il 91% e il 100% su
+tutti e quindici i campionati. Non era un dato da prendere, era un dato da
+usare.
+
+### ⚠️ Lo scoreboard si chiede a MESI, non a giorni
+
+Provato il 22/10/2026: `dates=20251001-20251031` torna **zero**,
+`dates=202510` torna **27 partite**. Una stagione di Champions camminando sul
+calendario sono ~330 chiamate; a mesi sono **12**. È la differenza fra un'ora
+e un minuto, ed è il motivo per cui esiste `partiteDelMese()`.
+
+### ⚠️⚠️ Qui ESPN non è la seconda fonte: è l'UNICA
+
+Nei quindici campionati football-data porta la riga ed ESPN la arricchisce,
+quindi ogni numero ha un secondo parere e nel dubbio la riga aspetta una
+persona. In Champions non c'è niente con cui confrontare. Per questo
+`importa-competizione.js`:
+
+- importa **solo le partite finite** — una riga senza risultato non è una
+  partita giocata, è un calendario;
+- scrive `fonte = 'espn'`, così si potrà sempre sapere quale parte
+  dell'archivio ha **un solo testimone**;
+- tiene i **nomi di ESPN** ("Internazionale", non "Inter"). Dentro la
+  competizione sono coerenti, ed è quello che serve alle medie di squadra —
+  ⚠️ ma **non si agganciano da sé** allo stesso club nel suo campionato.
+
+### ⚠️⚠️ Senza quote non c'è attendibilità — ed è il limite da sapere
+
+ESPN **non ha le quote**. L'attendibilità di BetterTrade *è* il consenso dei
+bookmaker: queste partite hanno gol, tiri, angoli e cartellini, ma **nessuna
+attendibilità**, e **non possono comparire fra le consigliate**. Servono per
+le medie, i gol attesi, gli angoli e i cartellini — non per scegliere cosa
+giocare.
+
+### ✅ Il ponte fra i nomi — e il cerchio si chiude
+
+Per le partite **future** le quote ci sono: The Odds API copre
+`soccer_uefa_champs_league` e `soccer_japan_j_league` (verificato il 22/10), e
+dalla sera del 22/10 sono **accese**. Con le quote arrivano attendibilità,
+scelta e voto, e la competizione compare **da sola** nella barra a destra
+delle Partite — quella barra si costruisce da quello che c'è in
+`prossime_partite`, non da un elenco scritto a mano.
+
+⚠️ **18 accoppiamenti in `lib/nomi-squadre.js`** (10 UCL, 8 JPN1), e il verso è
+**opposto** a tutto il resto del file: a destra ci sono i nomi di **ESPN**
+("Internazionale", "Sporting CP", "Kyoto Sanga"), non quelli di football-data.
+Letti uno per uno: il confronto automatico ne risolveva 8, ma la regola
+automatica sbaglia in silenzio — in questo stesso file c'è la cicatrice di
+"Paris Saint Germain" finito su "Paris FC", che è un'altra squadra.
+
+⚠️⚠️ **I nomi validi si cercano per DATA, non per codice stagione.** Il filtro
+era `stagione in ('2526','2627')`: la J1 giapponese ha `stagione = '2026'`
+(anno solare), quindi **ogni squadra giapponese risultava sconosciuta** e
+tutte le partite venivano saltate. Ora è `data > current_date - 730`, che
+parla la stessa lingua per tutti i calendari.
+
+⚠️ **Il codice d'uscita non vale uguale per tutti.** Un nome sconosciuto nei
+quindici di football-data è un **segnale**: le squadre cambiano tre volte
+l'anno e va aggiunto alla mappa. In Champions le partecipanti cambiano **per
+costruzione** ogni stagione, e i qualificati portano club mai visti: fermare
+l'aggiornamento perché una squadra albanese ha passato il turno sarebbe il
+rimedio peggiore del male. La partita si salta, l'avviso resta scritto, la
+routine prosegue.
+
+⚠️⚠️ **La dipendenza da ricordare**: il controllo guarda l'archivio degli
+**ultimi due anni**, quindi le quote di una competizione nuova entrano **solo
+dopo** che il recupero ESPN ha portato le sue stagioni recenti. Il 22/10 il
+primo tentativo è tornato a mani vuote proprio per questo — il recupero era
+al 2017. **Per una competizione nuova si parte da `--da=<anno scorso>`**, e
+solo dopo si lascia andare lo storico profondo.
+
+### L'aggiornamento orario
+
+`aggiorna-risultati.js` + `aggiornamento-orario.plist` (`StartInterval 3600`).
+⚠️ **Non è `aggiorna.js` più spesso**: quella scarica football-data, spende ~30
+crediti di The Odds API a giro (500 al mese — sarebbero finiti in diciassette
+ore) e ricalcola `andamento`. Questa fa **una cosa sola**, i risultati da ESPN,
+e costa **zero crediti**. ⚠️ E se un passo fallisce **continua**: qui nessun
+passo dipende da quello prima, e una fonte non documentata che tace per un'ora
+non deve fermare anche l'altra.
+
+### ⚠️ La Serie B portoghese non c'è, e non è un dimenticanza
+
+Non la copre **football-data** (`P2` reindirizza su `SP2`, verificato il
+16/09/2026), non la copre **ESPN** (sei slug provati, tutti 404) e non la
+copre **The Odds API**. Resterebbe FBref, cioè Cloudflare e un browser: è
+l'unico pezzo del briefing che costa davvero, e va deciso a parte.
+
 ## Storico e calendario: due tabelle, due significati
 
 | Tabella | Contiene | Quote | Si cancella? |

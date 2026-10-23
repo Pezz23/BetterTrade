@@ -15,7 +15,55 @@ export const CAMPIONATI = {
   E0: 'eng.1', E1: 'eng.2', I1: 'ita.1', I2: 'ita.2', SP1: 'esp.1', SP2: 'esp.2',
   D1: 'ger.1', D2: 'ger.2', F1: 'fra.1', F2: 'fra.2', P1: 'por.1', N1: 'ned.1',
   T1: 'tur.1', B1: 'bel.1', SC0: 'sco.1',
+  // ── Le competizioni che football-data NON copre (22/10/2026) ───────────────
+  // ⚠️⚠️ Per questi ESPN non è la seconda fonte: **è l'unica**. Nei quindici
+  // campionati sopra ESPN arricchisce righe che football-data ha già portato
+  // (e in caso di dubbio la riga aspetta una persona); qui invece crea la
+  // riga, e non c'è niente con cui confrontarla. È il motivo per cui
+  // `importa-competizione.js` scrive `fonte = 'espn'` e si rifiuta di
+  // indovinare.
+  UCL: 'uefa.champions',   // Champions League — storico fino al 2016
+  UEL: 'uefa.europa',      // Europa League
+  UECL: 'uefa.europa.conf',// Conference League
+  N2: 'ned.2',             // Olanda 2 (Keuken Kampioen Divisie)
+  JPN1: 'jpn.1',           // Giappone J1 — ⚠️ stagione ad anno solare
 };
+
+/**
+ * I nomi estesi e il calendario delle competizioni nuove.
+ *
+ * ⚠️ `partite.campionato` è **obbligatoria**, e per i quindici campionati
+ * vecchi si legge da una riga già in archivio (`importa-espn.js` fa così).
+ * Qui la riga in archivio non c'è ancora: il nome va scritto, una volta.
+ * ⚠️⚠️ `annoSolare` per il Giappone: la J1 va da febbraio a dicembre, quindi
+ * la stagione **è l'anno**. Infilarla nello schema agosto-luglio
+ * significherebbe spezzare ogni campionato giapponese in due stagioni nostre,
+ * e `calcola-andamento` conterebbe mezze stagioni.
+ */
+export const COMPETIZIONI = {
+  UCL:  { nome: 'UEFA Champions League', da: 2016 },
+  UEL:  { nome: 'UEFA Europa League', da: 2016 },
+  UECL: { nome: 'UEFA Conference League', da: 2021 },
+  N2:   { nome: 'Eerste Divisie', da: 2016 },
+  JPN1: { nome: 'J1 League', da: 2016, annoSolare: true },
+};
+
+/**
+ * Le partite di un **mese** (`aaaamm`), in una chiamata sola.
+ *
+ * ⚠️⚠️ È la differenza fra un'ora e un minuto. Lo scoreboard di ESPN accetta
+ * anche un mese intero, e **non** un intervallo `da-a` (provato il 22/10/2026:
+ * `dates=20251001-20251031` torna zero, `dates=202510` torna 27 partite).
+ * Camminando giorno per giorno una stagione di Champions sono ~330 chiamate,
+ * a mesi sono **12**.
+ * ⚠️ Non si usa per i quindici campionati vecchi, dove le date si chiedono
+ * all'archivio: lì le partite le conosciamo già.
+ */
+export async function partiteDelMese(div, mese) {
+  const d = await prendi(`${BASE}/${CAMPIONATI[div]}/scoreboard?dates=${mese}&limit=500`);
+  await dormi(PAUSA_MS);
+  return (d?.events || []).map(leggiEvento).filter(Boolean);
+}
 
 // ⚠️ Una pausa fra le chiamate, di proposito. Non c'è un limite dichiarato, e
 // proprio per questo non si corre: una fonte non documentata si tiene buona.
@@ -57,10 +105,23 @@ const nomiDi = (t) => t ? [t.displayName, t.shortDisplayName, t.name, t.location
 export async function partiteDelGiorno(div, giorno) {
   const d = await prendi(`${BASE}/${CAMPIONATI[div]}/scoreboard?dates=${giorno}`);
   await dormi(PAUSA_MS);
-  return (d?.events || []).map(e => {
-    const c = e.competitions[0];
+  return (d?.events || []).map(leggiEvento).filter(Boolean);
+}
+
+/**
+ * Un evento dello scoreboard nella forma che usiamo noi.
+ *
+ * ⚠️ **Una funzione sola per il giorno e per il mese**: è la stessa risposta di
+ * ESPN, e due letture della stessa risposta prima o poi leggono due cose
+ * diverse — il difetto che questo progetto ha già pagato con `emailDi()` in
+ * tre copie e `iniziaDopo` in due.
+ */
+function leggiEvento(e) {
+    const c = e.competitions?.[0];
+    if (!c) return null;
     const casa = c.competitors.find(x => x.homeAway === 'home');
     const osp = c.competitors.find(x => x.homeAway === 'away');
+    if (!casa || !osp) return null;
     return {
       id: e.id,
       // ⚠️ La data di ESPN è UTC. Per gli orari europei non cambia giorno, ma
@@ -78,19 +139,32 @@ export async function partiteDelGiorno(div, giorno) {
       golCasa: casa?.score == null ? null : Number(casa.score),
       golTrasferta: osp?.score == null ? null : Number(osp.score),
     };
-  });
 }
 
-/** Le statistiche di una partita: tiri, tiri in porta, possesso, angoli. */
-export async function statistiche(div, idEvento) {
-  const d = await prendi(`${BASE}/${CAMPIONATI[div]}/summary?event=${idEvento}`);
+/**
+ * Le statistiche di una partita: tiri, tiri in porta, possesso, angoli,
+ * cartellini.
+ *
+ * ⚠️⚠️ **`tentativi` esiste per il recupero storico** (22/10/2026). ESPN non
+ * ha il riepilogo delle partite vecchie, e ogni tentativo a vuoto costa la
+ * sua attesa crescente: misurato sul recupero della Champions, una riga
+ * passava da 0,84 a **4,5 secondi**, cioè da venti minuti a un'ora e mezza.
+ * Per una partita di ieri tre tentativi sono giusti — lì un buco è un
+ * problema di rete; per una del 2016 è una risposta, e si accetta.
+ */
+export async function statistiche(div, idEvento, tentativi = 3) {
+  const d = await prendi(`${BASE}/${CAMPIONATI[div]}/summary?event=${idEvento}`, tentativi);
   await dormi(PAUSA_MS);
   const squadre = d?.boxscore?.teams;
   if (!squadre || squadre.length < 2) return null;
   const leggi = (t) => {
     const s = Object.fromEntries((t.statistics || []).map(x => [x.name, x.displayValue]));
     const num = (k) => s[k] == null || s[k] === '' ? null : Number(String(s[k]).replace('%', ''));
-    return { tiri: num('totalShots'), tirip: num('shotsOnTarget'), possesso: num('possessionPct'), angoli: num('wonCorners') };
+    // ⚠️⚠️ **I cartellini c'erano e si buttavano via** (trovato il 22/10/2026):
+    // ESPN li espone come `yellowCards` e `redCards` in ogni riepilogo, e la
+    // tabella ha `gialli_*` e `rossi_*` da sempre. Nessuno li leggeva.
+    return { tiri: num('totalShots'), tirip: num('shotsOnTarget'), possesso: num('possessionPct'),
+      angoli: num('wonCorners'), gialli: num('yellowCards'), rossi: num('redCards') };
   };
   // ⚠️ L'ordine in `boxscore.teams` è casa poi trasferta, ma non è documentato:
   // si controlla con `homeAway` quando c'è, altrimenti si rinuncia invece di

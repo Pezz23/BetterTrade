@@ -219,9 +219,9 @@ non tutti**.
 | `note/betbuilder.md` | Bet Builder | Schedine a quota obiettivo, **private per utente** (`sql/36`-`38`): nessuno vede quelle di un altro, admin compresi. Compone con **`componiPasso` della scalata** — un passo e una schedina sono la stessa cosa — e si ferma **appena supera** la quota. Le già usate e le **scartate** (`preferenze`, riga personale) escono dalle candidate. ⚠️ **Una schedina salvata non cambia mai da sola**: le gambe sono una **copia**, non un collegamento — l'unica cosa che la tocca è la **quota corretta a mano**, perché c'è l'importo e una quota sbagliata è una vincita sbagliata. Esito **per schedina** e a mano; l'automatico vuole prima che la regola *"questa giocata è arrivata"* **si sposti** dal motore a `src/lib/`, non si copi. ⚠️ **Interruttore `ATTIVE \| ARCHIVIO`**: una chiusa ci scende **dieci secondi dopo l'esito** — il criterio è lo **stato**, non il tempo, e i dieci secondi sono il tempo per disfare un tocco sbagliato. ⚠️ I **filtri si salvano da sé, senza tasto**, perché lì la riga di `preferenze` è **personale** (nella scalata è condivisa, e il tasto serve). ⚠️ Le partite aggiunte **a mano sono fisse** e l'automatico punta a `obiettivo ÷ quota delle aggiunte`: in fondo darebbero quota 9 a chi ne ha chieste 5. |
 | `note/spin.md` | Slot, Spin provvisorie | La spunta **GIOCATA** è l'unica cosa che fa partire i conti della Dashboard. |
 | `note/interfaccia.md` | **qualunque** modifica a una pagina o a un componente | Colori, caratteri, spaziature e raggi **solo da `theme.js`**, ma **dove finisce la pagina** sta in `lib/layout.js` (`COLONNA`, `bordoDestro`) — un componente che la importasse da `App.jsx` chiuderebbe un anello col `lazy` delle pagine. Le tre barre fisse si misurano con `--barra-alta` e `--barra-bassa` di `index.css`, e **`--barra-bassa` È l'altezza della tab bar**: se non sale con lei, nasconde le ultime righe. ⚠️ `SOTTO_BARRA` **non viene da `SP`**: è la distanza dei bersagli dal bordo dell'iPhone (Siri e l'indicatore Home), un vincolo del telefono. I segni **solo da `Icona.jsx`** (niente emoji); le superfici da `stileCard`; le righe della lista sono `memo` e vogliono proprietà stabili; ogni pagina è `lazy`. **`npm run lint` deve dare 0 errori.** |
-| `note/trappole.md` | **prima** di toccare layout, migrazioni, date, query o script di misura | 42 difetti veri, ciascuno costato una sessione. L'elenco dei titoli è qui sotto: **se quello che stai per fare somiglia a uno di questi, apri il file.** |
+| `note/trappole.md` | **prima** di toccare layout, migrazioni, date, query o script di misura | 43 difetti veri, ciascuno costato una sessione. L'elenco dei titoli è qui sotto: **se quello che stai per fare somiglia a uno di questi, apri il file.** |
 
-### ⚠️ I titoli delle 42 trappole — il dettaglio sta in `note/trappole.md`
+### ⚠️ I titoli delle 43 trappole — il dettaglio sta in `note/trappole.md`
 
 - Una `timestamptz` non si taglia a fette
 - Il contenuto che non ci sta NON si stringe e NON si taglia: esce, e si disegna sopra il vicino
@@ -265,6 +265,7 @@ non tutti**.
 - I `<button>` non ereditano il colore del testo
 - Una tinta semitrasparente su uno sfondo chiaro si illumina
 - Nel convertire i colori, `rgba()` e `#hex` dello stesso nome sono tinte diverse
+- Una connessione a Postgres non sopravvive a un lavoro di ore
 
 ---
 
@@ -316,6 +317,16 @@ node --env-file=.env scripts/verifica-storico.js   # coerenza dell'archivio (set
 node --env-file=.env scripts/audit-archivio.js     # controllo completo (dopo ogni campionato nuovo)
 node --env-file=.env scripts/aggiorna.js --esegui                   # LA ROUTINE: martedì e venerdì dopo le 18
 node --env-file=.env scripts/importa-espn.js --campionati=I1 --giorni=30 --esegui   # la seconda fonte: risultati e possesso
+node --env-file=.env scripts/importa-competizione.js --comp=UCL --da=2016 --esegui  # Champions & co. da ESPN (prova a vuoto senza --esegui)
+#   ⚠️ Qui ESPN **non è la seconda fonte: è l'unica**. Crea la riga invece di
+#      arricchirla, quindi importa solo partite **finite** e scrive `fonte='espn'`.
+#   ⚠️⚠️ **Niente quote**: ESPN non le ha, quindi queste partite hanno gol,
+#      tiri, angoli e cartellini ma **nessuna attendibilità**, e non possono
+#      comparire fra le consigliate finché le quote non arrivano da The Odds API.
+#   comp: UCL · UEL · UECL · N2 (Olanda 2) · JPN1 (stagione ad anno solare)
+node --env-file=.env scripts/aggiorna-risultati.js --esegui   # OGNI ORA: solo i risultati, zero crediti
+#   ⚠️ Non è `aggiorna.js` più spesso: quella spende 30 crediti di The Odds API
+#      a giro (500 al mese) e ricalcola `andamento`. Questa fa solo ESPN.
 node --env-file=.env scripts/controlla-dati.js     # cosa è passato in silenzio (gira già dentro aggiorna.js)
 #   = import-storico --stagioni=2627 → riconcilia-prossime → importa-prossime
 #     → importa-prossime-odds → calcola-andamento --stagioni=1

@@ -188,6 +188,40 @@ export const NOMI = {
     "Dundee FC": "Dundee",
     "Falkirk F.C.": "Falkirk",
   },
+
+  // ── Le competizioni che arrivano da ESPN (22/10/2026) ─────────────────────
+  // ⚠️⚠️ Qui il verso è diverso da tutto il resto del file: l'archivio di
+  // queste competizioni **non** viene da football-data, viene da ESPN. Quindi
+  // a destra ci sono i nomi di ESPN ("Internazionale", "Sporting CP"), non
+  // quelli di football-data ("Inter", "Sp Lisbon"). Stessa funzione, altra
+  // sorgente — ed è il motivo per cui la mappa è per campionato e non globale.
+  //
+  // ⚠️ I 18 accoppiamenti sono stati **letti uno per uno** sulle due liste. Un
+  // confronto automatico ne risolveva 8 da solo, ma la regola automatica
+  // sbaglia in silenzio — è già successo qui con "Paris Saint Germain"
+  // finito su "Paris FC", che è un'altra squadra.
+  UCL: {
+    "Bodø/Glimt": "Bodo/Glimt",
+    "Feyenoord": "Feyenoord Rotterdam",
+    "Inter Milan": "Internazionale",
+    "LASK": "LASK Linz",
+    "Paris Saint Germain": "Paris Saint-Germain",
+    "Porto": "FC Porto",
+    "RC Lens": "Lens",
+    "Slavia Praha": "Slavia Prague",
+    "Sporting Lisbon": "Sporting CP",
+    "ŠK Slovan Bratislava": "Slovan Bratislava",
+  },
+  JPN1: {
+    "FC Machida Zelvia": "Machida Zelvia",
+    "Hiroshima Sanfrecce FC": "Sanfrecce Hiroshima",
+    "JEF United Chiba": "JEF United Ichihara-Chiba",
+    "Kyoto Purple Sanga": "Kyoto Sanga",
+    "Mito HollyHock": "Mito Hollyhock",
+    "Shimizu S Pulse": "Shimizu S-Pulse",
+    "Tokyo Verdy": "Tokyo Verdy 1969",
+    "Yokohama F Marinos": "Yokohama F. Marinos",
+  },
 };
 
 /** Il nome di football-data per un nome di The Odds API. Lancia se sconosciuto. */

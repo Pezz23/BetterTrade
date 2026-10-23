@@ -19,6 +19,31 @@ export const SPORT = {
   N1: 'soccer_netherlands_eredivisie', P1: 'soccer_portugal_primeira_liga',
   B1: 'soccer_belgium_first_div',     T1: 'soccer_turkey_super_league',
   SC0: 'soccer_spl',
+  // ⚠️⚠️ **Le competizioni che football-data non copre** (22/10/2026). Lo
+  // storico di queste arriva da ESPN, che però **non ha le quote**: senza
+  // quote non c'è consenso, e senza consenso non c'è attendibilità — cioè la
+  // partita entrerebbe in archivio ma non potrebbe mai comparire fra le
+  // consigliate. Qui si chiude il cerchio: The Odds API le copre
+  // (verificato il 22/10), quindi le partite **future** di Champions hanno
+  // il consenso come tutte le altre.
+  // ⚠️ Costano crediti come gli altri campionati: ~2 a giro ciascuno su 500
+  // al mese.
+  // ── Le competizioni che football-data non copre (22/10/2026) ──────────────
+  // ⚠️⚠️ **Qui si chiude il cerchio.** Lo storico di queste arriva da ESPN,
+  // che non ha le quote: senza quote non c'è consenso, senza consenso non c'è
+  // attendibilità, e la partita resterebbe in archivio senza poter comparire
+  // fra le consigliate. The Odds API le copre, quindi le partite **future**
+  // hanno il consenso come tutte le altre.
+  // ⚠️ Il ponte fra i nomi sta in `lib/nomi-squadre.js`, ed è l'unica cosa che
+  // le teneva spente: in archivio le squadre si chiamano come le chiama ESPN
+  // ("Internazionale"), su The Odds API no ("Inter Milan").
+  // ⚠️ Costano ~3 crediti a giro ciascuna, su 500 al mese.
+  UCL: 'soccer_uefa_champs_league',
+  JPN1: 'soccer_japan_j_league',
+  // ⚠️ Europa e Conference **restano spente**: il 22/10 The Odds API non aveva
+  // nemmeno una partita futura per loro, quindi accenderle costerebbe crediti
+  // per zero righe. Si accendono quando il torneo riparte.
+  // UEL: 'soccer_uefa_europa_league',
 };
 
 const BASE = 'https://api.the-odds-api.com/v4';

@@ -36,6 +36,10 @@ import { sql, chiudi } from '../lib/db.js';
 import { quote, totali, SPORT } from '../lib/odds-api.js';
 import { traduci } from '../lib/nomi-squadre.js';
 import { CAMPIONATI } from './import-storico.js';
+// ⚠️ I nomi delle competizioni che football-data **non copre**: `CAMPIONATI`
+// elenca i file che si scaricano da football-data, e infilarci la Champions
+// farebbe cercare un CSV che non esiste. Il nome sta dov'è la competizione.
+import { COMPETIZIONI } from '../lib/espn.js';
 
 const ESEGUI = process.argv.includes('--esegui');
 // Un campionato per volta: ogni chiamata costa un credito, e quando il DNS ne
@@ -44,9 +48,15 @@ const soloArg = process.argv.find(a => a.startsWith('--campionati='));
 const SOLO = soloArg ? soloArg.split('=')[1].split(',').map(x => x.trim().toUpperCase()) : null;
 const BOOK = process.env.ODDS_BOOK || 'codere_it';
 
-// Nomi validi per campionato: quelli visti nell'archivio nelle ultime due stagioni.
+// Nomi validi per campionato: quelli visti nell'archivio negli ultimi due anni.
+// ⚠️⚠️ **Per DATA e non per codice stagione** (22/10/2026). Il filtro era
+// `stagione in ('2526','2627')`, e va bene finché tutti i campionati hanno il
+// calendario europeo: la J1 giapponese va da febbraio a dicembre, quindi la
+// sua stagione **è l'anno** (`'2026'`) e non sarebbe mai entrata in
+// quell'elenco — ogni squadra giapponese sarebbe risultata sconosciuta.
+// La data invece parla la stessa lingua per tutti.
 const validi = new Map();
-for (const r of await sql`select div, casa as sq from partite where stagione in ('2526','2627') group by div, casa`)
+for (const r of await sql`select div, casa as sq from partite where data > current_date - 730 group by div, casa`)
   (validi.get(r.div) || validi.set(r.div, new Set()).get(r.div)).add(r.sq);
 
 // Data e ora nel fuso del Regno Unito, come football-data.
@@ -122,7 +132,7 @@ for (const div of daFare) {
 
     const { data, ora } = dataOraUK(ev.commence_time);
     righe.push({
-      div, campionato: CAMPIONATI[div], data, ora, casa, trasferta, fonte: 'odds-api',
+      div, campionato: CAMPIONATI[div] ?? COMPETIZIONI[div]?.nome, data, ora, casa, trasferta, fonte: 'odds-api',
       avg_ap_1: media(q1), avg_ap_x: media(qx), avg_ap_2: media(q2),
       max_ap_1: massimo(q1), max_ap_x: massimo(qx), max_ap_2: massimo(q2),
       bfe_ap_1: bfe?.[0] ?? null, bfe_ap_x: bfe?.[1] ?? null, bfe_ap_2: bfe?.[2] ?? null,
@@ -159,7 +169,18 @@ if (sconosciute.size) {
   for (const [k, v] of sconosciute) console.log(`      ${k.replace('|', '  "')}"  →  tradotto in "${v}", non in archivio`);
 }
 
-if (!ESEGUI || !righe.length) { await chiudi(); process.exit(sconosciute.size ? 1 : 0); }
+// ⚠️⚠️ **Un nome sconosciuto vale 1 solo nei quindici campionati di
+// football-data.** Lì le squadre cambiano tre volte l'anno e un nome nuovo è
+// un segnale: va aggiunto alla mappa, e il codice 1 serve a farlo notare
+// fermando la routine. In Champions no — le partecipanti **cambiano ogni
+// stagione per costruzione**, e i qualificati portano club che non abbiamo mai
+// visto. Fermare l'aggiornamento del martedì perché una squadra albanese ha
+// superato il turno sarebbe il rimedio peggiore del male: la partita si salta,
+// l'avviso resta scritto, la routine prosegue.
+const soloEspn = new Set(Object.keys(COMPETIZIONI));
+const gravi = [...sconosciute.keys()].filter(k => !soloEspn.has(k.split('|')[0]));
+if (sconosciute.size && !gravi.length) console.log('  (tutte in competizioni ESPN: la routine prosegue)');
+if (!ESEGUI || !righe.length) { await chiudi(); process.exit(gravi.length ? 1 : 0); }
 
 const COL = ['div', 'campionato', 'data', 'ora', 'casa', 'trasferta', 'fonte',
   'avg_ap_1', 'avg_ap_x', 'avg_ap_2', 'max_ap_1', 'max_ap_x', 'max_ap_2', 'bfe_ap_1', 'bfe_ap_x', 'bfe_ap_2',
