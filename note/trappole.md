@@ -331,4 +331,22 @@
   scrittura va dentro una ripetizione con attesa crescente, e si può riprovare
   senza pensarci solo perché è **idempotente** (`on conflict do nothing`). Un
   recupero che riparte da zero a ogni singhiozzo non finisce mai.
+- **L'ora di football-data e di The Odds API è INGLESE, non italiana.** Per
+  settimane tutto il calendario è stato **indietro di un'ora** — le partite
+  delle 15 segnate alle 14 — e nessuno se n'era accorto perché *sbagliavano
+  tutte insieme*, quindi la lista restava ordinata e plausibile. Lo ha visto
+  Mattia il 23/10/2026. ⚠️ Le due fonti sbagliavano per lo stesso motivo: The
+  Odds API dà un istante **UTC** e lo formattavamo in `Europe/London` *"come
+  football-data"*, e football-data pubblica la colonna `Time` **in ora
+  inglese** e la copiavamo così com'era. ⚠️⚠️ Londra è un'ora indietro rispetto
+  a Roma **tutto l'anno** (Regno Unito e UE cambiano l'ora negli stessi due
+  giorni), quindi lo scarto è fisso: non va calcolato sul periodo. ⚠️ E un
+  orario che cambia può cambiare **il giorno**: le 23:30 inglesi sono lo 00:30
+  del giorno dopo, e un giorno sbagliato è peggio di un'ora sbagliata.
+  La conversione vive in `btscout/lib/date.js`, in un posto solo.
+- **Un dato sbagliato tutto insieme non si vede.** Corollario del punto sopra,
+  e vale oltre le date: un errore **sistematico** non rompe l'ordinamento, non
+  crea buchi e non fa sbagliare i confronti interni — quindi passa i controlli
+  che guardano la coerenza. Si trova solo confrontando con **l'esterno**: qui è
+  bastato chiedere a The Odds API l'istante grezzo e convertirlo a mano.
 

@@ -19,6 +19,10 @@
 import { sql, chiudi } from '../lib/db.js';
 import { CAMPIONATI, parseCsv, parseData, normalizzaSquadra } from './import-storico.js';
 import { scaricaDaFootballData } from '../lib/rete.js';
+// ⚠️⚠️ **La colonna `Time` di football-data è in ora INGLESE**, non italiana:
+// senza la conversione tutto il calendario risultava indietro di un'ora
+// (trovato da Mattia il 23/10/2026). Il perché sta in `lib/date.js`.
+import { daInglese } from '../lib/date.js';
 
 const ESEGUI = process.argv.includes('--esegui');
 
@@ -49,13 +53,17 @@ const scartate = {};
 const righe = [];
 for (const r of grezze) {
   if (!CAMPIONATI[r.Div]) { scartate[r.Div] = (scartate[r.Div] || 0) + 1; continue; }
-  const data = parseData(r.Date);
-  if (!data || !r.HomeTeam || !r.AwayTeam) continue;
+  const dataInglese = parseData(r.Date);
+  if (!dataInglese || !r.HomeTeam || !r.AwayTeam) continue;
+  // ⚠️ Si converte **data e ora insieme**: alle 23:30 inglesi corrisponde lo
+  // 00:30 del giorno dopo, e spostare solo l'ora lascerebbe la partita nel
+  // giorno sbagliato — che è peggio.
+  const { data, ora } = daInglese(dataInglese, r.Time?.match(/^\d{2}:\d{2}$/) ? r.Time : null);
   const riga = {
     div: r.Div,
     campionato: CAMPIONATI[r.Div],
     data,
-    ora: r.Time?.match(/^\d{2}:\d{2}$/) ? r.Time : null,
+    ora,
     casa: normalizzaSquadra(r.HomeTeam.trim(), r.Div),
     trasferta: normalizzaSquadra(r.AwayTeam.trim(), r.Div),
   };

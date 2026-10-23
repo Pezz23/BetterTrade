@@ -40,6 +40,7 @@ import { CAMPIONATI } from './import-storico.js';
 // elenca i file che si scaricano da football-data, e infilarci la Champions
 // farebbe cercare un CSV che non esiste. Il nome sta dov'è la competizione.
 import { COMPETIZIONI } from '../lib/espn.js';
+import { dataOraItaliana } from '../lib/date.js';
 
 const ESEGUI = process.argv.includes('--esegui');
 // Un campionato per volta: ogni chiamata costa un credito, e quando il DNS ne
@@ -59,13 +60,12 @@ const validi = new Map();
 for (const r of await sql`select div, casa as sq from partite where data > current_date - 730 group by div, casa`)
   (validi.get(r.div) || validi.set(r.div, new Set()).get(r.div)).add(r.sq);
 
-// Data e ora nel fuso del Regno Unito, come football-data.
-function dataOraUK(iso) {
-  const d = new Date(iso);
-  const f = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
-  const p = Object.fromEntries(f.formatToParts(d).map(x => [x.type, x.value]));
-  return { data: `${p.year}-${p.month}-${p.day}`, ora: `${p.hour === '24' ? '00' : p.hour}:${p.minute}` };
-}
+// ⚠️⚠️ **L'ora è quella ITALIANA** (23/10/2026). Qui c'era scritto *"nel fuso
+// del Regno Unito, come football-data"*, e l'intenzione era giusta — le due
+// fonti devono dire la stessa ora — ma il fuso scelto era quello sbagliato:
+// Londra è un'ora indietro rispetto a Roma tutto l'anno, e il calendario
+// mostrava le partite delle 15 alle 14. Adesso **tutt'e due** convertono a
+// Roma, e la conversione sta in `lib/date.js`, una volta sola.
 
 const media = v => v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
 const massimo = v => v.length ? Math.max(...v) : null;
@@ -130,7 +130,7 @@ for (const div of daFare) {
     }
     const abbastanza = qo.length >= 3;
 
-    const { data, ora } = dataOraUK(ev.commence_time);
+    const { data, ora } = dataOraItaliana(ev.commence_time);
     righe.push({
       div, campionato: CAMPIONATI[div] ?? COMPETIZIONI[div]?.nome, data, ora, casa, trasferta, fonte: 'odds-api',
       avg_ap_1: media(q1), avg_ap_x: media(qx), avg_ap_2: media(q2),
