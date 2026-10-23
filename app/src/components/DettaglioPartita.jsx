@@ -11,6 +11,15 @@ import BarraPartita from './BarraPartita'
 import { usaVpm } from '../hooks/usaVpm'
 import { valutaPartita, vociPesate, verso, PESI, ETICHETTE, NOMI_STRATI, PESI_STRATI, VPM_NETTO } from '../lib/vpm'
 import { golAttesi, SOGLIE_OVER, consiglioGg, FIDUCIA_GG, fasciaGol, tagliGol, intervalloGol } from '../lib/gol'
+import { usaConteggi } from '../hooks/usaConteggi'
+import { atteso, pOltre, sogliaCentrale, NOMI, MISURA } from '../lib/conteggi'
+// ⚠️⚠️ **Dove si vede il blocco di angoli e cartellini.** Solo in Champions,
+// per scelta di Mattia (*"proviamo a metterlo per ora solo nelle partite di
+// champion"*), ed è anche l'unico posto dove regge: lì l'archivio è nostro,
+// preso da ESPN, e le due squadre si chiamano come le chiamiamo noi. In Serie
+// A i conteggi ci sono ma i nomi vengono da football-data: lo stesso club
+// nelle due competizioni è ancora due squadre diverse.
+const CON_CONTEGGI = new Set(['UCL'])
 
 // La scheda di una partita: tutto quello che sappiamo, in blocchi.
 // Pensata prima per il telefono — una colonna, numeri grandi, niente muri di
@@ -394,6 +403,9 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
         </Blocco>
       )}
 
+      {/* ── 3-bis. Angoli e cartellini ─────────────────────────────── */}
+      <Conteggi p={p} />
+
       {forma && <>
 
         {/* ── 4. La classifica ──────────────────────────────────────── */}
@@ -688,5 +700,107 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
         )}
       </div>
     </div>
+  )
+}
+
+/**
+ * ⚽ ANGOLI E CARTELLINI — quello che l'archivio sa, e quanto ne sa.
+ *
+ * ⚠️⚠️ **È un blocco DESCRITTIVO, non un consiglio, e la differenza è
+ * misurata.** Sulla soglia centrale il modello indovina il 54,0% in Champions
+ * contro una base del 53,1%: **dentro il rumore**. In Serie A fa +4,1 punti,
+ * ma lì il blocco non si vede (i nomi delle squadre vengono da football-data e
+ * i conteggi da ESPN: lo stesso club è ancora due squadre diverse). Quindi
+ * niente verde, niente «giocata consigliata» — solo i numeri e la loro misura
+ * scritta sotto. È la stessa regola del verde dei gol: *«più del solito», non
+ * «giocata vincente»*.
+ *
+ * ⚠️ **E si dice da dove vengono**: questi non sono prezzi di mercato, sono
+ * **solo storico**. Nessun bookmaker ha detto la sua, al contrario
+ * dell'attendibilità. Chi legge deve saperlo senza chiederlo.
+ */
+function Conteggi({ p }) {
+  const attivo = CON_CONTEGGI.has(p.div)
+  const dati = usaConteggi(attivo ? p.div : null)
+  if (!attivo || !dati?.lega) return null
+  const sc = dati.squadre?.[p.casa], st = dati.squadre?.[p.trasferta]
+  // ⚠️ Senza storia non si mostra niente. Un blocco con «—» dappertutto
+  // occuperebbe mezza schermata per dire che non sa, e la scheda è lunga.
+  if (!sc || !st || !sc.nCasa || !st.nFuori) return null
+
+  const mercati = ['angoli', 'cartellini'].map(mercato => {
+    const chiave = mercato === 'angoli' ? 'angoli' : 'cartellini'
+    const lega = { casa: Number(dati.lega[`${chiave}_casa`]), trasferta: Number(dati.lega[`${chiave}_trasferta`]) }
+    const a = atteso({
+      casa: { fatti: { m: sc[mercato].fattiCasa, n: sc.nCasa }, subiti: { m: sc[mercato].subitiCasa, n: sc.nCasa } },
+      trasferta: { fatti: { m: st[mercato].fattiFuori, n: st.nFuori }, subiti: { m: st[mercato].subitiFuori, n: st.nFuori } },
+      lega,
+    })
+    const soglia = sogliaCentrale(mercato, a.totale)
+    return { mercato, a, soglia, p: pOltre(soglia, a.totale), lega,
+      mediaLega: lega.casa + lega.trasferta }
+  })
+
+  const n1 = (x) => (x == null ? '—' : Number(x).toFixed(1).replace('.', ','))
+  const n2 = (x) => (x == null ? '—' : Number(x).toFixed(2).replace('.', ','))
+
+  return (
+    <Blocco titolo="Angoli e cartellini" icona="andamento" extra="solo storico" sottolinea>
+      {mercati.map(({ mercato, a, soglia, p: prob, mediaLega }) => (
+        <div key={mercato} style={{ marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+            <Etichetta>{NOMI[mercato]}</Etichetta>
+            {/* ⚠️ Il totale atteso accanto alla media della competizione: da
+                solo un «8,9» non dice se è tanto o poco, e il confronto è
+                l'unica cosa che lo rende leggibile. */}
+            <span style={{ fontFamily: F.mono, fontSize: S.base, color: C.spento }}>
+              competizione <b style={{ color: C.testo }}>{n1(mediaLega)}</b>
+            </span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr)',
+            gap: 8, alignItems: 'center', marginTop: 6 }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: F.mono, fontSize: S.grande, fontWeight: 700, color: C.testo }}>{n1(a.casa)}</div>
+              <div style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco }}>IN CASA</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: F.mono, fontSize: S.evidenza, fontWeight: 700, color: C.oro }}>{n1(a.totale)}</div>
+              <div style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco }}>ATTESI</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: F.mono, fontSize: S.grande, fontWeight: 700, color: C.testo }}>{n1(a.trasferta)}</div>
+              <div style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco }}>FUORI</div>
+            </div>
+          </div>
+          {/* ⚠️ **Una soglia sola, quella vicina al totale atteso.** Sulle altre
+              il modello dice «è tanto» o «è poco», che si vede anche a occhio:
+              mostrarle tutte e cinque darebbe cinque numeri di cui quattro
+              inutili, e l'aria di saperne più di quanto ne sa. */}
+          <div style={{ fontFamily: F.sans, fontSize: S.base, color: C.spento, marginTop: 5, textAlign: 'center' }}>
+            oltre {n1(soglia)} nel{' '}
+            <b style={{ color: C.testo, fontFamily: F.mono }}>{(prob * 100).toFixed(0)}%</b> dei casi
+          </div>
+        </div>
+      ))}
+
+      {/* le medie da cui esce tutto, perché il numero sopra si possa controllare */}
+      <div style={{ borderTop: `1px solid ${C.bordoChiaro}`, paddingTop: 8, marginTop: 2,
+        fontFamily: F.mono, fontSize: S.micro, color: C.fioco, lineHeight: 1.7 }}>
+        <div>{p.casa} in casa · angoli {n2(sc.angoli.fattiCasa)} fatti, {n2(sc.angoli.subitiCasa)} concessi ·
+          {' '}gialli {n2(sc.cartellini.fattiCasa)} · <b style={{ color: C.spento }}>{sc.nCasa} partite</b></div>
+        <div>{p.trasferta} fuori · angoli {n2(st.angoli.fattiFuori)} fatti, {n2(st.angoli.subitiFuori)} concessi ·
+          {' '}gialli {n2(st.cartellini.fattiFuori)} · <b style={{ color: C.spento }}>{st.nFuori} partite</b></div>
+      </div>
+
+      {/* ⚠️⚠️ La misura, scritta accanto al numero che descrive. Senza, questo
+          blocco sembrerebbe affidabile quanto l'attendibilità, e non lo è. */}
+      <div style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco, lineHeight: 1.6, marginTop: 8 }}>
+        ⚠️ <b style={{ color: C.spento }}>Solo storico</b>: qui nessun bookmaker ha detto la sua, al contrario
+        dell&apos;attendibilità. Provato su tutto l&apos;archivio camminando nel tempo, in Champions indovina il{' '}
+        {(MISURA.UCL.angoli.nostra * 100).toFixed(1).replace('.', ',')}% contro una base del{' '}
+        {(MISURA.UCL.angoli.base * 100).toFixed(1).replace('.', ',')}%: serve a sapere{' '}
+        <b style={{ color: C.spento }}>cosa succede di solito</b>, non a decidere una giocata.
+      </div>
+    </Blocco>
   )
 }
