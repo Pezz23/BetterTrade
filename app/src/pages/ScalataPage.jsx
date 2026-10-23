@@ -58,7 +58,7 @@ const nomeGiorno = (d) => d ? GIORNI[new Date(d + 'T12:00:00').getDay()] : ''
 function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumulato, colore, classifiche,
                 quote, setQuote, perc, setPerc, esito, setEsito, onToglie, prossima, onAggiunge,
                 onQuota = null, onSpezza = null, onApri = null, onManuale = null, tocca = true,
-                stelleDi = () => 0, anteprima = false }) {
+                stelleDi = () => 0, anteprima = false, fissato = false, onFissa = null }) {
   // ⚠️ La quota della schedina è il **prodotto delle quote modificate**, non di
   // quelle scaricate: Mattia gioca su book diversi e con i bonus, e una pagina
   // che mostra la quota del consenso gli racconterebbe un piano che non è il suo.
@@ -71,6 +71,24 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
   // ⚠️ L'esito vince sul colore del blocco: a piano finito conta com'è andata,
   // non quale fascia era.
   const tinta = esito === 'vinto' ? C.verde : esito === 'perso' ? C.rosso : colore
+
+  /**
+   * ⚠️⚠️ **«Fissa passo» NON è un esito**, e per questo è un tasto a parte
+   * (Mattia, 23/10/2026). L'esito dice *com'è andata*; questo dice *questo
+   * passo mi va bene, fammi vedere il prossimo*. Si comporta come l'esito —
+   * si accende, si spegne ritoccandolo — ma non racconta niente di falso sul
+   * risultato.
+   * ⚠️ **Compare anche in anteprima**, e deve: senza, fissato il passo 2 non
+   * ci sarebbe modo di arrivare al 3, e la catena si fermerebbe al secondo.
+   */
+  const tastoFissa = onFissa && !esito && tocca && (
+    <button onClick={onFissa} style={{
+      flex: 1, padding: '6px 0', fontFamily: F.sans, fontSize: S.base, cursor: 'pointer',
+      color: fissato ? C.viola : C.spento,
+      background: fissato ? `linear-gradient(${alpha(C.viola, 0.14)},${alpha(C.viola, 0.14)}), ${C.card}` : C.card,
+      border: `1px solid ${alpha(C.viola, fissato ? 0.5 : 0.18)}`,
+    }}>{fissato ? '✓ fissato' : 'fissa passo'}</button>
+  )
 
   return (
     <Card style={{ marginBottom: 8, borderColor: alpha(tinta, 0.35) }}>
@@ -266,12 +284,13 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
           numero lì vorrebbe dire inventarlo, ed è esattamente il motivo per
           cui i passi successivi restano nascosti. Qui si vede **cosa** si
           gioca, non **quanto**. */}
-      {anteprima ? (
+      {anteprima ? (<>
         <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${alpha(C.testo, 0.1)}`,
           fontFamily: F.sans, fontSize: S.minuta, color: C.fioco, textAlign: 'center', lineHeight: 1.5 }}>
-          staccato a mano · la puntata si calcola quando chiudi il passo {numero - 1}
+          la puntata si calcola quando chiudi il passo {numero - 1}
         </div>
-      ) : <>
+        {tastoFissa && <div style={{ display: 'flex', marginTop: 8 }}>{tastoFissa}</div>}
+      </>) : <>
 
       {/* ── Sotto la linea: puntata · incassato · utile ──────────────────── */}
       {/* ⚠️ I nomi sono quelli che usa Mattia (15/10/2026): *puntata* e non
@@ -339,6 +358,10 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
             border: `1px solid ${alpha(col, esito === e ? 0.5 : 0.18)}`,
           }}>{e === 'vinto' ? '✓ vinto' : e === 'perso' ? '✗ perso' : 'da giocare'}</button>
         ))}
+        {/* ⚠️ A destra di «da giocare», come chiesto: è il gesto che viene
+            dopo, quando il passo è composto e non c'è ancora niente da dire
+            sull'esito. */}
+        {tastoFissa}
       </div>}
       </>}
     </Card>
@@ -759,14 +782,52 @@ export default function ScalataPage() {
    * ⚠️ Si scorre finché la catena regge: due tagli di fila mostrano tre pezzi,
    * ma un pezzo staccato dal passo 7 **non** tira fuori anche i sei in mezzo.
    */
+  /**
+   * ⚠️⚠️ **I passi fissati a tavolino** (Mattia, 23/10/2026: *"devo poter
+   * fissare un passo e l'app mi mostra il passo 2 — lo scopo è programmare a
+   * tavolino tutto il percorso"*).
+   *
+   * ⚠️ Si tiene **un id, non l'indice del passo**: nel piano quello della
+   * prima gamba (la stessa chiave di `tagli`), a scalata aperta quello della
+   * riga salvata. Il motivo è preciso — spezzare un passo sposta di uno gli
+   * indici di tutti quelli dopo, quindi un elenco di indici si ritroverebbe a
+   * segnare il passo sbagliato **in silenzio**. È il limite che `aggiunte` ha
+   * ancora e che qui non si ripete.
+   * ⚠️⚠️ **La chiave porta davanti da quale dei due mondi viene** (`p:` o
+   * `s:`): sono due tabelle diverse, due contatori diversi, e un id di
+   * `scalata_passi` può benissimo valere quanto un id di `prossime_partite`.
+   * Senza il prefisso, aprendo una scalata un passo si sarebbe trovato fissato
+   * da solo — una volta ogni tanto, senza che si capisse perché.
+   * ⚠️ Non si salva da nessuna parte, come `tagli` e `aggiunte`: è un modo di
+   * guardare, non un fatto da registrare.
+   */
+  const [fissati, setFissati] = useState([])
+  const chiaveFissa = (i) => (aperta
+    ? (reg.passi[i]?.id != null ? `s:${reg.passi[i].id}` : null)
+    : (passi[i]?.partite?.[0]?.id != null ? `p:${passi[i].partite[0].id}` : null))
+  const fissa = (i) => { const k = chiaveFissa(i); if (k) setFissati(t => t.includes(k) ? t.filter(x => x !== k) : [...t, k]) }
+
   const limiteVisibile = useMemo(() => {
     const staccato = aperta
       ? (i) => reg.passi[i] && Number(reg.passi[i].numero) % 1 !== 0
       : (i) => passi[i] && tagli.includes(passi[i].partite?.[0]?.id)
+    // ⚠️ Fissare il passo `i` apre il passo `i+1`: è una cosa diversa dallo
+    // staccato, che si apre da sé. Due condizioni, non una.
+    // ⚠️ **Vale anche a scalata aperta** (Mattia, 23/10/2026: *"magari voglio
+    // portarmi avanti"*): lì il passo dopo si vede comunque senza soldi, e le
+    // sue quote si possono già sistemare — la cassa resta quella che arriva
+    // dall'esito, che è l'unica cosa che non si può anticipare.
+    const fissato = (i) => {
+      const k = aperta
+        ? (reg.passi[i]?.id != null ? `s:${reg.passi[i].id}` : null)
+        : (passi[i]?.partite?.[0]?.id != null ? `p:${passi[i].partite[0].id}` : null)
+      return !!k && fissati.includes(k)
+    }
+    const quanti = aperta ? reg.passi.length : passi.length
     let i = frontiera
-    while (staccato(i + 1)) i++
+    while (i + 1 < quanti && (staccato(i + 1) || fissato(i))) i++
     return i
-  }, [aperta, reg.passi, passi, tagli, frontiera])
+  }, [aperta, reg.passi, passi, tagli, fissati, frontiera])
 
   // ⚠️⚠️ **Le casse si RICALCOLANO dalla catena dei passi**, sempre: né lette
   // dal database né aggiornate a ogni esito. È quello che permette di togliere
@@ -1185,6 +1246,7 @@ export default function ScalataPage() {
                applicato alle casse erano due numeri diversi (al primo passo
                della catena: tutto l'utile contro il 70%). */
             <Passo key={riga.id} numero={i + 1} gambe={gambe} giorno={riga.giorno} ora={gambe[0]?.ora?.slice(0, 5)} stelleDi={votiDi} anteprima={inAnteprima}
+              fissato={fissati.includes(chiaveFissa(i))} onFissa={() => fissa(i)}
               posta={p} postaIniziale={posta} accumulato={acc} colore={coloreDi(i)} classifiche={classifiche}
               quote={quote} setQuote={setQuote} onApri={setApertaId} tocca={isAdmin}
               onQuota={(id, v) => reg.cambiaQuota(id, riga.id, v)}
@@ -1260,6 +1322,10 @@ export default function ScalataPage() {
                quindi `giorno + ora` ne faceva due chiavi uguali — e React con
                due chiavi uguali ridisegna la cosa sbagliata, in silenzio. */
             <Passo key={f.partite[0]?.id ?? f.giorno + f.ora} numero={i + 1} gambe={f.partite} giorno={f.giorno} ora={f.ora} stelleDi={votiDi} anteprima={inAnteprima}
+              /* ⚠️ Solo nel piano: a scalata aperta i passi si scoprono con
+                 l'esito, che lì è un fatto registrato e non una simulazione. */
+              fissato={fissati.includes(chiaveFissa(i))}
+              onFissa={() => fissa(i)}
               posta={p} postaIniziale={posta} accumulato={acc} colore={coloreDi(i)} classifiche={classifiche}
               onApri={setApertaId} tocca={isAdmin} prossima={prossimaDi(i)}
               onAggiunge={() => { const n = prossimaDi(i); if (n) setAggiunte(a => ({ ...a, [i]: [...(a[i] || []), n.id] })) }}

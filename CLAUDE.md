@@ -211,6 +211,7 @@ non tutti**.
 
 | file | si apre quando | la conclusione che non va persa |
 |---|---|---|
+| `note/conteggi.md` | angoli e cartellini, o si tocca `lib/conteggi.js` | **Descrivono, non consigliano**, e la differenza è **misurata per competizione** (`MISURA`, venti voci): in otto su venti il modello sta **sotto** la base, e la scheda lo scrive. Meglio sui **cartellini** che sugli angoli. ⚠️ La tabella la **stampa** `prova-conteggi.js --tabella`: non si ricopia a mano. ⚠️ Prevedere gli angoli dai **tiri** è peggio (Serie A 49,4% contro 56,1%), al contrario di quanto vale per i gol. |
 | `note/criterio.md` | si tocca attendibilità, VPM, scelta, voto, o si sceglie cosa giocare | **L'attendibilità è la probabilità secondo il consenso**, non "quanto spesso vince". Si gioca il segno secco, mai la X; soglie spin **75/72/65**. ⚠️ **La selezione riduce la perdita, non la ribalta**: il miglior indicatore rende 97,8%, e nessuna fascia ha ROI positivo dimostrabile. **La resa dice se il prezzo conviene, non cosa giocare.** VPM **non entra** nella selezione delle spin. ⚠️⚠️ **Il VOTO è una PAGELLA 0-10 dal 22/10/2026** — `10 × att − penalità sul disaccordo + bonus limitato sul prezzo` — e **non è una probabilità**: serve a ordinare e filtrare. Prima era `resa × fattore(VPM)`, che con la quota dal consenso diceva solo `1/margine`: misurato, era il peggior selettore (49,0% di azzeccate contro il 60,5% dell'attendibilità). `scelta` è **null** quando il campo contraddice il mercato. |
 | `note/gol.md` | si tocca `lib/gol.js`, i consigli over/GG, il blocco ⚽ | Il **modello** non usa quote; il **consiglio sul 2,5 sì** e passa da 64,8% a **71,2%** di volte giuste (+20 punti sulla base: **il numero migliore del progetto**). ⚠️ Il verde dice *"più del solito"*, **non** *"giocata vincente"*. Il GG è quasi imprevedibile: 54,0% contro una base di 53,2%, e **non è colpa del modello**. |
 | `note/andamento.md` | si tocca la pagina Andamento o `sql/21-23` | **I conteggi li fa il database**: 101.237 righe, e PostgREST ne dà 1000 **in silenzio**. Le soglie sono **parametri** delle funzioni. La tabella `andamento` è **derivata** e si ricalcola in coda a ogni importazione. |
@@ -346,6 +347,10 @@ node --env-file=.env scripts/prova-gg.js                   # il Goal/NoGoal: qua
 node --env-file=.env scripts/prova-consiglio-gol.js --stagioni=8   # i due consigli sotto la giocata
 #   con --mercato la riga 2,5 usa la quota invece del modello
 node --env-file=.env scripts/prova-dispersione.js --stagioni=8    # l'attendibilità vale meno se i book litigano?
+node --env-file=.env scripts/prova-conteggi.js --div=I1,UCL --k=12
+#   angoli e cartellini: cammina nel tempo e confronta con la BASE, non col caso
+#   ⚠️ `--tabella` stampa `MISURA` pronta per `app/src/lib/conteggi.js`
+#   pomelli: --mercato=angoli|cartellini --base=angoli|tiri|misto --finestra=10
 node --env-file=.env scripts/prova-soglie-scalata.js --dettaglio=61
 #   le soglie della card SELEZIONE: partite, a giornata, azzeccate, resa, e
 #   ⚠️ **quanti weekend reggono un passo e quanti ne reggono due** — che è la

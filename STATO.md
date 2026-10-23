@@ -59,6 +59,11 @@ stretta). Tutte verificate dal database subito dopo.
 
 | | |
 |---|---|
+| **le due automazioni non sono installate** | verificato il 23/10 con `launchctl`: **nessun agente**. Né l'orario (`aggiornamento-orario.plist`, solo risultati, zero crediti) né quello del martedì/venerdì (`aggiornamento.plist`). Due comandi ciascuno, in testa ai file |
+| **i falli e l'arbitro** | i due ingressi che la letteratura indica per i cartellini — il mercato dove il modello rende di più. I **falli** ESPN li dà già (`foulsCommitted`) e li buttiamo via, come i cartellini fino al 22/10. L'**arbitro** sta in football-data, ma ⚠️ **la colonna `Referee` non è stata verificata**: il 23/10 il DNS di quel sito era giù tutto il giorno |
+| **U2 — over 1,5 e 3,5 a schermo** | `pOver` li calcola già, la scheda consiglia solo il 2,5. **Due ore, nessun dato nuovo**: è il pezzo col miglior rapporto fra lavoro e risultato rimasto |
+| **il routing** | era *"da fare prima di aggiungere schermate nuove"*, e da allora ne sono arrivate tre: Bet Builder, le due card dei conteggi, la barra dei campionati. Più si aspetta, più si ricabla |
+| **Europa e Conference senza quote** | The Odds API non ha **nessuna** partita futura per loro (ricontrollato il 23/10): accenderle costerebbe crediti per zero righe. Le voci sono pronte e commentate in `lib/odds-api.js` |
 | **l'esito automatico del Bet Builder** | fattibile, ma prima la regola *"questa giocata è arrivata"* deve **spostarsi** da `btscout/lib/ricostruisci.js` a `app/src/lib/`, **non essere copiata**: due versioni direbbero prima o poi cose diverse sulla stessa schedina |
 | **idea 9** | `CompilaPerQuota` riempie le caselle **vuote** di una spin: va capito se Mattia voleva compilarne una **intera**. Domanda ancora senza risposta |
 | **«solo sopra soglia»** | tolto il 22/10 insieme alle slitte, **deciso da me**: diceva la stessa cosa di «attendibilità ≥» in lingua spin. Una riga per rimetterlo |
@@ -257,6 +262,81 @@ possesso, **angoli** e **cartellini**. Il dettaglio sta in `note/dati.md`.
 | **`scripts/aggiorna-risultati.js`** + **`aggiornamento-orario.plist`** | l'aggiornamento **orario**: solo i risultati, **zero crediti** |
 | **`lib/campionati.js`** (app) | sigle e nomi delle cinque competizioni, così la barra non mostra un codice grezzo |
 | ⚠️ **tiri in porta** | **c'erano già**: `tirip_*`, pieni al 91-100% su tutti e quindici i campionati. Non era un dato da prendere, era un dato da usare |
+
+### ✅ FINITO — l'archivio è passato da 54.249 a 67.515 partite (23/10)
+
+Tutti e cinque i recuperi sono arrivati in fondo. **+24% in una notte**, con
+angoli, cartellini, tiri, tiri in porta e possesso.
+
+| | partite | da | con statistiche |
+|---|---|---|---|
+| **Champions** | 1.823 | 2016 | **93%** |
+| **Europa League** | 3.090 | 2016 | 62% |
+| **Conference** | 765 | 2021 | **100%** |
+| **Olanda 2** | 3.991 | 2016 | 60% |
+| **Giappone J1** | 3.597 | 2016 | **24%** |
+
+⚠️ **Le statistiche sono parziali dove ESPN non ha i riepiloghi vecchi.** I gol
+ci sono sempre; angoli, cartellini e tiri no. Non tocca la scheda partita
+(`conteggi_dati()` guarda tre anni), **ma tocca chi vorrà misurare in
+profondità**: sulla J1 il campione utile è quello recente, non tutto.
+
+⚠️ Il primo tentativo era **morto a metà Europa League** con `ECONNRESET`: non
+era ESPN, era il pooler di Supabase che chiude la connessione dopo un'ora di
+scritture. La scrittura sta ora in una ripetizione con attesa crescente — si
+può riprovare perché è idempotente. **Trappola 44.**
+
+### 🕐 IL FUSO ERA SBAGLIATO — tutto il calendario indietro di un'ora (23/10)
+
+Trovato da Mattia: *"le partite delle 15 le segna alle 14"*. Vero, e
+**sistematico**: The Odds API dà un istante UTC e lo formattavamo in
+`Europe/London` *"come football-data"*; football-data pubblica `Time` **in ora
+inglese** e la copiavamo. Londra è un'ora indietro rispetto a Roma **tutto
+l'anno** (UK e UE cambiano l'ora negli stessi due giorni).
+
+La conversione vive ora in `btscout/lib/date.js`, in un posto solo, con **due**
+funzioni: da un istante si passa per il fuso, da un'ora inglese si somma l'ora.
+⚠️ E si converte **data e ora insieme**: le 23:30 inglesi sono lo 00:30 del
+giorno dopo.
+
+**Dati rimessi a posto** (backup prima): 245 partite future reimportate dalla
+fonte — gli id restano, quindi le 57 stelle e i 2 flag sono intatti — più le 12
+gambe delle schedine salvate, che si erano portate dietro la copia sbagliata.
+
+⚠️⚠️ **Trappola 45, che vale più del difetto**: *un dato sbagliato tutto
+insieme non si vede*. Un errore sistematico non rompe l'ordinamento, non crea
+buchi e non fa sbagliare i confronti interni — passa ogni controllo di
+coerenza. Si trova **solo confrontando con l'esterno**: qui è bastato chiedere
+a The Odds API l'istante grezzo e convertirlo a mano.
+
+### 🧮 U1 — misurato su VENTI competizioni, e la scheda ristrutturata (23/10)
+
+`prova-conteggi.js --tabella` **stampa** la tabella nella forma che
+`lib/conteggi.js` vuole: niente numeri ricopiati a mano. La soglia scelta è
+quella con la **base più vicina al 50%**, l'unica dove un modello può
+aggiungere qualcosa.
+
+⚠️⚠️ **In otto competizioni su venti il modello sta SOTTO la base**, e la
+scheda lo scrive in ambra invece di tacere. Dove va meglio: cartellini in
+Premier (+4,0), Scozia (+3,4), Francia (+2,7); angoli in Serie A (+4,1).
+⚠️ **Sui cartellini rende più che sugli angoli**, al contrario di quanto
+sembrava misurando solo la Champions.
+
+**Provata anche la base «tiri»** (la letteratura dice che i tiri portano
+informazione, e sui gol qui avevano già vinto): **sugli angoli no** — in Serie
+A 49,4% contro il 56,1% della storia degli angoli. ⚠️ La prima volta le tre
+varianti davano numeri **identici**: la query non leggeva i tiri e la prova
+ripiegava in silenzio. *Un interruttore che non morde è peggio di uno che
+manca, perché fa credere di aver misurato.*
+
+**La scheda partita**, nell'ordine chiesto da Mattia: testata (data e ora nella
+riga di campionato e stelle; quattro voci coi divisori **O/U · GG/NG · ANGOLI ·
+GIALLI** spartite con `flex: 1`) → forma (gol fatti|subiti accanto al nome, via
+la sezione in fondo: ~90px) → classifica → gol attesi **a scomparsa** →
+**due card** angoli e cartellini, a scomparsa → scontri → VPM.
+⚠️ `Blocco` ha imparato `sotto` (la parte che si apre) e `avviso` (visibile
+anche da chiusa): dove il modello non batte la base, nascondere la cautela
+farebbe leggere quei numeri come se fossero l'attendibilità.
 
 ### ⏳ Il recupero storico è PARTITO e gira da solo (22/10, 23:15)
 
