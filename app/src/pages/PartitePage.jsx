@@ -467,7 +467,7 @@ export default function PartitePage() {
           a metà schermo ciascuno e le due file non si assomiglierebbero più. */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 12 }}>
         {[ORDINI.slice(0, 3), ORDINI.slice(3)].map((fila, i) => (
-          <div key={i} style={{ display: 'flex', gap: 5, justifyContent: 'center' }}>
+          <div key={i} style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
             {fila.map(o => {
               const on = ordine === o.id
               return (
@@ -476,16 +476,31 @@ export default function PartitePage() {
                    perché a volte la vuoi bassa. */
                 <button key={o.id} onClick={() => { if (on) setCrescente(v => !v); else { setOrdine(o.id); setCrescente(false) } }}
                   style={{
-                    ...pillola(on, o.colore), flex: `0 0 ${TERZO}`, padding: '8px 4px',
-                    fontSize: S.corpo, whiteSpace: 'nowrap',
+                    // ⚠️ Più bassi del 30% (Mattia, 23/10/2026). Si stringe il
+                    // **riempimento**, non la larghezza: le due file restano
+                    // allineate sui terzi, che è quello che le fa sembrare una
+                    // cosa sola invece di due righe scollegate.
+                    // ⚠️ Spigolo da **card**, non da pastiglia (Mattia,
+                    // 23/10/2026: *"più quadrati, come Oggi/Domani"*). `R.g` è
+                    // lo stesso raggio delle quattro finestre temporali qui
+                    // sopra: due comandi della stessa pagina con due forme
+                    // diverse si leggono come due cose diverse.
+                    // ⚠️ Si sovrascrive **solo qui**, dopo `pillola`: quella
+                    // la usano anche «filtri», «tutti d'accordo» e le
+                    // targhette, che tonde ci stanno bene.
+                    // ⚠️ La misura **non cambia**: stesso riempimento, stesso
+                    // corpo, stessa larghezza di prima.
+                    ...pillola(on, o.colore), borderRadius: R.g,
+                    flex: `0 0 ${TERZO}`, padding: '4px 4px',
+                    fontSize: S.base, whiteSpace: 'nowrap',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3,
                   }}>
                   {/* ⚠️ La freccia in una casella a **larghezza fissa**, non
                       attaccata alla parola: comparendo e sparendo sposterebbe
                       il testo di nove pixel a ogni tocco, e cinque etichette
                       che ballano si notano più dell'ordine che è cambiato. */}
-                  <span style={{ width: 9, textAlign: 'center', fontFamily: F.mono,
-                    fontSize: S.minuta, color: on ? 'inherit' : 'transparent' }}>
+                  <span style={{ width: 8, textAlign: 'center', fontFamily: F.mono,
+                    fontSize: S.micro, color: on ? 'inherit' : 'transparent' }}>
                     {crescente ? '↑' : '↓'}
                   </span>
                   {o.label}
