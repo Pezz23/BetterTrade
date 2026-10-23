@@ -139,7 +139,7 @@ const DUE_RIGHE = compatta => compatta
  * compare affatto. In lista i gol attesi non sono caricati, e inventarli per
  * riempire uno spazio sarebbe peggio di lasciarlo vuoto.
  */
-function Consigli({ p, gol, compatta }) {
+function Consigli({ p, gol, compatta, conteggi = null, ultimo = false }) {
   return (
     /* ⚠️ **Vicini e separati da una riga verticale**, non ai due estremi
        (correzione di Mattia, 22/10/2026). Ai lati opposti sembravano due
@@ -148,13 +148,37 @@ function Consigli({ p, gol, compatta }) {
        *cosa farei*. ⚠️ `stretch` sul divisore: deve essere alto quanto il più
        alto dei due, e uno dei due può non avere la riga della percentuale
        (IN BILICO). */
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'stretch',
+    /* ⚠️⚠️ **Le colonne si spartiscono la riga, non si stringono al centro**
+       (Mattia, 23/10/2026). Con `justifyContent: center` le quattro voci
+       stavano appiccicate in mezzo e i due terzi ai lati restavano vuoti: ora
+       ogni voce è `flex: 1` e i divisori restano larghi un pixel, quindi le
+       colonne vengono tutte uguali e i divisori cadono nei punti giusti.
+       ⚠️ `minWidth: 0` su ogni voce: senza, una scritta lunga allargherebbe la
+       sua colonna e romperebbe l'uguaglianza invece di andare a capo. */
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'stretch',
       /* ⚠️ Lo spazio sotto i consigli è **più largo di prima** (Mattia,
          22/10/2026): i consigli e la data sono due cose diverse — *cosa
          farei* e *quando si gioca* — e stavano appiccicate come se fossero
          la stessa riga. */
-      gap: compatta ? SP.m : SP.l, marginBottom: compatta ? SP.s : SP.sez }}>
-      {[['O/U', consiglioOver(gol.over, mercatoOver25(p))], ['GG/NG', consiglioGg(gol.gg)]].map(([et, cons], i) => {
+      /* ⚠️⚠️ **Senza lo spazio grande sotto quando questa è l'ultima riga**
+         (23/10/2026). I 24px di `SP.sez` c'erano per staccare i consigli dalla
+         data, che stava sotto: spostata la data in cima, quello spazio non
+         separa più niente — teneva alta la card e basta. Era metà
+         dell'accorciamento chiesto da Mattia.
+         ⚠️ Con quattro voci lo spazio orizzontale si stringe: `SP.s` invece di
+         `SP.l`, perché i divisori contano come colonne. */
+      gap: conteggi ? SP.s : (compatta ? SP.m : SP.l),
+      marginBottom: ultimo ? 0 : (compatta ? SP.s : SP.sez) }}>
+      {[
+        ['O/U', consiglioOver(gol.over, mercatoOver25(p))],
+        ['GG/NG', consiglioGg(gol.gg)],
+        /* ⚠️⚠️ **Angoli e gialli accanto agli altri due, con gli stessi
+           divisori** (Mattia, 23/10/2026): sono quattro risposte alla stessa
+           domanda — *come viene questa partita*. ⚠️ Arrivano da fuori come i
+           consigli: la testata non calcola niente, e in lista non ci sono
+           perché lì i conteggi non sono caricati. */
+        ...(conteggi ?? []),
+      ].filter(Boolean).map(([et, cons], i) => {
         // ⚠️⚠️ **Lo scarto dalla base è il numero che rende leggibile il
         // consiglio**, e senza di lui una parola sola mente per omissione:
         // `UNDER 3,5` si avvera il 75% delle volte ma **da solo** arriva il
@@ -170,7 +194,7 @@ function Consigli({ p, gol, compatta }) {
         return (
           <Fragment key={et}>
           {i > 0 && <div style={{ width: 1, background: alpha(C.testo, 0.12) }} />}
-          <div style={{ lineHeight: 1.25, textAlign: 'center' }}>
+          <div style={{ lineHeight: 1.25, textAlign: 'center', flex: 1, minWidth: 0 }}>
             {/* ⚠️ **Ogni riga porta il nome della domanda** (Mattia, 15/10:
                 *"in bilico da solo non si capisce"*): `IN BILICO` da solo non
                 dice **su cosa**, e il Goal tace nel 65% dei casi — cioè nella
@@ -190,12 +214,17 @@ function Consigli({ p, gol, compatta }) {
               // avere lo stesso peso di uno che c'è.
               color: cons?.esito ? C.bianco : C.fioco,
             }}>{cons?.esito || 'IN BILICO'}</div>
-            {cons?.esito && scarto != null && (
+            {/* ⚠️ La percentuale si vede **anche senza lo scarto**: angoli e
+                cartellini non hanno una base per soglia con cui confrontarsi
+                (quella misurata sta nelle loro card, per competizione), ma
+                `52%` da solo è comunque il numero che si legge. Lo scarto,
+                dove c'è, resta la cosa che rende leggibile un consiglio. */}
+            {cons?.esito && cons?.p != null && (
               <div style={{ fontFamily: F.mono, fontSize: compatta ? 9 : 10, whiteSpace: 'nowrap', color: C.spento }}>
-                {(cons.p * 100).toFixed(0)}%{' '}
-                <span style={{ color: tinta, fontWeight: 700 }}>
-                  {scarto >= 0 ? '+' : ''}{(scarto * 100).toFixed(0)}
-                </span>
+                {(cons.p * 100).toFixed(0)}%
+                {scarto != null && <span style={{ color: tinta, fontWeight: 700 }}>
+                  {' '}{scarto >= 0 ? '+' : ''}{(scarto * 100).toFixed(0)}
+                </span>}
               </div>
             )}
           </div>
@@ -275,11 +304,49 @@ export function Stella({ voti, mio, puoVotare, onVota }) {
   )
 }
 
-export default function TestataPartita({ p, cat, compatta = false, gol = null }) {
+/**
+ * ⚠️⚠️ **`senzaData` e `conteggi` li passa SOLO la scheda partita**
+ * (23/10/2026). Questa testata la usano in sette posti — la lista, la scheda,
+ * le due finestre di scelta, lo Storico, Road to weekend — e cambiarla per
+ * tutti vorrebbe dire due cose: la lista cambierebbe forma senza che nessuno
+ * l'abbia chiesto, e soprattutto i conteggi costano **una chiamata per
+ * competizione**: nella scheda è una, in una lista di duecento partite di
+ * quindici campionati sarebbero quindici.
+ * Passandoli da fuori, gli altri sei posti restano identici e non chiamano
+ * niente.
+ */
+export default function TestataPartita({ p, cat, compatta = false, gol = null,
+                                         senzaData = false, conteggi = null }) {
   const c = CATEGORIE[cat]
   const classifiche = usaClassifiche()
+  /* ⚠️ Scritta **una volta** e messa in due posti diversi a seconda di
+     `senzaData`: nella scheda la data sta nella riga del campionato, in
+     lista sotto le squadre — ma la riga è **una sola**, perché due copie
+     prima o poi mostrano due cose diverse. */
+  const dataOra = (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: SP.xl }}>
+      <span style={{ display: 'flex', alignItems: 'center', gap: SP.s, fontSize: compatta ? S.corpo : CORPO_CONSIGLIO,
+        fontWeight: 600, fontFamily: F.mono, color: C.testo }}>
+        <Icona nome="calendario" misura={13} style={{ color: C.spento }} />
+        {giorno(p.data).toUpperCase()}
+      </span>
+      {p.ora && (
+        <span style={{ display: 'flex', alignItems: 'center', gap: SP.s, fontSize: compatta ? S.corpo : CORPO_CONSIGLIO,
+          fontWeight: 600, fontFamily: F.mono, color: C.testo }}>
+          <Icona nome="ora" misura={13} style={{ color: C.spento }} />
+          {p.ora.slice(0, 5)}
+        </span>
+      )}
+    </div>
+  )
   return (
     <>
+      {/* ⚠️⚠️ **Nella scheda la data NON è qui** (Mattia, 23/10/2026): è salita
+          nella riga del campionato e delle stelle, dove c'era spazio vuoto —
+          `senzaData` dice alla testata di non disegnarla. Prima l'avevo messa
+          in cima su una riga sua, e una riga sua costa comunque altezza: il
+          punto era guadagnarne.
+          ⚠️ In lista resta sotto, com'era: lì la riga si scorre a decine. */}
       {/* ⚠️ `center` e non più `start`: con il tondo sopra il nome le due
           colonne andavano allineate in alto, ora che è in linea col nome
           vanno allineate al centro, come il blocco della giocata in mezzo. */}
@@ -384,21 +451,8 @@ export default function TestataPartita({ p, cat, compatta = false, gol = null })
           com'era prima. */}
       <div style={{ marginTop: compatta ? 9 : SP.xl, paddingTop: compatta ? SP.m : SP.l,
         borderTop: `1px solid ${C.bordoTenue}` }}>
-      {gol && <Consigli p={p} gol={gol} compatta={compatta} />}
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: SP.xl }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: SP.s, fontSize: compatta ? S.corpo : CORPO_CONSIGLIO,
-          fontWeight: 600, fontFamily: F.mono, color: C.testo }}>
-          <Icona nome="calendario" misura={compatta ? 13 : 13} style={{ color: C.spento }} />
-          {giorno(p.data).toUpperCase()}
-        </span>
-        {p.ora && (
-          <span style={{ display: 'flex', alignItems: 'center', gap: SP.s, fontSize: compatta ? S.corpo : CORPO_CONSIGLIO,
-            fontWeight: 600, fontFamily: F.mono, color: C.testo }}>
-            <Icona nome="ora" misura={compatta ? 13 : 13} style={{ color: C.spento }} />
-            {p.ora.slice(0, 5)}
-          </span>
-        )}
-      </div>
+      {gol && <Consigli p={p} gol={gol} compatta={compatta} conteggi={conteggi} ultimo={senzaData} />}
+      {!senzaData && dataOra}
       </div>
     </>
   )

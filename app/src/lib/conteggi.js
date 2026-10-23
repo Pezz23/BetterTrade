@@ -114,13 +114,54 @@ export function sogliaCentrale(mercato, totale) {
 }
 
 /**
- * Quanto vale il modello, misurato camminando nel tempo su tutto l'archivio
- * (`btscout/scripts/prova-conteggi.js`, 22/10/2026). ⚠️ Sta qui e non in una
- * stringa dentro il JSX perché **è un risultato**, e un risultato scritto a
- * mano in un angolo dell'interfaccia invecchia senza che nessuno se ne accorga.
+ * ⚠️⚠️ **QUANTO VALE IL MODELLO, COMPETIZIONE PER COMPETIZIONE.** Misurato
+ * camminando nel tempo su tutto l'archivio (`btscout/scripts/prova-conteggi.js
+ * --tabella`, 23/10/2026): niente è scritto a mano, la tabella la **stampa il
+ * banco di prova** nella forma che serve qui. Un numero misurato e poi
+ * ricopiato è un numero che può sbagliarsi in silenzio.
+ *
+ * `soglia` è quella con la **base più vicina al 50%**, cioè l'unica dove un
+ * modello può aggiungere qualcosa: dove l'over esce il 70% delle volte, dire
+ * sempre over fa 70% e nessuno lo batte.
+ * `nostra` è quante volte il verso era giusto, `base` quante ne prendeva il
+ * «dico sempre il più frequente», `n` su quante partite.
+ *
+ * ⚠️⚠️ **In parecchie competizioni `nostra` è SOTTO `base`**, e non è un
+ * errore da nascondere: lì il modello non serve, e la scheda lo scrive invece
+ * di tacere. Un numero senza il suo voto di fiducia è peggio di nessun numero.
  */
 export const MISURA = {
-  UCL: { angoli: { nostra: 0.540, base: 0.531 }, cartellini: { nostra: 0.522, base: 0.506 } },
-  I1: { angoli: { nostra: 0.561, base: 0.520 }, cartellini: { nostra: 0.653, base: 0.649 } },
-  SP1: { angoli: { nostra: 0.541, base: 0.529 }, cartellini: { nostra: 0.703, base: 0.698 } },
+  E0: { angoli: { soglia: 10.5, nostra: 0.533, base: 0.541, n: 3720 }, cartellini: { soglia: 3.5, nostra: 0.566, base: 0.526, n: 3720 } },
+  E1: { angoli: { soglia: 9.5, nostra: 0.545, base: 0.551, n: 5431 }, cartellini: { soglia: 3.5, nostra: 0.545, base: 0.527, n: 5431 } },
+  I1: { angoli: { soglia: 9.5, nostra: 0.561, base: 0.520, n: 3724 }, cartellini: { soglia: 4.5, nostra: 0.574, base: 0.556, n: 3724 } },
+  I2: { angoli: { soglia: 9.5, nostra: 0.543, base: 0.506, n: 3290 }, cartellini: { soglia: 4.5, nostra: 0.569, base: 0.556, n: 3290 } },
+  SP1: { angoli: { soglia: 9.5, nostra: 0.541, base: 0.529, n: 3757 }, cartellini: { soglia: 4.5, nostra: 0.553, base: 0.533, n: 3757 } },
+  SP2: { angoli: { soglia: 9.5, nostra: 0.544, base: 0.551, n: 4011 }, cartellini: { soglia: 4.5, nostra: 0.565, base: 0.572, n: 4011 } },
+  D1: { angoli: { soglia: 9.5, nostra: 0.521, base: 0.500, n: 2980 }, cartellini: { soglia: 3.5, nostra: 0.529, base: 0.522, n: 2980 } },
+  D2: { angoli: { soglia: 9.5, nostra: 0.524, base: 0.538, n: 2664 }, cartellini: { soglia: 4.5, nostra: 0.570, base: 0.559, n: 2664 } },
+  F1: { angoli: { soglia: 9.5, nostra: 0.518, base: 0.522, n: 3400 }, cartellini: { soglia: 3.5, nostra: 0.546, base: 0.519, n: 3400 } },
+  F2: { angoli: { soglia: 8.5, nostra: 0.565, base: 0.542, n: 3036 }, cartellini: { soglia: 3.5, nostra: 0.540, base: 0.517, n: 3036 } },
+  N1: { angoli: { soglia: 10.5, nostra: 0.543, base: 0.547, n: 2645 }, cartellini: { soglia: 2.5, nostra: 0.557, base: 0.575, n: 2645 } },
+  N2: { angoli: { soglia: 9.5, nostra: 0.547, base: 0.560, n: 2276 }, cartellini: { soglia: 2.5, nostra: 0.588, base: 0.605, n: 2276 } },
+  P1: { angoli: { soglia: 9.5, nostra: 0.537, base: 0.523, n: 2697 }, cartellini: { soglia: 4.5, nostra: 0.555, base: 0.576, n: 2697 } },
+  T1: { angoli: { soglia: 9.5, nostra: 0.508, base: 0.506, n: 2964 }, cartellini: { soglia: 4.5, nostra: 0.530, base: 0.529, n: 2964 } },
+  B1: { angoli: { soglia: 9.5, nostra: 0.511, base: 0.537, n: 2520 }, cartellini: { soglia: 3.5, nostra: 0.562, base: 0.566, n: 2520 } },
+  SC0: { angoli: { soglia: 10.5, nostra: 0.551, base: 0.537, n: 2205 }, cartellini: { soglia: 3.5, nostra: 0.548, base: 0.514, n: 2205 } },
+  UCL: { angoli: { soglia: 9.5, nostra: 0.540, base: 0.531, n: 1112 }, cartellini: { soglia: 3.5, nostra: 0.522, base: 0.506, n: 1112 } },
+  UEL: { angoli: { soglia: 9.5, nostra: 0.523, base: 0.521, n: 1125 }, cartellini: { soglia: 4.5, nostra: 0.567, base: 0.574, n: 1125 } },
+  UECL: { angoli: { soglia: 9.5, nostra: 0.543, base: 0.538, n: 208 }, cartellini: { soglia: 4.5, nostra: 0.534, base: 0.553, n: 208 } },
+  JPN1: { angoli: { soglia: 9.5, nostra: 0.556, base: 0.529, n: 753 }, cartellini: { soglia: 2.5, nostra: 0.571, base: 0.551, n: 753 } },
+}
+
+/**
+ * Il giudizio su una competizione, già pronto da leggere: `null` quando di
+ * quella competizione non si è misurato niente.
+ * ⚠️ `utile` è **falso anche in pareggio**: battere la base di zero punti vuol
+ * dire non servire, e arrotondare in su una differenza che non c'è sarebbe
+ * esattamente il modo di farsi credere.
+ */
+export function giudizio(div, mercato) {
+  const m = MISURA[div]?.[mercato]
+  if (!m) return null
+  return { ...m, utile: m.nostra > m.base, scarto: m.nostra - m.base }
 }

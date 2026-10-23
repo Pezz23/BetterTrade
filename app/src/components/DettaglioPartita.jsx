@@ -4,7 +4,7 @@ import Icona from './Icona'
 import { Etichetta, Attesa } from './ui'
 import { usaForma } from '../hooks/usaForma'
 import { striscia } from '../lib/forma'
-import TestataPartita, { CATEGORIE, Stella, Barra, pct } from './TestataPartita'
+import TestataPartita, { CATEGORIE, Stella, Barra, pct, giorno } from './TestataPartita'
 import { sigla } from '../lib/campionati'
 import { tocco } from '../lib/schermo'
 import BarraPartita from './BarraPartita'
@@ -12,14 +12,7 @@ import { usaVpm } from '../hooks/usaVpm'
 import { valutaPartita, vociPesate, verso, PESI, ETICHETTE, NOMI_STRATI, PESI_STRATI, VPM_NETTO } from '../lib/vpm'
 import { golAttesi, SOGLIE_OVER, consiglioGg, FIDUCIA_GG, fasciaGol, tagliGol, intervalloGol } from '../lib/gol'
 import { usaConteggi } from '../hooks/usaConteggi'
-import { atteso, pOltre, sogliaCentrale, NOMI, MISURA } from '../lib/conteggi'
-// ⚠️⚠️ **Dove si vede il blocco di angoli e cartellini.** Solo in Champions,
-// per scelta di Mattia (*"proviamo a metterlo per ora solo nelle partite di
-// champion"*), ed è anche l'unico posto dove regge: lì l'archivio è nostro,
-// preso da ESPN, e le due squadre si chiamano come le chiamiamo noi. In Serie
-// A i conteggi ci sono ma i nomi vengono da football-data: lo stesso club
-// nelle due competizioni è ancora due squadre diverse.
-const CON_CONTEGGI = new Set(['UCL'])
+import { atteso, pOltre, sogliaCentrale, NOMI, giudizio } from '../lib/conteggi'
 
 // La scheda di una partita: tutto quello che sappiamo, in blocchi.
 // Pensata prima per il telefono — una colonna, numeri grandi, niente muri di
@@ -66,7 +59,24 @@ const Confronto = ({ etichetta, nota, a, b, forte = false }) => {
 // motivi: l'emoji la disegna il sistema operativo, quindi ogni telefono mostra
 // un'altra figura, e resta a colori pieni accanto a un titolo che ha il suo
 // colore. Qui il segno prende il colore del titolo, come una lettera.
-const Blocco = ({ titolo, icona, extra, children, style, sottolinea }) => (
+/**
+ * Una card della scheda.
+ *
+ * ⚠️⚠️ **`sotto` è la parte che si apre** (23/10/2026, richiesta di Mattia:
+ * *"la card a scomparsa, deve mostrare fino a X, il resto a scomparsa"*).
+ * `children` si vede sempre, `sotto` dietro un tocco. Due componenti diversi
+ * per card aperte e card apribili avrebbero voluto dire due intestazioni da
+ * tenere uguali, ed è il difetto che questo progetto ha già pagato altrove.
+ * ⚠️ **Sempre chiusa all'apertura, senza memoria** (scelta di Mattia): una
+ * scheda che si apre e si chiude venti volte al giorno, con uno stato che si
+ * trascina, ti fa trovare schermate diverse senza sapere perché.
+ * ⚠️ `avviso` resta visibile **anche da chiusa**: nelle card dei conteggi è la
+ * riga che dice *"qui il modello non serve"*, e nasconderla dentro la parte
+ * chiusa farebbe sembrare quei numeri affidabili quanto l'attendibilità.
+ */
+const Blocco = ({ titolo, icona, extra, children, style, sottolinea, sotto = null, avviso = null }) => {
+  const [aperto, setAperto] = useState(false)
+  return (
   <div style={{ background: C.card, border: `1px solid ${C.bordo}`, borderRadius: 12, padding: '13px 14px', ...style }}>
     {titolo && (
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10,
@@ -79,8 +89,20 @@ const Blocco = ({ titolo, icona, extra, children, style, sottolinea }) => (
       </div>
     )}
     {children}
+    {avviso}
+    {sotto && (<>
+      {aperto && <div style={{ marginTop: 10 }}>{sotto}</div>}
+      {/* ⚠️ Il comando in fondo e largo quanto la card: è l'ultima cosa della
+          card, e un bersaglio stretto in mezzo al testo si manca col pollice. */}
+      <button onClick={() => setAperto(v => !v)} style={{
+        width: '100%', marginTop: 10, padding: '5px 0', cursor: 'pointer', background: 'transparent',
+        border: 'none', borderTop: `1px solid ${alpha(C.testo, 0.08)}`,
+        color: C.fioco, fontFamily: F.sans, fontSize: S.micro, letterSpacing: '0.06em',
+      }}>{aperto ? '⌃ meno' : '⌄ di più'}</button>
+    </>)}
   </div>
-)
+  )
+}
 
 // Cliccabile: il risultato stava solo nel `title`, cioè si vedeva col mouse
 // sopra e su telefono mai.
@@ -114,6 +136,29 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
   const vs = verso(v)
   // I gol attesi: stesso hook, stesse finestre di VPM. Sta nella scheda e non
   // in barra (scelta di Mattia): è un dato da leggere, non da scorrere.
+  // ⚠️⚠️ Le due voci di angoli e gialli per la testata: **gli stessi numeri
+  // delle due card più sotto**, calcolati qui una volta e passati. Calcolarli
+  // due volte vorrebbe dire due risultati che un giorno divergono — e sono
+  // sotto gli occhi nella stessa schermata.
+  const conteggiDati = usaConteggi(p.div)
+  const vociConteggi = useMemo(() => {
+    const sc = conteggiDati?.squadre?.[p.casa], st = conteggiDati?.squadre?.[p.trasferta]
+    if (!conteggiDati?.lega || !sc || !st || !sc.nCasa || !st.nFuori) return null
+    return ['angoli', 'cartellini'].map(mercato => {
+      const lega = { casa: Number(conteggiDati.lega[`${mercato}_casa`]), trasferta: Number(conteggiDati.lega[`${mercato}_trasferta`]) }
+      const a = atteso({
+        casa: { fatti: { m: sc[mercato].fattiCasa, n: sc.nCasa }, subiti: { m: sc[mercato].subitiCasa, n: sc.nCasa } },
+        trasferta: { fatti: { m: st[mercato].fattiFuori, n: st.nFuori }, subiti: { m: st[mercato].subitiFuori, n: st.nFuori } },
+        lega,
+      })
+      const soglia = sogliaCentrale(mercato, a.totale)
+      // ⚠️ `O` e non `OVER`: quattro voci su 375px, e la parola intera
+      // allargherebbe la colonna più di quanto la riga può dare.
+      return [mercato === 'angoli' ? 'ANGOLI' : 'GIALLI',
+        { esito: `O ${soglia.toFixed(1).replace('.', ',')}`, p: pOltre(soglia, a.totale) }]
+    })
+  }, [conteggiDati, p.casa, p.trasferta])
+
   const g = useMemo(() => datiVpm ? golAttesi(datiVpm.squadre?.[p.div], p.casa, p.trasferta) : null,
     [datiVpm, p.div, p.casa, p.trasferta])
   const c = CATEGORIE[cat]
@@ -138,10 +183,27 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
             <span style={{ fontSize: S.minuta, fontWeight: 700, fontFamily: F.sans, padding: '3px 9px', borderRadius: R.pastiglia, background: alpha(C.bluPieno, 0.12), color: C.blu }}>{sigla(p.div)}</span>
             {cat !== 'no' && <span style={{ fontSize: S.minuta, fontWeight: 700, fontFamily: F.sans, padding: '3px 9px', borderRadius: R.pastiglia, background: alpha(c.colore, 0.15), color: c.colore, textTransform: 'uppercase' }}>{c.nome}</span>}
           </div>
+          {/* ⚠️⚠️ **Data e ora in questa riga** (Mattia, 23/10/2026): qui in
+              mezzo c'era solo spazio vuoto fra le targhette e la stella, e la
+              data su una riga sua costava altezza per niente. ⚠️ `minWidth: 0`
+              e `nowrap`: se lo spazio manca la riga va a capo per intero —
+              senza, la data si infilerebbe sotto le targhette tagliata a metà. */}
+          {/* ⚠️ Bianca e in grassetto (Mattia, 23/10/2026): spenta si
+              confondeva con le targhette intorno, ed è il **quando**, cioè la
+              prima cosa che si cerca aprendo una partita. Il segno accanto
+              resta fioco: l'icona non è il dato. */}
+          <span style={{ fontFamily: F.mono, fontSize: S.base, color: C.testo, fontWeight: 700,
+            whiteSpace: 'nowrap', minWidth: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Icona nome="calendario" misura={12} style={{ color: C.fioco }} />
+            {giorno(p.data).toUpperCase()}
+            {p.ora && <><span style={{ color: C.fantasma }}>·</span>{p.ora.slice(0, 5)}</>}
+          </span>
           <Stella voti={voti} mio={mio} puoVotare={puoVotare} onVota={onVota} />
         </div>
 
-        <div style={{ marginTop: 14 }}><TestataPartita p={p} cat={cat} gol={g} /></div>
+        <div style={{ marginTop: 14 }}>
+          <TestataPartita p={p} cat={cat} gol={g} senzaData conteggi={vociConteggi} />
+        </div>
 
         {/* ── I numeri, gli stessi della lista ──────────────────────────
             ⚠️ Qui c'erano la quota grande, le tre quote di mercato
@@ -188,7 +250,29 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
                     telefono il nome e dieci caselle non ci stanno insieme, e
                     l'over/under andava a capo. */}
                 <div style={{ padding: '6px 0 0' }}>
-                  <div style={{ fontSize: S.media, fontWeight: 700, textTransform: 'uppercase', fontFamily: F.sans, color: C.testo, marginBottom: 6, overflowWrap: 'anywhere' }}>{sq}</div>
+                  {/* ⚠️⚠️ **I gol fatti e subiti stanno QUI, accanto al nome**
+                      (Mattia, 23/10/2026). Erano una sezione a parte in fondo
+                      alla card, con la sua etichetta, la sua linea e una riga
+                      per squadra: novanta pixel per due numeri che parlano
+                      della stessa squadra di cui si sta già leggendo la
+                      striscia. Accanto al nome sono la stessa frase.
+                      ⚠️ `flexWrap` e `minWidth: 0`: su un telefono stretto i
+                      due numeri **vanno a capo** invece di spingere fuori il
+                      nome. Una larghezza senza via d'uscita non si stringe —
+                      esce, e si disegna sopra il vicino. */}
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap',
+                    marginBottom: 6, minWidth: 0 }}>
+                    <div style={{ fontSize: S.media, fontWeight: 700, textTransform: 'uppercase', fontFamily: F.sans,
+                      color: C.testo, overflowWrap: 'anywhere', minWidth: 0 }}>{sq}</div>
+                    {forma.gol?.[sq] && (
+                      <div style={{ marginLeft: 'auto', fontFamily: F.mono, fontSize: S.corpo, whiteSpace: 'nowrap' }}>
+                        <b style={{ color: C.verde }}>{forma.gol[sq].fatti}</b>
+                        <span style={{ color: C.fantasma }}> | </span>
+                        <b style={{ color: C.rosso }}>{forma.gol[sq].subiti}</b>
+                        <span style={{ color: C.spento, fontSize: S.micro }}> gol in {forma.gol[sq].partite}</span>
+                      </div>
+                    )}
+                  </div>
                   {s.length === 0
                     ? <span style={{ fontSize: S.minuta, color: C.spento, fontFamily: F.sans }}>nessuna partita giocata</span>
                     : <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -226,22 +310,51 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
               </div>
             )
           })}
-          <div style={{ marginTop: 11, paddingTop: 11, borderTop: `1px solid ${C.bordoChiaro}` }}>
-            <Etichetta colore={C.testo} style={{ fontSize: S.corpo, letterSpacing: '0.12em', fontWeight: 700, paddingBottom: 9, marginBottom: 9, borderBottom: `1px solid ${C.bordoChiaro}` }}>⚽ gol fatti / subiti · stagione</Etichetta>
+        </Blocco>
+
+        {/* ── 2b. La classifica, subito dopo la forma (23/10/2026) ──────────────────────────────────────── */}
+        <Blocco titolo="Classifica" icona="classifica" extra={`su ${forma.classifica?.[p.casa]?.squadre ?? '—'} squadre`} sottolinea>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
             {squadre.map(sq => {
-              const g = forma.gol[sq]
+              const cl = forma.classifica?.[sq]
+              if (!cl) return <div key={sq} style={{ fontSize: S.base, color: C.spento, fontFamily: F.sans }}>{sq}: —</div>
+              const meglio = cl.posizione_forma < cl.posizione, peggio = cl.posizione_forma > cl.posizione
+              const conti = (v, n, pe) => (
+                <div style={{ display: 'flex', gap: 5, fontFamily: F.mono, fontSize: S.corpo, fontWeight: 700 }}>
+                  <span style={{ color: C.verde }}>{v}V</span>
+                  <span style={{ color: C.fantasma }}>·</span>
+                  <span style={{ color: C.giallo }}>{n}N</span>
+                  <span style={{ color: C.fantasma }}>·</span>
+                  <span style={{ color: C.rosso }}>{pe}P</span>
+                </div>
+              )
               return (
-                <div key={sq} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', fontFamily: F.mono, fontSize: S.corpo }}>
-                  <span style={{ fontFamily: F.sans, fontWeight: 700, fontSize: S.media, textTransform: 'uppercase', color: C.testo, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sq}</span>
-                  <b style={{ color: C.verde, fontSize: S.titolo }}>{g.fatti}</b><span style={{ color: C.spento, fontSize: S.base }}>fatti</span>
-                  <span style={{ color: C.fantasma }}>|</span>
-                  <b style={{ color: C.rosso, fontSize: S.titolo }}>{g.subiti}</b><span style={{ color: C.spento, fontSize: S.base }}>subiti</span>
-                  <span style={{ color: C.spento, fontSize: S.base }}>({g.partite})</span>
+                <div key={sq} style={{ background: C.pozzo, border: `1px solid ${C.bordo}`, borderRadius: 10, padding: '11px 12px' }}>
+                  <div style={{ fontSize: S.corpo, fontWeight: 700, textTransform: 'uppercase', fontFamily: F.sans, color: C.testo, marginBottom: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sq}</div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
+                    <span style={{ fontSize: S.cifra, fontWeight: 700, fontFamily: F.mono, color: C.testo, lineHeight: 1 }}>{cl.posizione}°</span>
+                    <span style={{ fontSize: S.corpo, fontFamily: F.mono, color: C.oro, fontWeight: 700 }}>{cl.punti} pt</span>
+                  </div>
+                  <div style={{ marginTop: 7 }}>{conti(cl.vinte, cl.pari, cl.perse)}</div>
+                  <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.fioco, marginTop: 3 }}>in {cl.giocate} partite</div>
+
+                  {/* La classifica delle ultime 5: dice se sta salendo o scendendo. */}
+                  <div style={{ marginTop: 10, paddingTop: 9, borderTop: `1px solid ${C.bordoChiaro}` }}>
+                    <Etichetta style={{ fontSize: S.micro, marginBottom: 5 }}>forma · ultime {cl.giocate_forma}</Etichetta>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
+                      <span style={{ fontSize: S.evidenza, fontWeight: 700, fontFamily: F.mono, lineHeight: 1, color: meglio ? C.verde : peggio ? C.rosso : C.testo }}>{cl.posizione_forma}°</span>
+                      <span style={{ fontSize: S.base, fontFamily: F.mono, color: C.spento }}>{cl.punti_forma} pt</span>
+                      {meglio && <span style={{ fontSize: S.base, color: C.verde }}>▲{cl.posizione - cl.posizione_forma}</span>}
+                      {peggio && <span style={{ fontSize: S.base, color: C.rosso }}>▼{cl.posizione_forma - cl.posizione}</span>}
+                    </div>
+                    <div style={{ marginTop: 6 }}>{conti(cl.vinte_forma, cl.pari_forma, cl.perse_forma)}</div>
+                  </div>
                 </div>
               )
             })}
           </div>
         </Blocco>
+
       </>}
 
       {/* ⚠️ I gol attesi stanno **subito sotto la forma** (spostati il
@@ -257,42 +370,12 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
           52,5% vero) ma **debole** — misurato su 34.434 partite aggiunge il 42%
           dell'informazione che ha il mercato. Si legge come un colore della
           partita, non come una previsione da giocare. */}
-      {g && (
-        <Blocco titolo="Gol attesi" icona="gol" extra={`${g.totale.toFixed(2).replace('.', ',')} in tutto`} sottolinea>
-          {/* ⚠️ Prima qui c'erano i due numeri affiancati con "attesi" in mezzo, e
-              il totale ripetuto nel titolo. Mattia (12/10/2026): *"non si
-              capisce una mazza"* — aveva ragione due volte. Il totale era
-              scritto due volte, e due numeri con una parola in mezzo si leggono
-              come un intervallo, mentre sono **di due squadre diverse**.
-              Adesso: sopra di chi sono, sotto l'intervallo vero. */}
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
-            {[[p.casa, g.lambdaCasa], [p.trasferta, g.lambdaFuori]].map(([chi, lam], i) => (
-              <div key={chi} style={{ flex: 1, textAlign: i ? 'right' : 'left', minWidth: 0 }}>
-                <div style={{ fontSize: S.micro, fontFamily: F.sans, color: C.spento, letterSpacing: '0.06em',
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{chi.toUpperCase()}</div>
-                <div style={{ fontSize: S.evidenza, fontWeight: 700, fontFamily: F.mono, color: C.testo, lineHeight: 1.1 }}>
-                  {lam.toFixed(2).replace('.', ',')}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* ⚠️ "3,01 in tutto" è una media, e una media di gol non si vede mai
-              in campo: non esistono partite da 3,01 gol. L'intervallo dice la
-              stessa cosa in risultati veri. ⚠️ La percentuale accanto è
-              **verificata**, non calcolata e basta: su 10.059 partite dichiara
-              67,9% e si avvera 67,9% (`btscout/scripts/prova-gol.js`). Senza
-              quel numero un intervallo non si può leggere. */}
-          {(() => {
-            const iv = intervalloGol(g.totale)
-            return (
-              <div style={{ textAlign: 'center', marginBottom: 12, fontSize: S.minuta, fontFamily: F.sans, color: C.spento, letterSpacing: '0.04em' }}>
-                ATTESI <span style={{ color: C.testo, fontWeight: 700, fontSize: S.corpo }}>DA {iv.da} A {iv.a} GOL</span>
-                {' '}· {(iv.copertura * 100).toFixed(0)}% DELLE VOLTE
-              </div>
-            )
-          })()}
-
+      {/* ⚠️⚠️ **A scomparsa fino all'intervallo** (Mattia, 23/10/2026): quello
+          che si vede sempre è *quanti gol aspettarsi*, cioè la riga per cui la
+          card esiste. Le sei righe dei mercati e la legenda dei colori sono la
+          verifica, e si chiedono. */}
+      {g && (() => {
+        const sotto = (<>
           {/* ⚠️ IL COLORE È IL RISULTATO DELLA MISURA, non una decorazione.
               Verde = sopra la soglia alta, verde chiaro = sopra quella utile,
               niente colore = quel numero non dice più della media. Le soglie
@@ -400,56 +483,52 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
             «giocata vincente»: l&apos;over 3,5 in verde arriva il 44% delle volte. Le uniche dove il verde
             è anche una giocata che ha funzionato sopra il 70% sono over 0,5, over 1,5 e under 3,5.
           </div>
+        </>)
+        return (
+        <Blocco titolo="Gol attesi" icona="gol" extra={`${g.totale.toFixed(2).replace('.', ',')} in tutto`} sottolinea sotto={sotto}>
+
+          {/* ⚠️ Prima qui c'erano i due numeri affiancati con "attesi" in mezzo, e
+              il totale ripetuto nel titolo. Mattia (12/10/2026): *"non si
+              capisce una mazza"* — aveva ragione due volte. Il totale era
+              scritto due volte, e due numeri con una parola in mezzo si leggono
+              come un intervallo, mentre sono **di due squadre diverse**.
+              Adesso: sopra di chi sono, sotto l'intervallo vero. */}
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
+            {[[p.casa, g.lambdaCasa], [p.trasferta, g.lambdaFuori]].map(([chi, lam], i) => (
+              <div key={chi} style={{ flex: 1, textAlign: i ? 'right' : 'left', minWidth: 0 }}>
+                <div style={{ fontSize: S.micro, fontFamily: F.sans, color: C.spento, letterSpacing: '0.06em',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{chi.toUpperCase()}</div>
+                <div style={{ fontSize: S.evidenza, fontWeight: 700, fontFamily: F.mono, color: C.testo, lineHeight: 1.1 }}>
+                  {lam.toFixed(2).replace('.', ',')}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* ⚠️ "3,01 in tutto" è una media, e una media di gol non si vede mai
+              in campo: non esistono partite da 3,01 gol. L'intervallo dice la
+              stessa cosa in risultati veri. ⚠️ La percentuale accanto è
+              **verificata**, non calcolata e basta: su 10.059 partite dichiara
+              67,9% e si avvera 67,9% (`btscout/scripts/prova-gol.js`). Senza
+              quel numero un intervallo non si può leggere. */}
+          {(() => {
+            const iv = intervalloGol(g.totale)
+            return (
+              <div style={{ textAlign: 'center', marginBottom: 12, fontSize: S.minuta, fontFamily: F.sans, color: C.spento, letterSpacing: '0.04em' }}>
+                ATTESI <span style={{ color: C.testo, fontWeight: 700, fontSize: S.corpo }}>DA {iv.da} A {iv.a} GOL</span>
+                {' '}· {(iv.copertura * 100).toFixed(0)}% DELLE VOLTE
+              </div>
+            )
+          })()}
+
         </Blocco>
-      )}
+        )
+      })()}
 
       {/* ── 3-bis. Angoli e cartellini ─────────────────────────────── */}
       <Conteggi p={p} />
 
       {forma && <>
-
-        {/* ── 4. La classifica ──────────────────────────────────────── */}
-        <Blocco titolo="Classifica" icona="classifica" extra={`su ${forma.classifica?.[p.casa]?.squadre ?? '—'} squadre`} sottolinea>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
-            {squadre.map(sq => {
-              const cl = forma.classifica?.[sq]
-              if (!cl) return <div key={sq} style={{ fontSize: S.base, color: C.spento, fontFamily: F.sans }}>{sq}: —</div>
-              const meglio = cl.posizione_forma < cl.posizione, peggio = cl.posizione_forma > cl.posizione
-              const conti = (v, n, pe) => (
-                <div style={{ display: 'flex', gap: 5, fontFamily: F.mono, fontSize: S.corpo, fontWeight: 700 }}>
-                  <span style={{ color: C.verde }}>{v}V</span>
-                  <span style={{ color: C.fantasma }}>·</span>
-                  <span style={{ color: C.giallo }}>{n}N</span>
-                  <span style={{ color: C.fantasma }}>·</span>
-                  <span style={{ color: C.rosso }}>{pe}P</span>
-                </div>
-              )
-              return (
-                <div key={sq} style={{ background: C.pozzo, border: `1px solid ${C.bordo}`, borderRadius: 10, padding: '11px 12px' }}>
-                  <div style={{ fontSize: S.corpo, fontWeight: 700, textTransform: 'uppercase', fontFamily: F.sans, color: C.testo, marginBottom: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sq}</div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
-                    <span style={{ fontSize: S.cifra, fontWeight: 700, fontFamily: F.mono, color: C.testo, lineHeight: 1 }}>{cl.posizione}°</span>
-                    <span style={{ fontSize: S.corpo, fontFamily: F.mono, color: C.oro, fontWeight: 700 }}>{cl.punti} pt</span>
-                  </div>
-                  <div style={{ marginTop: 7 }}>{conti(cl.vinte, cl.pari, cl.perse)}</div>
-                  <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.fioco, marginTop: 3 }}>in {cl.giocate} partite</div>
-
-                  {/* La classifica delle ultime 5: dice se sta salendo o scendendo. */}
-                  <div style={{ marginTop: 10, paddingTop: 9, borderTop: `1px solid ${C.bordoChiaro}` }}>
-                    <Etichetta style={{ fontSize: S.micro, marginBottom: 5 }}>forma · ultime {cl.giocate_forma}</Etichetta>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
-                      <span style={{ fontSize: S.evidenza, fontWeight: 700, fontFamily: F.mono, lineHeight: 1, color: meglio ? C.verde : peggio ? C.rosso : C.testo }}>{cl.posizione_forma}°</span>
-                      <span style={{ fontSize: S.base, fontFamily: F.mono, color: C.spento }}>{cl.punti_forma} pt</span>
-                      {meglio && <span style={{ fontSize: S.base, color: C.verde }}>▲{cl.posizione - cl.posizione_forma}</span>}
-                      {peggio && <span style={{ fontSize: S.base, color: C.rosso }}>▼{cl.posizione_forma - cl.posizione}</span>}
-                    </div>
-                    <div style={{ marginTop: 6 }}>{conti(cl.vinte_forma, cl.pari_forma, cl.perse_forma)}</div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </Blocco>
 
         {/* ── 5. Gli scontri diretti ────────────────────────────────── */}
         <Blocco titolo="Scontri diretti" icona="scontri" extra={forma.scontri.length ? `ultimi ${forma.scontri.length}` : null} sottolinea>
@@ -704,102 +783,92 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
 }
 
 /**
- * ⚽ ANGOLI E CARTELLINI — quello che l'archivio sa, e quanto ne sa.
+ * ⚽ ANGOLI · CARTELLINI — due card, una per mercato.
  *
- * ⚠️⚠️ **È un blocco DESCRITTIVO, non un consiglio, e la differenza è
- * misurata.** Sulla soglia centrale il modello indovina il 54,0% in Champions
- * contro una base del 53,1%: **dentro il rumore**. In Serie A fa +4,1 punti,
- * ma lì il blocco non si vede (i nomi delle squadre vengono da football-data e
- * i conteggi da ESPN: lo stesso club è ancora due squadre diverse). Quindi
- * niente verde, niente «giocata consigliata» — solo i numeri e la loro misura
- * scritta sotto. È la stessa regola del verde dei gol: *«più del solito», non
- * «giocata vincente»*.
+ * ⚠️⚠️ **Due card e non una** (Mattia, 23/10/2026): sono due mercati diversi,
+ * si giocano separatamente e il modello vale **numeri diversi** nei due —
+ * in Premier i cartellini battono la base di 4 punti e gli angoli stanno
+ * sotto. Una card sola costringeva a un giudizio solo, o a due giudizi dentro
+ * la stessa frase.
  *
- * ⚠️ **E si dice da dove vengono**: questi non sono prezzi di mercato, sono
- * **solo storico**. Nessun bookmaker ha detto la sua, al contrario
- * dell'attendibilità. Chi legge deve saperlo senza chiederlo.
+ * ⚠️⚠️ **Descrivono, non consigliano**, e la differenza è misurata
+ * competizione per competizione (`lib/conteggi.js`, `MISURA`). Per questo non
+ * c'è niente di verde: ci sono i numeri e, aprendo, quanto valgono **qui**.
+ * ⚠️ **Ma l'avviso NON si nasconde**: dove il modello non batte la base resta
+ * scritto anche a card chiusa. Tutto il resto della spiegazione va dentro.
+ * ⚠️ **Solo storico**: qui nessun bookmaker ha detto la sua, al contrario
+ * dell'attendibilità — chi legge deve saperlo senza chiederlo.
  */
 function Conteggi({ p }) {
-  const attivo = CON_CONTEGGI.has(p.div)
-  const dati = usaConteggi(attivo ? p.div : null)
-  if (!attivo || !dati?.lega) return null
+  const dati = usaConteggi(p.div)
+  if (!dati?.lega) return null
   const sc = dati.squadre?.[p.casa], st = dati.squadre?.[p.trasferta]
-  // ⚠️ Senza storia non si mostra niente. Un blocco con «—» dappertutto
-  // occuperebbe mezza schermata per dire che non sa, e la scheda è lunga.
+  // ⚠️ Senza storia non si mostra niente: una card di «—» occupa spazio per
+  // dire che non sa, e la scheda è lunga.
   if (!sc || !st || !sc.nCasa || !st.nFuori) return null
+  return ['angoli', 'cartellini'].map(mercato => (
+    <Conteggio key={mercato} p={p} mercato={mercato} dati={dati} sc={sc} st={st} />
+  ))
+}
 
-  const mercati = ['angoli', 'cartellini'].map(mercato => {
-    const chiave = mercato === 'angoli' ? 'angoli' : 'cartellini'
-    const lega = { casa: Number(dati.lega[`${chiave}_casa`]), trasferta: Number(dati.lega[`${chiave}_trasferta`]) }
-    const a = atteso({
-      casa: { fatti: { m: sc[mercato].fattiCasa, n: sc.nCasa }, subiti: { m: sc[mercato].subitiCasa, n: sc.nCasa } },
-      trasferta: { fatti: { m: st[mercato].fattiFuori, n: st.nFuori }, subiti: { m: st[mercato].subitiFuori, n: st.nFuori } },
-      lega,
-    })
-    const soglia = sogliaCentrale(mercato, a.totale)
-    return { mercato, a, soglia, p: pOltre(soglia, a.totale), lega,
-      mediaLega: lega.casa + lega.trasferta }
+const n1 = (x) => (x == null ? '—' : Number(x).toFixed(1).replace('.', ','))
+const n2 = (x) => (x == null ? '—' : Number(x).toFixed(2).replace('.', ','))
+
+function Conteggio({ p, mercato, dati, sc, st }) {
+  const lega = { casa: Number(dati.lega[`${mercato}_casa`]), trasferta: Number(dati.lega[`${mercato}_trasferta`]) }
+  const a = atteso({
+    casa: { fatti: { m: sc[mercato].fattiCasa, n: sc.nCasa }, subiti: { m: sc[mercato].subitiCasa, n: sc.nCasa } },
+    trasferta: { fatti: { m: st[mercato].fattiFuori, n: st.nFuori }, subiti: { m: st[mercato].subitiFuori, n: st.nFuori } },
+    lega,
   })
-
-  const n1 = (x) => (x == null ? '—' : Number(x).toFixed(1).replace('.', ','))
-  const n2 = (x) => (x == null ? '—' : Number(x).toFixed(2).replace('.', ','))
+  const soglia = sogliaCentrale(mercato, a.totale)
+  const prob = pOltre(soglia, a.totale)
+  const voto = giudizio(p.div, mercato)
+  const dove = mercato === 'angoli' ? 'angoli' : 'gialli'
 
   return (
-    <Blocco titolo="Angoli e cartellini" icona="andamento" extra="solo storico" sottolinea>
-      {mercati.map(({ mercato, a, soglia, p: prob, mediaLega }) => (
-        <div key={mercato} style={{ marginBottom: 12 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
-            <Etichetta>{NOMI[mercato]}</Etichetta>
-            {/* ⚠️ Il totale atteso accanto alla media della competizione: da
-                solo un «8,9» non dice se è tanto o poco, e il confronto è
-                l'unica cosa che lo rende leggibile. */}
-            <span style={{ fontFamily: F.mono, fontSize: S.base, color: C.spento }}>
-              competizione <b style={{ color: C.testo }}>{n1(mediaLega)}</b>
-            </span>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr)',
-            gap: 8, alignItems: 'center', marginTop: 6 }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontFamily: F.mono, fontSize: S.grande, fontWeight: 700, color: C.testo }}>{n1(a.casa)}</div>
-              <div style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco }}>IN CASA</div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontFamily: F.mono, fontSize: S.evidenza, fontWeight: 700, color: C.oro }}>{n1(a.totale)}</div>
-              <div style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco }}>ATTESI</div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontFamily: F.mono, fontSize: S.grande, fontWeight: 700, color: C.testo }}>{n1(a.trasferta)}</div>
-              <div style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco }}>FUORI</div>
-            </div>
-          </div>
-          {/* ⚠️ **Una soglia sola, quella vicina al totale atteso.** Sulle altre
-              il modello dice «è tanto» o «è poco», che si vede anche a occhio:
-              mostrarle tutte e cinque darebbe cinque numeri di cui quattro
-              inutili, e l'aria di saperne più di quanto ne sa. */}
-          <div style={{ fontFamily: F.sans, fontSize: S.base, color: C.spento, marginTop: 5, textAlign: 'center' }}>
-            oltre {n1(soglia)} nel{' '}
-            <b style={{ color: C.testo, fontFamily: F.mono }}>{(prob * 100).toFixed(0)}%</b> dei casi
-          </div>
+    <Blocco titolo={NOMI[mercato]} icona="andamento" extra="solo storico" sottolinea
+      // ⚠️ L'avviso sta **fuori** dalla parte che si apre: è l'unica cosa che
+      // impedisce di leggere questi numeri come se fossero l'attendibilità.
+      avviso={voto && !voto.utile && (
+        <div style={{ marginTop: 8, fontFamily: F.sans, fontSize: S.micro, color: C.ambra, lineHeight: 1.5 }}>
+          ⚠️ In questa competizione il modello <b>non</b> fa meglio del dire sempre il più frequente
+          ({(voto.nostra * 100).toFixed(1).replace('.', ',')}% contro {(voto.base * 100).toFixed(1).replace('.', ',')}%).
         </div>
-      ))}
+      )}
+      sotto={
+        <div style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco, lineHeight: 1.6 }}>
+          Nessun bookmaker ha detto la sua su questi numeri, al contrario dell&apos;attendibilità:
+          vengono <b style={{ color: C.spento }}>solo dallo storico</b> delle due squadre, casa e fuori tenuti separati.
+          {voto && <> Provato camminando nel tempo su <b style={{ color: C.spento }}>{voto.n} partite</b> di questa
+            competizione, sulla soglia {n1(voto.soglia)} indovina il verso il{' '}
+            <b style={{ color: voto.utile ? C.spento : C.ambra }}>{(voto.nostra * 100).toFixed(1).replace('.', ',')}%</b>
+            {' '}delle volte, contro il {(voto.base * 100).toFixed(1).replace('.', ',')}% di chi dice sempre il più frequente.</>}
+          {' '}Servono a sapere <b style={{ color: C.spento }}>cosa succede di solito</b>, non a decidere una giocata.
+        </div>
+      }>
 
-      {/* le medie da cui esce tutto, perché il numero sopra si possa controllare */}
-      <div style={{ borderTop: `1px solid ${C.bordoChiaro}`, paddingTop: 8, marginTop: 2,
-        fontFamily: F.mono, fontSize: S.micro, color: C.fioco, lineHeight: 1.7 }}>
-        <div>{p.casa} in casa · angoli {n2(sc.angoli.fattiCasa)} fatti, {n2(sc.angoli.subitiCasa)} concessi ·
-          {' '}gialli {n2(sc.cartellini.fattiCasa)} · <b style={{ color: C.spento }}>{sc.nCasa} partite</b></div>
-        <div>{p.trasferta} fuori · angoli {n2(st.angoli.fattiFuori)} fatti, {n2(st.angoli.subitiFuori)} concessi ·
-          {' '}gialli {n2(st.cartellini.fattiFuori)} · <b style={{ color: C.spento }}>{st.nFuori} partite</b></div>
+      {/* la riga sola: quanti se ne aspettano e la soglia che conta */}
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+        <span style={{ fontFamily: F.mono, fontSize: S.evidenza, fontWeight: 700, color: C.oro }}>{n1(a.totale)}</span>
+        <span style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.fioco }}>
+          attesi · nella competizione {n1(lega.casa + lega.trasferta)}
+        </span>
+        {/* ⚠️ **Una soglia sola, quella vicina al totale atteso.** Sulle altre
+            il modello dice «è tanto» o «è poco», che si vede anche a occhio. */}
+        <span style={{ marginLeft: 'auto', fontFamily: F.sans, fontSize: S.base, color: C.spento }}>
+          oltre {n1(soglia)} nel <b style={{ color: C.testo, fontFamily: F.mono }}>{(prob * 100).toFixed(0)}%</b>
+        </span>
       </div>
 
-      {/* ⚠️⚠️ La misura, scritta accanto al numero che descrive. Senza, questo
-          blocco sembrerebbe affidabile quanto l'attendibilità, e non lo è. */}
-      <div style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco, lineHeight: 1.6, marginTop: 8 }}>
-        ⚠️ <b style={{ color: C.spento }}>Solo storico</b>: qui nessun bookmaker ha detto la sua, al contrario
-        dell&apos;attendibilità. Provato su tutto l&apos;archivio camminando nel tempo, in Champions indovina il{' '}
-        {(MISURA.UCL.angoli.nostra * 100).toFixed(1).replace('.', ',')}% contro una base del{' '}
-        {(MISURA.UCL.angoli.base * 100).toFixed(1).replace('.', ',')}%: serve a sapere{' '}
-        <b style={{ color: C.spento }}>cosa succede di solito</b>, non a decidere una giocata.
+      {/* ⚠️ Le medie da cui esce il numero sopra, col **conteggio delle
+          partite** accanto: è l'unica cosa che dice quanto fidarsi, e per
+          questo resta in vista invece di finire nella parte che si apre. */}
+      <div style={{ marginTop: 8, fontFamily: F.mono, fontSize: S.micro, color: C.fioco, lineHeight: 1.7 }}>
+        <div>{p.casa} in casa · {n2(sc[mercato].fattiCasa)} {dove} fatti, {n2(sc[mercato].subitiCasa)} concessi
+          {' '}· <b style={{ color: C.spento }}>{sc.nCasa} partite</b></div>
+        <div>{p.trasferta} fuori · {n2(st[mercato].fattiFuori)} {dove} fatti, {n2(st[mercato].subitiFuori)} concessi
+          {' '}· <b style={{ color: C.spento }}>{st.nFuori} partite</b></div>
       </div>
     </Blocco>
   )
