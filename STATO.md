@@ -61,7 +61,7 @@ stretta). Tutte verificate dal database subito dopo.
 |---|---|
 | **le due automazioni non sono installate** | verificato il 23/10 con `launchctl`: **nessun agente**. Né l'orario (`aggiornamento-orario.plist`, solo risultati, zero crediti) né quello del martedì/venerdì (`aggiornamento.plist`). Due comandi ciascuno, in testa ai file |
 | **i falli e l'arbitro** | i due ingressi che la letteratura indica per i cartellini — il mercato dove il modello rende di più. I **falli** ESPN li dà già (`foulsCommitted`) e li buttiamo via, come i cartellini fino al 22/10. L'**arbitro** sta in football-data, ma ⚠️ **la colonna `Referee` non è stata verificata**: il 23/10 il DNS di quel sito era giù tutto il giorno |
-| **U2 — over 1,5 e 3,5 a schermo** | `pOver` li calcola già, la scheda consiglia solo il 2,5. **Due ore, nessun dato nuovo**: è il pezzo col miglior rapporto fra lavoro e risultato rimasto |
+| ~~**U2'**~~ | ✅ **raccolta accesa il 23/10** (`sql/40`, zero crediti: la chiamata era già quella). ⚠️ **Ma non si usa**: l'archivio viene da football-data, che la 3,5 non la pubblica, quindi non c'è un passato su cui misurare se migliori il consiglio come ha fatto il 2,5. `MERCATO_35 = false` finché le partite raccolte non bastano — la query per misurarlo sta in `note/gol.md`. ⚠️ Giro completo lanciato il 23/10 (51 crediti, autorizzati): **89 partite su 246 hanno la 3,5, il 36%** — più del 23% atteso. Champions 17, Eredivisie 15, Bundesliga 15 |
 | **il routing** | era *"da fare prima di aggiungere schermate nuove"*, e da allora ne sono arrivate tre: Bet Builder, le due card dei conteggi, la barra dei campionati. Più si aspetta, più si ricabla |
 | **Europa e Conference senza quote** | The Odds API non ha **nessuna** partita futura per loro (ricontrollato il 23/10): accenderle costerebbe crediti per zero righe. Le voci sono pronte e commentate in `lib/odds-api.js` |
 | **l'esito automatico del Bet Builder** | fattibile, ma prima la regola *"questa giocata è arrivata"* deve **spostarsi** da `btscout/lib/ricostruisci.js` a `app/src/lib/`, **non essere copiata**: due versioni direbbero prima o poi cose diverse sulla stessa schedina |
@@ -179,6 +179,31 @@ cambierebbe posto sotto il dito.
   di muoverli da lì, non le categorie. ⚠️ Via con loro **«solo sopra soglia»**,
   che diceva la stessa cosa di «attendibilità ≥» in lingua spin: **deciso da
   me**, Mattia può rivolerlo.
+
+### 💳 I CREDITI DI THE ODDS API — il conto, che nessuno aveva mai fatto
+
+Contato il 23/10/2026, perché Mattia ha chiesto *"U2 ci manda fuori budget?"*.
+
+| | crediti |
+|---|---|
+| un giro completo (17 competizioni) | **51** — 34 per l'1X2 (`eu,uk` = 2 regioni) + 17 per l'over (`eu`) |
+| due giri a settimana | **~442 al mese** su 500 |
+| con Europa e Conference accese | **~494**, cioè il tetto |
+
+⚠️⚠️ **Aggiungendo Champions e J League il costo per giro è passato da 39 a
+51**, e non l'avevo detto. Oggi il margine c'è ma è sottile: un mese con
+qualche richiamo a mano e i crediti finiscono prima del 30.
+
+⚠️ **Dove si recupera, se servirà**: l'1X2 si chiede su **due** regioni e costa
+il doppio dell'over. Togliendo `uk` si passa da 442 a **294 al mese**. Per
+l'over la sola `eu` dà già 11-15 book su 172 partite su 172 (misurato il
+15/09): se vale anche per l'1X2 sono **148 crediti al mese** per qualche book
+in più su una media. ⚠️ **Da misurare prima**, confrontando su un campionato la
+media `eu` con la media `eu,uk`: costa **2 crediti** saperlo.
+
+⚠️ `alternate_totals` (la 2,5 esatta per tutti i book) e `btts` (il Goal/NoGoal
+di mercato) esistono, ma **solo sull'endpoint per singola partita, 1 credito
+l'una**: ~170 a weekend, fuori dal piano gratuito. Non sono in nessun piano.
 
 ### ⛔ Le regole di lavoro aggiunte in questi giorni
 
@@ -440,7 +465,7 @@ competizioni* non c'è — ed è il lavoro che aprirebbe il blocco a tutti.
 | # | pezzo | cosa aggiunge DAVVERO | stima |
 |---|---|---|---|
 | **U1** | **Leggere angoli e cartellini** che sono già lì: medie per squadra, casa/fuori, ultime N; il blocco nella scheda partita accanto a quello dei gol | il dato c'è dal primo giorno e **non si vede da nessuna parte**. È il miglior rapporto fra lavoro e risultato di tutto il piano | mezza giornata |
-| **U2** | **I mercati 1,5 e 3,5 a schermo**: `pOver` li calcola già, la scheda consiglia solo il 2,5 | tre righe di modello, zero dati nuovi — e il 2,5 è **il numero migliore del progetto** (64,8% → 71,2%) | 2 ore |
+| ~~**U2**~~ | ⚠️⚠️ **ERA GIÀ FATTO, e la riga qui sopra era sbagliata.** «La scheda consiglia solo il 2,5» non l'avevo verificato: `consiglioOver()` scorre **tutte** le soglie e sceglie *la più ambiziosa che regge*, e la griglia della scheda mostra over/under 0,5 · 1,5 · 2,5 · 3,5 con le fasce misurate. Provato il 23/10 sulle 245 partite in calendario: **OVER 1,5 → 149 volte, UNDER 3,5 → 50, OVER 2,5 → 46**. Le due soglie "mancanti" sono la maggioranza dei consigli | ✅ niente da fare |
 | **U3** | **La matrice dei risultati esatti e le fair odds**: da λ casa/λ trasferta a 1X2 + O/U + GG in un colpo, **in `lib/gol.js`**, non altrove | ⚠️ Serve a confrontare il nostro 1X2 col **consenso dei book**, che oggi è l'unica fonte dell'attendibilità. Da lì nasce un VPM sui gol | 1 giorno |
 | **U4** | **FBref**: xG e **Champions League** — l'unica cosa del briefing 1 che porta **informazione nuova** | ⚠️ È anche l'unico pezzo che può muovere il GG, perché aggiunge un dato, non una formula. Ma: fonte nuova, nomi squadra da riconciliare, e `soccerdata` è **Python** | 2-3 giorni |
 | **U5** | **Live / Sofascore** | ⏸️ **dopo** l'automazione (lotto F) e **dopo** che U1-U4 hanno detto se il modello vale | non stimabile ora |

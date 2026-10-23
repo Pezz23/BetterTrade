@@ -118,17 +118,29 @@ for (const div of daFare) {
     }
     if (q1.length < 3) { saltate++; continue; }   // troppo pochi book per un consenso
 
-    // ── il consenso sull'over/under 2,5, solo da chi quota quella linea ──
-    const qo = [], qu = [];
+    // ── il consenso sull'over/under, linea per linea ──────────────────────
+    // ⚠️⚠️ **Anche la 3,5, che prima si buttava** (23/10/2026). Ogni book
+    // quota la SUA linea principale: misurato su 2.227 quote era la 2,5 nel
+    // 67% dei casi e la **3,5 nel 23%**. Tenevamo solo la prima e il resto
+    // finiva nel cestino — a parità di chiamata, cioè **a costo zero**.
+    // ⚠️ `point === 2.5` e non "la linea più vicina al 2,5": un over 2,75 è
+    // un altro evento, non una versione imprecisa dello stesso. Vale uguale
+    // per la 3,5, ed è il motivo per cui si raccolgono **separate** invece di
+    // mescolarle in una media sola.
+    const linee = { 2.5: { o: [], u: [] }, 3.5: { o: [], u: [] } };
     for (const b of ou.get(ev.id)?.bookmakers || []) {
       const m = b.markets.find(m => m.key === 'totals'); if (!m) continue;
-      // ⚠️ `point === 2.5` e non "la linea più vicina al 2,5": un over 2,75 è
-      // un altro evento, non una versione imprecisa dello stesso.
-      const o = m.outcomes.find(x => x.name === 'Over' && Number(x.point) === 2.5);
-      const u = m.outcomes.find(x => x.name === 'Under' && Number(x.point) === 2.5);
-      if (o?.price > 1 && u?.price > 1) { qo.push(o.price); qu.push(u.price); }
+      for (const punto of [2.5, 3.5]) {
+        const o = m.outcomes.find(x => x.name === 'Over' && Number(x.point) === punto);
+        const u = m.outcomes.find(x => x.name === 'Under' && Number(x.point) === punto);
+        if (o?.price > 1 && u?.price > 1) { linee[punto].o.push(o.price); linee[punto].u.push(u.price); }
+      }
     }
+    const qo = linee[2.5].o, qu = linee[2.5].u;
+    // ⚠️ **Tre book come minimo, su ogni linea separatamente.** Una media di
+    // due quote non è un consenso, ed è la stessa soglia che vale per la 2,5.
     const abbastanza = qo.length >= 3;
+    const ab35 = linee[3.5].o.length >= 3;
 
     const { data, ora } = dataOraItaliana(ev.commence_time);
     righe.push({
@@ -142,7 +154,11 @@ for (const div of daFare) {
       avg_ap_under25: abbastanza ? media(qu) : null,
       max_ap_over25: abbastanza ? massimo(qo) : null,
       max_ap_under25: abbastanza ? massimo(qu) : null,
-      _book: q1.length, _ou: qo.length,
+      avg_ap_over35: ab35 ? media(linee[3.5].o) : null,
+      avg_ap_under35: ab35 ? media(linee[3.5].u) : null,
+      max_ap_over35: ab35 ? massimo(linee[3.5].o) : null,
+      max_ap_under35: ab35 ? massimo(linee[3.5].u) : null,
+      _book: q1.length, _ou: qo.length, _ou35: linee[3.5].o.length,
     });
     prese++;
   }
@@ -185,12 +201,18 @@ if (!ESEGUI || !righe.length) { await chiudi(); process.exit(gravi.length ? 1 : 
 const COL = ['div', 'campionato', 'data', 'ora', 'casa', 'trasferta', 'fonte',
   'avg_ap_1', 'avg_ap_x', 'avg_ap_2', 'max_ap_1', 'max_ap_x', 'max_ap_2', 'bfe_ap_1', 'bfe_ap_x', 'bfe_ap_2',
   'book', 'book_1', 'book_x', 'book_2',
-  'avg_ap_over25', 'avg_ap_under25', 'max_ap_over25', 'max_ap_under25'];
+  'avg_ap_over25', 'avg_ap_under25', 'max_ap_over25', 'max_ap_under25',
+  'avg_ap_over35', 'avg_ap_under35', 'max_ap_over35', 'max_ap_under35'];
 // ⚠️ Queste quattro possono essere **null** quando meno di tre book quotano il
 // 2,5, e football-data invece le riempie sempre per il blocco imminente: senza
 // `coalesce` un giro di The Odds API cancellerebbe un dato buono con un vuoto.
 // È la stessa ragione per cui `b365_*` non è in questa lista.
-const NON_CANCELLARE = new Set(['avg_ap_over25', 'avg_ap_under25', 'max_ap_over25', 'max_ap_under25']);
+// ⚠️ La 3,5 entra nella stessa protezione della 2,5: un giro in cui meno di
+// tre book quotano quella linea **non deve cancellare** quello che avevamo
+// preso prima. Vale ancora di più qui, perché la 3,5 è la linea principale
+// solo per un quarto dei bookmaker e capita che per una partita non ci sia.
+const NON_CANCELLARE = new Set(['avg_ap_over25', 'avg_ap_under25', 'max_ap_over25', 'max_ap_under25',
+  'avg_ap_over35', 'avg_ap_under35', 'max_ap_over35', 'max_ap_under35']);
 const daAggiornare = COL.filter(c => !['div', 'data', 'casa', 'trasferta'].includes(c));
 const pulite = righe.map(r => Object.fromEntries(COL.map(c => [c, r[c]])));
 

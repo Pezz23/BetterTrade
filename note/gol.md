@@ -537,3 +537,47 @@ tutto il resto misurato qui dentro.
 otto fa 96,3%. **Era rumore** — a queste quote servono decine di migliaia di
 scommesse per distinguere due punti.
 
+## 🆕 La linea 3,5 — raccolta dal 23/10/2026, non ancora usata
+
+⚠️⚠️ **Non è un dato nuovo da andare a prendere: è un dato che scartavamo.**
+The Odds API manda la linea principale di **ogni** bookmaker, non la 2,5:
+misurato su 2.227 quote, era la 2,5 nel 67% dei casi e la **3,5 nel 23%**.
+`importa-prossime-odds.js` teneva solo `point === 2.5` e buttava il resto.
+Quindi `sql/40` costa **zero crediti**: stessa chiamata di prima.
+
+Verificato appena acceso: su 20 partite di Serie A, **4 hanno la 3,5** (20%, in
+linea col 23% atteso), con quote sensate — over 3,5 a 2,01-2,12, under a
+1,72-1,95.
+
+**Perché proprio la 3,5.** Il consiglio sceglie la soglia più ambiziosa che
+regge, e sulle 245 partite in calendario il 23/10 diceva `OVER 1,5` **149**
+volte, `UNDER 3,5` **50** e `OVER 2,5` **46**. Il 2,5 è il numero migliore del
+progetto (dal 64,8% al 71,2%) **proprio perché usa il mercato**: l'under 3,5 è
+il secondo consiglio più frequente, e per un quarto delle partite il mercato
+ce l'avremmo.
+
+### ⚠️⚠️ Ma NON si usa ancora, e il motivo non è prudenza: è che non si può misurare
+
+L'archivio viene da **football-data, che la linea 3,5 non la pubblica**:
+`partite` ha solo `*_over25`. Quindi non esiste un passato su cui provare se il
+mercato della 3,5 migliori il consiglio come ha fatto col 2,5. `MERCATO_35`
+resta **falso** in `lib/gol.js`.
+
+L'unico modo è **aspettare**: le righe di `prossime_partite` non si cancellano,
+quindi quando ci saranno abbastanza partite giocate si misura così —
+
+```sql
+select count(*) n,
+       avg(case when p.gol_casa + p.gol_trasferta > 3.5 then 1 else 0 end) vero,
+       avg(1.0/f.avg_ap_over35 / (1.0/f.avg_ap_over35 + 1.0/f.avg_ap_under35)) detto
+from prossime_partite f
+join partite p
+  on p.div = f.div and p.data = f.data and p.casa = f.casa and p.trasferta = f.trasferta
+where f.avg_ap_over35 is not null;
+```
+
+Se `detto` e `vero` coincidono, il mercato della 3,5 è calibrato e
+l'interruttore si accende. ⚠️ Accenderlo prima vorrebbe dire credere a
+un'analogia — ed è il modo in cui qui si è già sbagliato: il VPM dentro il voto
+*"doveva"* aiutare e pesava **zero**.
+

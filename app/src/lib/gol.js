@@ -248,11 +248,36 @@ export const PAVIMENTI_OVER = {
  * ⚠️ Si usano le quote di **apertura** (`avg_ap_*`): sono quelle che esistono
  * quando si decide. In `partite` le `avg_*` senza `_ap` sono di chiusura.
  */
-export function mercatoOver25(r) {
-  const o = Number(r?.avg_ap_over25), u = Number(r?.avg_ap_under25)
+export function mercatoOver(r, soglia = 2.5) {
+  const suffisso = soglia === 3.5 ? '35' : '25'
+  const o = Number(r?.[`avg_ap_over${suffisso}`]), u = Number(r?.[`avg_ap_under${suffisso}`])
   if (!(o > 1) || !(u > 1)) return null
+  // ⚠️ **Il margine si toglie normalizzando**, non ignorandolo: `1/quota` da
+  // solo somma a 105-108%, e confrontare quel numero col nostro vorrebbe dire
+  // misurare la commissione del banco invece della partita.
   return (1 / o) / (1 / o + 1 / u)
 }
+
+/** La 2,5, che è il caso di tutti i giorni. ⚠️ Un guscio, non una copia. */
+export const mercatoOver25 = (r) => mercatoOver(r, 2.5)
+
+/**
+ * ⚠️⚠️ **Il mercato della 3,5 si RACCOGLIE ma non si USA ancora** (23/10/2026).
+ *
+ * Le quote ci sono da oggi (`sql/40`: The Odds API le mandava e le buttavamo),
+ * ma **non si possono misurare**: football-data, da cui viene tutto
+ * l'archivio, pubblica solo la linea 2,5, quindi non esiste un passato su cui
+ * provare se il mercato della 3,5 migliora il consiglio come ha fatto col 2,5
+ * (dal 64,8% al 71,2%).
+ *
+ * L'unico modo è **aspettare**: le righe di `prossime_partite` non si
+ * cancellano, quindi fra qualche settimana si uniscono a `partite` sulla
+ * chiave della partita e si misura. Finché quel numero non c'è, accendere
+ * questo interruttore vorrebbe dire credere a un'analogia — ed è esattamente
+ * il modo in cui in questo progetto si è già sbagliato (il VPM dentro il voto
+ * «doveva» aiutare e pesava zero).
+ */
+export const MERCATO_35 = false
 
 /**
  * Il consiglio su over/under: `{ esito, p, chiave, fonte }`, `esito: null`
@@ -280,12 +305,15 @@ export function mercatoOver25(r) {
  * ⚠️ Lo 0,5 resta fuori: over 0,5 arriva il 92,9% delle volte da solo, e
  * "giocati che si segna un gol" non è un consiglio.
  */
-export function consiglioOver(over, pMercato = null) {
+export function consiglioOver(over, pMercato = null, pMercato35 = null) {
   if (!over) return null
   let meglio = null
   for (const s of SOGLIE_OVER) {
-    const daMercato = s === 2 && pMercato != null
-    const p = daMercato ? pMercato : over[s]
+    // ⚠️ La 3,5 usa il mercato **solo se `MERCATO_35` è acceso**, e non lo è:
+    // vedi il perché sopra. La riga resta qui perché il giorno in cui la
+    // misura arriva il cambio è una costante, non una rilettura del codice.
+    const daMercato = (s === 2 && pMercato != null) || (s === 3 && MERCATO_35 && pMercato35 != null)
+    const p = daMercato ? (s === 2 ? pMercato : pMercato35) : over[s]
     if (p == null) continue
     for (const [verso, prob] of [['over', p], ['under', 1 - p]]) {
       const chiave = `${verso}${s}`
