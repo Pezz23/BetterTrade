@@ -77,6 +77,8 @@ stretta). Tutte verificate dal database subito dopo.
 | **5** | **La barra dei campionati** (idea 3) | ✅ **fatta il 22/10 sera** (`6bf18ae`), anticipata da Mattia prima del routing. La domanda *"cosa si restringe"* ha avuto risposta: **niente** — lo spazio si **riserva** (40px di margine a destra) invece di lasciar galleggiare la striscia sopra la lista |
 | **6** | **L'automazione** (lotto F): il `.plist` di launchd è pronto, due comandi | da fare |
 | **7** | **Quello che aspetta i dati**: il riepilogo della scalata (a 10-20 chiuse), il Satellite, la spin 2 sotto soglia, i backtest vecchi | non anticipabile |
+| **8** | 🧬 **UPGRADE MODELLO DI DATI — fonti** (briefing 1 di Mattia, 22/10): angoli e cartellini **già in archivio e mai letti**, over 1,5 e 3,5, FBref per xG e Champions, live. Il piano sta più sotto | ⛔ **da decidere**, quattro domande aperte |
+| **9** | 🧬 **UPGRADE MODELLO DI DATI — evoluzione predittiva** (briefing 2): matrice dei risultati esatti e fair odds. ⚠️ Il Poisson **esiste già** in `lib/gol.js` con le sue correzioni misurate: qui si estende, non si riscrive — e **non in Python**, o nascono due verità | ⛔ **da decidere** |
 
 ⚠️ Restano fuori dai lotti, **non dimenticate**: la **scala a sette colori per
 distanza nel tempo** (idea 1) — proposta e **non fatta**, perché nella pagina
@@ -188,6 +190,207 @@ cambierebbe posto sotto il dito.
 - ⚠️ **I backtest si chiedono prima di lanciarli** (21/10), e quello della
   Scalata madre è stato autorizzato e fatto: il risultato sta più sotto.
 
+
+## 🧬 UPGRADE MODELLO DI DATI — il piano (22 ottobre 2026)
+
+Due briefing di Mattia, consegnati insieme: **1. fonti di dati** (football-data,
+FBref, ESPN/Sofascore via `soccerdata`; top 5 + Champions; over/under 1,5 · 2,5
+· 3,5; GG/NG; **angoli e cartellini**; storico + live) e **2. evoluzione
+predittiva** (una classe Python `PoissonMatchPredictor`: forze d'attacco e
+difesa, λ casa/trasferta, matrice 0-0…6-6 con `scipy.stats.poisson`, mercati
+O/U e GG/NG, fair odds, 1X2).
+
+⛔ **Non sviluppato: questo è il piano, la decisione è di Mattia.**
+
+### ⚠️⚠️ Cosa esiste GIÀ — verificato dal database il 22/10
+
+| | |
+|---|---|
+| **angoli, cartellini, tiri** | **ci sono già in `partite`** (`sql/05`): `angoli_*`, `gialli_*`, `rossi_*`, `tiri_*`, `tirip_*`. **51.415 righe su 54.249 piene — il 94,8%**, da `1617` a `2627`, 15 campionati. ⚠️⚠️ **Non li legge nessuno**: l'unico file che li tocca oltre agli import è `prova-gol-varianti.js`. Il dato è in casa da sempre, e il lavoro **non è prenderlo: è usarlo** |
+| **gol del primo tempo** | `gol1t_*`, **99,9% pieno** — mai usato |
+| **il modello di Poisson** | **c'è, in `app/src/lib/gol.js`** (395 righe): `poisson(k, λ)`, `pOver(soglia, λ)` per **0,5 · 1,5 · 2,5 · 3,5**, GG, `intervalloGol`, `consiglioGg`. Il briefing 2 descrive **questo**, in un'altra lingua |
+| **le correzioni misurate** | ⚠️ `STRETTA_GG = 0,55`: il prodotto di due Poisson indipendenti è **troppo sicuro di sé** e va stretto verso la media. È la correzione che il briefing non prevede, e **senza di essa i numeri sono peggiori** |
+| **quote over/under** | `avg_over25`, `b365_over25` — 38.214 righe (70,4%) |
+
+### ⚠️⚠️ Le quattro cose che non tornano, da dire prima di tutto
+
+1. **Il briefing 2 chiede di riscrivere in Python un motore che esiste in JS.**
+   ⚠️ E non è una questione di gusto: l'invariante di questo repo è che *"una
+   misura e lo schermo devono dire lo stesso numero, e l'unico modo è che
+   eseguano lo stesso codice"* — gli script del motore importano
+   `app/src/lib/*.js` apposta. Due Poisson, uno in `gol.js` e uno in Python,
+   **divergono**: è lo stesso difetto di `emailDi()` in tre copie e di
+   `iniziaDopo` in due, già pagati.
+2. **Il GG/NG è già stato misurato, e quasi non si prevede**: 54,0% di volte
+   giuste contro una base del 53,2% (`prova-gg.js`, 12/10). ⚠️ **Non è colpa
+   del modello** — è il mercato che è quasi efficiente lì. Un modulo nuovo per
+   GG/NG non cambierà quel numero: cambiarlo vorrebbe dire un'**informazione**
+   nuova (xG, formazioni), non una formula nuova.
+3. **Dixon-Coles è già stato provato** nella fase vecchia del motore
+   (`btscout/STATO.md`, fasi S1-S6), e `prova-gol-varianti.js` /
+   `prova-gol-avversari.js` concludono **no**: l'indice dei gol non migliora
+   né con le varianti né correggendo per gli avversari affrontati.
+4. **«Live / near-real-time» è una modalità operativa, non una fonte**. Qui la
+   regola è che **ESPN non indovina mai**: nel dubbio la riga aspetta una
+   persona (`importazioni`). Un flusso live che scrive da solo va contro
+   quella regola, e prima del live serve l'**automazione** (lotto F, il
+   `.plist` di launchd già pronto).
+
+### ✅ Quello che è stato fatto il 22/10 sera, e perché NON in Python
+
+Mattia: *"priorità flusso di dati… quando torno vorrei avere tutta la
+Champions e magari qualche campionato come Olanda 2, Giappone, Serie B
+portoghese"*, più **l'aggiornamento orario dei risultati**. Autorizzato a
+scaricare.
+
+⚠️⚠️ **La ricerca ha spostato la strada.** Il briefing proponeva
+Python + `soccerdata` + FBref: `soccerdata` oggi vuole **Python ≥ 3.10** (qui
+c'è il 3.9 di sistema) e si porta dietro **`seleniumbase`**, cioè un browser
+intero, perché FBref sta dietro Cloudflare. **ESPN è già dentro il progetto**,
+è gratis, senza chiave, e in una chiamata dà gol, tiri, **tiri in porta**,
+possesso, **angoli** e **cartellini**. Il dettaglio sta in `note/dati.md`.
+
+| | |
+|---|---|
+| **`lib/espn.js`** | cinque competizioni nuove (`UCL`, `UEL`, `UECL`, `N2`, `JPN1`), `partiteDelMese()` — ⚠️ lo scoreboard accetta un **mese** ma non un intervallo: 12 chiamate per stagione invece di 330 — e i **cartellini**, che ESPN dava e noi buttavamo via |
+| **`scripts/importa-competizione.js`** | nuovo: importa una competizione intera. Prova a vuoto di default, solo partite **finite**, `fonte='espn'` |
+| **`scripts/aggiorna-risultati.js`** + **`aggiornamento-orario.plist`** | l'aggiornamento **orario**: solo i risultati, **zero crediti** |
+| **`lib/campionati.js`** (app) | sigle e nomi delle cinque competizioni, così la barra non mostra un codice grezzo |
+| ⚠️ **tiri in porta** | **c'erano già**: `tirip_*`, pieni al 91-100% su tutti e quindici i campionati. Non era un dato da prendere, era un dato da usare |
+
+### ⏳ Il recupero storico è PARTITO e gira da solo (22/10, 23:15)
+
+```
+cd btscout && tail -f recupero.log          # a che punto è
+node --env-file=.env -e "import('./lib/db.js').then(async({sql,chiudi})=>{\
+  const r=await sql\`select div,count(*) n,min(data) da,max(data) a from partite \
+  where div in ('UCL','UEL','UECL','N2','JPN1') group by div\`; console.table(r); await chiudi()})"
+```
+
+Cinque competizioni dal 2016, ~11.000 partite stimate, **~1,2 secondi l'una**:
+tre o quattro ore. È lanciato **staccato dalla sessione** (`nohup`), quindi
+continua anche a terminale chiuso, e **riprende da dove è arrivato** se si
+ferma — la chiave è l'indice unico della tabella, non un segnaposto.
+
+⚠️ **Era cinque volte più lento, e il perché conta**: ESPN non ha il riepilogo
+delle partite vecchie, e `prendi()` insisteva **tre volte** con attese
+crescenti su ogni buco. Da 4,5 a 1,2 secondi a riga aggiungendo un parametro
+`tentativi`: per una partita di ieri tre tentativi sono giusti, per una del
+2016 il buco è una risposta.
+
+### ✅ Il ponte fra i nomi, e la Champions nella colonna di destra
+
+Fatto la sera del 22/10: **UCL e JPN1 sono accese** in `lib/odds-api.js`,
+quindi le loro partite **future** prendono il consenso dei bookmaker come
+tutte le altre — e con le quote arrivano attendibilità, scelta e voto. Appena
+entrano in `prossime_partite` compaiono **da sole** nella barra dei campionati
+a destra: la barra si costruisce da quello che c'è, non da un elenco scritto.
+
+| | |
+|---|---|
+| **`lib/nomi-squadre.js`** | 18 accoppiamenti nuovi (10 UCL, 8 JPN1). ⚠️ Il verso è **opposto** al resto del file: a destra ci sono i nomi di **ESPN** ("Internazionale", "Sporting CP"), non quelli di football-data. ⚠️ Letti uno per uno: il confronto automatico ne risolveva 8, ma sbaglia in silenzio — è già successo con "Paris Saint Germain" finito su "Paris FC" |
+| **`importa-prossime-odds.js`** | ⚠️⚠️ i nomi validi si cercano **per data** (`data > current_date - 730`) e non più per codice stagione: la J1 giapponese ha `stagione = '2026'`, e nel vecchio filtro `in ('2526','2627')` **ogni squadra giapponese risultava sconosciuta**. E il nome della competizione ha un ripiego su `COMPETIZIONI`, perché `CAMPIONATI` elenca i file di football-data e la Champions non ne ha uno |
+| **il codice d'uscita** | un nome sconosciuto vale **1 solo nei quindici di football-data**, dove è un segnale. In Champions le partecipanti cambiano **per costruzione** ogni stagione: la partita si salta, l'avviso resta scritto, la routine prosegue |
+
+⚠️⚠️ **La dipendenza da ricordare**: il controllo dei nomi guarda l'archivio
+degli **ultimi due anni**, quindi le quote di una competizione nuova entrano
+**solo dopo** che il recupero ESPN ha portato le sue stagioni recenti. Il
+22/10 il primo tentativo è tornato a mani vuote proprio per questo — il
+recupero era al 2017. Per una competizione nuova si parte sempre da
+`--da=<anno scorso>`, poi si lascia andare lo storico profondo.
+
+⚠️⚠️ **Un limite che resta:**
+
+1. **La Serie B portoghese non esiste in nessuna delle fonti gratuite**: non
+   football-data (`P2` reindirizza su `SP2`, verificato il 16/09), non ESPN
+   (sei slug provati), non The Odds API. Resta FBref, cioè Cloudflare e un
+   browser: va deciso a parte.
+
+### ✅ U1 — angoli e cartellini: letti, MISURATI, e mostrati in Champions
+
+Mattia, 23/10: *"partiamo con U1, magari mettiamo un'indicazione che quei dati
+provengono solo dallo storico. Crea qualcosa che fa previsione di goal
+cartellino over calci d'angolo e proviamo a metterlo per ora solo nelle
+partite di champion"*.
+
+| | |
+|---|---|
+| **`app/src/lib/conteggi.js`** | il modello: forza d'attacco × forza di difesa × media della competizione, casa e fuori separati, e Poisson sul totale. ⚠️ **Usa la `pOver()` di `lib/gol.js`**: una seconda Poisson in questo repo sarebbe la copia che prima o poi dice un numero diverso dallo schermo |
+| **`app/sql/39-conteggi.sql`** | `conteggi_dati(div, ultime)`: medie per squadra, casa/fuori, fatti/concessi, **con il conteggio accanto**. Per competizione e non per archivio — serve alla scheda di UNA partita |
+| **`app/src/hooks/usaConteggi.js`** | memoria **per competizione**: aprire una partita di Champions non butta via i conteggi della Serie A |
+| **`btscout/scripts/prova-conteggi.js`** | il banco di prova: cammina nel tempo, non guarda mai avanti, e confronta con la **base** |
+| **la scheda partita** | blocco «Angoli e cartellini», **solo UCL** |
+
+⚠️⚠️ **LA MISURA, ed è il motivo per cui il blocco NON dà consigli.** Sulla
+soglia centrale, camminando nel tempo su tutto l'archivio:
+
+| | nostra | base | |
+|---|---|---|---|
+| angoli, Serie A | 56,1% | 52,0% | **+4,1** |
+| angoli, Liga | 54,1% | 52,9% | +1,2 |
+| **angoli, Champions** | **54,0%** | **53,1%** | **+0,9 — dentro il rumore** |
+| cartellini, Champions | 52,2% | 50,6% | +1,6 |
+| cartellini, Serie A | 65,3% | 64,9% | +0,4 |
+
+Quindi il blocco **descrive**, non consiglia: niente verde, niente «giocata».
+È la stessa riga del verde dei gol — *«più del solito», non «giocata
+vincente»*. ⚠️ `K_STRETTA = 12` è **misurato**: con 8 la Champions scende
+sotto la base, con 20 non guadagna niente. ⚠️ `MISURA` è **esportata dalla
+libreria** e non scritta nel JSX: un risultato copiato in un angolo
+dell'interfaccia invecchia senza che nessuno se ne accorga.
+
+⚠️ **Perché solo in Champions, oltre alla richiesta**: lì l'archivio è nostro
+(ESPN) e le due squadre si chiamano come le chiamiamo noi. In Serie A i
+conteggi ci sono ma i nomi vengono da football-data: lo stesso club nelle due
+competizioni è ancora **due squadre diverse**. Il ponte fra i nomi *fra
+competizioni* non c'è — ed è il lavoro che aprirebbe il blocco a tutti.
+
+### 🏆 Dove sono arrivati i dati (23/10, notte)
+
+| | |
+|---|---|
+| **UCL** | ✅ **completa**: 1.823 partite dal 2016, 93% con statistiche. **18 partite future** con 33 bookmaker, exchange e over/under |
+| **JPN1** | 1.070 partite (stagioni recenti) + **10 partite future** con le quote |
+| **UEL** | in corso, al 2019 |
+| **UECL · N2** | in coda |
+| **Serie B portoghese** | ⛔ **abbandonata** da Mattia il 23/10 |
+
+### Il piano, in cinque pezzi — da fare in quest'ordine
+
+| # | pezzo | cosa aggiunge DAVVERO | stima |
+|---|---|---|---|
+| **U1** | **Leggere angoli e cartellini** che sono già lì: medie per squadra, casa/fuori, ultime N; il blocco nella scheda partita accanto a quello dei gol | il dato c'è dal primo giorno e **non si vede da nessuna parte**. È il miglior rapporto fra lavoro e risultato di tutto il piano | mezza giornata |
+| **U2** | **I mercati 1,5 e 3,5 a schermo**: `pOver` li calcola già, la scheda consiglia solo il 2,5 | tre righe di modello, zero dati nuovi — e il 2,5 è **il numero migliore del progetto** (64,8% → 71,2%) | 2 ore |
+| **U3** | **La matrice dei risultati esatti e le fair odds**: da λ casa/λ trasferta a 1X2 + O/U + GG in un colpo, **in `lib/gol.js`**, non altrove | ⚠️ Serve a confrontare il nostro 1X2 col **consenso dei book**, che oggi è l'unica fonte dell'attendibilità. Da lì nasce un VPM sui gol | 1 giorno |
+| **U4** | **FBref**: xG e **Champions League** — l'unica cosa del briefing 1 che porta **informazione nuova** | ⚠️ È anche l'unico pezzo che può muovere il GG, perché aggiunge un dato, non una formula. Ma: fonte nuova, nomi squadra da riconciliare, e `soccerdata` è **Python** | 2-3 giorni |
+| **U5** | **Live / Sofascore** | ⏸️ **dopo** l'automazione (lotto F) e **dopo** che U1-U4 hanno detto se il modello vale | non stimabile ora |
+
+### ⚠️ La domanda su Python, e la risposta che consiglio
+
+**Python sì, ma solo come braccio, mai come cervello.** `soccerdata` è la via
+più corta per FBref, e scriverne l'equivalente in Node sarebbe lavoro vero.
+Quindi:
+
+- **Ingestione in Python** (U4): uno script che scarica, normalizza e **scrive
+  in Postgres**, nello stesso schema di tutti gli altri import — con la prova
+  a vuoto di default, come ogni script che tocca dati qui.
+- **Modello in JS, uno solo** (`app/src/lib/gol.js`): perché è lo stesso codice
+  che gira nell'app e nei backtest. ⚠️ **Nessun calcolo di probabilità in
+  Python**, o nascono due verità.
+
+### Le decisioni che servono a Mattia prima di partire
+
+1. **Si parte da U1** (angoli e cartellini già in casa) o da **U4** (FBref e
+   Champions, che è la cosa che più assomiglia al briefing ma costa dieci volte
+   tanto)?
+2. **Il GG/NG**: sapendo che misurato vale 54,0% contro 53,2%, lo si vuole
+   comunque a schermo come mercato, o si tiene solo come numero dentro la
+   scheda?
+3. **Champions League**: entra nell'archivio come sedicesimo campionato, o è
+   una cosa a parte? ⚠️ Le squadre si ripetono fra lega e coppa, e
+   `calcola-andamento` conta per campionato.
+4. **Angoli e cartellini**: servono per **guardarli** o per **giocarli**? Se
+   per giocarli serve una fonte di quote che oggi non abbiamo.
 
 ## 🪜 SCALATA MADRE — il piano di rientro progressivo (21 ottobre 2026)
 

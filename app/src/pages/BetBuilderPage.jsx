@@ -10,7 +10,9 @@ import { usaPreferenze } from '../hooks/usaPreferenze'
 import { valutaPartita } from '../lib/vpm'
 import { componiPasso, CONSIGLIATO, QUOTA_MINIMA_GAMBA } from '../lib/scalata'
 import ScegliGamba from '../components/ScegliGamba'
-import { iniziaDopo, lunediProssimo } from '../lib/attendibilita'
+import SchedaScorrevole from '../components/SchedaScorrevole'
+import DettaglioPartita from '../components/DettaglioPartita'
+import { iniziaDopo, lunediProssimo, categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
 import { sigla } from '../lib/campionati'
 import { pct, eur, gg, quando } from '../lib/formato'
 
@@ -57,8 +59,8 @@ const CRITERI = [
 const ATTESA_ARCHIVIO = 10_000
 
 export default function BetBuilderPage() {
-  const { currentUser } = useAuth()
-  const { righe, flagDi, votiDi } = usaProssime()
+  const { currentUser, isAdmin } = useAuth()
+  const { righe, flagDi, votiDi, vota, mioVoto } = usaProssime()
   const datiVpm = usaVpm()
   const reg = usaSchedine(currentUser?.id)
   // ⚠️⚠️ **Le partite scartate stanno in `preferenze`, riga PERSONALE**: è la
@@ -101,6 +103,14 @@ export default function BetBuilderPage() {
   // appena arriva una quota nuova, e la partita è la stessa.
   const [aggiunteId, setAggiunteId] = useState([])
   const [manuale, setManuale] = useState(false)
+  // ⚠️⚠️ **La scheda si apre solo sulle partite FUTURE** (Mattia, 23/10/2026:
+  // *"mi interessano solo le partite future"*), e non è una scelta di comodo:
+  // le gambe di una schedina salvata sono una **copia**, mentre la scheda
+  // vuole la riga viva di `prossime_partite` — con quote, attendibilità, VPM.
+  // Quando la partita si gioca esce da lì, e da quel momento il nome non si
+  // tocca più. Farla funzionare anche dopo vuol dire una scheda che legge
+  // dall'archivio: un altro lavoro, non un parametro.
+  const [apertaId, setApertaId] = useState(null)
   // ⚠️ Il confine si calcola **una volta per sessione**: dentro un `useMemo`
   // delle candidate si rifarebbe a ogni tocco di una manopola.
   const limiteLunedi = useMemo(() => lunediProssimo(0), [])
@@ -261,6 +271,15 @@ export default function BetBuilderPage() {
     </div>
   )
 
+  // ⚠️ Si cerca fra le righe **vive**: una gamba salvata porta `prossima_id`,
+  // e se quella partita si è già giocata qui non c'è più — ed è giusto così.
+  const partitaAperta = apertaId ? valutate.find(r => r.id === apertaId) : null
+  // ⚠️ `apribile` serve alla gamba per sapere se mostrarsi cliccabile: un nome
+  // che sembra un tasto e non apre niente è peggio di un nome che non lo
+  // sembra. La riga del registro lo chiede per `prossima_id`, la proposta per
+  // il suo stesso id.
+  const apribile = (id) => !!id && valutate.some(r => r.id === id)
+
   // ⚠️ Definito **una volta**: compare sia sotto la proposta sia al posto suo
   // quando non ce n'è una, e due copie dello stesso tasto prima o poi si
   // comportano in due modi diversi.
@@ -348,6 +367,7 @@ export default function BetBuilderPage() {
             {proposta.gambe.map(g => {
               const aMano = aggiunteId.includes(g.id)
               return <Gamba key={g.id} g={g} aMano={aMano}
+                onApri={apribile(g.id) ? () => setApertaId(g.id) : null}
                 onScarta={() => aMano ? setAggiunteId(a => a.filter(x => x !== g.id)) : scarta(g.id)} />
             })}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
@@ -495,6 +515,7 @@ export default function BetBuilderPage() {
                 sbagliata. */}
             <div style={{ marginTop: 6 }}>
               {s.gambe.map(g => <Gamba key={g.id} g={g}
+                onApri={apribile(g.prossima_id) ? () => setApertaId(g.prossima_id) : null}
                 onQuota={(v) => reg.cambiaQuota(g.id, v).then(r => setAvviso(r.errore ?? null))} />)}
             </div>
             {/* l'importo resta modificabile: si scrive quando si gioca, non
@@ -577,6 +598,18 @@ export default function BetBuilderPage() {
           combinata è il prodotto delle rese, e una schedina da quota 5 vuole
           quattro o cinque gambe. Mattia lo sa — *"più fanny che
           profittevole"* — e ripeterlo a ogni schedina sarebbe una predica. */}
+      {/* ⚠️ Fuori da ogni ramo: il foglio copre la pagina, e legarlo a una
+          vista vorrebbe dire che cambiando vista resta aperto sopra il nulla.
+          ⚠️ **È la stessa scheda della pagina Partite**, non una versione
+          ridotta — un secondo posto per la stessa cosa prima o poi diverge. */}
+      {partitaAperta && (
+        <SchedaScorrevole onChiudi={() => setApertaId(null)}>
+          <DettaglioPartita p={partitaAperta} cat={categoria(partitaAperta.probGiocata, SOGLIE_DEFAULT)}
+            voti={votiDi(partitaAperta.id)} mio={mioVoto(partitaAperta.id)} puoVotare={isAdmin}
+            onVota={() => vota(partitaAperta.id)} onChiudi={() => setApertaId(null)} />
+        </SchedaScorrevole>
+      )}
+
       {/* ⚠️⚠️ **La stessa finestra di Road to weekend**, coi suoi filtri ⚑ e
           ★ e la ricerca a testo libero: una gemella scritta qui sarebbe una
           seconda idea di *"quale partita aggiungo"*.
@@ -667,7 +700,7 @@ function ComeFunziona() {
 
 /** Una gamba, uguale nella proposta e nel registro: **se fossero due pezzi,
  *  prima o poi mostrerebbero due cose diverse.** */
-function Gamba({ g, onScarta = null, onQuota = null, aMano = false }) {
+function Gamba({ g, onScarta = null, onQuota = null, aMano = false, onApri = null }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: `minmax(0,1fr) 30px 46px${onScarta ? ' 18px' : ''}`,
       gap: 6, alignItems: 'center', padding: '5px 0', borderTop: `1px solid ${alpha(C.testo, 0.06)}` }}>
@@ -679,7 +712,16 @@ function Gamba({ g, onScarta = null, onQuota = null, aMano = false }) {
               le altre si rifanno a ogni tocco di una manopola. */}
           {aMano && <> · <b style={{ color: C.viola }}>a mano</b></>}
         </div>
-        <div style={{ fontSize: S.corpo, fontFamily: F.sans, color: C.testo, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {/* ⚠️⚠️ **Si apre toccando i NOMI, non tutta la riga** — come in Road
+            to weekend. Nella riga ci sono già il campo della quota e la × che
+            la toglie: un contenitore cliccabile sopra di loro vuol dire aprire
+            un foglio a tutto schermo mentre si corregge una quota.
+            ⚠️ Se la partita non c'è più fra le future, il nome **non si finge
+            un tasto**: niente cursore, niente ruolo. */}
+        <div onClick={onApri || undefined} role={onApri ? 'button' : undefined}
+          title={onApri ? 'apri la scheda della partita' : undefined}
+          style={{ fontSize: S.corpo, fontFamily: F.sans, color: C.testo, cursor: onApri ? 'pointer' : 'default',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {g.casa} — {g.trasferta}
         </div>
       </div>

@@ -57,7 +57,8 @@ const nomeGiorno = (d) => d ? GIORNI[new Date(d + 'T12:00:00').getDay()] : ''
 
 function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumulato, colore, classifiche,
                 quote, setQuote, perc, setPerc, esito, setEsito, onToglie, prossima, onAggiunge,
-                onQuota = null, onSpezza = null, onApri = null, onManuale = null, tocca = true }) {
+                onQuota = null, onSpezza = null, onApri = null, onManuale = null, tocca = true,
+                stelleDi = () => 0, anteprima = false }) {
   // ⚠️ La quota della schedina è il **prodotto delle quote modificate**, non di
   // quelle scaricate: Mattia gioca su book diversi e con i bonus, e una pagina
   // che mostra la quota del consenso gli racconterebbe un piano che non è il suo.
@@ -104,21 +105,35 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
             si tocca: nessuna regola da ricordare.
             ⚠️ Non compare dopo l'ultima gamba (lì non c'è niente da staccare)
             né su un passo già giocato: quello che è accaduto non si tocca. */}
-        {/* ⚠️⚠️ **E solo dove i DUE pezzi arrivano al minimo** (correzione di
-            Mattia, 21/10): prima il taglio si offriva fra ogni coppia di
-            gambe, quindi proponeva di fabbricare una schedina a 1,30 — che non
-            è un passo di questa scalata. `puoSpezzare` guarda il prodotto di
-            qua e di là dal taglio. */}
-        {iG > 0 && onSpezza && !esito && tocca && puoSpezzare(quoteGambe, iG) && (
-          <button onClick={() => onSpezza(iG)} title="Da qui in giù diventa un passo a parte"
+        {/* ⚠️⚠️ **Il taglio si offre OVUNQUE, e avvisa invece di vietare**
+            (Mattia, 23/10/2026). Il 21/10 l'avevo chiuso ai soli punti dove
+            **tutt'e due** i pezzi arrivano a 2,00, e il risultato è che non
+            compariva quasi mai: col taglio automatico a 2,00 un passo da
+            quattro gambe sta a 2,07, e spezzarlo in 2+2 fa 1,44 e 1,44.
+            Cioè vietava proprio il caso per cui era stato chiesto — *"me ne
+            propone 4 e io ne voglio 2"*.
+            ⚠️ **Chi decide è lui, e il minimo resta scritto**: il pezzo sotto
+            2,00 lo dice da sé, in ambra, con quanto gli manca (riga sopra). È
+            la stessa scelta dei filtri: la pagina avvisa, non impedisce.
+            ⚠️ `puoSpezzare` **non si butta**: qui serve a colorare il comando,
+            cioè a far vedere *prima* di toccare che quel taglio lascia un
+            pezzo corto. */}
+        {iG > 0 && onSpezza && !esito && tocca && (() => {
+          const aNorma = puoSpezzare(quoteGambe, iG)
+          return (
+          <button onClick={() => onSpezza(iG)}
+            title={aNorma ? 'Da qui in giù diventa un passo a parte'
+              : `Da qui in giù diventa un passo a parte — ma uno dei due pezzi resta sotto ${QUOTA_MINIMA_SCHEDINA.toFixed(2).replace('.', ',')}`}
             style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', padding: '3px 0',
-              background: 'none', border: 'none', cursor: 'pointer', color: C.fioco, fontFamily: F.sans,
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: aNorma ? C.fioco : C.ambra, fontFamily: F.sans,
               fontSize: S.micro, letterSpacing: '0.04em' }}>
             <span style={{ flex: 1, height: 1, background: alpha(C.testo, 0.10) }} />
-            spezza qui
+            spezza qui{aNorma ? '' : ' ⚠'}
             <span style={{ flex: 1, height: 1, background: alpha(C.testo, 0.10) }} />
           </button>
-        )}
+          )
+        })()}
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 34px 58px 20px',
           gap: 6, alignItems: 'center', padding: '6px 0', borderTop: `1px solid ${alpha(C.testo, 0.06)}` }}>
           {/* ⚠️⚠️ **Si apre la scheda toccando i NOMI, non tutta la riga**
@@ -151,6 +166,16 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
               {' · '}scelta <b style={{ color: C.testo }}>{pct(g.scelta)}</b>
               {g.vpm != null && <> · VPM <b style={{ color: C.testo }}>{Number(g.vpm).toFixed(2).replace('.', ',')}</b></>}
               {' · '}{sigla(g.div)} · {g.ora?.slice(0, 5)}
+              {/* ⚠️⚠️ **La stella si vede DENTRO il passo** (23/10/2026). Da
+                  quando scavalca i filtri, una gamba può stare lì con
+                  l'attendibilità al 40% — e senza questo segno sembrerebbe un
+                  errore del programma invece di una scelta di chi l'ha
+                  stellata. ⚠️ È anche l'unico modo di capire perché il passo
+                  si è spezzato in quel punto: una stella a quota bassa sposta
+                  il taglio. */}
+              {stelleDi(g.prossima_id ?? g.id) > 0 && (
+                <span title="entrata perché stellata" style={{ color: C.oro }}> · ★</span>
+              )}
             </div>
             {/* ⚠️ **La posizione sta a destra di OGNI squadra**, non in una
                 colonna a parte (richiesta di Mattia, 18/10/2026): così si legge
@@ -234,6 +259,20 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
         </button>
       )}
 
+      {/* ⚠️⚠️ **In anteprima i soldi non si mostrano, e non è pudore.** Un
+          passo staccato a mano si vede subito — è quello che hai appena fatto,
+          non il futuro — ma la sua **puntata non esiste ancora**: è la cassa
+          che arriva dal passo prima, e quel passo non è chiuso. Mettere un
+          numero lì vorrebbe dire inventarlo, ed è esattamente il motivo per
+          cui i passi successivi restano nascosti. Qui si vede **cosa** si
+          gioca, non **quanto**. */}
+      {anteprima ? (
+        <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${alpha(C.testo, 0.1)}`,
+          fontFamily: F.sans, fontSize: S.minuta, color: C.fioco, textAlign: 'center', lineHeight: 1.5 }}>
+          staccato a mano · la puntata si calcola quando chiudi il passo {numero - 1}
+        </div>
+      ) : <>
+
       {/* ── Sotto la linea: puntata · incassato · utile ──────────────────── */}
       {/* ⚠️ I nomi sono quelli che usa Mattia (15/10/2026): *puntata* e non
           "posta", *incassato* e non "se vince", *da rigiocare* e non
@@ -301,6 +340,7 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
           }}>{e === 'vinto' ? '✓ vinto' : e === 'perso' ? '✗ perso' : 'da giocare'}</button>
         ))}
       </div>}
+      </>}
     </Card>
   )
 }
@@ -545,15 +585,33 @@ export default function ScalataPage() {
 
   const candidate = useMemo(() => {
     if (!righe) return []
+    // ⚠️⚠️ **La stella scavalca TUTTI i filtri di qualità** (Mattia,
+    // 23/10/2026: *"le partite con la stella entrino nella scaletta come le
+    // altre, e la stella scavalca tutto"*). Fino a ieri finivano solo
+    // nell'elenco qui sotto: la stella è un gesto esplicito su una partita
+    // sola, e un filtro che la butta fuori sta discutendo con chi l'ha messa.
+    // ⚠️ **I tre filtri che restano non sono di qualità**: una partita già
+    // cominciata non si pianifica, una con le quote incoerenti è un dato
+    // rotto, e una tolta a mano è stata tolta a mano. Quelli valgono per
+    // tutti, stella compresa.
+    // ⚠️ **Il flag ⚑ no, e non è una dimenticanza**: Mattia lo usa per
+    // marcare a vista partite che nella scaletta ci sono già — è una
+    // verifica, non una scelta.
+    // ⚠️⚠️ **Effetto da sapere**: i passi si spezzano appena superano 2,00,
+    // quindi una stella a quota 1,05 non aggiunge solo una gamba — cambia
+    // **dove si taglia** la schedina. Per questo dentro il passo la gamba
+    // entrata per la stella la si vede (★).
+    const stellata = (r) => votiDi(r.id) > 0
     return valutate.filter(r =>
       !tolte.includes(r.id) &&
       !r.quoteIncoerenti &&
       iniziaDopo(r, daOra) &&
-      r.att != null && r.att * 100 >= attMin &&
-      r.scelta != null && r.scelta * 100 >= sceMin &&
-      (vpmMin <= 0 || (r.vpm != null && r.vpm >= vpmMin)) &&
-      (r.quota ?? 0) >= quotaGamba)
-  }, [righe, valutate, attMin, sceMin, vpmMin, quotaGamba, tolte, daOra])
+      (stellata(r) || (
+        r.att != null && r.att * 100 >= attMin &&
+        r.scelta != null && r.scelta * 100 >= sceMin &&
+        (vpmMin <= 0 || (r.vpm != null && r.vpm >= vpmMin)) &&
+        (r.quota ?? 0) >= quotaGamba)))
+  }, [righe, valutate, attMin, sceMin, vpmMin, quotaGamba, tolte, daOra, votiDi])
 
   // ⚠️ Le fasce sono una **proposta**: stesso giorno, orari entro tre ore. Poi
   // si toglie a mano quello che non piace — è il motivo per cui la pagina esiste.
@@ -688,6 +746,27 @@ export default function ScalataPage() {
     while (dato(i)) i++
     return i
   }, [aperta, reg.passi, esiti])
+
+  /**
+   * Fin dove si disegna: la frontiera, **più** i pezzi staccati a mano che le
+   * stanno attaccati.
+   *
+   * ⚠️ Come si riconosce un pezzo staccato a mano, nei due modi:
+   * a scalata **aperta** ha un `numero` **decimale** — `spezzaPasso` inserisce
+   * la riga a metà fra due interi (1,5 fra l'1 e il 2), ed è il motivo per cui
+   * `sql/31` ha reso quella colonna `numeric`; nel **piano** la sua prima gamba
+   * è uno dei punti di taglio.
+   * ⚠️ Si scorre finché la catena regge: due tagli di fila mostrano tre pezzi,
+   * ma un pezzo staccato dal passo 7 **non** tira fuori anche i sei in mezzo.
+   */
+  const limiteVisibile = useMemo(() => {
+    const staccato = aperta
+      ? (i) => reg.passi[i] && Number(reg.passi[i].numero) % 1 !== 0
+      : (i) => passi[i] && tagli.includes(passi[i].partite?.[0]?.id)
+    let i = frontiera
+    while (staccato(i + 1)) i++
+    return i
+  }, [aperta, reg.passi, passi, tagli, frontiera])
 
   // ⚠️⚠️ **Le casse si RICALCOLANO dalla catena dei passi**, sempre: né lette
   // dal database né aggiornate a ogni esito. È quello che permette di togliere
@@ -1091,7 +1170,10 @@ export default function ScalataPage() {
           // consiglio di questo passo dipende da quello che i passi prima
           // hanno già messo via — compresi i centesimi dell'arrotondamento.
           const { cassa: p, accumulo: acc } = casseDi(reg.passi.slice(0, i), posta, (k) => perc[k])
-          if (p < 1 || i > frontiera) return null
+          // ⚠️ Vale anche qui: un passo staccato a mano (numero decimale) si
+          // vede subito, in anteprima e senza i soldi.
+          const inAnteprima = i > frontiera
+          if ((p < 1 && !inAnteprima) || i > limiteVisibile) return null
           return (
             /* ⚠️⚠️ **`i + 1`, non `riga.numero`.** La colonna `numero` è
                l'ordine con cui i passi sono stati salvati, e **lascia dei
@@ -1102,7 +1184,7 @@ export default function ScalataPage() {
                numero della colonna il consiglio scritto nella card e quello
                applicato alle casse erano due numeri diversi (al primo passo
                della catena: tutto l'utile contro il 70%). */
-            <Passo key={riga.id} numero={i + 1} gambe={gambe} giorno={riga.giorno} ora={gambe[0]?.ora?.slice(0, 5)}
+            <Passo key={riga.id} numero={i + 1} gambe={gambe} giorno={riga.giorno} ora={gambe[0]?.ora?.slice(0, 5)} stelleDi={votiDi} anteprima={inAnteprima}
               posta={p} postaIniziale={posta} accumulato={acc} colore={coloreDi(i)} classifiche={classifiche}
               quote={quote} setQuote={setQuote} onApri={setApertaId} tocca={isAdmin}
               onQuota={(id, v) => reg.cambiaQuota(id, riga.id, v)}
@@ -1167,13 +1249,17 @@ export default function ScalataPage() {
             acc += inc.via
             p = inc.rigioca
           }
-          if (p < 1 || i > frontiera) return null
+          // ⚠️ Un pezzo staccato a mano si vede anche oltre la frontiera, e
+          // **anche se la cassa non c'è ancora**: `p < 1` qui vorrebbe dire
+          // *"non so quanto puntare"*, che in anteprima è proprio il punto.
+          const inAnteprima = i > frontiera
+          if ((p < 1 && !inAnteprima) || i > limiteVisibile) return null
           return (
             /* ⚠️ La chiave è **l'id della prima gamba**: due pezzi tagliati
                dalla stessa fascia hanno lo stesso giorno e la stessa ora,
                quindi `giorno + ora` ne faceva due chiavi uguali — e React con
                due chiavi uguali ridisegna la cosa sbagliata, in silenzio. */
-            <Passo key={f.partite[0]?.id ?? f.giorno + f.ora} numero={i + 1} gambe={f.partite} giorno={f.giorno} ora={f.ora}
+            <Passo key={f.partite[0]?.id ?? f.giorno + f.ora} numero={i + 1} gambe={f.partite} giorno={f.giorno} ora={f.ora} stelleDi={votiDi} anteprima={inAnteprima}
               posta={p} postaIniziale={posta} accumulato={acc} colore={coloreDi(i)} classifiche={classifiche}
               onApri={setApertaId} tocca={isAdmin} prossima={prossimaDi(i)}
               onAggiunge={() => { const n = prossimaDi(i); if (n) setAggiunte(a => ({ ...a, [i]: [...(a[i] || []), n.id] })) }}
