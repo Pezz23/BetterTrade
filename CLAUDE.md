@@ -22,11 +22,19 @@ e l'unico modo è che eseguano lo stesso codice.**
 
 **All'inizio di ogni sessione si legge [STATO.md](STATO.md)** — è la to-do e il
 punto esatto in cui siamo: dove siamo oggi, i lotti nell'ordine concordato, il
-lavoro in corso e tutto quello che è **ancora aperto**. Dal 22/10/2026 è
-**corto** (~45 kB): quello che è chiuso sta in [STORICO.md](STORICO.md).
+lavoro in corso e tutto quello che è **ancora aperto**. Dal 22/10/2026
+quello che è chiuso sta in [STORICO.md](STORICO.md), e ci torna ogni volta che
+una sezione finisce: il 24/10 sono scesi là il piano della Scalata madre e il
+lotto del voto, **spostati con uno script e verificati riga per riga contro
+git** — mai ribattuti a mano.
 **Alla fine si aggiorna.** Se una task cambia stato e il file non lo riflette,
 la sessione dopo riparte da informazioni sbagliate: aggiornarlo fa parte del
 lavoro, non è un extra.
+
+⚠️ **In cima a STATO ci sono due blocchi fatti per questo**: *«Per ripartire»*
+(il comando del server di sviluppo e lo stato dei dati) e *«Da dove ripartire,
+in ordine di valore»* — cinque voci con il costo di ciascuna. ⛔ Nessuna di
+quelle è stata promessa: **si propone e decide Mattia.**
 
 ⚠️ **Se è passato più di un mese dall'ultimo aggiornamento**, in cima a STATO
 c'è il blocco "RIPARTIRE DOPO UNA PAUSA": tre comandi e la tabella di cosa è

@@ -16,21 +16,57 @@
 **Ultimo aggiornamento:** 22 ottobre 2026 (notte) · app alla versione
 **1.52.01** · ultimo commit `28322a1`
 
-## ▶️ DOVE SIAMO — 22 ottobre 2026, leggi questo per primo
+## ▶️ DOVE SIAMO — 24 ottobre 2026, leggi questo per primo
 
-**Tutto il lavoro del 21-22 ottobre sta su ROAD TO WEEKEND**, e la sera del 22
-si è spostato su **BET BUILDER** e **PARTITE**. Il restyling è chiuso (il
-blocco più sotto è storia): la pagina della scalata è lo strumento del
-weekend, il Builder quello delle schedine personali, e Partite ha preso la
-barra dei campionati.
+**Versione `1.57.01`, tutto committato e pushato** (`origin/main` è allineato:
+verificato il 24/10). Niente in sospeso, niente da recuperare.
 
-⚠️ **Versione a schermo: `1.54.00`.** Il 22 sera sono passati sette commit
-senza che il contatore si alzasse — se succede di nuovo, sul telefono non si
-distingue il lavoro di oggi dalla cache di ieri.
+Il lavoro del **21-22 ottobre** sta su ROAD TO WEEKEND e BET BUILDER; quello
+del **23 ottobre** — una giornata lunga — su **dati** e **scheda partita**:
 
-⚠️⚠️ **Ci sono 8 commit non pushati** (da `c5e4e95` a questo). **Il push è
-sempre di Mattia**: se la prossima sessione li trova lì, non sono dimenticati,
-aspettano lui.
+| | |
+|---|---|
+| **l'archivio è passato da 54.249 a 67.517 partite** | Champions, Europa, Conference, Olanda 2 e Giappone da ESPN. **20 competizioni** |
+| **il fuso era sbagliato di un'ora** su tutto il calendario, dall'inizio | corretto alla radice e i dati rimessi a posto |
+| **angoli e cartellini** entrano nella scheda, **misurati su venti competizioni** | e dove il modello non batte la base, la scheda lo scrive |
+| **la scheda partita è stata ristrutturata** | data nella riga del campionato, quattro voci coi divisori, card a scomparsa |
+| **«fissa passo»** in Road to weekend | per programmare tutto il percorso a tavolino |
+| **la linea over/under 3,5** smette di finire nel cestino | raccolta sì, usata **no**: non c'è un passato su cui misurarla |
+
+### Per ripartire
+
+```bash
+cd app && npm run dev          # il server di sviluppo non resta acceso fra le sessioni
+```
+
+**I dati del weekend sono già dentro** (caricati il 23/10 sera): risultati
+della stagione, calendario, `andamento` ricalcolata, `controlla-dati` pulito.
+Non serve rilanciare niente prima di lunedì.
+
+⚠️ **Crediti The Odds API: 157 su 500** rimasti questo mese. Un giro completo
+ne costa **51** — vedi il blocco «I CREDITI» più sotto prima di lanciarne uno.
+
+⚠️ **Il contatore di versione si alza a mano** (`app/src/versione.js`), a ogni
+commit che cambia l'app. Il 22 sera sono passati sette commit senza alzarlo, e
+sul telefono non si distingueva il lavoro di oggi dalla cache di ieri.
+
+### 👉 Da dove ripartire, in ordine di valore
+
+Nessuna di queste è stata promessa a Mattia: **si propone e decide lui.**
+
+| | cosa | costo |
+|---|---|---|
+| 1 | **I falli** — ESPN li manda (`foulsCommitted`) in ogni riepilogo e **li buttiamo via**, esattamente com'era per i cartellini fino al 22/10. Sono il meccanismo che produce il giallo, e i cartellini sono il mercato dove il modello rende di più. Serve: una colonna, due righe in `lib/espn.js`, il recupero, **e la rimisura** | mezza giornata, zero crediti |
+| 2 | **Il routing** (lotto 3) — era *"da fare prima di aggiungere schermate nuove"* e da allora ne sono arrivate tre. Vuole mezza giornata in cui non si aggiunge niente | mezza giornata |
+| 3 | **L'arbitro** — la letteratura lo chiama cruciale per i cartellini. ⚠️ **Prima va verificato** che football-data abbia davvero la colonna `Referee`: il 23/10 il DNS di quel sito era giù tutto il giorno e **non l'ho potuto controllare** | da stimare dopo la verifica |
+| 4 | **La misura `eu` contro `eu,uk`** sull'1X2: se la sola `eu` basta, libera **148 crediti al mese** | 2 crediti, un'ora |
+| 5 | **U3** — matrice dei risultati esatti e fair odds | 1 giorno |
+
+⏳ **In attesa che passino le partite, non da fare adesso:**
+- **`MERCATO_35`** — 89 partite hanno la quota 3,5 dal 23/10; quando si saranno
+  giocate si lancia la query di `note/gol.md` e si decide se accendere.
+- **Il riepilogo del Bet Builder** e quello della scalata, che vogliono
+  dieci-venti schedine chiuse: prima direbbero rumore.
 
 ### Cos'è cambiato, in ordine
 
@@ -49,6 +85,14 @@ aspettano lui.
 | **🎟️ Bet Builder, il secondo giro**: `ATTIVE \| ARCHIVIO` coi dieci secondi, i **filtri che restano**, il filtro **«fino a lunedì»** e **＋ aggiungi partita** (la finestra di Road to weekend, con `S3` al posto di `P3`) | `3368fed` |
 | **Tab bar più alta due volte** (Siri sul bordo dell'iPhone): ~49 → ~65px, e `--barra-bassa` 62 → 78 | `60863c6` · `d291d7d` |
 | **🏴 LA BARRA DEI CAMPIONATI** a destra, fissa — e i filtri delle Partite rifatti sui **quattro indicatori** | `6bf18ae` |
+| **🏆 Champions, Europa, Conference, Olanda 2 e J1 da ESPN** + l'aggiornamento orario + il ponte fra i nomi | `7c7657f` |
+| **🧮 U1 — angoli e cartellini** letti, misurati, mostrati | `e2a2545` |
+| **Scalata**: le stelle entrano nella scaletta, «spezza» sbloccato, la scheda dal Bet Builder | `af8e046` |
+| **Partite**: tasti dell'ordine più bassi del 30% e coi filtri accoppiati | `60ec07a` · `076d625` |
+| **🕐 Il fuso**: il calendario era indietro di un'ora, corretto alla radice | `25f45a1` |
+| **La scheda partita ristrutturata**, e i conteggi misurati su venti competizioni | `978d3fd` |
+| **«fissa passo»** in Road to weekend | `5f511d9` |
+| **U2' — la linea 3,5** smette di finire nel cestino | `5da5b0a` |
 
 Le migrazioni applicate in questi due giorni: **`sql/31`** (numero del passo
 decimale, per inserirne uno in mezzo), **`sql/32`** (il metodo `madre`),
@@ -80,10 +124,10 @@ stretta). Tutte verificate dal database subito dopo.
 | **3** | **Gli indirizzi delle pagine** (lotto Q, routing) | da fare — **prima di aggiungere schermate nuove**, o si ricablano dopo. E toglie la trappola della mappa di `guarda.mjs` |
 | **4** | ✅ **La schedina a schermo — fatta il 22/10 come 🎟️ BET BUILDER** (`sql/36`): schedine a quota obiettivo, private per utente, con «giocata» e «cancella», e le partite già usate escluse dalle successive. ⚠️ **Resta aperta solo l'idea 9**: `CompilaPerQuota` riempie le caselle **vuote** di una spin — va capito con Mattia se voleva compilarne una **intera**. |
 | **5** | **La barra dei campionati** (idea 3) | ✅ **fatta il 22/10 sera** (`6bf18ae`), anticipata da Mattia prima del routing. La domanda *"cosa si restringe"* ha avuto risposta: **niente** — lo spazio si **riserva** (40px di margine a destra) invece di lasciar galleggiare la striscia sopra la lista |
-| **6** | **L'automazione** (lotto F): il `.plist` di launchd è pronto, due comandi | da fare |
+| **6** | **L'automazione** (lotto F) | ⚠️ Ora i `.plist` sono **due** e **nessuno dei due è installato** (verificato con `launchctl` il 23/10): `aggiornamento.plist` (martedì/venerdì, la routine intera) e `aggiornamento-orario.plist` (solo i risultati da ESPN, **zero crediti**). Due comandi ciascuno, scritti in testa ai file |
 | **7** | **Quello che aspetta i dati**: il riepilogo della scalata (a 10-20 chiuse), il Satellite, la spin 2 sotto soglia, i backtest vecchi | non anticipabile |
-| **8** | 🧬 **UPGRADE MODELLO DI DATI — fonti** (briefing 1 di Mattia, 22/10): angoli e cartellini **già in archivio e mai letti**, over 1,5 e 3,5, FBref per xG e Champions, live. Il piano sta più sotto | ⛔ **da decidere**, quattro domande aperte |
-| **9** | 🧬 **UPGRADE MODELLO DI DATI — evoluzione predittiva** (briefing 2): matrice dei risultati esatti e fair odds. ⚠️ Il Poisson **esiste già** in `lib/gol.js` con le sue correzioni misurate: qui si estende, non si riscrive — e **non in Python**, o nascono due verità | ⛔ **da decidere** |
+| **8** | 🧬 **UPGRADE MODELLO DI DATI — fonti** | 🟡 **in corso, e la parte grossa è fatta**: le cinque competizioni nuove da ESPN, angoli e cartellini letti e misurati (U1), la linea 3,5 raccolta (U2'). **Resta**: i falli, l'arbitro, l'xG da FBref (U4), il live (U5) |
+| **9** | 🧬 **UPGRADE MODELLO DI DATI — evoluzione predittiva** (U3): matrice dei risultati esatti e fair odds. ⚠️ Il Poisson **esiste già** in `lib/gol.js` con le sue correzioni misurate: qui si estende, non si riscrive — e **non in Python**, o nascono due verità | ⛔ **da decidere**, mai iniziato |
 
 ⚠️ Restano fuori dai lotti, **non dimenticate**: la **scala a sette colori per
 distanza nel tempo** (idea 1) — proposta e **non fatta**, perché nella pagina
@@ -464,10 +508,10 @@ competizioni* non c'è — ed è il lavoro che aprirebbe il blocco a tutti.
 
 | # | pezzo | cosa aggiunge DAVVERO | stima |
 |---|---|---|---|
-| **U1** | **Leggere angoli e cartellini** che sono già lì: medie per squadra, casa/fuori, ultime N; il blocco nella scheda partita accanto a quello dei gol | il dato c'è dal primo giorno e **non si vede da nessuna parte**. È il miglior rapporto fra lavoro e risultato di tutto il piano | mezza giornata |
+| ~~**U1**~~ | ✅ **fatto il 23/10** (`e2a2545`, poi `978d3fd`): due card nella scheda, misurate su venti competizioni. Il dettaglio sta in `note/conteggi.md` | ✅ |
 | ~~**U2**~~ | ⚠️⚠️ **ERA GIÀ FATTO, e la riga qui sopra era sbagliata.** «La scheda consiglia solo il 2,5» non l'avevo verificato: `consiglioOver()` scorre **tutte** le soglie e sceglie *la più ambiziosa che regge*, e la griglia della scheda mostra over/under 0,5 · 1,5 · 2,5 · 3,5 con le fasce misurate. Provato il 23/10 sulle 245 partite in calendario: **OVER 1,5 → 149 volte, UNDER 3,5 → 50, OVER 2,5 → 46**. Le due soglie "mancanti" sono la maggioranza dei consigli | ✅ niente da fare |
 | **U3** | **La matrice dei risultati esatti e le fair odds**: da λ casa/λ trasferta a 1X2 + O/U + GG in un colpo, **in `lib/gol.js`**, non altrove | ⚠️ Serve a confrontare il nostro 1X2 col **consenso dei book**, che oggi è l'unica fonte dell'attendibilità. Da lì nasce un VPM sui gol | 1 giorno |
-| **U4** | **FBref**: xG e **Champions League** — l'unica cosa del briefing 1 che porta **informazione nuova** | ⚠️ È anche l'unico pezzo che può muovere il GG, perché aggiunge un dato, non una formula. Ma: fonte nuova, nomi squadra da riconciliare, e `soccerdata` è **Python** | 2-3 giorni |
+| **U4** | **FBref: solo l'xG** — ⚠️ la Champions **non serve più**: dal 23/10 ce l'abbiamo da ESPN, con angoli e cartellini. Resta l'xG, che è l'unico dato davvero nuovo | ⚠️ È anche l'unico pezzo che può muovere il GG, perché aggiunge un dato e non una formula. Ma: fonte nuova, nomi squadra da riconciliare, e `soccerdata` oggi vuole **Python ≥ 3.10** (qui c'è il 3.9) e un **browser** (Cloudflare) | 2-3 giorni |
 | **U5** | **Live / Sofascore** | ⏸️ **dopo** l'automazione (lotto F) e **dopo** che U1-U4 hanno detto se il modello vale | non stimabile ora |
 
 ### ⚠️ La domanda su Python, e la risposta che consiglio
@@ -485,6 +529,11 @@ Quindi:
 
 ### Le decisioni che servono a Mattia prima di partire
 
+⚠️ **Le quattro domande qui sotto sono del 22/10 e hanno avuto risposta**: si
+è partiti da U1 (fatto), il GG resta un numero dentro la scheda, la Champions
+è entrata come competizione a sé (`div = 'UCL'`) ed è servita per **guardare**
+angoli e cartellini, non per giocarli. Restano come traccia del ragionamento.
+
 1. **Si parte da U1** (angoli e cartellini già in casa) o da **U4** (FBref e
    Champions, che è la cosa che più assomiglia al briefing ma costa dieci volte
    tanto)?
@@ -497,214 +546,18 @@ Quindi:
 4. **Angoli e cartellini**: servono per **guardarli** o per **giocarli**? Se
    per giocarli serve una fonte di quote che oggi non abbiamo.
 
-## 🪜 SCALATA MADRE — il piano di rientro progressivo (21 ottobre 2026)
+## 🪜 SCALATA MADRE e ⚖️ IL VOTO — spostati in STORICO.md (24/10/2026)
 
-Briefing di Mattia, ragionato con Gemini. ⛔ **Non sviluppato in blocco**:
-valutato, misurato e diviso in lotti. Le decisioni qui sotto sono sue.
+Il piano della scalata (21/10) è stato **eseguito per intero**: pavimenti,
+quota 2,00, selezione 61%, i lotti A · B · C · E · F. Il voto è diventato la
+**pagella 0-10** il 22/10. Tutte e due le sezioni — misure, decisioni e numeri
+— stanno ora in [STORICO.md](STORICO.md), parola per parola.
 
-### ⚠️⚠️ Il numero su cui si regge, misurato
-
-Il briefing parte da *"precisione storica ~72%"*. In questo progetto quel 72% è
-la percentuale con cui vince **un singolo favorito corto** (1,35-1,40:
-dichiarato 69,1%, arrivato 72,5%). Il piano però gioca **doppie**, che sono un
-altro evento. Misurato con `prova-scalata.js --quota=2.0`, 8 stagioni, 723
-passi:
-
-```
-quota minima 2,00 →  vince 41,6%   quota media realizzata 2,448
-                     gambe medie 2,71      resa 100,8%
-```
-
-⚠️ **41,6%, non 72%.** E per arrivare a 2,00 partendo da gambe ≥1,30 ce ne
-vogliono **2,71 in media, non 2**: la quota sfonda a 2,448, il che sposta tutte
-le poste del piano.
-
-**L'EV del Modello A**, un ciclo da 10 unità:
-
-| p(passo) | EV ciclo | chiude 4/4 | cicli in utile |
-|---|---|---|---|
-| 41,6% | −3,47u | 3,0% | 17% |
-| 49,0% | −0,48u | 5,8% | 24% |
-| **50,4%** (resa 100,8%) | **+0,20u** | 6,5% | 25% |
-
-⚠️⚠️ **L'EV è indistinguibile da zero**, e il segno dipende da una stima con
-±8 punti di margine. Non è una bocciatura — a quota 2,00 la resa misurata è la
-**migliore di tutte le fasce provate** — ma va detto cos'è il modello:
-**ridistribuisce la varianza, non crea un margine.**
-
-```
-49,6% → −10u    25,0% → −3u    12,6% → +3u    6,3% → +18u    6,5% → +68u
-```
-
-Si perdono **tre cicli su quattro**, poco per volta, e si vince molto di rado.
-⚠️ **Nel codice non si scrive mai «garantito»**: il «+3u garantito dopo due
-passi» del briefing è condizionato ad aver già vinto due passi, cosa che accade
-il 25% delle volte.
-
-### Le decisioni di Mattia (21/10/2026)
-
-| | |
-|---|---|
-| quota minima | **2,00 "a salire"** — corretta il 21/10 dopo aver visto che a 1,90 i due vincoli qui sotto **non possono valere insieme** (il 1° passo incassa 19 e non 20) |
-| l'arrotondamento | **i centesimi in accumulo, le cifre intere in «da rigiocare»** |
-| il vincolo vero | **in due giornate deve rientrare il capitale iniziale** — è il pavimento del 2° passo |
-| il Satellite | **si aspetta**, in fondo a questa lista |
-| i backtest | ⚠️⚠️ **si chiedono prima di lanciarli.** Selezione da usare: **attendibilità ≥ 68% _oppure_ scelta ≥ 66%**, gamba con quota ≥ 1,30 |
-
-### I lotti
-
-| | | stato |
-|---|---|---|
-| **A** | **Spezzare un passo in due** | ✅ **fatto il 21/10** (`sql/31`, `spezzaFasce`, `spezzaPasso`, `puoSpezzare`) — provato dal vivo **e a scalata aperta** |
-| **B** | La regola «Madre» a **pavimenti** (`PAVIMENTI`, `percentualeConsigliata`) | ✅ **fatto il 21/10** · **misurata il 22/10**, vedi sotto |
-| **C** | La pagina: via la quota schedina e le due regole dai filtri, l'avviso sul passo | ✅ **fatto il 21/10** (`sql/32`) |
-| **D** | **Il Satellite** | ⏸️ **in attesa, priorità futura** |
-| **E** | ⚑ **Flag**, **«+ aggiungi partita manuale»**, **pagina in sola lettura per tutti** | ✅ **fatto il 22/10** (`sql/33`, `sql/34`) — nato strada facendo, non era nel briefing |
-| **F** | **Soglia 61% rimisurata · preferenze salvate · i soldi solo agli admin** | ✅ **fatto il 22/10** (`sql/35`) — vedi sotto |
-
-### Il lotto F, cosa contiene (22 ottobre 2026)
-
-**La soglia consigliata passa da 58% a 61%**, e il come conta più del numero.
-Mattia aveva chiesto il **68%**; `btscout/scripts/prova-soglie-scalata.js` —
-**nuovo, perché la tabella di ottobre l'aveva prodotta un giro non conservato**
-— dice che lì la resa è la più alta della tabella ma **metà dei weekend non ha
-un passo componibile**, e **due passi (il suo vincolo: "in due giornate
-recupero il capitale") si compongono nel 13% dei weekend invece del 74%**.
-⚠️⚠️ **La colonna che decide è quella dei weekend, non la resa**: la scalata
-gioca una schedina da 2,00, non una partita singola. E il guadagno non era
-nemmeno dimostrabile — 100,2 ±3,1 contro 99,5 ±2,0.
-⚠️ Per questo il tasto scrive **anche i weekend**: a 68% avrebbe detto *"resa
-100,2% su 1.359 partite"*, la frase più bella della tabella, tacendo la cosa
-che conta.
-⚠️ **Una stagione sola non misura la resa** (Mattia: *"misura sulla 25/26"*):
-a 61% le otto stagioni vanno da **96,9 a 103,5** con ±5 ciascuna. Il
-**materiale** invece sì, e la 25/26 conferma (2,4 al giorno, 85% dei weekend
-con un passo, 78% con due).
-
-**Le preferenze salvate** (`sql/35`, `hooks/usaPreferenze.js`): una tabella
-sola, la riga con `user_id` **nullo** è quella condivisa degli admin. Catena di
-lettura **la mia → quella degli admin → i valori di fabbrica**. Si salva
-*tutta la situazione* — soglie, bankroll, tolte, aggiunte, tagli, quote,
-percentuali — **col tasto e non in automatico** (sei admin sulla stessa riga),
-con accanto **chi** ha salvato e **quando**.
-⚠️⚠️ E così è sparito un difetto che nessuno aveva visto: la percentuale
-«metti via» era **locale alla pagina anche a scalata aperta**, quindi due
-admin sullo stesso registro potevano vedere **casse diverse**.
-
-**I soldi solo agli admin**: la card del conto e l'interruttore
-`PIANO | ARCHIVIO` non esistono per chi non è admin — la road map si
-condivide, il registro dei soldi no. ⚠️ Fatto **togliendo le card**, non
-richiudendo la lettura delle tabelle: quella svuoterebbe la pagina per tutti.
-
-### Il lotto E, cosa contiene (22 ottobre 2026)
-
-**⚑ I flag** (`flag_partite`, `sql/33`). Mattia: *"un flag verde per segnare
-quelle che mi piacciono, le chiameremo partite flaggate così da non confondere
-con le stelle"*. Stessa forma di `voti_partite`, **significato diverso**: la
-stella scavalca la soglia nelle spin, **il flag non scavalca niente** — le
-soglie della scalata alimentano anche il taglio automatico a 2,00, e una gamba
-corta entrata di straforo abbasserebbe il passo in silenzio. Flaggano tutti gli
-admin, il conto si vede.
-⚠️ **Flaggate e votate restano nell'elenco anche quando i filtri le tagliano**,
-marcate `fuori filtri`: un segno che sparisce alzando una soglia è il difetto
-peggiore. Ma **non entrano nella scaletta**: per quello c'è il tasto manuale.
-
-**«+ aggiungi partita manuale»** (`components/ScegliGamba.jsx`), sotto il tasto
-della consigliata: testo libero più i filtri ⚑/★, **tutto il calendario** anche
-sotto le soglie, in ordine di data e ora. Targhetta `P3` = già nel passo 3.
-⚠️ Il tasto sopra **accetta** la proposta dell'app, questo **la scavalca**: per
-questo hanno un aspetto diverso.
-
-**La pagina aperta a tutti in sola lettura** (`sql/34`). ⚠️⚠️ Due cose che si
-sono scoperte solo provandole:
-1. `usaScalate` filtrava per `user_id`, quindi uno spettatore avrebbe letto
-   **il proprio** registro — vuoto. Ora chi non è admin legge quello che c'è
-   (`usaScalate(userId, tutte)`); ogni admin continua a vedere il suo.
-2. **`scalate_write` era più largo di quanto dicesse**: `user_id = mio OR
-   admin` lasciava a *chiunque* creare una scalata a nome proprio. Non si
-   vedeva perché la lettura era chiusa; aprendola, un utente poteva farsi un
-   registro che sarebbe comparso agli spettatori. Ora è un **and**.
-   ⚠️ Trovato **simulando una sessione utente** contro le policy
-   (`set local role authenticated` + `request.jwt.claims` col suo `auth_id`),
-   non leggendo il codice: dal ruolo postgres RLS non si vede, e dal JSX
-   nemmeno. **È il modo di provare una policy senza password e senza browser,
-   e va riusato.**
-
-Verificato per ruolo, dentro una transazione annullata:
-
-| | legge scalate e passi | crea una scalata | tocca un passo | mette un flag |
-|---|---|---|---|---|
-| **utente** | ✅ sì | ✅ respinto | ✅ respinto | ✅ respinto |
-| **admin** | ✅ sì | ✅ può | ✅ può | ✅ può |
-
-⚠️⚠️ **La tabella 7/6/15 del briefing non è una formula: sono tre numeri che
-valgono solo a quota 2,00 esatta.** Sotto però c'è una logica che si
-generalizza, ed è quella da implementare: **i pavimenti**. Dopo ogni passo
-vinto il peggio che può succedere è **−3, poi +3, poi +18** (in unità sulla
-posta iniziale di 10). Da lì l'accantonamento si ricava a qualunque quota.
-✅ **Sciolto il 21/10 fissando la quota minima a 2,00.** La domanda era: cosa
-fare quando la quota non basta a riempire il pavimento (a 1,70 il primo passo
-incassa 17, il pavimento ne chiede 7 e ne restano 10 da rigiocare — la scalata
-non cresce). La risposta di Mattia non è stata una delle due che avevo
-proposto: **ha alzato la quota minima**, e così il caso non si presenta.
-⚠️ **Resta vero sotto 2,00, e il codice lo tratta senza inventare**: il
-pavimento prende quello che c'è (la percentuale è limitata a 100) e il passo
-dopo recupera il resto, perché i pavimenti sono cumulativi. La card avvisa
-**quanto** manca alla quota minima.
-
-### ⚠️⚠️ La misura, fatta il 22/10/2026 con la selezione di Mattia
-
-`prova-scalata.js --stagioni=8 --quota=2.0 --soglia=0.68 --scelta=0.66`, cioè
-**attendibilità ≥ 68% OPPURE scelta ≥ 66%**, gamba ≥ 1,30. 260 weekend.
-⚠️ Lì un passo = **un giorno** (l'archivio non ha l'ora), quindi è la lettura
-conservativa.
-
-```
-quota 2,00 →  576 passi · 2,80 gambe · quota media 2,459 · vince 42,2% · resa 103,1%
-```
-
-⚠️⚠️ **Il 103,1% NON è un guadagno: il margine è ±10 punti** (576 passi a quota
-2,46). Dice la stessa cosa di tutte le altre righe — **circa 98-100%** — e la
-selezione più stretta **non ha migliorato il passo**: con att ≥ 60% la resa a
-2,00 era 100,8%, con att ≥ 68% _oppure_ scelta ≥ 66% è 103,1%, cioè lo stesso
-numero dentro il rumore. **Il materiale però cala**: 576 passi invece di 723.
-
-**E la scalata intera, 149 scalate:**
-
-| | |
-|---|---|
-| muore al 1° passo | **60%** |
-| passi vinti di fila | 0→89 · 1→42 · 2→13 · 3→4 · 4→1 |
-| rientra la posta | 28% |
-| risultato | mediana **−1,00** · media −0,61 · migliore +43 · peggiore −11 |
-| bankroll per stagione (da 100) | 69 · 41 · 102 · 46 · 37 · 84 · 27 · 84 → **mediana 69**, in utile **1 su 8** |
-
-⚠️⚠️ **Il vincolo "in due giornate rientra il capitale" si avvera il 12% delle
-volte** (18 scalate su 149 hanno vinto due passi), perché per rientrare bisogna
-**prima** vincerli. Il pavimento garantisce *quanto* si mette via, non che ci
-si arrivi.
-⚠️ **I pavimenti non cambiano il segno, cambiano la forma**: con una resa per
-passo attorno al 98-100% nessuna regola di accantonamento crea margine — è la
-stessa frase scritta per le due regole vecchie, e vale identica per questa.
-Quello che comprano è *perdere poco spesso e vincere molto di rado*.
-⚠️ **Resta la disputa aperta**, ed è il motivo per cui la pagina salva tutto:
-questa misura è sulla selezione **meccanica**. Mattia sceglie a mano, e solo il
-registro può dire se fa meglio del 98%.
-
-### ⏸️ D — La Scalata Satellite, in attesa
-
-Si attiva **solo** dopo un 4° passo vinto, finanziata con 10u del profitto.
-⚠️ **Scatta nel 6,5% dei cicli**, e nella simulazione su otto stagioni il
-quarto passo **non è mai arrivato** (*passi vinti di fila: 0→57 · 1→21 · 2→8 ·
-3→2 · **4→0*** su 88 scalate). È una funzione che si vedrebbe forse una volta
-l'anno: per questo è l'ultima.
-⚠️ Il **«rischio ZERO»** del briefing è contabilità mentale: vinte, quelle 10u
-sono bankroll come le altre. La perdita massima di 10u **è** corretta (i passi
-1-3 rigiocano solo vincite), ma l'EV resta negativo: si converte un profitto
-realizzato in uno atteso un filo più basso, in cambio di varianza.
-⚠️ Serve una colonna nuova (`tipo` o `madre_id` su `scalate`), quindi una
-migrazione: un motivo in più per non farla finché la Madre non ha girato.
-
+⚠️ **Quello che resta aperto di quel piano, e non va perso:**
+- **D — la Scalata Satellite**: ⏸️ in attesa, priorità futura. Il come è
+  descritto in STORICO.
+- il **riepilogo della scalata** vuole dieci-venti scalate chiuse: prima
+  direbbe rumore.
 
 ## 📋 LE DIECI IDEE DI MATTIA — 21 ottobre 2026 (notte)
 
@@ -904,84 +757,6 @@ Valutato il 12/10/2026, **non sviluppato**: la risposta completa sta in
     `addEventListener('touchmove')`. E il ripristino dello scorrimento non c'è
     **di proposito**, tolto il 7/10 perché la lista non viene più smontata.
     **STATO.md era corretto, non va cambiato.**
-
-## 🔵 Lotto N — Il voto unico della partita
-*`btscout/scripts/` (misura storica) → poi `lib/`.*
-
-14. **Definire il voto.** Deciso il 10/10/2026 discutendone: il voto finale
-    **resta una probabilità**, non una media di indici.
-    `voto = attendibilità ± correzione del campo (VPM)`, con la correzione
-    limitata a pochi punti.
-    ⚠️ **Perché non una media dei tre** (e i conti che lo dicono): nove esiti si
-    **moltiplicano**, quindi la probabilità deve dominare. Tutte e 9 all'80% →
-    P(9/9) = **13,4%**; al 76% → **8,5%**; al 72% → **5,2%**; al 65% →
-    **2,1%**. Sulla spin 1 del 9/10 (P(9/9) = 8,5% con le attendibilità vere),
-    mettere al centro una partita al 47% costa **−37%** sulla probabilità di
-    tutta la spin.
-    ⚠️ **La quota esce dalla selezione**: il Grado la contiene al 30% di
-    proposito, e dentro un voto di selezione direbbe "accetta una casella meno
-    probabile se paga di più" — su un accumulator da nove è il contrario di
-    quello che conviene, perché le probabilità si moltiplicano e la quota la si
-    incassa solo se vince tutto. La quota risponde a *quanto punto*, non a
-    *cosa gioco*.
-    ⚠️ **Una media di indici non è monotòna nella probabilità di vincere**: un
-    7,8 può essere "78% con VPM mediocre" o "62% con VPM 9,5", due rischi
-    diversissimi, e una soglia su quel numero non governa più niente.
-15. **Misurare VPM nel passato, prima di pesarlo.** Si può: 53.973 partite con
-    risultati e gol, tiri in porta sul **94,7%** dell'archivio, consenso di
-    apertura su **37.910**. Si ricostruisce VPM **com'era il giorno prima** di
-    ogni partita giocata e si risponde a una domanda sola: *fra le partite sopra
-    soglia, quelle dove il campo era d'accordo col mercato hanno vinto più
-    spesso di quelle dove dissentiva — e di quanti punti?*
-    ⚠️ **Col consenso di APERTURA e il VPM di quel giorno**: usare dati che
-    allora non c'erano è il modo classico di scoprire che un sistema funziona
-    fino a quando lo si gioca (vale la trappola apertura/chiusura già scritta in
-    CLAUDE.md).
-    ⚠️ Se la risposta è **zero**, lo si scopre prima di costruirci sopra — e
-    sarebbe coerente con quello che l'archivio ha già detto sulla forma
-    (`misura-forma.js`).
-15b. [x] **Backtest A1 — fatto il 10 ottobre 2026, e ha cambiato le priorità.**
-    `btscout/scripts/misura-resa-favoriti.js`, 37.871 partite.
-    - **Le quote corte sono l'unica fascia che non perde**: 1,30-1,45 →
-      resa **99,8%** [97,5 … 102,1] su 2.733 partite. Tutti i favoriti insieme:
-      **95,3%**; la fascia 1,70-2,00: **94,3%**. È proprio la fascia della SOFT.
-    - **Il favourite-longshot bias si vede**: in 1,35-1,40 l'attendibilità
-      diceva 69,1% e il favorito ha vinto **72,5%**.
-    - ⚠️ **La scoperta vera**: le stesse 2.733 partite a tre prezzi — Bet365
-      99,8%, media di mercato 100,3%, **massima di mercato 103,2%
-      [100,9 … 105,6]**, il solo valore significativamente sopra 100.
-      **Il vantaggio sta nel prezzo, non nella selezione**: +3,4 punti solo
-      cambiando book, più di quanto possa aggiungere qualunque indice.
-    - ⚠️ **Da verificare prima di costruirci sopra**: su quali book Mattia può
-      davvero giocare. La massima di mercato è un prezzo che bisogna POTER
-      prendere, e i book che pagano di più limitano i vincenti.
-    - Conseguenza sul piano: **la voce 15 (misurare VPM nel passato) scende di
-      priorità**. Prima si capisce quanto prezzo si può recuperare, perché quei
-      3,4 punti sono più grandi di qualunque correzione.
-
-15c. [x] **Backtest A2 — Mattia gioca su Bet365** (10/10/2026). Il +3,4 della
-    massima non è suo, quindi: c'è un sottoinsieme di Bet365 sopra 100?
-    - **No, e non è dimostrabile.** "Bet365 paga più della media" dà 101,2%
-      [96,9 … 105,6]; attendibilità 65-70% dà 101,3% [98,4 … 104,3]. Nessuno
-      significativo.
-    - ⚠️ **Il limite è l'archivio, non il criterio**: per dimostrare +2% servono
-      **3.553 scommesse**, la fascia ne ha **2.733 in otto stagioni**. Il
-      vantaggio minimo visibile è **±2,3%**. Un vantaggio vero del 2% resta
-      invisibile — quindi **nessun backtest su questi dati può validare una
-      selezione**, e va detto prima di chiederglielo.
-    - ⚠️ **Il CLV è negativo (−3,15% contro l'exchange di chiusura) ma è una
-      misura sbagliata per questa fascia**: la chiusura implica 70,5% e il
-      favorito ha vinto 72,7%, quindi prevedeva resa 96,8% contro il 99,8%
-      reale. Il bias sui favoriti sopravvive alla chiusura. **Il CLV resta
-      valido solo dove è stato validato** (valore a quota media 6).
-    - **Conclusione**: sui favoriti corti a Bet365 si gioca **alla pari**
-      (99,8% ± 2,3). I guadagni dimostrabili sono **strutturali**: quote corte
-      invece di lunghe (+5,5 punti) e **una partita per volta** invece di due o
-      tre. La selezione serve a **escludere**, non a creare margine.
-
-16. **Trovare il voto minimo da giocare**, misurato: sopra quale voto le spin
-    pagano. È la domanda che un output unico rende rispondibile e che oggi, con
-    tre indicatori e una soglia su uno solo, non lo è.
 
 ## 🔵 Lotto O — Il metodo di giocata
 *Dopo il lotto N, e senza toccare le spin.*
