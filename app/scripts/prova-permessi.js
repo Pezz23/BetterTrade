@@ -138,22 +138,31 @@ if (partitaProva && uA && pA) {
   console.log('\n  · voti: nessuna partita futura in tabella, controlli saltati');
 }
 
-// ── ⚑ I flag della scalata (flag_partite, sql/33) ───────────────────────────
+// ── ⚑ I flag della scalata (flag_partite, sql/33 → sql/41) ──────────────────
 // ⚠️ Stesse policy delle stelle, e vanno provate **dall'API**: dal ruolo
 // postgres RLS non si vede, quindi una tabella nuova sembra sempre a posto.
+// ⚠️⚠️ **Dal 24/10/2026 (`sql/41`) il flag lo mette anche un utente**, con
+// `da_admin` che deve dire il vero: verde se admin, blu se utente. Prima
+// questa sezione si aspettava che un utente venisse respinto.
 if (partitaProva && uA && pA) {
   const A = await entra(uA, pA);
   console.log(`\nFLAG — ${A.me.username} (admin) e ${N.me.username} (utente)`);
-  let r = await A.s.from('flag_partite').insert({ prossima_id: partitaProva.id, user_id: A.me.id });
+  let r = await A.s.from('flag_partite').insert({ prossima_id: partitaProva.id, user_id: A.me.id, da_admin: false });
+  esito(false, !r.error, 'admin flagga dichiarandosi utente');
+  r = await A.s.from('flag_partite').insert({ prossima_id: partitaProva.id, user_id: A.me.id, da_admin: true });
   esito(true, !r.error, 'admin flagga a nome proprio');
-  r = await A.s.from('flag_partite').insert({ prossima_id: partitaProva.id, user_id: N.me.id });
+  r = await A.s.from('flag_partite').insert({ prossima_id: partitaProva.id, user_id: N.me.id, da_admin: false });
   esito(false, !r.error, 'admin flagga a nome di un altro');
   const { data: visti } = await N.s.from('flag_partite').select('prossima_id');
   esito(true, !!(visti && visti.length), 'utente vede i flag (servono al contatore)');
-  r = await N.s.from('flag_partite').insert({ prossima_id: partitaProva.id, user_id: N.me.id });
-  esito(false, !r.error, 'utente flagga');
+  r = await N.s.from('flag_partite').insert({ prossima_id: partitaProva.id, user_id: N.me.id, da_admin: true });
+  esito(false, !r.error, 'utente flagga dichiarandosi admin');
+  r = await N.s.from('flag_partite').insert({ prossima_id: partitaProva.id, user_id: N.me.id, da_admin: false });
+  esito(true, !r.error, 'utente flagga (blu)');
   const { data: delN } = await N.s.from('flag_partite').delete().eq('prossima_id', partitaProva.id).eq('user_id', A.me.id).select();
   esito(false, !!(delN && delN.length), 'utente cancella il flag di un admin');
+  const { data: delU } = await N.s.from('flag_partite').delete().eq('prossima_id', partitaProva.id).eq('user_id', N.me.id).select();
+  esito(true, !!(delU && delU.length), 'utente toglie il proprio flag');
   const { data: delA } = await A.s.from('flag_partite').delete().eq('prossima_id', partitaProva.id).eq('user_id', A.me.id).select();
   esito(true, !!(delA && delA.length), 'admin toglie il proprio flag');
 }

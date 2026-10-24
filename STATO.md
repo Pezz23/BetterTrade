@@ -8,38 +8,45 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 24 ottobre 2026 · app alla versione **1.59.00** ·
-ultimo passaggio di consegne: 24/10 (prima della scalata personale)
+**Ultimo aggiornamento:** 24 ottobre 2026 (sera) · app alla versione
+**1.59.00** · ultimo commit dell'app `39d7021` · passaggio di consegne: 24/10
 
 ## ▶️ DOVE SIAMO — 24 ottobre 2026, leggi questo per primo
 
-**Versione `1.59.00`** — il 24/10, in ordine: il tasto **Bilancio** solo per
-gli admin (`1.57.02`), la pagina **Spin** (`1.58.00`) e **Road to weekend
-con un conto personale per account** (`1.59.00`, `sql/41`): ricariche, conto
-calcolato (`versato · conto · risultato`), ⟳ RIPARTI dopo un passo perso,
-«fissato» salvato, ognuno vede solo la sua scalata, flag a tutti (verdi
-admin, blu user). Il perché in `note/scalata.md`. Provata da Mattia in dev.
+**Versione `1.59.00`, tutto committato e pushato** (`origin/main` allineato,
+verificato alla chiusura del 24/10). ⚠️ `sql/41` è applicata al database, che
+è **uno solo** per il dev e per Vercel: da qui in poi una migrazione arriva
+agli utenti **prima** del codice che la usa, finché non si fa il push — e il
+24/10 per qualche ora la versione pubblicata (1.58.00) ha rifiutato i flag
+degli admin, perché non mandava `da_admin`. **Migrazione e push vanno
+vicini.**
 
-La pagina **Spin** (`1.58.00`):
-- l'automatica ordina e colora per **scelta** con soglie proprie **75/72/68**
-  (`SOGLIE_SPIN`): il weekend del 24/10 passa da 0 verdi e 1 gialla a **5 e
-  6**. Fuori dalle spin i colori restano dell'attendibilità. Perché, in
-  `note/criterio.md`;
-- la seconda griglia («A mano», prima «Con le stelline») **parte vuota** e ha
-  il tasto «↺ svuota»;
-- la finestra della casella ha **«ordina per» attendibilità · voto · VPM ·
-  scelta**, su tutte le partite fino a martedì, sotto soglia comprese;
-- **«S1 · S2 · S3»** nella finestra guarda tre fonti per spin — automatica, a
-  mano e **la griglia salvata in Slot** — e compare **anche per la spin che si
-  sta compilando**: lo scopo è non mettere la stessa partita in due spin.
+Il 24/10, in ordine:
 
-Provata da Mattia in `npm run dev` il 24/10; lint e build passano,
-`prova-spin.js` torna coi numeri della misura.
+| | versione | commit |
+|---|---|---|
+| il tasto **Bilancio** solo per gli admin | `1.57.02` | `7deafd9` |
+| **Spin**: selezione per **scelta** 75/72/68, griglia «A mano» vuota, «ordina per» i quattro indicatori, «S1» su tre fonti | `1.58.00` | `a115a23` |
+| il **passaggio di consegne** diventa una procedura (CLAUDE.md) | — | `3aeace7` |
+| **Road to weekend, un conto personale per account** (`sql/41`): ricariche, conto calcolato, ⟳ RIPARTI, «fissato» salvato, ognuno la sua, flag a tutti | `1.59.00` | `39d7021` |
 
-⚠️ **Aperto: tre partite rinviate sono DOPPIE in `prossime_partite`**, con la
-data vecchia e la nuova (Paris SG-Lyon 25 e 26/10, Toulouse-Troyes 24 e 25,
-Montpellier-Red Star 24 e 26). Possono finire due volte nella stessa spin. Da
-guardare in `riconcilia-prossime` / importazione.
+**Road to weekend in tre righe** (il dettaglio in `note/scalata.md`):
+- ogni account — admin e user — ha **il suo conto e la sua scalata**, e
+  nessuno vede quelli degli altri. Il conto parte da **0** e si riempie con
+  **＋ ricarica**; è **calcolato** (`contoDi`), e la card dice **versato ·
+  conto · risultato** (`conto − versato`, in rosso se si è sotto);
+- dopo un passo perso i passi dopo restano **visibili e spenti**, e **⟳
+  RIPARTI** apre un giro nuovo con quelli, sulla puntata del 10% del conto;
+- **Mattia ha azzerato il suo archivio** il 24/10 mattina: tutti i registri
+  partono vuoti, e non c'è niente da recuperare.
+
+**Spin in tre righe** (il dettaglio in `note/spin.md`): l'automatica
+ordina e colora per **scelta** (verde 75 · giallo 72 · blu 68), **solo lì**;
+la griglia «A mano» parte vuota; nella finestra «S1» dice dove sta già una
+partita — automatica, a mano o Slot — anche nella spin che si compila.
+
+Tutte e due **provate da Mattia in `npm run dev`**; lint (0 errori) e build
+passano. ⚠️ **Non viste in produzione**: si guardano dopo il push.
 
 Il lavoro del **21-22 ottobre** sta su ROAD TO WEEKEND e BET BUILDER; quello
 del **23 ottobre** — una giornata lunga — su **dati** e **scheda partita**:
@@ -76,6 +83,7 @@ Nessuna di queste è stata promessa a Mattia: **si propone e decide lui.**
 
 | | cosa | costo |
 |---|---|---|
+| 00 | **Un giro dell'app pubblicata sul telefono** (1.59.00): Spin, Road to weekend con una ricarica, un flag da admin e uno da user. E `prova-permessi.js`, che dal 24/10 si aspetta i flag anche dagli utenti — vuole le password, quindi lo lancia Mattia | dieci minuti |
 | 0 | **Le partite rinviate doppie** (vedi «Quello che resta aperto») — piccolo, ma tocca quello che si gioca: la stessa partita può finire due volte in una spin | un'ora |
 | 1 | **I falli** — ESPN li manda (`foulsCommitted`) in ogni riepilogo e **li buttiamo via**, esattamente com'era per i cartellini fino al 22/10. Sono il meccanismo che produce il giallo, e i cartellini sono il mercato dove il modello rende di più. Serve: una colonna, due righe in `lib/espn.js`, il recupero, **e la rimisura** | mezza giornata, zero crediti |
 | 2 | **Il routing** (lotto 3) — era *"da fare prima di aggiungere schermate nuove"* e da allora ne sono arrivate tre. Vuole mezza giornata in cui non si aggiunge niente | mezza giornata |
@@ -87,7 +95,8 @@ Nessuna di queste è stata promessa a Mattia: **si propone e decide lui.**
 - **`MERCATO_35`** — 89 partite hanno la quota 3,5 dal 23/10; quando si saranno
   giocate si lancia la query di `note/gol.md` e si decide se accendere.
 - **Il riepilogo del Bet Builder** e quello della scalata, che vogliono
-  dieci-venti schedine chiuse: prima direbbero rumore.
+  dieci-venti schedine chiuse: prima direbbero rumore. ⚠️ Per la scalata il
+  conteggio riparte da zero: il 24/10 l'archivio è stato azzerato.
 
 ## 🔄 RIPARTIRE DOPO UNA PAUSA
 
@@ -122,7 +131,7 @@ sta nel blocco «I CREDITI DI THE ODDS API» più sotto.
 | ⚠️ **La tabella `andamento`** | è **derivata**: la stagione in corso si rifà **da sola** a ogni importazione (dal 15/10/2026), l'archivio intero con `calcola-andamento.js --stagioni=8 --esegui` (23 secondi). Non è un backup da conservare. |
 | ⚠️ **Le note "a ottobre…"** | in CLAUDE.md e qui ci sono frasi legate al momento (i tre strati di VPM che guardano quasi le stesse partite, le 1-3 partite in casa). **Da gennaio sono false**: la forma comincia a dire altro. |
 | ✅ **Il criterio, le soglie, i pesi** | non scadono: sono misurati sull'archivio, non sulla settimana. |
-| ✅ **sql/01-29, RLS, permessi** | applicati e verificati. `scripts/prova-permessi.js` lo riconferma in un minuto. |
+| ✅ **sql/01-41, RLS, permessi** | applicati e verificati. `scripts/prova-permessi.js` lo riconferma in un minuto — ⚠️ ma **non conosce ancora le policy della scalata** di `sql/41`: quelle si provano col metodo della transazione annullata (CLAUDE.md, «Come lavorare con Mattia»). |
 
 **I numeri qui sotto con una data accanto sono fotografie, non verità**: se
 leggi "884 partite" o "440 crediti" e siamo a marzo, sono vecchi di mesi.
@@ -156,12 +165,15 @@ leggi "884 partite" o "440 crediti" e siamo a marzo, sono vecchi di mesi.
 | **U2' — la linea 3,5** smette di finire nel cestino | `5da5b0a` |
 | **Il tasto Bilancio solo per gli admin** (24/10) | `7deafd9` |
 | **Spin**: selezione per **scelta** 75/72/68, griglia «A mano» vuota, «ordina per» i quattro indicatori, «S1» su tre fonti (24/10) | `a115a23` |
-| **Road to weekend, conto personale** (`sql/41`): ricariche, conto calcolato, ⟳ RIPARTI, «fissato» salvato, ognuno la sua, flag a tutti; la partita aggiunta che non si toglieva; backup con le tabelle delle persone (24/10) | questo commit |
+| **Road to weekend, conto personale** (`sql/41`): ricariche, conto calcolato, ⟳ RIPARTI, «fissato» salvato, ognuno la sua, flag a tutti; la partita aggiunta che non si toglieva; backup con le tabelle delle persone (24/10) | `39d7021` |
 
 Le migrazioni applicate in questi due giorni: **`sql/31`** (numero del passo
 decimale, per inserirne uno in mezzo), **`sql/32`** (il metodo `madre`),
 **`sql/33`** (`flag_partite`), **`sql/34`** (lettura aperta + scrittura
-stretta). Tutte verificate dal database subito dopo.
+stretta). Tutte verificate dal database subito dopo. Il 24/10 **`sql/41`**
+(conto personale, ricariche, `fissato`, policy «ognuno la sua», flag a
+tutti, `riparti_scalata`): ⚠️ **sostituisce `sql/34`**, e le sue policy sono
+state provate simulando uno user e un admin in una transazione annullata.
 
 ### ⚠️ Quello che resta aperto, e va deciso da Mattia
 
