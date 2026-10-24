@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { C, F, alpha, S, SP } from '../theme'
-import { Card, Etichetta, TastoRipeti, Attesa } from '../components/ui'
+import { Card, Etichetta, Attesa } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { usaProssime } from '../hooks/usaProssime'
 import { usaVpm } from '../hooks/usaVpm'
@@ -19,7 +19,7 @@ import { pct, eur, gg, quando } from '../lib/formato'
 import {
   METODO, NOMI_REGOLA, MAX_GAMBE, QUOTA_MINIMA_GAMBA, QUOTA_MINIMA_SCHEDINA, CONSIGLIATO,
   postaDi, fasce, spezzaFasce, spezzaAlMinimo, giorno, casseDi, percentualeConsigliata, applicaIncasso,
-  puoSpezzare,
+  puoSpezzare, contoDi,
 } from '../lib/scalata'
 
 // ROAD TO WEEKEND — la road map delle giocate del weekend.
@@ -58,7 +58,7 @@ const nomeGiorno = (d) => d ? GIORNI[new Date(d + 'T12:00:00').getDay()] : ''
 function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumulato, colore, classifiche,
                 quote, setQuote, perc, setPerc, esito, setEsito, onToglie, prossima, onAggiunge,
                 onQuota = null, onSpezza = null, onApri = null, onManuale = null, tocca = true,
-                stelleDi = () => 0, anteprima = false, fissato = false, onFissa = null }) {
+                stelleDi = () => 0, anteprima = false, fissato = false, onFissa = null, fermo = false }) {
   // ⚠️ La quota della schedina è il **prodotto delle quote modificate**, non di
   // quelle scaricate: Mattia gioca su book diversi e con i bonus, e una pagina
   // che mostra la quota del consenso gli racconterebbe un piano che non è il suo.
@@ -287,7 +287,9 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
       {anteprima ? (<>
         <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${alpha(C.testo, 0.1)}`,
           fontFamily: F.sans, fontSize: S.minuta, color: C.fioco, textAlign: 'center', lineHeight: 1.5 }}>
-          la puntata si calcola quando chiudi il passo {numero - 1}
+          {/* ⚠️ Dopo un passo perso la puntata non arriva dal passo prima:
+              arriva da ⟳ RIPARTI, che apre un giro nuovo sul conto. */}
+          {fermo ? 'la scalata è ferma: questo passo riparte con ⟳ RIPARTI' : `la puntata si calcola quando chiudi il passo ${numero - 1}`}
         </div>
         {tastoFissa && <div style={{ display: 'flex', marginTop: 8 }}>{tastoFissa}</div>}
       </>) : <>
@@ -409,16 +411,30 @@ function Riparti({ quante, onAzzera }) {
         ? `⚠️ TOCCA ANCORA PER CANCELLARE ${quante === 1 ? 'LA SCALATA' : `LE ${quante} SCALATE`}`
         : '↺ riparti da 0'}
       <span style={{ display: 'block', fontSize: S.micro, color: C.fioco, marginTop: 2 }}>
-        {armato ? 'non si torna indietro' : 'cancella lo storico e riparte dal capitale iniziale'}
+        {armato ? 'non si torna indietro' : 'cancella scalate e ricariche: il conto torna a 0'}
       </span>
     </button>
   )
 }
 
-function Archivio({ storico, onAzzera, tocca = true }) {
+function Archivio({ storico, ricariche = [], conto, onAzzera, onAnnulla, tocca = true }) {
   const chiuse = (storico || []).filter(s => s.stato === 'chiusa')
   if (!storico) return <Card><Attesa style={{ padding: 0 }} /></Card>
-  if (!chiuse.length) return (
+  // ⚠️ Si annulla **solo l'ultima ricarica, e solo se dopo non si è aperta
+  // nessuna scalata**: quella scalata è nata su quel conto, e toglierle la
+  // ricarica da sotto riscriverebbe il passato. Serve al dito che scrive
+  // 1000 invece di 100.
+  const ultima = ricariche[0]
+  const annullabile = ultima && !(storico || []).some(s => s.aperta_il > ultima.fatta_il)
+  // ⚠️⚠️ **Ricariche e giri nella stessa colonna, in ordine di tempo**: il
+  // conto è la somma delle due cose, e leggerle separate nasconderebbe
+  // proprio quello che Mattia ha chiesto di vedere — quante volte si è
+  // ricaricato fra un giro e l'altro.
+  const eventi = [
+    ...ricariche.map(r => ({ tipo: 'ricarica', quando: r.fatta_il, r })),
+    ...chiuse.map(s => ({ tipo: 'giro', quando: s.chiusa_il, s })),
+  ].sort((a, b) => String(b.quando).localeCompare(String(a.quando)))
+  if (!chiuse.length && !ricariche.length) return (
     <div>
       <Card><div style={{ fontSize: S.base, fontFamily: F.sans, color: C.spento, lineHeight: 1.6 }}>
         Nessuna scalata chiusa. Apri un piano, segna gli esiti e premi <b>STOP</b>:
@@ -429,14 +445,18 @@ function Archivio({ storico, onAzzera, tocca = true }) {
       {!!storico.length && tocca && <Riparti quante={storico.length} onAzzera={onAzzera} />}
     </div>
   )
-  const tot = chiuse.reduce((a, s) => a + (Number(s.bankroll_finale) - Number(s.bankroll_iniziale)), 0)
+  // ⚠️⚠️ **Il risultato è conto meno versato**, non la somma dei giri: è la
+  // domanda di Mattia — *"tre bankroll persi e un incasso da 200 devono dire
+  // perdita"*. La somma dei giri lo dice lo stesso, ma solo finché nessuno
+  // ricarica a scalata aperta; questa lo dice sempre.
+  const tot = conto.risultato
   return (
     <div>
       <Card style={{ marginBottom: 10 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, textAlign: 'center' }}>
-          {[['SCALATE', String(chiuse.length), C.testo],
-            ['CAPITALE ORA', eur(chiuse[0]?.bankroll_finale), C.oro],
-            ['IN TUTTO', (tot >= 0 ? '+' : '') + eur(tot), tot >= 0 ? C.verde : C.rosso]].map(([l, v, col]) => (
+          {[['VERSATO', eur(conto.versato), C.testo],
+            ['CONTO', eur(conto.conto), C.oro],
+            ['RISULTATO', (tot >= 0 ? '+' : '') + eur(tot), tot >= 0 ? C.verde : C.rosso]].map(([l, v, col]) => (
             <div key={l}>
               <Etichetta>{l}</Etichetta>
               <div style={{ fontFamily: F.mono, fontSize: S.titolo, fontWeight: 700, color: col, marginTop: 3 }}>{v}</div>
@@ -444,7 +464,24 @@ function Archivio({ storico, onAzzera, tocca = true }) {
           ))}
         </div>
       </Card>
-      {chiuse.map(s => {
+      {eventi.map(({ tipo, r, s }) => {
+        if (tipo === 'ricarica') return (
+          <Card key={`r${r.id}`} style={{ marginBottom: 6, padding: '9px 12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+              <span style={{ fontFamily: F.sans, fontSize: S.base, color: C.testo }}>
+                {String(r.fatta_il).slice(8, 10)}/{String(r.fatta_il).slice(5, 7)}
+                <span style={{ color: C.spento }}> · ricarica</span>
+              </span>
+              <span style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+                {tocca && annullabile && r.id === ultima.id && (
+                  <button onClick={() => onAnnulla(r.id)} style={{ background: 'transparent', border: 'none', padding: 0,
+                    cursor: 'pointer', color: C.spento, fontFamily: F.sans, fontSize: S.minuta, textDecoration: 'underline' }}>annulla</button>
+                )}
+                <span style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700, color: C.oro }}>+{eur(r.importo)}</span>
+              </span>
+            </div>
+          </Card>
+        )
         const d = Number(s.bankroll_finale) - Number(s.bankroll_iniziale)
         return (
           <Card key={s.id} style={{ marginBottom: 6, padding: '9px 12px' }}>
@@ -477,14 +514,16 @@ function Archivio({ storico, onAzzera, tocca = true }) {
 
 export default function ScalataPage() {
   const { currentUser, isAdmin } = useAuth()
-  const { righe, ricarica: ricaricaPartite, vota, votiDi, mioVoto, flagga, flagDi, mioFlag } = usaProssime()
+  const { righe, ricarica: ricaricaPartite, vota, votiDi, mioVoto, flagga, flagDi, flagTipiDi, mioFlag } = usaProssime()
   const datiVpm = usaVpm()
   const classifiche = usaClassifiche()
-  // ⚠️ Chi non è admin legge **il registro che c'è**, non il proprio (vuoto).
-  const reg = usaScalate(currentUser?.id, !isAdmin)
-  // ⚠️ Gli admin condividono una riga sola, gli utenti ne hanno una loro: la
-  // differenza la fa l'hook, non questa pagina.
-  const pref = usaPreferenze('scalata')
+  // ⚠️⚠️ **Ognuno il suo registro e il suo conto** (Mattia, 24/10/2026:
+  // *"ogni utente sia indipendente"*), admin e user: lo garantisce `sql/41`,
+  // non questa pagina. Prima un utente leggeva la scalata di Admin.
+  const reg = usaScalate(currentUser?.id)
+  // ⚠️ **Personale, come nel Bet Builder**: la riga condivisa fra gli admin
+  // aveva senso finché la scalata era una sola per tutti.
+  const pref = usaPreferenze('scalata', { personale: true })
   const [modo, setModo] = useState('piano')
   // la partita aperta a tutto schermo, come nella pagina Partite
   const [apertaId, setApertaId] = useState(null)
@@ -512,16 +551,13 @@ export default function ScalataPage() {
   // filtra solo per giorno, quindi a metà pomeriggio la lista conterrebbe
   // ancora le partite delle 13.
   const [daOra, setDaOra] = useState(() => Date.now())
-  // ⚠️⚠️ **Capitale dedicato, non il conto vero** (scelta di Mattia,
-  // 18/10/2026): la scalata ha un suo capitale che vive nelle sue tabelle, e il
-  // bankroll del gruppo non si muove. Quando si vorrà renderlo reale,
-  // l'accumulo rientrerà come **movimento** — mai scrivendo `users.bankroll`,
-  // che è calcolato (regola 1).
-  // ⚠️ Il valore proposto è **l'ultimo capitale chiuso**: è la catena del
-  // capitale, e si legge da `bankroll_finale` invece di ricostruirla sommando
-  // i risultati di tutte le scalate — una somma che basta un record saltato a
-  // sfalsare.
-  const [bankroll, setBankroll] = useState(null)
+  // ⚠️⚠️ **Niente più bankroll da regolare a mano** (24/10/2026): il bankroll
+  // è il **conto** (`contoDi`), che si muove solo con le ricariche e i giri.
+  // I tasti −/+ cambiavano il capitale senza lasciare traccia, ed è il motivo
+  // per cui non si poteva sapere quanto ci si era messo dentro. Il conto della
+  // scalata **non è** il bankroll del gruppo: `users.bankroll` non si muove.
+  // L'importo della ricarica che si sta scrivendo.
+  const [importo, setImporto] = useState('')
   // le partite aggiunte a mano a un passo, per indice di passo
   const [aggiunte, setAggiunte] = useState({})
   const [quote, setQuote] = useState({})
@@ -531,6 +567,10 @@ export default function ScalataPage() {
   // ⚠️ Gli id della **prima gamba di ogni pezzo staccato**: il taglio si ancora
   // alla partita, non alla posizione, così non si sposta quando il piano cambia.
   const [tagli, setTagli] = useState([])
+  // ⚠️ I passi fissati **nel piano** (a scalata aperta è una colonna del
+  // passo, `sql/41`). Sta qui in alto e non accanto a `limiteVisibile` perché
+  // la legge anche la rilettura delle preferenze, più sotto.
+  const [fissati, setFissati] = useState([])
 
   // ⚠️ La scheda vuole la **riga intera** di `prossime_partite`, non la gamba:
   // le gambe salvate portano una copia dei quattro numeri di quel giorno, non
@@ -540,9 +580,15 @@ export default function ScalataPage() {
   // guardiano, ogni ridisegno rimetterebbe i valori salvati sopra quelli che
   // stai muovendo adesso — cioè le manopole tornerebbero indietro da sole.
   const applicato = useRef(false)
+  // ⚠️ `letta` è uno **stato** e non il ref: il salvataggio automatico deve
+  // partire dal ridisegno in cui i valori salvati sono già nelle manopole, non
+  // da quello prima — altrimenti la prima cosa che farebbe è riscrivere i
+  // valori di fabbrica sopra quelli salvati.
+  const [letta, setLetta] = useState(false)
   useEffect(() => {
     if (applicato.current || !pref.pronte) return
     applicato.current = true
+    setLetta(true)
     const d = pref.dati
     if (!d) return
     // ⚠️ **Un valore che manca non dà errore, dà il predefinito di qualcun
@@ -555,7 +601,6 @@ export default function ScalataPage() {
     setSceMin(n(f.scelta, CONSIGLIATO.scelta))
     setVpmMin(n(f.vpm, 0))
     setQuotaGamba(n(f.quotaGamba, QUOTA_MINIMA_GAMBA))
-    if (d.bankroll != null && Number.isFinite(Number(d.bankroll))) setBankroll(Number(d.bankroll))
     // ⚠️ E il **piano**: tolte, aggiunte, tagli, quote, percentuali ed esiti
     // (Mattia, 22/10: *"gli admin devono vedere tutti la stessa situazione,
     // bankroll e partite del passo x compreso"*). Le partite che nel frattempo
@@ -568,17 +613,44 @@ export default function ScalataPage() {
     if (pi.quote && typeof pi.quote === 'object') setQuote(pi.quote)
     if (pi.perc && typeof pi.perc === 'object') setPerc(pi.perc)
     if (pi.esiti && typeof pi.esiti === 'object') setEsiti(pi.esiti)
+    if (Array.isArray(pi.fissati)) setFissati(pi.fissati)
   }, [pref.pronte, pref.dati])
 
-  // ⚠️ **La vista la decide il ruolo, non solo i tasti.** Nascondere
-  // l'interruttore basterebbe — `modo` parte da 'piano' e lo cambiano solo
-  // quei due tasti — ma legare la vista a `isAdmin` rende la cosa vera per
-  // costruzione invece che per conseguenza: domani qualcuno aggiunge un terzo
-  // posto da cui si cambia modo e non deve ricordarsi di questo.
-  const vista = isAdmin ? modo : 'piano'
+  // ⚠️⚠️ **Si salva da sola** (Mattia, 24/10/2026), come nel Bet Builder: il
+  // tasto «salva» serviva perché la riga era condivisa fra sei admin e ogni
+  // tocco l'avrebbe riscritta agli altri mentre guardavano. Personale, non c'è
+  // nessuno da disturbare.
+  // ⚠️ `salva` dentro un ref: `pref` è un oggetto nuovo a ogni ridisegno, e
+  // metterlo fra le dipendenze di un effetto è il ciclo infinito già pagato.
+  // ⚠️ E il primo giro **non scrive**: annota com'era la situazione appena
+  // letta, così chi apre e non tocca non crea una riga nel database.
+  const salvaPref = useRef(pref.salva); salvaPref.current = pref.salva
+  const ultimaSalvata = useRef(null)
+  useEffect(() => {
+    if (!letta) return
+    const dati = {
+      filtri: { att: attMin, scelta: sceMin, vpm: vpmMin, quotaGamba },
+      piano: { tolte, aggiunte, tagli, quote, perc, esiti, fissati },
+    }
+    const j = JSON.stringify(dati)
+    if (ultimaSalvata.current === null) { ultimaSalvata.current = j; return }
+    if (ultimaSalvata.current === j) return
+    const t = setTimeout(async () => {
+      const r = await salvaPref.current(dati)
+      if (r?.errore) setAvviso(r.errore)
+      else ultimaSalvata.current = j
+    }, 800)
+    return () => clearTimeout(t)
+  }, [letta, attMin, sceMin, vpmMin, quotaGamba, tolte, aggiunte, tagli, quote, perc, esiti, fissati])
+
+  // Dal 24/10/2026 l'archivio è di tutti: ognuno ha il suo.
+  const vista = modo
 
   const aperta = reg.aperta
-  const bankrollIniziale = aperta ? Number(aperta.bankroll_iniziale) : (bankroll ?? Math.floor(reg.capitale))
+  // ⚠️ Il conto **fermo**: ricariche più i giri chiusi. È il bankroll con cui
+  // si apre il prossimo giro; con un giro aperto vale il suo.
+  const contoFermo = contoDi({ ricariche: reg.ricariche, storico: reg.storico || [] }).fermo
+  const bankrollIniziale = aperta ? Number(aperta.bankroll_iniziale) : Math.round(contoFermo * 100) / 100
   const posta = aperta ? Number(aperta.posta) : postaDi(bankrollIniziale)
 
   // ⚠️ Le candidate: **attendibilità E scelta** sopra le soglie, più il
@@ -672,10 +744,16 @@ export default function ScalataPage() {
         // «+ aggiungi partita manuale» può arrivare una partita che i filtri
         // non prendono, e cercandola fra le candidate sarebbe sparita
         // **in silenzio** — il tasto avrebbe fatto finta di funzionare.
-        ...(aggiunte[i] || []).map(id => valutate.find(c => c.id === id)).filter(Boolean),
+        // ⚠️⚠️ **Le tolte escono anche da qui** (Mattia, 24/10/2026: *"aggiungo
+        // una partita e non mi permette più di cancellarla"*). Le tolte
+        // filtravano solo le candidate, e una partita aggiunta col `+` o a mano
+        // viene da questa lista: il × la segnava tolta e lei restava nel passo
+        // — e col piano che si salva da solo, restava anche riaprendo l'app.
+        ...(aggiunte[i] || []).filter(id => !tolte.includes(id))
+          .map(id => valutate.find(c => c.id === id)).filter(Boolean),
       ],
     })).filter(f => f.partite.length)
-  }, [candidate, valutate, aggiunte, tagli])
+  }, [candidate, valutate, aggiunte, tagli, tolte])
 
   // ⚠️⚠️ **Flaggate e votate restano in lista anche se i filtri le tagliano**
   // (Mattia, 22/10/2026). Senza, bastava alzare una soglia per far sparire un
@@ -798,14 +876,16 @@ export default function ScalataPage() {
    * `scalata_passi` può benissimo valere quanto un id di `prossime_partite`.
    * Senza il prefisso, aprendo una scalata un passo si sarebbe trovato fissato
    * da solo — una volta ogni tanto, senza che si capisse perché.
-   * ⚠️ Non si salva da nessuna parte, come `tagli` e `aggiunte`: è un modo di
-   * guardare, non un fatto da registrare.
+   * ⚠️⚠️ **Dal 24/10/2026 si salva** (Mattia: i passi fissati sparivano
+   * chiudendo l'app). A scalata aperta è la colonna `fissato` del passo
+   * (`sql/41`), nel piano va con il resto delle preferenze.
    */
-  const [fissati, setFissati] = useState([])
-  const chiaveFissa = (i) => (aperta
-    ? (reg.passi[i]?.id != null ? `s:${reg.passi[i].id}` : null)
-    : (passi[i]?.partite?.[0]?.id != null ? `p:${passi[i].partite[0].id}` : null))
-  const fissa = (i) => { const k = chiaveFissa(i); if (k) setFissati(t => t.includes(k) ? t.filter(x => x !== k) : [...t, k]) }
+  const chiaveFissa = (i) => (passi[i]?.partite?.[0]?.id != null ? `p:${passi[i].partite[0].id}` : null)
+  const eFissato = (i) => (aperta ? !!reg.passi[i]?.fissato : fissati.includes(chiaveFissa(i)))
+  const fissa = (i) => {
+    if (aperta) { const r = reg.passi[i]; if (r) reg.fissa(r.id, !r.fissato); return }
+    const k = chiaveFissa(i); if (k) setFissati(t => t.includes(k) ? t.filter(x => x !== k) : [...t, k])
+  }
 
   const limiteVisibile = useMemo(() => {
     const staccato = aperta
@@ -817,17 +897,21 @@ export default function ScalataPage() {
     // portarmi avanti"*): lì il passo dopo si vede comunque senza soldi, e le
     // sue quote si possono già sistemare — la cassa resta quella che arriva
     // dall'esito, che è l'unica cosa che non si può anticipare.
-    const fissato = (i) => {
-      const k = aperta
-        ? (reg.passi[i]?.id != null ? `s:${reg.passi[i].id}` : null)
-        : (passi[i]?.partite?.[0]?.id != null ? `p:${passi[i].partite[0].id}` : null)
-      return !!k && fissati.includes(k)
-    }
+    const fissato = (i) => (aperta ? !!reg.passi[i]?.fissato
+      : (passi[i]?.partite?.[0]?.id != null && fissati.includes(`p:${passi[i].partite[0].id}`)))
     const quanti = aperta ? reg.passi.length : passi.length
     let i = frontiera
     while (i + 1 < quanti && (staccato(i + 1) || fissato(i))) i++
     return i
   }, [aperta, reg.passi, passi, tagli, fissati, frontiera])
+
+  // ⚠️⚠️ **Il primo passo perso ferma la catena**, ma i passi dopo restano
+  // nel piano (Mattia, 24/10/2026: *"se metto perso non mi presenta i passi
+  // successivi, motivo per il quale ho chiuso la scalata"*). Da lì in poi si
+  // vedono **spenti**, come anteprima, e ⟳ RIPARTI li rimette in gioco.
+  const perso = aperta
+    ? reg.passi.findIndex(r => r.esito === 'perso')
+    : passi.findIndex((_, k) => esiti[k] === 'perso')
 
   // ⚠️⚠️ **Le casse si RICALCOLANO dalla catena dei passi**, sempre: né lette
   // dal database né aggiornate a ogni esito. È quello che permette di togliere
@@ -843,6 +927,14 @@ export default function ScalataPage() {
     const live = bankrollIniziale - posta + c.accumulo + c.cassa
     return { inGioco: c.cassa, accumulo: c.accumulo, vivi: c.vivi, live, risultato: c.accumulo + c.cassa - posta }
   }, [aperta, reg.passi, passi, esiti, quote, perc, posta, bankrollIniziale])
+
+  // Il conto di adesso: ricariche, giri chiusi e quanto il giro in corso ha
+  // fatto finora (nel piano, quanto farebbe con gli esiti provati).
+  const conto = contoDi({ ricariche: reg.ricariche, storico: reg.storico || [],
+    aperta: { bankroll_iniziale: bankrollIniziale }, live: casse.live })
+  // Arrotondato al centesimo: è un importo, e i decimali della quota non
+  // devono finire nel registro.
+  const cent = (x) => Math.round(x * 100) / 100
 
   if (!righe) return <Attesa>carico le partite…</Attesa>
 
@@ -876,13 +968,12 @@ export default function ScalataPage() {
             intero e non il solo tasto: con una vista sola non c'è niente da
             commutare, e un interruttore con un bottone solo è un comando che
             non comanda. */}
-        {isAdmin && (
-          <div style={{ display: 'flex', gap: 4 }}>
-            {[['piano', 'PIANO'], ['archivio', `ARCHIVIO${reg.storico?.length ? ` ${reg.storico.filter(x => x.stato === 'chiusa').length}` : ''}`]].map(([k, l]) => (
-              <Tasto key={k} attivo={modo === k} onClick={() => setModo(k)} colore={C.celestePieno}>{l}</Tasto>
-            ))}
-          </div>
-        )}
+        {/* ⚠️ Dal 24/10/2026 c'è per tutti: ognuno ha il suo registro. */}
+        <div style={{ display: 'flex', gap: 4 }}>
+          {[['piano', 'PIANO'], ['archivio', `ARCHIVIO${reg.storico?.length ? ` ${reg.storico.filter(x => x.stato === 'chiusa').length}` : ''}`]].map(([k, l]) => (
+            <Tasto key={k} attivo={modo === k} onClick={() => setModo(k)} colore={C.celestePieno}>{l}</Tasto>
+          ))}
+        </div>
       </div>
 
       {reg.errore && (
@@ -902,10 +993,12 @@ export default function ScalataPage() {
       {/* ⚠️ Azzerare il registro azzera anche lo stato della pagina: esiti e
           percentuali sono indicizzati per passo, e passi non ce ne sono più. */}
       {vista === 'archivio' && (
-        <Archivio storico={reg.storico} tocca={isAdmin} onAzzera={async () => {
-          await reg.azzeraTutto()
-          setEsiti({}); setPerc({}); setTolte([]); setAggiunte({}); setQuote({}); setBankroll(null)
-        }} />
+        <Archivio storico={reg.storico} ricariche={reg.ricariche} conto={conto}
+          onAnnulla={async (id) => { const x = await reg.annullaRicarica(id); setAvviso(x?.errore ?? null) }}
+          onAzzera={async () => {
+            await reg.azzeraTutto()
+            setEsiti({}); setPerc({}); setTolte([]); setAggiunte({}); setQuote({}); setFissati([])
+          }} />
       )}
       {vista === 'piano' && <>
 
@@ -922,7 +1015,8 @@ export default function ScalataPage() {
           ⚠️ E resta un `if` che **nasconde**: a proteggere è la policy — ma qui
           non c'è niente da proteggere, perché i passi e le gambe sono già
           leggibili per scelta. Questo toglie solo il conto dalla vista. */}
-      {isAdmin && <>
+      {/* ⚠️ Dal 24/10/2026 la vede **ognuno sul suo conto**: il motivo per
+          nasconderla agli utenti era che il conto era quello di Admin. */}
       {/* ⚠️ **In cima e col bordo acceso** (richiesta di Mattia): è il conto, e
           un conto che sta in mezzo alla pagina si legge dopo le partite — cioè
           dopo aver già deciso. Il fondo è una tinta d'oro appena accesa su
@@ -931,8 +1025,10 @@ export default function ScalataPage() {
       <Card style={{ marginBottom: 12, borderColor: alpha(C.oro, 0.45),
         background: `linear-gradient(${alpha(C.oro, 0.045)},${alpha(C.oro, 0.045)}), ${C.card}` }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, textAlign: 'center' }}>
+          {/* ⚠️ «CONTO» e non più «BANKROLL LIVE»: è lo stesso numero, ma
+              adesso comprende le ricariche e tutti i giri, non solo questo. */}
           {[['IN GIOCO', casse.inGioco, C.oro], ['ACCUMULO', casse.accumulo, C.verde],
-            ['BANKROLL LIVE', casse.live, casse.live >= bankrollIniziale ? C.verde : C.rosso]].map(([l, v, col]) => (
+            ['CONTO', conto.conto, conto.conto >= bankrollIniziale ? C.verde : C.rosso]].map(([l, v, col]) => (
             <div key={l}>
               <Etichetta>{l}</Etichetta>
               <div style={{ fontFamily: F.mono, fontSize: S.titolo, fontWeight: 700, color: col, marginTop: 3 }}>{eur(v)}</div>
@@ -940,45 +1036,47 @@ export default function ScalataPage() {
           ))}
         </div>
 
-        {/* ⚠️ Il bankroll iniziale sta **qui** e non fra i filtri (richiesta di
-            Mattia): i filtri scelgono le partite, questo è un conto. Il valore
-            che propone è quello vero del conto, e `↺` ci torna. */}
-        {/* ⚠️⚠️ **DUE righe e non una** (21/10/2026, visto in una schermata a
-            375px). Su una riga sola stavano sei cose — l'etichetta, i due
-            tasti, il valore, il ritorno al conto e la prossima puntata — e le
-            ultime due si accavallavano. È la regola che questo progetto ha già
-            scritto: *più di tre o quattro informazioni su una riga si dividono
-            in due righe invece di stringere*. Sopra il comando, sotto quello
-            che il comando produce. */}
+        {/* ⚠️⚠️ **Versato e risultato, sempre in vista** (Mattia, 24/10/2026:
+            *"se perdo 3 bankroll interi e una volta incasso 200 € devo capire
+            di essere in perdita e non in utile"*). Il risultato è **conto
+            meno versato**: è l'unico numero che non si fa ingannare
+            dall'ultimo incasso. Sopra il riepilogo, sotto il gesto che lo
+            muove — la ricarica, l'unico modo in cui entrano soldi. */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: SP.s,
           marginTop: SP.l, paddingTop: SP.m, borderTop: `1px solid ${alpha(C.testo, 0.1)}` }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: SP.m }}>
-            <div style={{ fontSize: S.base, fontFamily: F.sans, color: C.spento }}>bankroll iniziale</div>
-            {/* ⚠️ **Un euro per scatto, tenendo premuto** (Mattia, 18/10): a 10 € per
-                tocco il bankroll si poteva solo approssimare, e la puntata è il suo
-                10% — cioè il passo del bankroll decide il passo della puntata. */}
-            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: SP.s }}>
-              {/* ⚠️ Il capitale lo muove chi gioca: per gli altri resta il
-                  numero, senza i due tasti. */}
-              {isAdmin && <TastoRipeti onScatto={() => setBankroll(Math.max(10, bankrollIniziale - 1))}>−</TastoRipeti>}
-              <div style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700, color: C.testo, minWidth: 64, textAlign: 'center' }}>
-                {eur(bankrollIniziale)}
-              </div>
-              {isAdmin && <TastoRipeti onScatto={() => setBankroll(bankrollIniziale + 1)}>+</TastoRipeti>}
-            </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: SP.m, flexWrap: 'wrap', fontFamily: F.sans, fontSize: S.base, color: C.spento }}>
+            <span>versato <b style={{ color: C.testo, fontFamily: F.mono }}>{eur(conto.versato)}</b></span>
+            <span style={{ marginLeft: 'auto' }}>risultato{' '}
+              <b style={{ fontFamily: F.mono, color: conto.risultato >= 0 ? C.verde : C.rosso }}>
+                {conto.risultato >= 0 ? '+' : ''}{eur(conto.risultato)}
+              </b>
+            </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: SP.m, flexWrap: 'wrap' }}>
-            {currentUser?.bankroll != null && Math.floor(Number(currentUser.bankroll)) !== bankrollIniziale && (
-              <button onClick={() => setBankroll(null)} title="torna al bankroll vero del conto"
-                style={{ background: 'transparent', border: 'none', color: C.oro, cursor: 'pointer', fontFamily: F.sans, fontSize: S.minuta, padding: 0 }}>
-                ↺ conto: {eur(Math.floor(Number(currentUser.bankroll)))}
-              </button>
-            )}
-            <span style={{ marginLeft: 'auto', fontFamily: F.sans, fontSize: S.base, color: C.spento }}>
-              prossima puntata <b style={{ color: C.oro }}>{eur(posta)}</b>
+          <div style={{ display: 'flex', alignItems: 'center', gap: SP.m }}>
+            {/* ⚠️ **16px**: sotto, iOS ingrandisce la pagina da solo quando
+                si tocca il campo (trappola già pagata). */}
+            <input value={importo} onChange={e => setImporto(e.target.value.replace(',', '.'))}
+              inputMode="decimal" placeholder="importo"
+              style={{ width: 90, minWidth: 0, background: C.pozzo, border: `1px solid ${C.bordo}`, padding: '6px 8px',
+                color: C.testo, fontFamily: F.mono, fontSize: 16, outline: 'none' }} />
+            <Tasto colore={C.oro} attivo={Number(importo) > 0} onClick={async () => {
+              if (!(Number(importo) > 0)) return
+              const x = await reg.ricaricaConto(cent(Number(importo)))
+              setAvviso(x?.errore ?? null)
+              if (!x?.errore) setImporto('')
+            }}>＋ ricarica</Tasto>
+            <span style={{ marginLeft: 'auto', fontFamily: F.sans, fontSize: S.base, color: C.spento, textAlign: 'right' }}>
+              puntata <b style={{ color: C.oro }}>{eur(posta)}</b>
               <span style={{ fontSize: S.micro, color: C.fioco }}> (10%)</span>
             </span>
           </div>
+          {!aperta && posta < 1 && (
+            <div style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.ambra }}>
+              {conto.versato > 0
+                ? 'Il conto è sotto 10 €: la puntata sarebbe sotto 1 €. Ricarica per aprire una scalata.'
+                : 'Il conto parte da 0: fai una ricarica per aprire la prima scalata.'}
+            </div>
+          )}
         </div>
 
         {casse.vivi > 0 && (
@@ -1000,7 +1098,7 @@ export default function ScalataPage() {
         {/* ⚠️ Per chi guarda e basta i due tasti **non ci sono**, né spenti:
             un tasto disabilitato racconta una cosa che si potrebbe fare, e
             qui non si può — lo dice la policy, non solo questo `if`. */}
-        {!isAdmin ? null : aperta ? (
+        {aperta ? (
           <button onClick={async () => {
             // ⚠️⚠️ **Le casse si scrivono qui, una volta sola.** Da quando si
             // ricalcolano dalla catena, `scalate.cassa` e `scalate.accumulo`
@@ -1010,8 +1108,11 @@ export default function ScalataPage() {
             // guadagno senza nessun posto da cui fosse arrivato. Una volta
             // chiusa la catena non si ricalcola più (i passi restano, ma la
             // verità di quella scalata è ferma): va **congelata**.
-            await reg.chiudi(Math.floor(casse.live), { cassa: casse.inGioco, accumulo: casse.accumulo })
-            setEsiti({}); setPerc({}); setTolte([]); setAggiunte({}); setBankroll(null)
+            // ⚠️ **Al centesimo, non per difetto** (24/10/2026): con il conto
+            // calcolato dai giri, un `Math.floor` qui toglieva i centesimi
+            // dell'accumulo dal conto a ogni STOP.
+            await reg.chiudi(cent(casse.live), { cassa: casse.inGioco, accumulo: casse.accumulo })
+            setEsiti({}); setPerc({}); setTolte([]); setAggiunte({})
           }}
             style={{ width: '100%', marginTop: 10, padding: '8px 0', background: `linear-gradient(${alpha(C.rosso, .1)},${alpha(C.rosso, .1)}), ${C.card}`,
               border: `1px solid ${alpha(C.rosso, 0.4)}`, color: C.rosso, fontFamily: F.sans, fontSize: S.base, cursor: 'pointer' }}>
@@ -1025,7 +1126,7 @@ export default function ScalataPage() {
              sono tre scritture più la rilettura, e un tasto che resta uguale
              per un secondo invita a premerlo due volte — cioè a provare ad
              aprire due scalate sullo stesso capitale. */
-          <button disabled={!passi.length || reg.occupato}
+          <button disabled={!passi.length || reg.occupato || posta < 1}
             onClick={async () => {
               const piano = []
               let p = posta, acc = 0
@@ -1055,10 +1156,10 @@ export default function ScalataPage() {
               else { setErroreApri(null); setEsiti({}); setPerc({}) }
             }}
             style={{ width: '100%', marginTop: 10, padding: '9px 0',
-              background: passi.length ? `linear-gradient(${alpha(C.verde, .12)},${alpha(C.verde, .12)}), ${C.card}` : C.card,
-              border: `1px solid ${alpha(C.verde, passi.length ? 0.5 : 0.15)}`,
-              color: passi.length ? C.verde : C.fioco, fontFamily: F.sans, fontSize: S.base,
-              cursor: passi.length ? 'pointer' : 'default' }}>
+              background: passi.length && posta >= 1 ? `linear-gradient(${alpha(C.verde, .12)},${alpha(C.verde, .12)}), ${C.card}` : C.card,
+              border: `1px solid ${alpha(C.verde, passi.length && posta >= 1 ? 0.5 : 0.15)}`,
+              color: passi.length && posta >= 1 ? C.verde : C.fioco, fontFamily: F.sans, fontSize: S.base,
+              cursor: passi.length && posta >= 1 ? 'pointer' : 'default' }}>
             {reg.occupato ? 'salvo il piano…' : `▶ APRI SCALATA — congela ${passi.length} passi e comincia a registrare`}
           </button>
         )}
@@ -1068,7 +1169,6 @@ export default function ScalataPage() {
           </div>
         )}
       </Card>
-      </>}
 
       {/* ── I tasti di selezione ───────────────────────────────────────── */}
       <Card style={{ marginBottom: 10 }}>
@@ -1121,28 +1221,8 @@ export default function ScalataPage() {
             bocciata è un modo di giocarla per sbaglio. */}
         <div style={{ display: 'flex', gap: 5, marginTop: 9, flexWrap: 'wrap', alignItems: 'center' }}>
           <Etichetta colore={C.celestePieno}>METODO · {METODO.nome.toUpperCase()}</Etichetta>
-          {/* ⚠️⚠️ **Salvataggio col tasto, non automatico** (scelta di Mattia,
-              22/10/2026), e la ragione è che siete **sei account admin sulla
-              stessa riga**: col salvataggio automatico ogni tocco del `+`
-              riscriverebbe le soglie anche agli altri, in diretta, mentre
-              stanno guardando. Col tasto si armeggia e poi si decide.
-              ⚠️ Salva **tutta la situazione**, non solo i filtri: bankroll,
-              partite tolte, aggiunte a mano, tagli, quote e percentuali. */}
-          {/* ⚠️ `attivo` acceso: un tasto grigio in questo tema si legge come
-              **disabilitato**, e qui invece è il gesto che tiene. Accanto al
-              rosso del ricarica si leggono come quello che sono — verde
-              conserva, rosso butta. */}
-          <Tasto colore={C.verde} attivo style={{ marginLeft: 'auto' }}
-            onClick={async () => {
-              const r = await pref.salva({
-                filtri: { att: attMin, scelta: sceMin, vpm: vpmMin, quotaGamba },
-                bankroll: aperta ? null : bankrollIniziale,
-                piano: { tolte, aggiunte, tagli, quote, perc, esiti },
-              })
-              setAvviso(r?.errore ?? null)
-            }}>
-            {pref.occupato ? 'salvo…' : 'salva'}
-          </Tasto>
+          {/* ⚠️ Niente più tasto «salva» (24/10/2026): la selezione è
+              personale e **si salva da sola**, come nel Bet Builder. */}
           {/* ⚠️ A scalata aperta il ricarica **azzera il piano e lascia i
               soldi dove sono**: è la risposta di Mattia a *"cosa succede alle
               scalate dimenticate"* — il denaro è lo stato della scalata, il
@@ -1156,7 +1236,7 @@ export default function ScalataPage() {
               ⚠️ `attivo` non vuol dire "selezionato": qui serve solo a dargli
               fondo e bordo pieni, che è l'unico modo che ha `Tasto` di
               gridare. */}
-          <Tasto colore={C.rosso} attivo
+          <Tasto colore={C.rosso} attivo style={{ marginLeft: 'auto' }}
             onClick={() => {
               setTolte([]); setAggiunte({}); setDaOra(Date.now())
               // ⚠️ **E rilegge davvero le partite.** Finché `usaProssime` non
@@ -1170,16 +1250,10 @@ export default function ScalataPage() {
             ↻ {aperta ? 'nuovo piano' : 'ricarica'}
           </Tasto>
         </div>
-        {/* ⚠️ **Una selezione salvata deve dire da chi e da quando**: con sei
-            admin sulla stessa riga, una soglia cambiata da sola fra ieri e
-            oggi è illeggibile senza il nome accanto. E chi non ha mai salvato
-            lo deve sapere, o crede che le sue soglie restino. */}
+        {/* ⚠️ Una selezione che si salva da sola deve dirlo, e dire **quando**:
+            chi non lo sa crede che le soglie tornino quelle di fabbrica. */}
         <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.spento, marginTop: 7, lineHeight: 1.5 }}>
-          {pref.info
-            ? <>selezione salvata{pref.info.chi ? <> da <b style={{ color: C.testo }}>{pref.info.chi}</b></> : ''}
-                {' · '}{quando(pref.info.quando)}
-                {' · '}{pref.info.condivisa ? 'condivisa fra gli admin' : 'solo tua'}</>
-            : <>nessuna selezione salvata{isAdmin ? ' — quella che salvi la vedono tutti gli admin' : ''}</>}
+          {pref.info ? <>si salva da sola · ultima volta {quando(pref.info.quando)}</> : <>si salva da sola, appena cambi qualcosa</>}
           {pref.errore && <span style={{ color: C.ambra }}>{' · '}{pref.errore}</span>}
         </div>
         <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.spento, marginTop: 4, lineHeight: 1.5 }}>
@@ -1233,7 +1307,8 @@ export default function ScalataPage() {
           const { cassa: p, accumulo: acc } = casseDi(reg.passi.slice(0, i), posta, (k) => perc[k])
           // ⚠️ Vale anche qui: un passo staccato a mano (numero decimale) si
           // vede subito, in anteprima e senza i soldi.
-          const inAnteprima = i > frontiera
+          const fermo = perso >= 0 && i > perso
+          const inAnteprima = i > frontiera || fermo
           if ((p < 1 && !inAnteprima) || i > limiteVisibile) return null
           return (
             /* ⚠️⚠️ **`i + 1`, non `riga.numero`.** La colonna `numero` è
@@ -1246,9 +1321,9 @@ export default function ScalataPage() {
                applicato alle casse erano due numeri diversi (al primo passo
                della catena: tutto l'utile contro il 70%). */
             <Passo key={riga.id} numero={i + 1} gambe={gambe} giorno={riga.giorno} ora={gambe[0]?.ora?.slice(0, 5)} stelleDi={votiDi} anteprima={inAnteprima}
-              fissato={fissati.includes(chiaveFissa(i))} onFissa={() => fissa(i)}
+              fermo={fermo} fissato={eFissato(i)} onFissa={() => fissa(i)}
               posta={p} postaIniziale={posta} accumulato={acc} colore={coloreDi(i)} classifiche={classifiche}
-              quote={quote} setQuote={setQuote} onApri={setApertaId} tocca={isAdmin}
+              quote={quote} setQuote={setQuote} onApri={setApertaId}
               onQuota={(id, v) => reg.cambiaQuota(id, riga.id, v)}
               onToglie={(id) => reg.togliGamba(id, riga.id)}
               prossima={prossimaSalvata(i)}
@@ -1314,6 +1389,9 @@ export default function ScalataPage() {
           // ⚠️ Un pezzo staccato a mano si vede anche oltre la frontiera, e
           // **anche se la cassa non c'è ancora**: `p < 1` qui vorrebbe dire
           // *"non so quanto puntare"*, che in anteprima è proprio il punto.
+          // ⚠️ Nel piano un passo perso è una **prova**, e RIPARTI non c'è:
+          // i passi dopo restano nascosti come prima.
+          const fermo = false
           const inAnteprima = i > frontiera
           if ((p < 1 && !inAnteprima) || i > limiteVisibile) return null
           return (
@@ -1324,10 +1402,10 @@ export default function ScalataPage() {
             <Passo key={f.partite[0]?.id ?? f.giorno + f.ora} numero={i + 1} gambe={f.partite} giorno={f.giorno} ora={f.ora} stelleDi={votiDi} anteprima={inAnteprima}
               /* ⚠️ Solo nel piano: a scalata aperta i passi si scoprono con
                  l'esito, che lì è un fatto registrato e non una simulazione. */
-              fissato={fissati.includes(chiaveFissa(i))}
+              fermo={fermo} fissato={eFissato(i)}
               onFissa={() => fissa(i)}
               posta={p} postaIniziale={posta} accumulato={acc} colore={coloreDi(i)} classifiche={classifiche}
-              onApri={setApertaId} tocca={isAdmin} prossima={prossimaDi(i)}
+              onApri={setApertaId} prossima={prossimaDi(i)}
               onAggiunge={() => { const n = prossimaDi(i); if (n) setAggiunte(a => ({ ...a, [i]: [...(a[i] || []), n.id] })) }}
               onManuale={() => setManuale({
                 titolo: `PASSO ${i + 1}`,
@@ -1341,9 +1419,46 @@ export default function ScalataPage() {
               quote={quote} setQuote={setQuote}
               perc={perc[i]} setPerc={(v) => setPerc(x => ({ ...x, [i]: v }))}
               esito={esiti[i] ?? null} setEsito={(e) => setEsiti(x => ({ ...x, [i]: e }))}
-              onToglie={(id) => setTolte(t => [...t, id])} />
+              /* ⚠️ Toglie **anche dalle aggiunte**: rimessa dall'elenco, la
+                 partita torna nel suo passo naturale, non in quello dove
+                 l'avevi spostata. */
+              onToglie={(id) => {
+                setTolte(t => [...t, id])
+                setAggiunte(a => Object.fromEntries(Object.entries(a).map(([k, v]) => [k, v.filter(x => x !== id)])))
+              }} />
           )
         })}
+
+      {/* ⚠️⚠️ **⟳ RIPARTI** (Mattia, 24/10/2026): dopo un passo perso, chiude
+          il giro e ne apre uno nuovo coi passi programmati che restano, sulla
+          puntata del 10% del conto. Prima l'unico modo di andare avanti era
+          STOP, che si portava via i passi e lasciava da ricomporre tutto. */}
+      {aperta && perso >= 0 && reg.passi.slice(perso + 1).some(r => r.esito === 'aperto') && (() => {
+        const finale = cent(casse.live)
+        const nuovoConto = cent(contoFermo + finale - bankrollIniziale)
+        const nuovaPosta = postaDi(nuovoConto)
+        const puo = nuovaPosta >= 1 && !reg.occupato
+        return (
+          <div style={{ marginTop: 10 }}>
+            <button disabled={!puo} onClick={async () => {
+              const x = await reg.riparti(reg.passi[perso], {
+                finale, cassa: casse.inGioco, accumulo: casse.accumulo, conto: nuovoConto, posta: nuovaPosta })
+              setAvviso(x?.errore ?? null)
+              if (!x?.errore) setPerc({})
+            }} style={{ width: '100%', padding: '9px 0', cursor: puo ? 'pointer' : 'default',
+              background: puo ? `linear-gradient(${alpha(C.celestePieno, .12)},${alpha(C.celestePieno, .12)}), ${C.card}` : C.card,
+              border: `1px solid ${alpha(C.celestePieno, puo ? 0.5 : 0.15)}`,
+              color: puo ? C.celestePieno : C.fioco, fontFamily: F.sans, fontSize: S.base }}>
+              {reg.occupato ? 'riparto…' : `⟳ RIPARTI dal passo ${perso + 2} — nuovo giro con puntata ${eur(nuovaPosta)}`}
+            </button>
+            <div style={{ marginTop: 4, fontFamily: F.sans, fontSize: S.minuta, color: puo ? C.spento : C.ambra, textAlign: 'center' }}>
+              {puo
+                ? `chiude questo giro (conto ${eur(nuovoConto)}) e rimette in gioco i passi che restano`
+                : `il conto sarebbe ${eur(nuovoConto)}: la puntata scende sotto 1 €, serve prima una ricarica`}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ⚠️⚠️ **Un passo nascosto deve dire di esserci.** I passi dopo la
           frontiera non si vedono, ma esistono e sono già nel piano salvato:
@@ -1365,7 +1480,7 @@ export default function ScalataPage() {
                 passo per volta (22/10/2026). */}
             {' · '}<span style={{ color: C.fioco }}>
               {casse.inGioco < 1
-                ? 'la scalata si è fermata qui: restano nel piano, non in gioco'
+                ? (aperta && perso >= 0 ? 'si rimettono in gioco con ⟳ RIPARTI' : 'la scalata si è fermata qui: restano nel piano, non in gioco')
                 : `compare quando segni l'esito del passo ${frontiera + 1}`}
             </span>
           </div>
@@ -1457,21 +1572,25 @@ export default function ScalataPage() {
                       ogni riga è rumore su quaranta righe. */}
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1,
                     textDecoration: 'none' }}>
-                    {/* ⚠️ Per chi non è admin il flag resta **visibile ma non
-                        toccabile**: il conto dei segni è l'informazione, metterlo
-                        è un gesto riservato — e lo impone la policy, non questo
-                        `if`, che nasconde e basta. */}
-                    <button onClick={() => isAdmin && flagga(g.id)} disabled={!isAdmin}
-                      title={!isAdmin ? `${flagDi(g.id)} flag` : mioFlag(g.id) ? 'togli il flag' : 'mi piace per la scalata'}
+                    {/* ⚠️⚠️ **Dal 24/10/2026 il flag lo mette chiunque**
+                        (Mattia): **verde** se l'ha messo un admin, **blu** se
+                        un utente. Quando ci sono tutti e due vince il verde,
+                        che è il segno di prima; il numero dice quanti sono. */}
+                    {(() => { const t = flagTipiDi(g.id), mio = mioFlag(g.id)
+                      const tinta = mio ? (isAdmin ? C.verde : C.blu) : t.admin ? C.verde : C.blu
+                      return (
+                    <button onClick={() => flagga(g.id)}
+                      title={mio ? 'togli il flag' : `mi piace per la scalata${t.admin + t.user ? ` · ${t.admin} admin, ${t.user} utenti` : ''}`}
                       style={{ display: 'flex', alignItems: 'center', gap: 1, background: 'transparent',
-                        border: 'none', padding: 0, cursor: isAdmin ? 'pointer' : 'default',
+                        border: 'none', padding: 0, cursor: 'pointer',
                         /* ⚠️ `C.fioco` e non `C.fantasma`: la bandiera spenta è un tasto che
                            si può premere, e `fantasma` in questo progetto vuol dire
                            **disabilitato**. Lo stesso grigio della × qui accanto. */
-                        color: mioFlag(g.id) ? C.verde : flagDi(g.id) ? alpha(C.verde, 0.75) : C.fioco }}>
+                        color: mio ? tinta : flagDi(g.id) ? alpha(tinta, 0.75) : C.fioco }}>
                       <Icona nome="bandiera" misura={13} pieno={mioFlag(g.id)} />
                       {flagDi(g.id) > 1 && <span style={{ fontSize: S.micro }}>{flagDi(g.id)}</span>}
                     </button>
+                      ) })()}
                     {votiDi(g.id) > 0 && (
                       <span title={`${votiDi(g.id)} stelle dalla pagina Partite`}
                         style={{ display: 'flex', alignItems: 'center', gap: 1, color: C.oro }}>
@@ -1519,10 +1638,10 @@ export default function ScalataPage() {
                   </span>
                   <span style={{ color: fuori ? C.fioco : col, textAlign: 'center' }}>{g.giocata}</span>
                   <span style={{ color: col, textAlign: 'right' }}>{Number(g.quota).toFixed(2).replace('.', ',')}</span>
-                  {isAdmin && <button onClick={() => setTolte(t => fuori ? t.filter(x => x !== g.id) : [...t, g.id])}
+                  <button onClick={() => setTolte(t => fuori ? t.filter(x => x !== g.id) : [...t, g.id])}
                     title={fuori ? 'rimetti in scaletta' : 'togli dalla scaletta'}
                     style={{ background: 'transparent', border: 'none', cursor: 'pointer',
-                      textDecoration: 'none', color: fuori ? C.verde : C.fioco, fontSize: S.media }}>{fuori ? '+' : '×'}</button>}
+                      textDecoration: 'none', color: fuori ? C.verde : C.fioco, fontSize: S.media }}>{fuori ? '+' : '×'}</button>
                 </div>
                 </div>
               )

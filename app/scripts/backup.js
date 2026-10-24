@@ -30,7 +30,19 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
 
 // Tutte le tabelle che l'app usa. `users` per prima: è la più importante.
-const TABELLE = ['users', 'movimenti', 'giornate', 'griglia', 'impostazioni', 'inserite'];
+// ⚠️⚠️ **Le tabelle scritte dalle persone, non solo quelle del bankroll**
+// (24/10/2026): fino a oggi mancavano scalate, schedine, voti, flag e
+// preferenze, e il backup "prima di toccare la scalata" non conteneva la
+// scalata. Le partite (`partite`, `prossime_partite`, `andamento`) restano
+// fuori: si ricostruiscono dalle fonti, e sono 100.000 righe.
+const TABELLE = ['users', 'movimenti', 'giornate', 'griglia', 'impostazioni', 'inserite',
+  'scalate', 'scalata_passi', 'scalata_gambe', 'scalata_ricariche',
+  'schedine', 'schedina_gambe', 'voti_partite', 'flag_partite', 'preferenze'];
+// Le tabelle senza `id`: si pagina sulla loro chiave, che deve essere univoca.
+const ORDINE = {
+  voti_partite: ['prossima_id', 'user_id'], flag_partite: ['prossima_id', 'user_id'],
+  preferenze: ['ambito', 'user_id'],
+};
 
 // Supabase risponde al massimo 1000 righe per volta: si pagina con range().
 //
@@ -45,7 +57,9 @@ async function scaricaTutto(tabella) {
   const PAGINA = 1000;
   const righe = [];
   for (let da = 0; ; da += PAGINA) {
-    const { data, error } = await supabase.from(tabella).select('*').order('id').range(da, da + PAGINA - 1);
+    let q = supabase.from(tabella).select('*');
+    for (const c of ORDINE[tabella] ?? ['id']) q = q.order(c, { nullsFirst: true });
+    const { data, error } = await q.range(da, da + PAGINA - 1);
     if (error) throw error;
     righe.push(...data);
     if (data.length < PAGINA) return righe;

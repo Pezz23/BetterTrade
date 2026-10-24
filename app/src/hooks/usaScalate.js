@@ -18,8 +18,11 @@ import { supabase } from '../supabase'
 // registro riscrivibile non è una prova. Qui non c'è nessuna funzione che
 // modifichi una riga con `stato = 'chiusa'`, ed è voluto.
 
-/** Il capitale dedicato di partenza quando non c'è ancora nessuna scalata. */
-export const CAPITALE_INIZIALE = 100
+// ⚠️⚠️ **Dal 24/10/2026 ogni account ha il SUO conto** (`sql/41`), admin e
+// user, e ognuno vede solo il suo registro: niente più lettura aperta. Il
+// conto parte da 0 e si riempie con le **ricariche**: `CAPITALE_INIZIALE`
+// (100 scritti nel codice) non c'è più, perché era un versamento che non
+// lasciava traccia — il contrario di quello che il conto deve dire.
 
 /** Il passo senza le gambe annidate dalla lettura: quelle vivono a parte. */
 const senzaGambe = (riga) => {
@@ -48,8 +51,8 @@ const annulla = async (id, messaggio) => {
 }
 
 /** Le scalate dell'utente: la aperta (se c'è) e lo storico. */
-export function usaScalate(userId, tutte = false) {
-  const [stato, setStato] = useState({ aperta: null, passi: [], gambe: [], storico: null, errore: null })
+export function usaScalate(userId) {
+  const [stato, setStato] = useState({ aperta: null, passi: [], gambe: [], storico: null, ricariche: [], errore: null })
   // ⚠️ **`occupato` serve a schermo.** Ogni gesto è un giro al database, e un
   // tasto che per mezzo secondo non dice niente sembra rotto: è il motivo per
   // cui la lentezza di prima si notava più di quanto durasse.
@@ -75,18 +78,15 @@ export function usaScalate(userId, tutte = false) {
    */
   const ricarica = useCallback(async () => {
     if (!userId) return
-    // ⚠️⚠️ **`tutte` serve agli SPETTATORI** (22/10/2026). Dal 22/10 la pagina
-    // è aperta anche a chi non è admin, e `sql/34` lascia leggere le tabelle a
-    // tutti — ma con il filtro sull'utente uno spettatore avrebbe letto **il
-    // proprio** registro, cioè niente: la pagina gli sarebbe sembrata vuota,
-    // e la policy aperta inutile. Senza filtro vede quello che c'è.
-    // ⚠️ Ogni admin continua a vedere **il suo**: due admin con una scalata
-    // aperta ciascuno sono due verità su due capitali diversi, e mescolarle
-    // vorrebbe dire segnare un esito sulla scalata di un altro. Lo spettatore
-    // invece non segna niente, quindi per lui "la più recente" basta.
-    const q = supabase.from('scalate').select('*').order('aperta_il', { ascending: false })
-    const { data: scalate, error } = await (tutte ? q : q.eq('user_id', userId))
-    if (error) return setStato(s => ({ ...s, errore: error.message }))
+    // ⚠️ Il filtro sull'utente resta anche se la policy fa già da sé
+    // (`sql/41`): dice cosa si vuole, e non dipende dal ricordarsi la policy.
+    // Scalate e ricariche non dipendono l'una dall'altra: partono insieme, e
+    // il conto costa un'attesa in più solo sulla carta.
+    const [{ data: scalate, error }, { data: ricariche, error: eR }] = await Promise.all([
+      supabase.from('scalate').select('*').eq('user_id', userId).order('aperta_il', { ascending: false }),
+      supabase.from('scalata_ricariche').select('*').eq('user_id', userId).order('fatta_il', { ascending: false }),
+    ])
+    if (error || eR) return setStato(s => ({ ...s, errore: (error || eR).message }))
 
     const aperta = (scalate || []).find(s => s.stato === 'aperta') || null
     let passi = [], gambe = []
@@ -99,8 +99,8 @@ export function usaScalate(userId, tutte = false) {
       passi = (p || []).map(senzaGambe)
       gambe = (p || []).flatMap(r => r.scalata_gambe || []).sort((a, b) => a.id - b.id)
     }
-    setStato({ aperta, passi, gambe, storico: scalate || [], errore: null })
-  }, [userId, tutte])
+    setStato({ aperta, passi, gambe, storico: scalate || [], ricariche: ricariche || [], errore: null })
+  }, [userId])
 
   useEffect(() => { ricarica() }, [ricarica])
 
@@ -118,7 +118,7 @@ export function usaScalate(userId, tutte = false) {
     // scalata monca; e un messaggio di Postgres non dice a una persona cosa
     // deve correggere.
     if (!piano?.length) return { errore: 'non c’è nessun passo da salvare' }
-    if (!(posta > 0)) return { errore: 'la puntata è zero: il capitale è troppo basso' }
+    if (!(posta > 0)) return { errore: 'la puntata è zero: il conto è troppo basso, serve una ricarica' }
     for (const [i, p] of piano.entries()) {
       const brutta = p.gambe.find(g => !(Number(g.quota) > 1))
       if (brutta) return { errore: `passo ${i + 1}: la quota di ${brutta.casa} non è valida` }
@@ -371,6 +371,67 @@ export function usaScalate(userId, tutte = false) {
   }, [quotaDi, ricarica])
 
   /**
+   * ⚠️⚠️ **⟳ RIPARTI dopo un passo perso** (Mattia, 24/10/2026: *"se metto
+   * perso non mi presenta i passi successivi, motivo per il quale ho chiuso la
+   * scalata"*). Chiude il giro come STOP e ne apre uno nuovo coi **passi
+   * programmati che restano** — spostati, non copiati — e la puntata del 10%
+   * del conto. Gli accumuli ripartono dalla prima vittoria del giro nuovo,
+   * perché `casseDi` cammina sui passi del giro.
+   * ⚠️ È una funzione del database (`riparti_scalata`, `sql/41`) e non tre
+   * chiamate: senza transazione, a metà resterebbe un giro chiuso senza il
+   * successivo. I numeri li calcola la pagina, la formula resta in un posto.
+   */
+  const riparti = useCallback(async (passoPerso, { finale, cassa, accumulo, conto, posta }) => {
+    if (!stato.aperta) return { errore: 'nessuna scalata aperta' }
+    const { error } = await supabase.rpc('riparti_scalata', {
+      p_scalata: stato.aperta.id, p_dopo: Number(passoPerso.numero), p_finale: finale,
+      p_cassa: cassa, p_accumulo: accumulo, p_conto: conto, p_posta: posta,
+    })
+    if (error) return { errore: error.message }
+    await ricarica()
+    return {}
+  }, [stato.aperta, ricarica])
+
+  /**
+   * Una ricarica del conto. ⚠️ È l'**unico** modo in cui entrano soldi: i
+   * tasti −/+ sul bankroll non ci sono più, perché cambiavano il conto senza
+   * lasciare traccia.
+   */
+  const ricaricaConto = useCallback(async (importo) => {
+    const n = Number(importo)
+    if (!(n > 0)) return { errore: 'importo non valido' }
+    const { error } = await supabase.from('scalata_ricariche').insert({ user_id: userId, importo: n })
+    if (error) return { errore: error.message }
+    await ricarica()
+    return {}
+  }, [userId, ricarica])
+
+  /**
+   * Annulla una ricarica sbagliata. ⚠️ La pagina la offre **solo per
+   * l'ultima, e solo se dopo non si è aperta nessuna scalata**: quella scalata
+   * è nata su quel conto, e toglierle la ricarica da sotto riscriverebbe il
+   * passato.
+   */
+  const annullaRicarica = useCallback(async (id) => {
+    const { error } = await supabase.from('scalata_ricariche').delete().eq('id', id)
+    if (error) return { errore: error.message }
+    await ricarica()
+    return {}
+  }, [ricarica])
+
+  /**
+   * «fissa passo» a scalata aperta. ⚠️ Era stato della pagina e **spariva
+   * chiudendo l'app**: i passi fissati tornavano nascosti, e sembrava che la
+   * scalata li avesse persi (Mattia, 24/10/2026). Ora è una colonna del passo.
+   */
+  const fissa = useCallback(async (passoId, valore) => {
+    const { error } = await supabase.from('scalata_passi').update({ fissato: !!valore }).eq('id', passoId)
+    if (error) return { errore: error.message }
+    await ricarica()
+    return {}
+  }, [ricarica])
+
+  /**
    * ⚠️⚠️ **Riparti da 0: cancella tutto il registro di questo utente**, come
    * se fosse il primo giorno (Mattia, 18/10). È l'unica operazione
    * irreversibile della pagina, e non ha una via di ritorno: non esiste un
@@ -379,22 +440,22 @@ export function usaScalate(userId, tutte = false) {
    * `on delete cascade` (`sql/30`), quindi se ne vanno con loro. Cancellarle a
    * mano in tre giri lascerebbe orfani al primo errore in mezzo.
    * ⚠️ **Le scalate aperte vanno via anche loro**: *"come se partissi quel
-   * giorno per la prima volta"*. Dopo, il capitale torna a
-   * `CAPITALE_INIZIALE` da sé, perché non c'è più nessun `bankroll_finale` da
-   * cui ripartire.
+   * giorno per la prima volta"*.
+   * ⚠️⚠️ **E vanno via anche le ricariche** (24/10/2026): il conto è
+   * `ricariche + risultati`, e cancellare solo le scalate restituirebbe le
+   * perdite — un conto che dopo un azzeramento vale più di prima. Dopo, il
+   * conto è 0 e si ricomincia da una ricarica.
    */
   const azzeraTutto = useCallback(async () => {
     if (!userId) return { errore: 'nessun utente' }
-    const { error } = await supabase.from('scalate').delete().eq('user_id', userId)
-    if (error) return { errore: error.message }
+    const errore = primoErrore(await Promise.all([
+      supabase.from('scalate').delete().eq('user_id', userId),
+      supabase.from('scalata_ricariche').delete().eq('user_id', userId),
+    ]))
+    if (errore) return { errore }
     await ricarica()
     return {}
   }, [userId, ricarica])
-
-  /** Il capitale dedicato: quello della scalata aperta, o l'ultimo chiuso. */
-  const capitale = stato.aperta?.bankroll_iniziale != null
-    ? Number(stato.aperta.bankroll_iniziale)
-    : Number(stato.storico?.find(s => s.bankroll_finale != null)?.bankroll_finale ?? CAPITALE_INIZIALE)
 
   // ⚠️ Le scritture escono avvolte in `occupato`: il conto dell'attesa sta in
   // un posto solo, invece che ripetuto dentro ognuna. Si avvolge **qui** e non
@@ -406,7 +467,11 @@ export function usaScalate(userId, tutte = false) {
   }
 
   return {
-    ...stato, capitale, occupato, ricarica,
+    ...stato, occupato, ricarica,
+    riparti: attendendo(riparti),
+    ricaricaConto: attendendo(ricaricaConto),
+    annullaRicarica: attendendo(annullaRicarica),
+    fissa: attendendo(fissa),
     apri: attendendo(apri),
     segna: attendendo(segna),
     chiudi: attendendo(chiudi),

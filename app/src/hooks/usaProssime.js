@@ -40,7 +40,7 @@ function carica(forza = false) {
         // ⚑ I flag della scalata (sql/33): stessa forma delle stelle, altro
         // significato. ⚠️ Parte **insieme** alle altre due e non dopo: qui il
         // tempo non è nei dati, è nel numero di giri.
-        supabase.from('flag_partite').select('prossima_id, user_id'),
+        supabase.from('flag_partite').select('prossima_id, user_id, da_admin'),
       ])
       inCorso = null
       if (p.error) throw new Error(p.error.message)
@@ -118,18 +118,22 @@ export function usaProssime() {
   // con `vota`: sono due tabelle e due domande, e il giorno in cui una delle
   // due cambia regola (la stella scavalca la soglia, il flag no) una funzione
   // condivisa diventerebbe un albero di `if`.
+  // ⚠️⚠️ **Dal 24/10/2026 il flag lo mette chiunque** (`sql/41`), e porta con
+  // sé `da_admin`: verde se l'ha messo un admin, blu se un utente (Mattia).
+  // È una fotografia del ruolo al momento del flag, e la policy rifiuta chi
+  // prova a dichiararsi admin senza esserlo.
   const flagga = useCallback(async (prossimaId) => {
-    if (!isAdmin || !currentUser) return
+    if (!currentUser) return
     const mio = flag.some(f => f.prossima_id === prossimaId && f.user_id === currentUser.id)
     const prima = flag
     const dopo = mio
       ? flag.filter(f => !(f.prossima_id === prossimaId && f.user_id === currentUser.id))
-      : [...flag, { prossima_id: prossimaId, user_id: currentUser.id }]
+      : [...flag, { prossima_id: prossimaId, user_id: currentUser.id, da_admin: isAdmin }]
     setFlag(dopo)
     if (memoria) memoria.flag = dopo
     const { error } = mio
       ? await supabase.from('flag_partite').delete().eq('prossima_id', prossimaId).eq('user_id', currentUser.id)
-      : await supabase.from('flag_partite').insert({ prossima_id: prossimaId, user_id: currentUser.id })
+      : await supabase.from('flag_partite').insert({ prossima_id: prossimaId, user_id: currentUser.id, da_admin: isAdmin })
     if (error) {
       setFlag(prima)
       if (memoria) memoria.flag = prima
@@ -137,10 +141,15 @@ export function usaProssime() {
     }
   }, [isAdmin, currentUser, flag])
   const flagDi = useCallback((id) => flag.filter(f => f.prossima_id === id).length, [flag])
+  // Quanti flag di admin e quanti di utenti: decide il colore della bandiera.
+  const flagTipiDi = useCallback((id) => {
+    const qui = flag.filter(f => f.prossima_id === id)
+    return { admin: qui.filter(f => f.da_admin).length, user: qui.filter(f => !f.da_admin).length }
+  }, [flag])
   const mioFlag = useCallback((id) =>
     !!currentUser && flag.some(f => f.prossima_id === id && f.user_id === currentUser.id), [flag, currentUser])
   const mioVoto = useCallback((id) =>
     !!currentUser && voti.some(v => v.prossima_id === id && v.user_id === currentUser.id), [currentUser, voti])
 
-  return { righe, voti, vota, votiDi, mioVoto, flag, flagga, flagDi, mioFlag, caricamento, errore, ricarica }
+  return { righe, voti, vota, votiDi, mioVoto, flag, flagga, flagDi, flagTipiDi, mioFlag, caricamento, errore, ricarica }
 }

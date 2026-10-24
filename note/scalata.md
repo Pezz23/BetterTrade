@@ -610,3 +610,62 @@ e la scalata finiva subito. Il segnaposto ora è la stringa `'posta'`.
 **`null` è un valore legittimo, e un operatore che lo tratta come assenza se lo
 mangia in silenzio.**
 
+
+### 💰 Il conto personale, la ricarica e ⟳ RIPARTI (24/10/2026)
+
+Due difetti trovati da Mattia giocando, e una richiesta che li ha assorbiti:
+*"il bankroll deve essere sempre solo 1, quando finisce devo poterlo
+ricaricare: se perdo 3 bankroll interi, quindi 300 €, e una volta incasso
+200 €, devo capire di essere in perdita e non in utile"*. E: *"ogni account
+avrà il suo conto personale, sia Admin che user"* (`sql/41`, `1.59.00`).
+
+**I due difetti, perché non si ripetano:**
+- ⚠️ **Il bankroll tornava a 100 dopo lo STOP.** La selezione salvata
+  portava con sé il bankroll del 22/10, e senza una scalata aperta
+  **passava sopra** al capitale del registro (90). Il bankroll non sta più
+  nelle preferenze.
+- ⚠️ **I passi «sparivano».** Erano tre cose insieme: «fissa passo» era stato
+  della pagina e si perdeva chiudendo l'app; dopo un passo perso la catena si
+  ferma e i passi dopo si nascondevano; e l'unico modo di andare avanti era
+  STOP, che li chiudeva in archivio. Oggi «fissato» è una colonna del passo,
+  i passi dopo un perso restano **visibili e spenti**, e c'è RIPARTI.
+
+**Il conto è CALCOLATO, mai scritto**, come il bankroll del gruppo (regola 1):
+
+    conto = Σ ricariche + Σ (bankroll_finale − bankroll_iniziale) dei giri chiusi
+
+`contoDi` in `lib/scalata.js`. ⚠️ **Non ci sono più i tasti −/+** sul
+bankroll: cambiavano il capitale senza lasciare traccia, ed è il motivo per
+cui *quanto ci si era messo dentro* non lo sapeva nessuno. Entra denaro solo
+con **＋ ricarica**. ⚠️ Il **risultato è `conto − versato`**, non la somma
+dei giri: dice *perdita* anche dopo un buon incasso, se prima si è
+ricaricato di più. ⚠️ **Tutti partono da 0**, Admin compreso (Mattia ha
+azzerato il suo archivio il 24/10): `CAPITALE_INIZIALE` non esiste più.
+⚠️ È un conto **separato** da `users.bankroll`: una ricarica qui non tocca il
+Bilancio (*"sono 2 conti diversi"*).
+⚠️ Lo STOP scrive il `bankroll_finale` **al centesimo**, non per difetto: con
+il conto fatto di giri, il `Math.floor` toglieva i centesimi dell'accumulo.
+
+**⟳ RIPARTI**, sul giro con un passo perso e passi ancora da giocare: chiude
+il giro come STOP e ne apre uno nuovo con **i passi programmati che restano —
+spostati, non copiati** — e la puntata del 10% del conto nuovo. Gli accumuli
+ripartono **dalla prima vittoria** del giro nuovo (*"la solita scaletta"*),
+perché `casseDi` cammina sui passi del giro. ⚠️ È una funzione del database
+(`riparti_scalata`), non tre chiamate: supabase-js non ha transazioni, e a
+metà resterebbe un giro chiuso senza il successivo. I numeri li calcola la
+pagina; la funzione controlla solo che abbiano senso (puntata ≥ 1, passi da
+spostare). Se la puntata scenderebbe sotto 1 €, il tasto lo dice e chiede una
+ricarica.
+
+**Ognuno il suo**: le policy di `scalate`, `scalata_passi`,
+`scalata_gambe` e `scalata_ricariche` guardano `user_id`, **admin compresi**
+— come le schedine del Bet Builder. ⚠️ `sql/41` ha chiuso anche un resto di
+`sql/30`: `passi_write` e `gambe_write` lasciavano a qualunque admin scrivere
+i passi di chiunque. Provato simulando un utente e un admin in una
+transazione annullata. La selezione è **personale e si salva da sola** (niente
+più tasto «salva»). ⚠️ «Riparti da 0» cancella **anche le ricariche**:
+cancellare solo le scalate restituirebbe le perdite.
+
+**I flag ⚑ li mette chiunque**: **verde** di un admin, **blu** di un utente
+(`flag_partite.da_admin`, una fotografia del ruolo; la policy rifiuta chi si
+dichiara admin senza esserlo). Le **stelline** restano agli admin.

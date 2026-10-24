@@ -8,13 +8,19 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 24 ottobre 2026 · app alla versione **1.58.00** ·
-ultimo commit dell'app `a115a23` · ultimo passaggio di consegne: 24/10
+**Ultimo aggiornamento:** 24 ottobre 2026 · app alla versione **1.59.00** ·
+ultimo passaggio di consegne: 24/10 (prima della scalata personale)
 
 ## ▶️ DOVE SIAMO — 24 ottobre 2026, leggi questo per primo
 
-**Versione `1.58.00`** — il 24/10 il tasto **Bilancio** è diventato solo per
-gli admin (`1.57.02`), e la pagina **Spin** è cambiata (`1.58.00`):
+**Versione `1.59.00`** — il 24/10, in ordine: il tasto **Bilancio** solo per
+gli admin (`1.57.02`), la pagina **Spin** (`1.58.00`) e **Road to weekend
+con un conto personale per account** (`1.59.00`, `sql/41`): ricariche, conto
+calcolato (`versato · conto · risultato`), ⟳ RIPARTI dopo un passo perso,
+«fissato» salvato, ognuno vede solo la sua scalata, flag a tutti (verdi
+admin, blu user). Il perché in `note/scalata.md`. Provata da Mattia in dev.
+
+La pagina **Spin** (`1.58.00`):
 - l'automatica ordina e colora per **scelta** con soglie proprie **75/72/68**
   (`SOGLIE_SPIN`): il weekend del 24/10 passa da 0 verdi e 1 gialla a **5 e
   6**. Fuori dalle spin i colori restano dell'attendibilità. Perché, in
@@ -150,6 +156,7 @@ leggi "884 partite" o "440 crediti" e siamo a marzo, sono vecchi di mesi.
 | **U2' — la linea 3,5** smette di finire nel cestino | `5da5b0a` |
 | **Il tasto Bilancio solo per gli admin** (24/10) | `7deafd9` |
 | **Spin**: selezione per **scelta** 75/72/68, griglia «A mano» vuota, «ordina per» i quattro indicatori, «S1» su tre fonti (24/10) | `a115a23` |
+| **Road to weekend, conto personale** (`sql/41`): ricariche, conto calcolato, ⟳ RIPARTI, «fissato» salvato, ognuno la sua, flag a tutti; la partita aggiunta che non si toglieva; backup con le tabelle delle persone (24/10) | questo commit |
 
 Le migrazioni applicate in questi due giorni: **`sql/31`** (numero del passo
 decimale, per inserirne uno in mezzo), **`sql/32`** (il metodo `madre`),
@@ -167,6 +174,8 @@ stretta). Tutte verificate dal database subito dopo.
 | **Europa e Conference senza quote** | The Odds API non ha **nessuna** partita futura per loro (ricontrollato il 23/10): accenderle costerebbe crediti per zero righe. Le voci sono pronte e commentate in `lib/odds-api.js` |
 | **l'esito automatico del Bet Builder** | fattibile, ma prima la regola *"questa giocata è arrivata"* deve **spostarsi** da `btscout/lib/ricostruisci.js` a `app/src/lib/`, **non essere copiata**: due versioni direbbero prima o poi cose diverse sulla stessa schedina |
 | **tre partite rinviate DOPPIE in `prossime_partite`** | trovate il 24/10: Paris SG-Lyon (25 e 26/10), Toulouse-Troyes (24 e 25), Montpellier-Red Star (24 e 26) — resta la riga con la data vecchia. Possono entrare due volte nella stessa spin e nel Builder. Da guardare in `riconcilia-prossime` / importazione, **prima** di cancellare qualcosa: `prossime_partite` non si cancella a mano (`note/dati.md`) |
+| **il × in «TUTTE LE CONSIGLIATE» a scalata aperta** | barra la partita ma **non la toglie dal passo salvato** (per quello serve il × nella card del passo). Chiesto a Mattia il 24/10 se è il caso che ha visto: senza risposta |
+| **la vecchia riga di preferenze condivisa della scalata** | `preferenze` con `ambito='scalata'` e `user_id` nullo, col bankroll 100 del 22/10: dal 24/10 non la legge nessuno. Da cancellare **con l'ok di Mattia** |
 | **idea 9** | `CompilaPerQuota` riempie le caselle **vuote** di una spin: va capito se Mattia voleva compilarne una **intera**. Domanda ancora senza risposta |
 | **«solo sopra soglia»** | tolto il 22/10 insieme alle slitte, **deciso da me**: diceva la stessa cosa di «attendibilità ≥» in lingua spin. Una riga per rimetterlo |
 | ~~**le casse le vedono tutti**~~ | ✅ **chiuso il 24/10** (`1.57.02`): in Road to weekend casse e archivio erano **già** solo per gli admin (lotto 1, `ScalataPage` `{isAdmin && …}`), e questa riga era rimasta indietro. Mattia ha chiesto di togliere agli `user` anche il tasto **Bilancio** del menu: `soloAdmin:true` in `VOCI_MENU`. ⚠️ Nasconde il tasto, **non** i dati: la lettura resta quella delle policy |

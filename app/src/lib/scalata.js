@@ -363,6 +363,39 @@ export function casseDi(passi, posta, percDi = () => undefined) {
 }
 
 /**
+ * ⚠️⚠️ **Il conto della scalata, calcolato e mai scritto** (Mattia,
+ * 24/10/2026: *"se perdo 3 bankroll interi, quindi 300 €, e una volta incasso
+ * 200 €, devo capire di essere in perdita e non in utile"*).
+ *
+ *     conto = Σ ricariche + Σ (bankroll_finale − bankroll_iniziale) delle chiuse
+ *
+ * È la stessa regola del bankroll del gruppo (regola 1), su soldi diversi: un
+ * numero memorizzato si può ritoccare, una somma di fatti no. Prima il
+ * capitale era *"l'ultimo bankroll_finale"* più i tasti −/+, e quanto ci si
+ * era messo dentro non lo sapeva nessuno.
+ *
+ * `live` è il bankroll live della scalata aperta (`casse.live` nella pagina):
+ * con una scalata aperta il conto di adesso è quello fermo più quanto quel
+ * giro ha guadagnato o perso finora. ⚠️ Funziona anche se si è ricaricato a
+ * scalata aperta: la ricarica entra in `versato`, il giro aperto conta solo la
+ * sua differenza.
+ *
+ * Torna `versato` (quanto è entrato), `fermo` (il conto senza il giro aperto:
+ * è il bankroll con cui si apre il prossimo), `conto` (adesso) e `risultato`
+ * (`conto − versato`: in rosso se si è in perdita, qualunque sia l'ultimo
+ * incasso).
+ */
+export function contoDi({ ricariche = [], storico = [], aperta = null, live = null } = {}) {
+  const versato = ricariche.reduce((a, r) => a + Number(r.importo || 0), 0)
+  const chiusi = storico
+    .filter(s => s.stato !== 'aperta' && s.bankroll_finale != null)
+    .reduce((a, s) => a + Number(s.bankroll_finale) - Number(s.bankroll_iniziale), 0)
+  const fermo = versato + chiusi
+  const conto = aperta && live != null ? fermo + Number(live) - Number(aperta.bankroll_iniziale) : fermo
+  return { versato, fermo, conto, risultato: conto - versato }
+}
+
+/**
  * Simula una scalata su una sequenza di passi già composti.
  * `passi` = `[{ quota, vinto }]`, in ordine. Torna il registro e le tre casse.
  *
