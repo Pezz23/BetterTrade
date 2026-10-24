@@ -117,6 +117,19 @@ rispondere alla domanda di chi lo legge, non a quella più comoda da calcolare.
 giocare un disaccordo, lo strumento è **la stellina**, che esiste già per
 questo.
 
+⚠️⚠️ **Dal 24/10/2026 VPM entra nelle spin, ma attraverso la SCELTA**
+(Mattia): l'automatica ordina e colora per `scelta` — `att + 0,10 × VPM`
+normalizzato — con soglie proprie, **verde 75 · giallo 72 · blu 68**
+(`SOGLIE_SPIN` in `lib/spin.js`). Il motivo: il 24/10 il weekend aveva **zero
+verdi e una gialla** su 145 partite, perché la regola dell'over porta i
+favoriti più forti sotto quelli meno forti (Rangers 76,7% → 69,6%, blu).
+⚠️ *"VPM non è il criterio, è un indicatore in più"*: **fuori dalle spin i
+colori restano dell'attendibilità** con 75/72/65. ⚠️ E la scelta sta sopra
+l'attendibilità fino a 10 punti, quindi verde a 75 di scelta **non** vuol dire
+75% di probabilità: sull'archivio scelta e attendibilità azzeccano quasi
+uguale (75,8% contro 75,9% sul 10% migliore). Il disaccordo resta fuori
+(`scelta` è `null`), a meno di una stellina.
+
 **I pesi** (`PESI`) vengono dalle correlazioni misurate su 561 squadre-stagione:
 vittorie 0,30 · gol subiti 0,18 · gol fatti 0,13 · **dominio 0,13** · tiri in
 porta concessi 0,12 · tiri in porta fatti 0,09 · differenza reti 0,05.

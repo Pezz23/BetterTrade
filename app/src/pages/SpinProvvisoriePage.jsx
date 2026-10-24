@@ -5,25 +5,30 @@ import Icona from '../components/Icona'
 import { Card, Etichetta, Btn } from '../components/ui'
 import { CATEGORIE, pct, giorno } from '../components/RigaPartita'
 import { gg } from '../lib/formato'
-import { categoria, SOGLIE_DEFAULT, martediChiusura } from '../lib/attendibilita'
+import { categoria, martediChiusura } from '../lib/attendibilita'
 import ScegliCasella from '../components/ScegliCasella'
 import CompilaPerQuota from '../components/CompilaPerQuota'
-import { candidate, componi, conStelline, votateOltreIlLimite, spinPiena, pronosticoDa, DISPOSIZIONE } from '../lib/spin'
+import { candidate, componi, votateOltreIlLimite, spinPiena, pronosticoDa, DISPOSIZIONE, SOGLIE_SPIN, valoreSpin } from '../lib/spin'
+import { usaVpm } from '../hooks/usaVpm'
+import { valutaPartita } from '../lib/vpm'
 import { compilaSpin } from '../lib/griglia'
 import { supabase } from '../supabase'
 import { sigla } from '../lib/campionati'
 
 // L'anteprima delle spin compilate da sole, dalla lista delle partite della
-// settimana. Per ogni spin due griglie: quella automatica (solo attendibilità)
-// e quella con le stelline (le votate prima). Le celle in cui le due
+// settimana. Per ogni spin due griglie: quella automatica (per scelta, con le
+// soglie delle spin) e quella a mano, che parte vuota. Le celle in cui le due
 // differiscono si accendono. La logica è in lib/spin.js.
 
 // La quarta spin è "Fun", libera e scritta a mano: la compilazione automatica
 // riempie solo le tre agganciate al calendario.
 const SPIN = [1, 2, 3]
 
-function Cella({ pos, partita, votiDi, diversa, onClic, inAltre }) {
-  const cat = partita ? categoria(partita.probGiocata, SOGLIE_DEFAULT) : 'no'
+// ⚠️ Colore e percentuale della cella vengono dallo **stesso** numero, la
+// scelta (`valoreDi`): un 70% colorato di verde non si capirebbe.
+function Cella({ pos, partita, votiDi, valoreDi, diversa, onClic, inAltre }) {
+  const valore = partita ? valoreDi(partita) : null
+  const cat = partita ? categoria(valore, SOGLIE_SPIN) : 'no'
   const colore = CATEGORIE[cat].colore
   const voti = partita ? votiDi(partita.id) : 0
   return (
@@ -76,7 +81,7 @@ function Cella({ pos, partita, votiDi, diversa, onClic, inAltre }) {
               `guarda.mjs`, non a occhio. `@1.28` ci sta, `sul book · 70%` no.
               Nell'elenco sotto, dove c'è spazio, resta per esteso. */}
           <div style={{ fontSize: S.base, color: C.spento, whiteSpace: 'nowrap' }}>
-            {partita.quotaGiocata ? `@${partita.quotaGiocata.toFixed(2)}` : 'book'} · <b style={{ color: colore }}>{pct(partita.probGiocata)}</b>
+            {partita.quotaGiocata ? `@${partita.quotaGiocata.toFixed(2)}` : 'book'} · <b style={{ color: colore }}>{valore == null ? '—' : pct(valore)}</b>
           </div>
         </>
       ) : <div style={{ fontSize: S.corpo, color: C.fantasma }}>—</div>}
@@ -110,13 +115,13 @@ function Compila({ indice, celle, piena, onFatto }) {
   )
 }
 
-function Griglia({ titolo, colore, celle, riferimento, votiDi, indice, piena, onFatto, spiegazione, onClicCasella, onRipristina, onPerQuota, altrove }) {
+function Griglia({ titolo, colore, celle, riferimento, votiDi, valoreDi, indice, piena, onFatto, spiegazione, onClicCasella, onSvuota, onPerQuota, altrove }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
         <Etichetta colore={colore} style={{ fontSize: S.corpo, marginBottom: spiegazione ? 3 : 6 }}>{titolo}</Etichetta>
-        {/* Compare solo se hai toccato qualcosa: rimette l'ordine automatico
-            delle votate, senza passare dal database. */}
+        {/* Compare solo se hai toccato qualcosa: rimette la griglia vuota,
+            senza passare dal database. */}
         <span style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
           {onPerQuota && (
             <button onClick={onPerQuota} style={{
@@ -124,11 +129,11 @@ function Griglia({ titolo, colore, celle, riferimento, votiDi, indice, piena, on
               fontSize: S.minuta, fontFamily: F.sans, padding: '3px 9px', cursor: 'pointer',
             }}>compila per quota</button>
           )}
-          {onRipristina && (
-            <button onClick={onRipristina} style={{
+          {onSvuota && (
+            <button onClick={onSvuota} style={{
               background: 'transparent', border: `1px solid ${C.bordo}`, borderRadius: R.pastiglia, color: C.spento,
               fontSize: S.minuta, fontFamily: F.sans, padding: '3px 9px', cursor: 'pointer',
-            }}>↺ riparti dalle votate</button>
+            }}>↺ svuota</button>
           )}
         </span>
       </div>
@@ -144,7 +149,10 @@ function Griglia({ titolo, colore, celle, riferimento, votiDi, indice, piena, on
         {DISPOSIZIONE.flat().map(pos => {
           const c = celle.find(c => c.pos === pos)
           const rif = riferimento?.find(r => r.pos === pos)
-          return <Cella key={pos} pos={pos} partita={c.partita} votiDi={votiDi} diversa={!!riferimento && c.partita?.id !== rif?.partita?.id}
+          // ⚠️ Solo le caselle **piene** si confrontano: la griglia a mano
+          // parte vuota, e una casella vuota sarebbe "diversa" ovunque.
+          return <Cella key={pos} pos={pos} partita={c.partita} votiDi={votiDi} valoreDi={valoreDi}
+            diversa={!!riferimento && !!c.partita && c.partita.id !== rif?.partita?.id}
             inAltre={c.partita ? altrove?.[c.partita.id] : null}
             onClic={onClicCasella ? () => onClicCasella(pos) : undefined} />
         })}
@@ -159,9 +167,13 @@ export default function SpinProvvisoriePage() {
   const [quante, setQuante] = useState(3)
   // Quali spin della griglia hanno già qualcosa dentro: per la conferma.
   const [piene, setPiene] = useState([false, false, false])
+  // Le partite già scritte in Slot, spin per spin (per `prossima_id`): contano
+  // per «S1» come le due griglie della pagina, e sopravvivono al ricaricamento.
+  const [salvate, setSalvate] = useState([[], [], []])
   async function leggiGriglia() {
     const { data } = await supabase.from('griglia').select('spins').eq('id', 1).single()
     setPiene([0, 1, 2].map(i => spinPiena(data?.spins?.[i])))
+    setSalvate([0, 1, 2].map(i => (data?.spins?.[i] || []).map(c => c.prossima_id).filter(Boolean)))
   }
   useEffect(() => { leggiGriglia() }, [])
 
@@ -173,17 +185,29 @@ export default function SpinProvvisoriePage() {
   // Solo giorno/mese: `giorno()` ci mette davanti il giorno della settimana, e
   // accanto alla parola "martedì" diventerebbe "martedì mar 13/10".
   const gm = d => `${d.slice(8, 10)}/${d.slice(5, 7)}`
-  const ordinate = useMemo(() => candidate(righe, { votiDi }), [righe, votiDi])
+  // ⚠️ La scelta vuole VPM, che arriva con una chiamata a parte (una volta
+  // per sessione). Finché non c'è, `valoreSpin` resta sull'attendibilità e la
+  // pagina lo dice: meglio una griglia provvisoria che una pagina ferma.
+  const datiVpm = usaVpm()
+  const vpmDi = useMemo(() => {
+    const m = new Map()
+    if (datiVpm) for (const r of righe) m.set(r.id, valutaPartita(datiVpm, r))
+    return m
+  }, [datiVpm, righe])
+  const valoreDi = useMemo(() => r => valoreSpin(r, vpmDi.get(r.id)), [vpmDi])
+  const ordinate = useMemo(() => candidate(righe, { votiDi, valore: valoreDi }), [righe, votiDi, valoreDi])
+  // La finestra di scelta pesca da **tutte** le partite del weekend, non solo
+  // dalle candidate: ordinando per VPM o per voto deve poter comparire anche
+  // una partita sotto soglia.
+  const delWeekend = useMemo(() => righe.filter(r => r.data <= limite && !r.quoteIncoerenti), [righe, limite])
   // Le votate che giocano dopo il martedì: il loro voto non produce niente,
   // e tacerlo farebbe sembrare la stellina ignorata.
   const oltre = useMemo(() => votateOltreIlLimite(righe, votiDi), [righe, votiDi])
   const automatiche = useMemo(() => componi(ordinate, quante), [ordinate, quante])
-  // Solo le partite votate, niente riempitivi: se i voti non bastano le
-  // caselle restano vuote (deciso il 2/10/2026). La griglia con le stelline
-  // deve dire cosa avete scelto VOI, non cosa ci metterebbe il criterio.
-  const soloVotate = useMemo(() => conStelline(ordinate.filter(r => votiDi(r.id) > 0), votiDi), [ordinate, votiDi])
 
-  // Le scelte fatte a mano: { "spin|posizione": partita | null }. Vivono qui,
+  // Le scelte fatte a mano: { "spin|posizione": partita | null }. ⚠️ **Dal
+  // 24/10/2026 la seconda griglia parte vuota** (Mattia) e si riempie solo
+  // così: prima la riempivano le votate da sole. Vivono qui,
   // non nel database — finché non si preme "Compila spin" è un'anteprima, e si
   // possono provare combinazioni senza sporcare niente.
   const [aMano, setAMano] = useState({})
@@ -192,27 +216,37 @@ export default function SpinProvvisoriePage() {
 
   // ⚠️ Sta sopra `altrove`, che la legge: `const` ha la zona morta, e oggi
   // funziona solo perché `altrove` viene chiamata dentro il JSX, cioè dopo.
-  const votate = useMemo(() => componi(soloVotate, quante).map((spin, si) =>
-    spin.map(c => (`${si}|${c.pos}` in aMano ? { ...c, partita: aMano[`${si}|${c.pos}`] } : c))
-  ), [soloVotate, quante, aMano])
+  const manuali = useMemo(() => componi([], quante).map((spin, si) =>
+    spin.map(c => ({ ...c, partita: aMano[`${si}|${c.pos}`] ?? null }))
+  ), [quante, aMano])
 
-  // Dove sta già una partita, nelle ALTRE spin: non la blocca (si può ripetere
-  // volendo), ma deve essere evidente prima di sceglierla.
-  const altrove = spinCorrente => {
+  // Dove sta già una partita: non la blocca (si può ripetere volendo), ma
+  // deve essere evidente prima di sceglierla. ⚠️ **Lo scopo è non mettere la
+  // stessa partita in due spin** (Mattia, 24/10/2026), quindi si guardano tre
+  // fonti per ogni spin: l'automatica, quella a mano e **quella già scritta in
+  // Slot**. Una partita in più fonti della stessa spin conta una volta sola.
+  // ⚠️ `esclusa` vale solo per la targhetta **dentro le caselle**: lì la spin
+  // stessa direbbe "↔1" su ogni casella della spin 1. Nella finestra di scelta
+  // non si esclude niente, e «S1» compare anche se si sta compilando la spin 1.
+  const altrove = (esclusa = null) => {
     const m = {}
-    votate.forEach((spin, si) => {
-      if (si === spinCorrente) return
-      spin.forEach(c => { if (c.partita) (m[c.partita.id] ??= []).push(si + 1) })
-    })
+    const segna = (id, si) => {
+      if (!id || si === esclusa) return
+      const dove = (m[id] ??= [])
+      if (!dove.includes(si + 1)) dove.push(si + 1)
+    }
+    for (const griglie of [automatiche, manuali]) griglie.forEach((spin, si) => spin.forEach(c => segna(c.partita?.id, si)))
+    salvate.forEach((ids, si) => ids.forEach(id => segna(id, si)))
+    for (const dove of Object.values(m)) dove.sort()
     return m
   }
 
   const nVotate = ordinate.filter(p => votiDi(p.id) > 0).length
   // Tutte le partite con almeno una stellina, anche sotto soglia o oltre il
   // limite: chi ha votato deve vedere dov'è finito il suo voto.
-  const votateTutte = useMemo(() => righe.filter(p => votiDi(p.id) > 0).sort((a, b) => votiDi(b.id) - votiDi(a.id) || b.probGiocata - a.probGiocata), [righe, votiDi])
+  const votateTutte = useMemo(() => righe.filter(p => votiDi(p.id) > 0).sort((a, b) => votiDi(b.id) - votiDi(a.id) || (valoreDi(b) ?? 0) - (valoreDi(a) ?? 0)), [righe, votiDi, valoreDi])
   const doveSta = id => {
-    for (let s = 0; s < votate.length; s++) { const c = votate[s].find(c => c.partita?.id === id); if (c) return { spin: s + 1, pos: c.pos } }
+    for (let s = 0; s < manuali.length; s++) { const c = manuali[s].find(c => c.partita?.id === id); if (c) return { spin: s + 1, pos: c.pos } }
     return null
   }
   const servono = quante * 9
@@ -223,9 +257,9 @@ export default function SpinProvvisoriePage() {
       <div style={{ fontSize: S.evidenza, fontWeight: 700, color: C.testo, fontFamily: F.sans, marginBottom: 4 }}>Anteprima delle spin</div>
       <div style={{ fontSize: S.corpo, color: C.spento, fontFamily: F.sans, marginBottom: 14, lineHeight: 1.6 }}>
         {caricamento ? 'Caricamento…' : <>
-          {ordinate.length} partite candidate · <b style={{ color: nVotate ? C.oro : C.ambra }}>{nVotate} votate</b>,
-          che riempiono {Math.min(nVotate, quante * 9)} delle {quante * 9} caselle con le stelline.
+          {ordinate.length} partite candidate · <b style={{ color: nVotate ? C.oro : C.ambra }}>{nVotate} votate</b>.
           {ordinate.length < servono && <span style={{ color: C.ambra }}> Per {quante} spin ne servono {servono}: le ultime restano a metà.</span>}
+          {!datiVpm && <span style={{ color: C.ambra }}> VPM non è ancora arrivato: per ora colori e ordine vengono dalla sola attendibilità.</span>}
         </>}
       </div>
 
@@ -284,16 +318,16 @@ export default function SpinProvvisoriePage() {
         <Card key={i} style={{ padding: '14px' }}>
           <div style={{ fontSize: S.cifra, fontWeight: 700, color: C.oro, fontFamily: F.sans, letterSpacing: 2, marginBottom: 12 }}>SPIN {i + 1}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <Griglia titolo="Automatica" colore={C.spento} celle={auto} votiDi={votiDi} indice={i} piena={piene[i]} onFatto={leggiGriglia}
-              spiegazione={<>Le più attendibili in ordine: la prima al <b style={{ color: C.menta }}>centro</b>, le 4 dopo agli <b style={{ color: C.oroChiaro }}>angoli</b>, le ultime 4 ai <b style={{ color: C.celeste }}>lati</b>.</>} />
-            <Griglia titolo="Con le stelline" colore={C.oro} celle={votate[i]} riferimento={auto} votiDi={votiDi} indice={i} piena={piene[i]} onFatto={leggiGriglia}
+            <Griglia titolo="Automatica" colore={C.spento} celle={auto} votiDi={votiDi} valoreDi={valoreDi} indice={i} piena={piene[i]} onFatto={leggiGriglia}
+              spiegazione={<>In ordine di <b style={{ color: C.testo }}>scelta</b> (attendibilità corretta da VPM): la prima al <b style={{ color: C.menta }}>centro</b>, le 4 dopo agli <b style={{ color: C.oroChiaro }}>angoli</b>, le ultime 4 ai <b style={{ color: C.celeste }}>lati</b>. Verde da 75, giallo da 72, blu da 68.</>} />
+            <Griglia titolo="A mano" colore={C.oro} celle={manuali[i]} riferimento={auto} votiDi={votiDi} valoreDi={valoreDi} indice={i} piena={piene[i]} onFatto={leggiGriglia}
               onClicCasella={pos => setCasella({ spin: i, pos })}
               altrove={altrove(i)}
               onPerQuota={() => setPerQuota(i)}
-              onRipristina={Object.keys(aMano).some(k => k.startsWith(`${i}|`))
+              onSvuota={Object.keys(aMano).some(k => k.startsWith(`${i}|`))
                 ? () => setAMano(v => Object.fromEntries(Object.entries(v).filter(([k]) => !k.startsWith(`${i}|`))))
                 : undefined}
-              spiegazione={<><b style={{ color: C.oro }}>Solo le partite votate</b>, nessun riempitivo: se i voti non bastano le caselle restano vuote. Ordine per stelline, a parità per attendibilità; una votata entra <b style={{ color: C.testo }}>anche se sotto soglia</b>, ma <b style={{ color: C.rosso }}>mai oltre martedì</b>. In <b style={{ color: C.viola }}>violetto</b> le caselle diverse dall'automatica.</>} />
+              spiegazione={<><b style={{ color: C.oro }}>Parte vuota</b>: tocca una casella e scegli la partita, ordinando per attendibilità, voto, VPM o scelta. Niente oltre martedì, e niente finisce in Slot finché non premi <b style={{ color: C.testo }}>Compila</b>. In <b style={{ color: C.viola }}>violetto</b> le caselle diverse dall'automatica.</>} />
           </div>
         </Card>
       ))}
@@ -302,10 +336,12 @@ export default function SpinProvvisoriePage() {
       {casella && (
         <ScegliCasella
           pos={casella.pos}
-          partite={ordinate}
+          partite={delWeekend}
           votiDi={votiDi}
-          usate={votate[casella.spin].filter(c => c.pos !== casella.pos && c.partita).map(c => c.partita.id)}
-          altrove={altrove(casella.spin)}
+          vpmDi={vpmDi}
+          valoreDi={valoreDi}
+          usate={manuali[casella.spin].filter(c => c.pos !== casella.pos && c.partita).map(c => c.partita.id)}
+          altrove={altrove()}
           onScegli={p => { setAMano(v => ({ ...v, [`${casella.spin}|${casella.pos}`]: p })); setCasella(null) }}
           onSvuota={() => { setAMano(v => ({ ...v, [`${casella.spin}|${casella.pos}`]: null })); setCasella(null) }}
           onChiudi={() => setCasella(null)}
@@ -313,8 +349,8 @@ export default function SpinProvvisoriePage() {
       )}
 
       {perQuota !== null && (() => {
-        const vuote = votate[perQuota].filter(c => !c.partita)
-        const usate = votate.flat().filter(c => c.partita).map(c => c.partita.id)
+        const vuote = manuali[perQuota].filter(c => !c.partita)
+        const usate = manuali.flat().filter(c => c.partita).map(c => c.partita.id)
         return (
           <CompilaPerQuota
             /* Pescava da tutte le future: il limite non lo vedeva, e si
@@ -341,7 +377,7 @@ export default function SpinProvvisoriePage() {
           {votateTutte.length === 0
             ? <div style={{ fontSize: S.corpo, color: C.spento, fontFamily: F.sans }}>Nessuna partita con stelline: si votano dalla pagina Partite.</div>
             : votateTutte.map(p => {
-              const cat = categoria(p.probGiocata, SOGLIE_DEFAULT), colore = CATEGORIE[cat].colore
+              const valore = valoreDi(p), cat = categoria(valore, SOGLIE_SPIN), colore = CATEGORIE[cat].colore
               const dove = doveSta(p.id)
               return (
                 /* Due righe: in una sola, fra stelline, data, nome, giocata,
@@ -361,7 +397,7 @@ export default function SpinProvvisoriePage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3, fontSize: S.base, color: C.spento }}>
                     <span style={{ flexShrink: 0 }}>{giorno(p.data)}</span>
                     <span style={{ flexShrink: 0 }}>{p.quotaGiocata ? `@${p.quotaGiocata.toFixed(2)}` : 'sul book'}</span>
-                    <b style={{ color: colore, flexShrink: 0 }}>{pct(p.probGiocata)}</b>
+                    <b style={{ color: colore, flexShrink: 0 }}>{valore == null ? '—' : pct(valore)}</b>
                     <span style={{ marginLeft: 'auto', textAlign: 'right', color: dove ? C.verde : p.data > limite ? C.rosso : C.spento, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {dove ? `spin ${dove.spin} · pos ${dove.pos}` : p.data > limite ? '⛔ oltre martedì' : cat === 'no' ? 'sotto soglia' : 'non entra'}
                     </span>

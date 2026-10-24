@@ -1,4 +1,5 @@
-import { categoria, SOGLIE_DEFAULT, martediChiusura } from './attendibilita.js'
+import { categoria, martediChiusura } from './attendibilita.js'
+import { fondo } from './ordine.js'
 
 // La composizione automatica delle spin. Solo calcoli: la usa la pagina
 // "Spin provvisorie" e il tasto che compila la griglia.
@@ -14,7 +15,30 @@ export const ORDINE_POSIZIONI = [9, 1, 2, 3, 4, 5, 6, 7, 8]
 export const DISPOSIZIONE = [[1, 5, 2], [6, 9, 7], [3, 8, 4]]
 
 /**
- * Le partite che possono entrare in una spin, nell'ordine di attendibilità.
+ * ⚠️⚠️ **Le soglie delle spin, e il numero a cui si applicano** (Mattia,
+ * 24/10/2026). Dentro le spin verde, giallo e blu si leggono sulla **scelta**
+ * — `attendibilità + 0,10 × VPM` normalizzato, vedi `lib/vpm.js` — e non più
+ * sull'attendibilità sola: con la regola dell'over i favoriti più forti
+ * scendevano a blu (Rangers 76,7% → 69,6%) e il weekend del 24/10 aveva **zero
+ * verdi e una gialla** su 145 partite.
+ * ⚠️ **Vale solo qui.** Fuori dalle spin i colori restano quelli
+ * dell'attendibilità con `SOGLIE_DEFAULT`: VPM è un indicatore in più, non il
+ * criterio. ⚠️ E la scelta sta **sopra** l'attendibilità fino a 10 punti:
+ * verde a 75 di scelta non vuol dire 75% di probabilità.
+ */
+export const SOGLIE_SPIN = { centro: 0.75, giallo: 0.72, blu: 0.68 }
+
+/**
+ * Il numero con cui una partita entra e si ordina nelle spin. `v` è il
+ * risultato di `valutaPartita`: senza (VPM non ancora arrivato) resta
+ * l'attendibilità, e `null` quando il campo contraddice il mercato — lì la
+ * scelta non si fa, come nella pagina Partite.
+ */
+export const valoreSpin = (r, v) => (v ? v.scelta : r.probGiocata)
+
+/**
+ * Le partite che possono entrare in una spin, in ordine di `valore` (la
+ * scelta, vedi `valoreSpin`).
  *
  * ⚠️ **Il limite di data è un blocco, non un filtro**: oltre il martedì che
  * chiude il weekend non entra niente, **nemmeno una partita votata**. Una
@@ -22,7 +46,7 @@ export const DISPOSIZIONE = [[1, 5, 2], [6, 9, 7], [3, 8, 4]]
  * calendario, che è un vincolo sulla spin intera: mescolare due weekend
  * significa tenere otto schedine aperte nove giorni (8/10/2026).
  */
-export function candidate(righe, { soglie = SOGLIE_DEFAULT, votiDi, oggi } = {}) {
+export function candidate(righe, { soglie = SOGLIE_SPIN, votiDi, oggi, valore = r => r.probGiocata } = {}) {
   const limite = martediChiusura(oggi)
   const votata = r => !!votiDi && votiDi(r.id) > 0
   return righe
@@ -34,8 +58,10 @@ export function candidate(righe, { soglie = SOGLIE_DEFAULT, votiDi, oggi } = {})
     // stesso è rotto, e nessun giudizio lo ripara (12/10/2026, dopo il voto
     // del 200% su Burgos-Granada).
     .filter(r => !r.quoteIncoerenti)
-    .filter(r => votata(r) || categoria(r.probGiocata, soglie) !== 'no')
-    .sort((a, b) => b.probGiocata - a.probGiocata)
+    .filter(r => votata(r) || categoria(valore(r), soglie) !== 'no')
+    // Una votata senza scelta (campo contro mercato) entra lo stesso, ma in
+    // fondo: `fondo` tiene il `null` fuori dalla sottrazione.
+    .sort((a, b) => fondo(valore(a), valore(b)) || (valore(b) ?? 0) - (valore(a) ?? 0) || b.probGiocata - a.probGiocata)
 }
 
 /**
@@ -62,11 +88,6 @@ export function componi(ordinate, n) {
     spin.push(ORDINE_POSIZIONI.map((pos, i) => ({ pos, partita: blocco[i] ?? null })).sort((a, b) => a.pos - b.pos))
   }
   return spin
-}
-
-/** Le stelline comandano: le votate prima (più voti prima), a parità l'attendibilità. */
-export function conStelline(ordinate, votiDi) {
-  return [...ordinate].sort((a, b) => votiDi(b.id) - votiDi(a.id) || b.probGiocata - a.probGiocata)
 }
 
 // La giocata come la scrive lib/attendibilita ("1 + over 1,5") tradotta nel

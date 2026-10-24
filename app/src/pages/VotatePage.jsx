@@ -24,8 +24,8 @@ export default function VotatePage() {
   const datiVpm = usaVpm()
   const [apertaId, setApertaId] = useState(null)
 
-  // Prima le più votate, poi per attendibilità: lo stesso ordine con cui
-  // entrano nelle spin (vedi `conStelline` in lib/spin.js).
+  // Prima le più votate, poi per attendibilità. (Era lo stesso ordine della
+  // griglia "con le stelline" delle spin, che dal 24/10/2026 parte vuota.)
   const votate = useMemo(
     () => righe.filter(r => votiDi(r.id) > 0).sort((a, b) => votiDi(b.id) - votiDi(a.id) || b.probGiocata - a.probGiocata),
     [righe, votiDi])

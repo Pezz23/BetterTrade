@@ -9,8 +9,9 @@
 // griglia è un dato condiviso da sei persone, e si guarda prima di scriverlo.
 
 import { admin } from './_admin.js';
-import { valuta, categoria, SOGLIE_DEFAULT, martediChiusura } from '../src/lib/attendibilita.js';
-import { candidate, componi, conStelline, cellaDa, votateOltreIlLimite } from '../src/lib/spin.js';
+import { valuta, categoria, martediChiusura } from '../src/lib/attendibilita.js';
+import { candidate, componi, cellaDa, votateOltreIlLimite, SOGLIE_SPIN, valoreSpin } from '../src/lib/spin.js';
+import { valutaPartita } from '../src/lib/vpm.js';
 
 const quante = Number((process.argv.find(a => a.startsWith('--spin=')) || '--spin=2').split('=')[1]);
 
@@ -25,7 +26,12 @@ const votiDi = id => (voti || []).filter(v => v.prossima_id === id).length;
 
 const righe = (righeGrezze || []).map(valuta).filter(r => r.prob !== null);
 const limite = martediChiusura();
-const ordinate = conStelline(candidate(righe, { votiDi }), votiDi);
+// ⚠️ Dal 24/10/2026 le spin si compongono per **scelta** (vedi `SOGLIE_SPIN`),
+// che vuole VPM: la stessa chiamata dell'app, `vpm_dati()`.
+const { data: datiVpm, error: erroreVpm } = await admin.rpc('vpm_dati');
+if (erroreVpm) { console.error('✗ vpm_dati:', erroreVpm.message); process.exit(1); }
+const valore = r => valoreSpin(r, valutaPartita(datiVpm, r));
+const ordinate = candidate(righe, { votiDi, valore });
 
 console.log(`${righe.length} future valutate · ${(voti || []).length} voti · limite ${limite} (martedì) · ${ordinate.length} candidate`);
 
@@ -45,8 +51,8 @@ for (const [i, celle] of componi(ordinate, quante).entries()) {
     console.log(
       ` ${pos} ${ruolo(pos)}  ${`${c.casa} - ${c.ospite}`.padEnd(34)}` +
       ` ${c.pronostico.padEnd(8)} q=${(c.quota || '—').padEnd(5)} ${c.data}` +
-      `  att=${(p.probGiocata * 100).toFixed(1)}%  resa=${p.resa ? (p.resa * 100).toFixed(0) + '%' : '—'}` +
-      `  ${categoria(p.probGiocata, SOGLIE_DEFAULT).padEnd(6)} ${stelle}`
+      `  att=${(p.probGiocata * 100).toFixed(1)}%  scelta=${valore(p) == null ? '—' : (valore(p) * 100).toFixed(1) + '%'}` +
+      `  ${categoria(valore(p), SOGLIE_SPIN).padEnd(6)} ${stelle}`
     );
   }
 }

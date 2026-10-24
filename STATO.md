@@ -18,8 +18,27 @@
 
 ## ▶️ DOVE SIAMO — 24 ottobre 2026, leggi questo per primo
 
-**Versione `1.57.02`** — il 24/10 il tasto **Bilancio** è diventato solo per
-gli admin. Niente in sospeso, niente da recuperare.
+**Versione `1.58.00`** — il 24/10 il tasto **Bilancio** è diventato solo per
+gli admin (`1.57.02`), e la pagina **Spin** è cambiata (`1.58.00`):
+- l'automatica ordina e colora per **scelta** con soglie proprie **75/72/68**
+  (`SOGLIE_SPIN`): il weekend del 24/10 passa da 0 verdi e 1 gialla a **5 e
+  6**. Fuori dalle spin i colori restano dell'attendibilità. Perché, in
+  `note/criterio.md`;
+- la seconda griglia («A mano», prima «Con le stelline») **parte vuota** e ha
+  il tasto «↺ svuota»;
+- la finestra della casella ha **«ordina per» attendibilità · voto · VPM ·
+  scelta**, su tutte le partite fino a martedì, sotto soglia comprese;
+- **«S1 · S2 · S3»** nella finestra guarda tre fonti per spin — automatica, a
+  mano e **la griglia salvata in Slot** — e compare **anche per la spin che si
+  sta compilando**: lo scopo è non mettere la stessa partita in due spin.
+
+Provata da Mattia in `npm run dev` il 24/10; lint e build passano,
+`prova-spin.js` torna coi numeri della misura.
+
+⚠️ **Aperto: tre partite rinviate sono DOPPIE in `prossime_partite`**, con la
+data vecchia e la nuova (Paris SG-Lyon 25 e 26/10, Toulouse-Troyes 24 e 25,
+Montpellier-Red Star 24 e 26). Possono finire due volte nella stessa spin. Da
+guardare in `riconcilia-prossime` / importazione.
 
 Il lavoro del **21-22 ottobre** sta su ROAD TO WEEKEND e BET BUILDER; quello
 del **23 ottobre** — una giornata lunga — su **dati** e **scheda partita**:
