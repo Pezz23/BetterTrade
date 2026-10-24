@@ -18,8 +18,8 @@
 
 ## ▶️ DOVE SIAMO — 24 ottobre 2026, leggi questo per primo
 
-**Versione `1.57.01`, tutto committato e pushato** (`origin/main` è allineato:
-verificato il 24/10). Niente in sospeso, niente da recuperare.
+**Versione `1.57.02`** — il 24/10 il tasto **Bilancio** è diventato solo per
+gli admin. Niente in sospeso, niente da recuperare.
 
 Il lavoro del **21-22 ottobre** sta su ROAD TO WEEKEND e BET BUILDER; quello
 del **23 ottobre** — una giornata lunga — su **dati** e **scheda partita**:
@@ -151,7 +151,7 @@ stretta). Tutte verificate dal database subito dopo.
 | **l'esito automatico del Bet Builder** | fattibile, ma prima la regola *"questa giocata è arrivata"* deve **spostarsi** da `btscout/lib/ricostruisci.js` a `app/src/lib/`, **non essere copiata**: due versioni direbbero prima o poi cose diverse sulla stessa schedina |
 | **idea 9** | `CompilaPerQuota` riempie le caselle **vuote** di una spin: va capito se Mattia voleva compilarne una **intera**. Domanda ancora senza risposta |
 | **«solo sopra soglia»** | tolto il 22/10 insieme alle slitte, **deciso da me**: diceva la stessa cosa di «attendibilità ≥» in lingua spin. Una riga per rimetterlo |
-| **le casse le vedono tutti** | aprendo la pagina agli utenti, bankroll, accumulo e archivio sono visibili a chi entra. Si toglie la card a chi non è admin — una riga — ma è una scelta sua |
+| ~~**le casse le vedono tutti**~~ | ✅ **chiuso il 24/10** (`1.57.02`): in Road to weekend casse e archivio erano **già** solo per gli admin (lotto 1, `ScalataPage` `{isAdmin && …}`), e questa riga era rimasta indietro. Mattia ha chiesto di togliere agli `user` anche il tasto **Bilancio** del menu: `soloAdmin:true` in `VOCI_MENU`. ⚠️ Nasconde il tasto, **non** i dati: la lettura resta quella delle policy |
 | **lo spezza a mano quasi non compare** | col taglio automatico a 2,00 i passi nascono già minimi, e un pezzo minimo non si divide in due pezzi che arrivino entrambi a 2,00. Riappare solo su un passo allungato a mano |
 | **un passo può avere 8 gambe** | `fasce()` raggruppa per orario e `MAX_GAMBE` vale solo per la proposta automatica. Mattia: *"decido io a mano"* |
 | ~~il lotto 1 non è stato guardato~~ | ✅ **guardato da Mattia il 22/10**, e il giro ha trovato una cosa: gli utenti vedevano *"ARCHIVIO 1"*. Corretto — l'archivio segue le casse |
@@ -172,8 +172,7 @@ stretta). Tutte verificate dal database subito dopo.
 ⚠️ Restano fuori dai lotti, **non dimenticate**: la **scala a sette colori per
 distanza nel tempo** (idea 1) — proposta e **non fatta**, perché nella pagina
 il colore dice già *in quale passo* sta la partita e due significati sullo
-stesso canale non si leggono; e le **casse visibili agli utenti**, che si
-tolgono con una riga quando Mattia vorrà.
+stesso canale non si leggono.
 
 ### Cosa ha prodotto il lotto 2, oltre alle quattro voci
 

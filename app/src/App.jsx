@@ -81,7 +81,10 @@ const VOCI_MENU = [
   { id:'slot',        label:'Slot',             icona:'slot', desc:'La griglia delle quattro spin', soloAdmin:true },
   { id:'provvisorie', label:'Spin',             icona:'spin', desc:'Le spin provvisorie: le candidate di questo weekend', soloAdmin:true },
   { id:'reporting',   label:'Reporting',        icona:'reporting', desc:'Le giornate registrate, per persona e per settimana' },
-  { id:'bilancio',    label:'Bilancio',         icona:'bilancio', desc:'Saldi, movimenti e bankroll del gruppo' },
+  // ⚠️ **soloAdmin dal 24/10/2026** (Mattia): saldi e bankroll del gruppo non
+  // li vede chi è `user`. Qui si nasconde il tasto e basta: la lettura dei
+  // dati resta quella decisa dalle policy.
+  { id:'bilancio',    label:'Bilancio',         icona:'bilancio', desc:'Saldi, movimenti e bankroll del gruppo', soloAdmin:true },
   { id:'utenti',      label:'Utenti',           icona:'utenti', desc:'Gestione utenti e password', soloAdmin:true },
   { id:'importazioni',label:'Importazioni',     icona:'importazioni', desc:'Partite da ESPN che non si agganciano da sole' },
 ]
