@@ -68,6 +68,46 @@ Nessuna di queste è stata promessa a Mattia: **si propone e decide lui.**
 - **Il riepilogo del Bet Builder** e quello della scalata, che vogliono
   dieci-venti schedine chiuse: prima direbbero rumore.
 
+## 🔄 RIPARTIRE DOPO UNA PAUSA
+
+⚠️ Questo blocco era finito in `STORICO.md` con l'alleggerimento del 22/10,
+mentre `CLAUDE.md` continuava a prometterlo *"in cima a STATO"*: un rimando a
+qualcosa che non c'era. Rimesso qui il 24/10, con i numeri aggiornati.
+
+Se fra l'ultimo aggiornamento e oggi sono passate settimane o mesi, **i dati
+sono vecchi, non il codice**. In ordine:
+
+```bash
+cd btscout
+node --env-file=.env scripts/aggiorna.js --esegui    # risultati + quote: recupera tutto da solo
+node --env-file=.env scripts/verifica-storico.js     # l'archivio è coerente?
+cd ../app && npm run lint && npm run dev             # 0 errori, poi la barra deve dire la versione di `app/src/versione.js`
+```
+
+`aggiorna.js` guarda indietro e non perde niente: `riconcilia-prossime` chiude
+le future diventate partite anche se sono di tre mesi fa. **I crediti di The
+Odds API si rigenerano ogni mese** (500), quindi dopo una pausa sono pieni.
+⚠️ **Dal 23/10/2026 un giro costa 51 crediti** (17 competizioni: 34 per l'1X2
+su due regioni + 17 per l'over), cioè ~442 al mese su 500. Il conto per intero
+sta nel blocco «I CREDITI DI THE ODDS API» più sotto.
+
+**Cosa sarà sicuramente da rifare, e cosa invece regge:**
+
+| | |
+|---|---|
+| ⚠️ **Le quote future** | `prossime_partite` è una fotografia: dopo una pausa è tutta scaduta. La riempie `aggiorna.js`. |
+| ⚠️ **A stagione nuova VPM non esiste per ~4 giornate.** | Serve un minimo di **3 partite giocate** per squadra (`MIN_PARTITE`): in agosto-settembre la colonna VPM fa `—` e il voto vale la resa. **Non è un difetto.** |
+| ⚠️ **Le ancore di VPM** | misurate su 24/25 e 25/26, **fisse di proposito**. Vanno rimisurate solo quando si vuole aggiungere una stagione — e allora cambiano *tutti* i VPM storici, quindi si fa una volta e si scrive la data. |
+| ⚠️ **La tabella `andamento`** | è **derivata**: la stagione in corso si rifà **da sola** a ogni importazione (dal 15/10/2026), l'archivio intero con `calcola-andamento.js --stagioni=8 --esegui` (23 secondi). Non è un backup da conservare. |
+| ⚠️ **Le note "a ottobre…"** | in CLAUDE.md e qui ci sono frasi legate al momento (i tre strati di VPM che guardano quasi le stesse partite, le 1-3 partite in casa). **Da gennaio sono false**: la forma comincia a dire altro. |
+| ✅ **Il criterio, le soglie, i pesi** | non scadono: sono misurati sull'archivio, non sulla settimana. |
+| ✅ **sql/01-29, RLS, permessi** | applicati e verificati. `scripts/prova-permessi.js` lo riconferma in un minuto. |
+
+**I numeri qui sotto con una data accanto sono fotografie, non verità**: se
+leggi "884 partite" o "440 crediti" e siamo a marzo, sono vecchi di mesi.
+
+---
+
 ### Cos'è cambiato, in ordine
 
 | | commit |

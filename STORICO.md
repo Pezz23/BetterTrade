@@ -1,4 +1,72 @@
 # STORICO — BetterTrade
+## Dove siamo in una riga
+
+**L'app funziona e si usa.** `app/` (React+Vite su Vercel) e le 53.973 partite
+di 15 campionati stanno nello stesso Supabase; `btscout/` è il motore che le
+importa e le misura. Sicurezza chiusa, archivio dentro, numeri chiusi.
+
+Sopra ci sono: la pagina **Partite** con la card a cinque numeri
+(`quota · attendibilità · VPM · resa · voto`), la **scheda** che spiega da dove
+vengono — forma, **gol attesi** con le dieci celle a gradiente, classifica,
+scontri, VPM —, le **Spin provvisorie** che compilano la griglia da sole col
+blocco del weekend, la griglia **agganciata alle partite vere**, lo **storico**,
+la **gestione utenti**, il **rendiconto** e la pagina **Andamento**, che misura
+quanto sono attendibili i quattro indicatori su 101.237 giocate ricostruite
+nelle otto stagioni passate.
+
+**Dove eravamo arrivati col ragionamento** (10 ottobre): il **voto** riassume
+tutto in un numero (resa × fattore VPM, 100% = pareggio), e la **scala a
+recupero** è il metodo di giocata, misurato su otto stagioni. La conclusione
+onesta è scritta in CLAUDE.md: **sui favoriti corti si gioca alla pari**, i
+guadagni dimostrabili sono strutturali (quote corte, una partita per volta), e
+un vantaggio del 2% **non è dimostrabile** con questo archivio.
+
+## La storia, in breve
+
+| quando | cosa |
+|---|---|
+| 16/09 | chiarito il criterio: **attendibilità = probabilità**, non valore |
+| 23/09 | via la doppia chance · spin agganciate alle partite vere · soglie 75/72/65 |
+| 2-5/10 | lotti A-D: stelline che contano, lista e scheda finite, storico |
+| 7-8/10 | lotti G-H-I: pulizia, gesto indietro alla Safari, classifica nel tondo · permessi (sql/19) · contatore di versione · `npm run lint` |
+| 9/10 | **VPM** per intero (lotto L): calcolo, `sql/20`, lista, scheda |
+| 10/10 | la **scala a recupero** misurata (lotto O) · il **voto** al posto del Grado, card rifatta (lotto P) |
+
+Il dettaglio di ogni lotto, col *perché* di ogni scelta, sta sotto in
+"Fatto di recente": serve a non rifare esperimenti già fatti.
+
+**Fotografia del 7 ottobre 2026** (ormai vecchia, tenuta come riferimento):
+archivio a 884 partite della stagione 26/27, 206 future, 32 book di media,
+440 crediti. Una futura non si chiuderà mai — **Levante-Ath Bilbao del 16/09,
+rinviata e mai giocata** — ed è giusto così.
+
+---
+
+## 🎯 Il metodo di giocata, come esce dai test del 10 ottobre 2026
+
+Non è ancora nell'app: è il risultato del backtest (voce 18), scritto qui perché
+è la cosa che Mattia userà.
+
+| | |
+|---|---|
+| **Quando** | venerdì-sabato e domenica-lunedì, **una** giocata per turno |
+| **Cosa** | **la partita con la resa più alta** fra quelle a quota **1,35-1,45** dove VPM conferma il segno del mercato ed è netto (≥ 6) |
+| **Quanto** | base = **10% del bankroll**, ricalcolata all'inizio di ogni scala |
+| **Come sale** | accantona `65 · 35 · 35 · 30 · 30 · 25%` **dell'utile**, arrotondato per eccesso; il resto si rigioca |
+| **Quando chiude** | al primo passo perso, **o al 6° passo vinto**: si incassa tutto e si riparte |
+| **Da quando** | 5ª giornata di campionato |
+
+Su otto stagioni: mediana **218 €** partendo da 200, mai azzerato, punto più
+basso 75 €, quattro stagioni su sette in attivo.
+
+⚠️ **Mattia gioca su Bet365**, e nell'app le quote arrivano da The Odds API che
+**non lo include** (41 book, nessun Bet365 — verificato). L'app mostra Codere,
+che su questo weekend pagava **2,8 punti meno** della massima. Bet365 ce l'ha
+solo football-data, nel blocco imminente: `importa-prossime.js` lo riempirebbe.
+**Resta da decidere** se metterlo davanti a Codere in `valuta()`.
+
+---
+
 
 > **L'archivio di quello che è chiuso**: fasi, lotti finiti, giornate di
 > lavoro, misure già fatte. Staccato da `STATO.md` il 22/10/2026 — **stesso
@@ -358,109 +426,6 @@ quindi se qualcosa non torna alla prossima sessione è successo *dopo*:
 4. **Rimisurare la soglia di dispersione su The Odds API** quando ci saranno
    un paio di migliaia di partite giocate con le loro massime (oggi ~300): il 10%
    è trasposto per percentile, non misurato.
-
----
-
-# 🔄 RIPARTIRE DOPO UNA PAUSA
-
-Se fra l'ultimo aggiornamento e oggi sono passate settimane o mesi, **i dati
-sono vecchi, non il codice**. In ordine:
-
-```bash
-cd btscout
-node --env-file=.env scripts/aggiorna.js --esegui    # risultati + quote: recupera tutto da solo
-node --env-file=.env scripts/verifica-storico.js     # l'archivio è coerente?
-cd ../app && npm run lint && npm run dev             # 0 errori, poi la barra deve dire 1.26.00
-```
-
-`aggiorna.js` guarda indietro e non perde niente: `riconcilia-prossime` chiude
-le future diventate partite anche se sono di tre mesi fa. **I crediti di The
-Odds API si rigenerano ogni mese** (500), quindi dopo una pausa sono pieni.
-⚠️ **Dal 15/10/2026 un giro costa 45 crediti, non 30**: si è aggiunto il mercato
-over/under (1 per campionato). Due giri a settimana fanno ~360 su 500.
-
-**Cosa sarà sicuramente da rifare, e cosa invece regge:**
-
-| | |
-|---|---|
-| ⚠️ **Le quote future** | `prossime_partite` è una fotografia: dopo una pausa è tutta scaduta. La riempie `aggiorna.js`. |
-| ⚠️ **A stagione nuova VPM non esiste per ~4 giornate.** | Serve un minimo di **3 partite giocate** per squadra (`MIN_PARTITE`): in agosto-settembre la colonna VPM fa `—` e il voto vale la resa. **Non è un difetto.** |
-| ⚠️ **Le ancore di VPM** | misurate su 24/25 e 25/26, **fisse di proposito**. Vanno rimisurate solo quando si vuole aggiungere una stagione — e allora cambiano *tutti* i VPM storici, quindi si fa una volta e si scrive la data. |
-| ⚠️ **La tabella `andamento`** | è **derivata**: la stagione in corso si rifà **da sola** a ogni importazione (dal 15/10/2026), l'archivio intero con `calcola-andamento.js --stagioni=8 --esegui` (23 secondi). Non è un backup da conservare. |
-| ⚠️ **Le note "a ottobre…"** | in CLAUDE.md e qui ci sono frasi legate al momento (i tre strati di VPM che guardano quasi le stesse partite, le 1-3 partite in casa). **Da gennaio sono false**: la forma comincia a dire altro. |
-| ✅ **Il criterio, le soglie, i pesi** | non scadono: sono misurati sull'archivio, non sulla settimana. |
-| ✅ **sql/01-29, RLS, permessi** | applicati e verificati. `scripts/prova-permessi.js` lo riconferma in un minuto. |
-
-**I numeri qui sotto con una data accanto sono fotografie, non verità**: se
-leggi "884 partite" o "440 crediti" e siamo a marzo, sono vecchi di mesi.
-
----
-
-## Dove siamo in una riga
-
-**L'app funziona e si usa.** `app/` (React+Vite su Vercel) e le 53.973 partite
-di 15 campionati stanno nello stesso Supabase; `btscout/` è il motore che le
-importa e le misura. Sicurezza chiusa, archivio dentro, numeri chiusi.
-
-Sopra ci sono: la pagina **Partite** con la card a cinque numeri
-(`quota · attendibilità · VPM · resa · voto`), la **scheda** che spiega da dove
-vengono — forma, **gol attesi** con le dieci celle a gradiente, classifica,
-scontri, VPM —, le **Spin provvisorie** che compilano la griglia da sole col
-blocco del weekend, la griglia **agganciata alle partite vere**, lo **storico**,
-la **gestione utenti**, il **rendiconto** e la pagina **Andamento**, che misura
-quanto sono attendibili i quattro indicatori su 101.237 giocate ricostruite
-nelle otto stagioni passate.
-
-**Dove eravamo arrivati col ragionamento** (10 ottobre): il **voto** riassume
-tutto in un numero (resa × fattore VPM, 100% = pareggio), e la **scala a
-recupero** è il metodo di giocata, misurato su otto stagioni. La conclusione
-onesta è scritta in CLAUDE.md: **sui favoriti corti si gioca alla pari**, i
-guadagni dimostrabili sono strutturali (quote corte, una partita per volta), e
-un vantaggio del 2% **non è dimostrabile** con questo archivio.
-
-## La storia, in breve
-
-| quando | cosa |
-|---|---|
-| 16/09 | chiarito il criterio: **attendibilità = probabilità**, non valore |
-| 23/09 | via la doppia chance · spin agganciate alle partite vere · soglie 75/72/65 |
-| 2-5/10 | lotti A-D: stelline che contano, lista e scheda finite, storico |
-| 7-8/10 | lotti G-H-I: pulizia, gesto indietro alla Safari, classifica nel tondo · permessi (sql/19) · contatore di versione · `npm run lint` |
-| 9/10 | **VPM** per intero (lotto L): calcolo, `sql/20`, lista, scheda |
-| 10/10 | la **scala a recupero** misurata (lotto O) · il **voto** al posto del Grado, card rifatta (lotto P) |
-
-Il dettaglio di ogni lotto, col *perché* di ogni scelta, sta sotto in
-"Fatto di recente": serve a non rifare esperimenti già fatti.
-
-**Fotografia del 7 ottobre 2026** (ormai vecchia, tenuta come riferimento):
-archivio a 884 partite della stagione 26/27, 206 future, 32 book di media,
-440 crediti. Una futura non si chiuderà mai — **Levante-Ath Bilbao del 16/09,
-rinviata e mai giocata** — ed è giusto così.
-
----
-
-## 🎯 Il metodo di giocata, come esce dai test del 10 ottobre 2026
-
-Non è ancora nell'app: è il risultato del backtest (voce 18), scritto qui perché
-è la cosa che Mattia userà.
-
-| | |
-|---|---|
-| **Quando** | venerdì-sabato e domenica-lunedì, **una** giocata per turno |
-| **Cosa** | **la partita con la resa più alta** fra quelle a quota **1,35-1,45** dove VPM conferma il segno del mercato ed è netto (≥ 6) |
-| **Quanto** | base = **10% del bankroll**, ricalcolata all'inizio di ogni scala |
-| **Come sale** | accantona `65 · 35 · 35 · 30 · 30 · 25%` **dell'utile**, arrotondato per eccesso; il resto si rigioca |
-| **Quando chiude** | al primo passo perso, **o al 6° passo vinto**: si incassa tutto e si riparte |
-| **Da quando** | 5ª giornata di campionato |
-
-Su otto stagioni: mediana **218 €** partendo da 200, mai azzerato, punto più
-basso 75 €, quattro stagioni su sette in attivo.
-
-⚠️ **Mattia gioca su Bet365**, e nell'app le quote arrivano da The Odds API che
-**non lo include** (41 book, nessun Bet365 — verificato). L'app mostra Codere,
-che su questo weekend pagava **2,8 punti meno** della massima. Bet365 ce l'ha
-solo football-data, nel blocco imminente: `importa-prossime.js` lo riempirebbe.
-**Resta da decidere** se metterlo davanti a Codere in `valuta()`.
 
 ---
 
