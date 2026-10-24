@@ -9,7 +9,7 @@
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
 **Ultimo aggiornamento:** 24 ottobre 2026 (sera) · app alla versione
-**1.59.00** · ultimo commit dell'app `39d7021` · passaggio di consegne: 24/10
+**1.59.01** · passaggio di consegne: 24/10 (prima della 1.59.01)
 
 ## ▶️ DOVE SIAMO — 24 ottobre 2026, leggi questo per primo
 
@@ -29,6 +29,7 @@ Il 24/10, in ordine:
 | **Spin**: selezione per **scelta** 75/72/68, griglia «A mano» vuota, «ordina per» i quattro indicatori, «S1» su tre fonti | `1.58.00` | `a115a23` |
 | il **passaggio di consegne** diventa una procedura (CLAUDE.md) | — | `3aeace7` |
 | **Road to weekend, un conto personale per account** (`sql/41`): ricariche, conto calcolato, ⟳ RIPARTI, «fissato» salvato, ognuno la sua, flag a tutti | `1.59.00` | `39d7021` |
+| **Il piano non si perde più col passare delle partite**: calendario fermo fino a «⟳ Aggiorna calendario», esiti agganciati al passo, conferma sul tasto rosso, registro delle cancellazioni (`sql/42`), il ciclo di scritture del Bet Builder | `1.59.01` | il commit dopo `8402c15` |
 
 **Road to weekend in tre righe** (il dettaglio in `note/scalata.md`):
 - ogni account — admin e user — ha **il suo conto e la sua scalata**, e
@@ -186,6 +187,8 @@ state provate simulando uno user e un admin in una transazione annullata.
 | **Europa e Conference senza quote** | The Odds API non ha **nessuna** partita futura per loro (ricontrollato il 23/10): accenderle costerebbe crediti per zero righe. Le voci sono pronte e commentate in `lib/odds-api.js` |
 | **l'esito automatico del Bet Builder** | fattibile, ma prima la regola *"questa giocata è arrivata"* deve **spostarsi** da `btscout/lib/ricostruisci.js` a `app/src/lib/`, **non essere copiata**: due versioni direbbero prima o poi cose diverse sulla stessa schedina |
 | **tre partite rinviate DOPPIE in `prossime_partite`** | trovate il 24/10: Paris SG-Lyon (25 e 26/10), Toulouse-Troyes (24 e 25), Montpellier-Red Star (24 e 26) — resta la riga con la data vecchia. Possono entrare due volte nella stessa spin e nel Builder. Da guardare in `riconcilia-prossime` / importazione, **prima** di cancellare qualcosa: `prossime_partite` non si cancella a mano (`note/dati.md`) |
+| **la scalata 41 senza passi** | aperta 15:28 e chiusa 15:31 del 24/10 con zero passi, senza «nuovo piano»: causa **non trovata**. Da `sql/42` ogni passo cancellato finisce in `scalata_cancellazioni` — **se ricapita, si guarda lì** |
+| **la 1.59.01 non è ancora stata provata** | lint e build passano, la logica è verificata nel codice; il piano che resta fermo e «Aggiorna calendario» vanno visti da Mattia |
 | **il × in «TUTTE LE CONSIGLIATE» a scalata aperta** | barra la partita ma **non la toglie dal passo salvato** (per quello serve il × nella card del passo). Chiesto a Mattia il 24/10 se è il caso che ha visto: senza risposta |
 | **la vecchia riga di preferenze condivisa della scalata** | `preferenze` con `ambito='scalata'` e `user_id` nullo, col bankroll 100 del 22/10: dal 24/10 non la legge nessuno. Da cancellare **con l'ok di Mattia** |
 | **idea 9** | `CompilaPerQuota` riempie le caselle **vuote** di una spin: va capito se Mattia voleva compilarne una **intera**. Domanda ancora senza risposta |

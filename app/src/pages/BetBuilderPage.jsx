@@ -157,7 +157,14 @@ export default function BetBuilderPage() {
   useEffect(() => {
     if (!filtriLetti) return
     const f = { att: attMin, scelta: sceMin, vpm: vpmMin, quotaGamba, lunedi: finoLunedi }
-    if (JSON.stringify(datiPref.current?.filtri ?? partenza.current) === JSON.stringify(f)) return
+    // ⚠️⚠️ **Si confrontano i valori, non il testo JSON** (24/10/2026). Il
+    // database restituisce le chiavi in un altro ordine (`jsonb` le riordina),
+    // quindi il testo era sempre diverso: ogni lettura dopo un salvataggio
+    // faceva ripartire un salvataggio, e con la pagina aperta le preferenze
+    // si riscrivevano ogni secondo circa — 3.946 scritture contate il 24/10.
+    // È la trappola delle chiavi in un ordine diverso, rientrata da qui.
+    const salvati = datiPref.current?.filtri ?? partenza.current
+    if (salvati && Object.keys(f).every(k => salvati[k] === f[k])) return
     const t = setTimeout(() => salvaPref.current({ ...(datiPref.current ?? {}), filtri: f }), 800)
     return () => clearTimeout(t)
   }, [filtriLetti, attMin, sceMin, vpmMin, quotaGamba, finoLunedi, pref.dati])

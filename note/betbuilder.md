@@ -188,3 +188,16 @@ lasciano passare niente, la via a mano è l'unica che resta.
 ## Quello che resta da fare
 
 - **L'esito automatico** dall'archivio, col vincolo scritto sopra.
+
+### ⚠️ Il salvataggio dei filtri girava in tondo (corretto il 24/10/2026)
+
+Il Builder decideva se salvare confrontando il **testo JSON** dei filtri con
+quello letto dal database, ma `jsonb` restituisce le chiavi **in un altro
+ordine**: il testo era sempre diverso, e ogni rilettura dopo un salvataggio
+ne faceva partire un altro. Con la pagina aperta le preferenze si
+riscrivevano ogni secondo circa — **3.946 aggiornamenti** contati il 24/10.
+Ora si confrontano **i valori, chiave per chiave**. È la trappola *"le righe
+annidate di PostgREST tornano con le chiavi in un ordine diverso"*, rientrata
+da una porta nuova. (Dedotto dal codice e dal contatore: non visto
+succedere in diretta, perché quando si è guardato nessuno aveva il Builder
+aperto.)

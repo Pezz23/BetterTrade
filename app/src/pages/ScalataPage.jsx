@@ -17,7 +17,7 @@ import { sigla } from '../lib/campionati'
 import { weekendDi, categoria, SOGLIE_DEFAULT, iniziaDopo } from '../lib/attendibilita'
 import { pct, eur, gg, quando } from '../lib/formato'
 import {
-  METODO, NOMI_REGOLA, MAX_GAMBE, QUOTA_MINIMA_GAMBA, QUOTA_MINIMA_SCHEDINA, CONSIGLIATO,
+  METODO, NOMI_REGOLA, QUOTA_MINIMA_GAMBA, QUOTA_MINIMA_SCHEDINA, CONSIGLIATO,
   postaDi, fasce, spezzaFasce, spezzaAlMinimo, giorno, casseDi, percentualeConsigliata, applicaIncasso,
   puoSpezzare, contoDi,
 } from '../lib/scalata'
@@ -551,6 +551,23 @@ export default function ScalataPage() {
   // filtra solo per giorno, quindi a metà pomeriggio la lista conterrebbe
   // ancora le partite delle 13.
   const [daOra, setDaOra] = useState(() => Date.now())
+  // ⚠️⚠️ **Il calendario del PIANO è fermo** (Mattia, 24/10/2026: *"continua a
+  // perdersi tutto, quando passa l'orario delle partite le cancella"*). Il
+  // piano non è salvato come oggetto: si ricompone dalle candidate, e le
+  // candidate escludevano le partite **già cominciate rispetto ad adesso** —
+  // quindi alla prima partita del passo 1 il passo spariva, quelli dopo
+  // scalavano di un posto e i fissati perdevano il loro passo. Ora l'istante
+  // è quello dell'ultimo **«Aggiorna calendario»**, salvato con il resto del
+  // piano: il piano resta com'era finché non lo si aggiorna, anche riaprendo
+  // l'app il giorno dopo. `daOra` resta l'orologio vivo del `+` e della
+  // finestra manuale, dove una partita già cominciata non si pianifica.
+  const [calendarioDa, setCalendarioDa] = useState(() => Date.now())
+  const [armaNuovo, setArmaNuovo] = useState(false)
+  useEffect(() => {
+    if (!armaNuovo) return
+    const t = setTimeout(() => setArmaNuovo(false), 5000)
+    return () => clearTimeout(t)
+  }, [armaNuovo])
   // ⚠️⚠️ **Niente più bankroll da regolare a mano** (24/10/2026): il bankroll
   // è il **conto** (`contoDi`), che si muove solo con le ricariche e i giri.
   // I tasti −/+ cambiavano il capitale senza lasciare traccia, ed è il motivo
@@ -614,6 +631,7 @@ export default function ScalataPage() {
     if (pi.perc && typeof pi.perc === 'object') setPerc(pi.perc)
     if (pi.esiti && typeof pi.esiti === 'object') setEsiti(pi.esiti)
     if (Array.isArray(pi.fissati)) setFissati(pi.fissati)
+    if (Number.isFinite(Number(pi.calendarioDa)) && pi.calendarioDa) setCalendarioDa(Number(pi.calendarioDa))
   }, [pref.pronte, pref.dati])
 
   // ⚠️⚠️ **Si salva da sola** (Mattia, 24/10/2026), come nel Bet Builder: il
@@ -630,7 +648,7 @@ export default function ScalataPage() {
     if (!letta) return
     const dati = {
       filtri: { att: attMin, scelta: sceMin, vpm: vpmMin, quotaGamba },
-      piano: { tolte, aggiunte, tagli, quote, perc, esiti, fissati },
+      piano: { tolte, aggiunte, tagli, quote, perc, esiti, fissati, calendarioDa },
     }
     const j = JSON.stringify(dati)
     if (ultimaSalvata.current === null) { ultimaSalvata.current = j; return }
@@ -641,7 +659,7 @@ export default function ScalataPage() {
       else ultimaSalvata.current = j
     }, 800)
     return () => clearTimeout(t)
-  }, [letta, attMin, sceMin, vpmMin, quotaGamba, tolte, aggiunte, tagli, quote, perc, esiti, fissati])
+  }, [letta, attMin, sceMin, vpmMin, quotaGamba, tolte, aggiunte, tagli, quote, perc, esiti, fissati, calendarioDa])
 
   // Dal 24/10/2026 l'archivio è di tutti: ognuno ha il suo.
   const vista = modo
@@ -700,13 +718,13 @@ export default function ScalataPage() {
     return valutate.filter(r =>
       !tolte.includes(r.id) &&
       !r.quoteIncoerenti &&
-      iniziaDopo(r, daOra) &&
+      iniziaDopo(r, calendarioDa) &&
       (stellata(r) || (
         r.att != null && r.att * 100 >= attMin &&
         r.scelta != null && r.scelta * 100 >= sceMin &&
         (vpmMin <= 0 || (r.vpm != null && r.vpm >= vpmMin)) &&
         (r.quota ?? 0) >= quotaGamba)))
-  }, [righe, valutate, attMin, sceMin, vpmMin, quotaGamba, tolte, daOra, votiDi])
+  }, [righe, valutate, attMin, sceMin, vpmMin, quotaGamba, tolte, calendarioDa, votiDi])
 
   // ⚠️ Le fasce sono una **proposta**: stesso giorno, orari entro tre ore. Poi
   // si toglie a mano quello che non piace — è il motivo per cui la pagina esiste.
@@ -755,6 +773,15 @@ export default function ScalataPage() {
     })).filter(f => f.partite.length)
   }, [candidate, valutate, aggiunte, tagli, tolte])
 
+  // ⚠️⚠️ **Esiti e percentuali si agganciano al PASSO, non alla posizione**
+  // (24/10/2026). Erano `esiti[i]`: quando un passo spariva, quello dopo
+  // ereditava l'esito e la percentuale del passo sparito. La chiave è quella
+  // di «fissa»: la riga salvata a scalata aperta (`s:`), la prima gamba nel
+  // piano (`p:`). Le chiavi vecchie, numeriche, non trovano più niente.
+  const kp = (i) => (aperta
+    ? (reg.passi[i]?.id != null ? `s:${reg.passi[i].id}` : `#${i}`)
+    : (passi[i]?.partite?.[0]?.id != null ? `p:${passi[i].partite[0].id}` : `#${i}`))
+
   // ⚠️⚠️ **Flaggate e votate restano in lista anche se i filtri le tagliano**
   // (Mattia, 22/10/2026). Senza, bastava alzare una soglia per far sparire un
   // segno messo a mano — e un segno che scompare in silenzio è il difetto
@@ -766,8 +793,8 @@ export default function ScalataPage() {
     if (!righe) return []
     const dentro = new Set(candidate.map(c => c.id))
     return valutate.filter(r => !dentro.has(r.id) && !tolte.includes(r.id)
-      && iniziaDopo(r, daOra) && (flagDi(r.id) > 0 || votiDi(r.id) > 0))
-  }, [righe, valutate, candidate, tolte, daOra, flagDi, votiDi])
+      && iniziaDopo(r, calendarioDa) && (flagDi(r.id) > 0 || votiDi(r.id) > 0))
+  }, [righe, valutate, candidate, tolte, calendarioDa, flagDi, votiDi])
 
   // ⚠️ Si fondono **in ordine di data**, non in coda: una partita flaggata
   // appartiene al suo weekend, e messa in fondo finirebbe sotto il divisore
@@ -842,11 +869,12 @@ export default function ScalataPage() {
   const frontiera = useMemo(() => {
     const dato = aperta
       ? (i) => reg.passi[i] && reg.passi[i].esito !== 'aperto'
-      : (i) => !!esiti[i]
+      : (i) => !!esiti[kp(i)]
     let i = 0
     while (dato(i)) i++
     return i
-  }, [aperta, reg.passi, esiti])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aperta, reg.passi, passi, esiti])
 
   /**
    * Fin dove si disegna: la frontiera, **più** i pezzi staccati a mano che le
@@ -911,7 +939,7 @@ export default function ScalataPage() {
   // vedono **spenti**, come anteprima, e ⟳ RIPARTI li rimette in gioco.
   const perso = aperta
     ? reg.passi.findIndex(r => r.esito === 'perso')
-    : passi.findIndex((_, k) => esiti[k] === 'perso')
+    : passi.findIndex((_, k) => esiti[kp(k)] === 'perso')
 
   // ⚠️⚠️ **Le casse si RICALCOLANO dalla catena dei passi**, sempre: né lette
   // dal database né aggiornate a ogni esito. È quello che permette di togliere
@@ -919,13 +947,16 @@ export default function ScalataPage() {
   // solo, perché non c'è un secondo numero da disfare.
   const casse = useMemo(() => {
     const c = aperta
-      ? casseDi(reg.passi, posta, (i) => perc[i])
+      ? casseDi(reg.passi, posta, (i) => perc[kp(i)])
       : casseDi(passi.map((f, i) => ({
         quota: f.partite.reduce((a, g) => a * (Number(quote[g.id] ?? g.quota) || 1), 1),
-        esito: esiti[i] ?? 'aperto',
-      })), posta, (i) => perc[i])
+        esito: esiti[kp(i)] ?? 'aperto',
+      })), posta, (i) => perc[kp(i)])
     const live = bankrollIniziale - posta + c.accumulo + c.cassa
     return { inGioco: c.cassa, accumulo: c.accumulo, vivi: c.vivi, live, risultato: c.accumulo + c.cassa - posta }
+    // ⚠️ `kp` è una funzione nuova a ogni ridisegno: dipende solo da `aperta`,
+    // `reg.passi` e `passi`, che sono già qui.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aperta, reg.passi, passi, esiti, quote, perc, posta, bankrollIniziale])
 
   // Il conto di adesso: ricariche, giri chiusi e quanto il giro in corso ha
@@ -1139,7 +1170,7 @@ export default function ScalataPage() {
                 // il piano salva la catena ipotetica: le puntate vere le
                 // ricalcola la pagina man mano che gli esiti arrivano
                 const m = p * q
-                const pc = perc[i] ?? percentualeConsigliata({ numero: i + 1, montante: m, puntata: p, posta, accumulato: acc })
+                const pc = perc[kp(i)] ?? percentualeConsigliata({ numero: i + 1, montante: m, puntata: p, posta, accumulato: acc })
                 const inc = applicaIncasso(m, pc, p)
                 acc += inc.via
                 p = inc.rigioca
@@ -1236,9 +1267,18 @@ export default function ScalataPage() {
               ⚠️ `attivo` non vuol dire "selezionato": qui serve solo a dargli
               fondo e bordo pieni, che è l'unico modo che ha `Tasto` di
               gridare. */}
+          {/* ⚠️⚠️ **A scalata aperta chiede conferma** (Mattia, 24/10/2026):
+              lì cancella i passi non giocati, e in un tocco solo era il gesto
+              più distruttivo della pagina accanto ai filtri. Il primo tocco lo
+              arma e dice **quanti** passi butta, il secondo esegue; si disarma
+              da sé dopo cinque secondi, come «Riparti da 0». */}
           <Tasto colore={C.rosso} attivo style={{ marginLeft: 'auto' }}
             onClick={() => {
-              setTolte([]); setAggiunte({}); setDaOra(Date.now())
+              const daButtare = aperta ? reg.passi.filter(x => x.esito === 'aperto').length : 0
+              if (daButtare && !armaNuovo) { setArmaNuovo(true); return }
+              setArmaNuovo(false)
+              const ora = Date.now()
+              setTolte([]); setAggiunte({}); setDaOra(ora); setCalendarioDa(ora)
               // ⚠️ **E rilegge davvero le partite.** Finché `usaProssime` non
               // aveva memoria questo tasto non ricaricava niente — spostava
               // solo l'orologio — e il nome mentiva: le partite erano quelle
@@ -1247,7 +1287,9 @@ export default function ScalataPage() {
               ricaricaPartite()
               if (aperta) reg.azzeraPiano()
             }}>
-            ↻ {aperta ? 'nuovo piano' : 'ricarica'}
+            {armaNuovo
+              ? `⚠️ tocca ancora: cancella ${reg.passi.filter(x => x.esito === 'aperto').length} passi non giocati`
+              : `↻ ${aperta ? 'nuovo piano' : 'ricarica'}`}
           </Tasto>
         </div>
         {/* ⚠️ Una selezione che si salva da sola deve dirlo, e dire **quando**:
@@ -1256,10 +1298,21 @@ export default function ScalataPage() {
           {pref.info ? <>si salva da sola · ultima volta {quando(pref.info.quando)}</> : <>si salva da sola, appena cambi qualcosa</>}
           {pref.errore && <span style={{ color: C.ambra }}>{' · '}{pref.errore}</span>}
         </div>
-        <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.spento, marginTop: 4, lineHeight: 1.5 }}>
-          {METODO.desc}
-          <br />posta <b style={{ color: C.testo }}>{posta}</b> (10% del bankroll, per difetto)
-          · schedina ≥ {QUOTA_MINIMA_SCHEDINA.toFixed(2).replace('.', ',')} · massimo {MAX_GAMBE} gambe
+        {/* ⚠️⚠️ **«Aggiorna calendario» al posto della riga del metodo**
+            (Mattia, 24/10/2026): il piano è fermo all'istante dell'ultimo
+            aggiornamento, e questo è il gesto che lo sposta ad adesso — le
+            partite già cominciate escono, quelle nuove entrano. ⚠️ **Non
+            cancella niente**: né le tolte, né le aggiunte, né a scalata aperta
+            i passi salvati — quello resta al tasto rosso, con la conferma. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+          <Tasto colore={C.celestePieno} attivo onClick={() => {
+            const ora = Date.now()
+            setCalendarioDa(ora); setDaOra(ora)
+            ricaricaPartite()
+          }}>⟳ Aggiorna calendario</Tasto>
+          <span style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.spento }}>
+            partite dalle {new Date(calendarioDa).toLocaleString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+          </span>
         </div>
       </Card>
 
@@ -1304,7 +1357,7 @@ export default function ScalataPage() {
           // accumulo**: i pavimenti del metodo sono cumulativi, quindi il
           // consiglio di questo passo dipende da quello che i passi prima
           // hanno già messo via — compresi i centesimi dell'arrotondamento.
-          const { cassa: p, accumulo: acc } = casseDi(reg.passi.slice(0, i), posta, (k) => perc[k])
+          const { cassa: p, accumulo: acc } = casseDi(reg.passi.slice(0, i), posta, (k) => perc[kp(k)])
           // ⚠️ Vale anche qui: un passo staccato a mano (numero decimale) si
           // vede subito, in anteprima e senza i soldi.
           const fermo = perso >= 0 && i > perso
@@ -1343,12 +1396,12 @@ export default function ScalataPage() {
                  stato della pagina: da `gambe[iG]` in giù scendono in un passo
                  inserito subito dopo, col numero di mezzo (3 e 4 → 3,5). */
               onSpezza={(iG) => reg.spezzaPasso(riga, reg.passi[i + 1]?.numero ?? null, gambe.slice(iG))}
-              perc={perc[i]} setPerc={(v) => setPerc(x => ({ ...x, [i]: v }))}
+              perc={perc[kp(i)]} setPerc={(v) => setPerc(x => ({ ...x, [kp(i)]: v }))}
               esito={riga.esito === 'aperto' ? null : riga.esito}
               setEsito={(e) => {
                 const q = gambe.reduce((a, g) => a * Number(g.quota), 1)
                 const m = p * q
-                const pc = perc[i] ?? percentualeConsigliata({ numero: i + 1, montante: m, puntata: p, posta, accumulato: acc })
+                const pc = perc[kp(i)] ?? percentualeConsigliata({ numero: i + 1, montante: m, puntata: p, posta, accumulato: acc })
                 const r = applicaIncasso(m, pc, p)
                 // ⚠️ Si scrive **solo l'esito e la fotografia del passo**: le
                 // casse non si toccano, le ricalcola `casseDi`. Annullare è
@@ -1378,10 +1431,10 @@ export default function ScalataPage() {
           // del 1 — e col taglio automatico a 2,00 serve molto di rado.
           let p = posta, acc = 0
           for (let k = 0; k < i; k++) {
-            if (esiti[k] !== 'vinto') { p = 0; break }
+            if (esiti[kp(k)] !== 'vinto') { p = 0; break }
             const q = passi[k].partite.reduce((a, g) => a * (Number(quote[g.id] ?? g.quota) || 1), 1)
             const m = p * q
-            const pc = perc[k] ?? percentualeConsigliata({ numero: k + 1, montante: m, puntata: p, posta, accumulato: acc })
+            const pc = perc[kp(k)] ?? percentualeConsigliata({ numero: k + 1, montante: m, puntata: p, posta, accumulato: acc })
             const inc = applicaIncasso(m, pc, p)
             acc += inc.via
             p = inc.rigioca
@@ -1417,8 +1470,8 @@ export default function ScalataPage() {
               })}
               onSpezza={(iG) => { const id = f.partite[iG]?.id; if (id) setTagli(t => [...t, id]) }}
               quote={quote} setQuote={setQuote}
-              perc={perc[i]} setPerc={(v) => setPerc(x => ({ ...x, [i]: v }))}
-              esito={esiti[i] ?? null} setEsito={(e) => setEsiti(x => ({ ...x, [i]: e }))}
+              perc={perc[kp(i)]} setPerc={(v) => setPerc(x => ({ ...x, [kp(i)]: v }))}
+              esito={esiti[kp(i)] ?? null} setEsito={(e) => setEsiti(x => ({ ...x, [kp(i)]: e }))}
               /* ⚠️ Toglie **anche dalle aggiunte**: rimessa dall'elenco, la
                  partita torna nel suo passo naturale, non in quello dove
                  l'avevi spostata. */

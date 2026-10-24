@@ -669,3 +669,40 @@ cancellare solo le scalate restituirebbe le perdite.
 **I flag ⚑ li mette chiunque**: **verde** di un admin, **blu** di un utente
 (`flag_partite.da_admin`, una fotografia del ruolo; la policy rifiuta chi si
 dichiara admin senza esserlo). Le **stelline** restano agli admin.
+
+### 🕐 Il piano non si perde più col passare delle partite (24/10/2026, sera)
+
+Mattia: *"continua a perdersi tutto, partite fissate o giocate, quando passa
+l'orario delle partite le cancella"* (`1.59.01`, `sql/42`).
+
+⚠️⚠️ **La causa, nel piano**: il piano non è salvato come oggetto, si
+**ricompone** dalle candidate — e le candidate escludevano le partite **già
+cominciate rispetto ad adesso**. Alla prima partita del passo 1 il passo
+spariva, quelli dopo **scalavano di un posto** ereditando esiti e
+percentuali del passo sparito (erano `esiti[i]`, per posizione), e i fissati
+(ancorati alla prima gamba) non trovavano più il loro passo. Verificato sui
+dati salvati di Admin: i due fissati erano Aston Villa-Man City (13:30) e
+Preston-West Brom (16:00), entrambe cominciate.
+
+**La correzione:**
+- **il calendario del piano è fermo** all'istante dell'ultimo **«⟳ Aggiorna
+  calendario»** (`calendarioDa`, salvato con il piano): il piano resta
+  com'era finché non lo si aggiorna. Il tasto sta nella card SELEZIONE, al
+  posto della riga del metodo, e **non cancella niente** — né tolte, né
+  aggiunte, né i passi di una scalata aperta. `daOra` resta l'orologio vivo
+  del `+` e della finestra manuale;
+- **esiti e percentuali si agganciano al passo** (`kp(i)`: `s:<id riga>` a
+  scalata aperta, `p:<prima gamba>` nel piano), non alla posizione;
+- il tasto rosso «↻ nuovo piano», che a scalata aperta **cancella i passi non
+  giocati**, resta (Mattia) ma **chiede conferma**: il primo tocco dice quanti
+  passi butta, il secondo esegue, si disarma dopo cinque secondi.
+
+⚠️ **A scalata aperta il tempo non toccava i passi**: sono righe salvate. Ma
+il 24/10 la scalata 41 (aperta 15:28, STOP 15:31) è finita **senza passi**,
+e Mattia non ha premuto «nuovo piano». Le strade che cancellano un passo
+sono quattro (nuovo piano, riparti da 0, × sull'ultima gamba, il `+` che
+svuota il passo dopo) e **non si è potuto sapere quale**. Per questo
+`sql/42`: un **trigger** annota in `scalata_cancellazioni` ogni passo
+cancellato — chi, quando, numero, esito, fissato, le partite, e lo stato
+della scalata (`null` = cancellata insieme, cioè una cascata). **La prossima
+volta che sparisce qualcosa, si guarda lì prima di indovinare.**
