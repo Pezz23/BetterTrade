@@ -8,13 +8,8 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-# STATO — BetterTrade
-
-> To-do list e fonte di verità sul punto in cui siamo. Da leggere all'inizio di
-> ogni sessione e aggiornare ogni volta che una task cambia stato.
-
-**Ultimo aggiornamento:** 22 ottobre 2026 (notte) · app alla versione
-**1.52.01** · ultimo commit `28322a1`
+**Ultimo aggiornamento:** 24 ottobre 2026 · app alla versione **1.58.00** ·
+ultimo commit dell'app `a115a23` · ultimo passaggio di consegne: 24/10
 
 ## ▶️ DOVE SIAMO — 24 ottobre 2026, leggi questo per primo
 
@@ -75,6 +70,7 @@ Nessuna di queste è stata promessa a Mattia: **si propone e decide lui.**
 
 | | cosa | costo |
 |---|---|---|
+| 0 | **Le partite rinviate doppie** (vedi «Quello che resta aperto») — piccolo, ma tocca quello che si gioca: la stessa partita può finire due volte in una spin | un'ora |
 | 1 | **I falli** — ESPN li manda (`foulsCommitted`) in ogni riepilogo e **li buttiamo via**, esattamente com'era per i cartellini fino al 22/10. Sono il meccanismo che produce il giallo, e i cartellini sono il mercato dove il modello rende di più. Serve: una colonna, due righe in `lib/espn.js`, il recupero, **e la rimisura** | mezza giornata, zero crediti |
 | 2 | **Il routing** (lotto 3) — era *"da fare prima di aggiungere schermate nuove"* e da allora ne sono arrivate tre. Vuole mezza giornata in cui non si aggiunge niente | mezza giornata |
 | 3 | **L'arbitro** — la letteratura lo chiama cruciale per i cartellini. ⚠️ **Prima va verificato** che football-data abbia davvero la colonna `Referee`: il 23/10 il DNS di quel sito era giù tutto il giorno e **non l'ho potuto controllare** | da stimare dopo la verifica |
@@ -152,6 +148,8 @@ leggi "884 partite" o "440 crediti" e siamo a marzo, sono vecchi di mesi.
 | **La scheda partita ristrutturata**, e i conteggi misurati su venti competizioni | `978d3fd` |
 | **«fissa passo»** in Road to weekend | `5f511d9` |
 | **U2' — la linea 3,5** smette di finire nel cestino | `5da5b0a` |
+| **Il tasto Bilancio solo per gli admin** (24/10) | `7deafd9` |
+| **Spin**: selezione per **scelta** 75/72/68, griglia «A mano» vuota, «ordina per» i quattro indicatori, «S1» su tre fonti (24/10) | `a115a23` |
 
 Le migrazioni applicate in questi due giorni: **`sql/31`** (numero del passo
 decimale, per inserirne uno in mezzo), **`sql/32`** (il metodo `madre`),
@@ -168,6 +166,7 @@ stretta). Tutte verificate dal database subito dopo.
 | **il routing** | era *"da fare prima di aggiungere schermate nuove"*, e da allora ne sono arrivate tre: Bet Builder, le due card dei conteggi, la barra dei campionati. Più si aspetta, più si ricabla |
 | **Europa e Conference senza quote** | The Odds API non ha **nessuna** partita futura per loro (ricontrollato il 23/10): accenderle costerebbe crediti per zero righe. Le voci sono pronte e commentate in `lib/odds-api.js` |
 | **l'esito automatico del Bet Builder** | fattibile, ma prima la regola *"questa giocata è arrivata"* deve **spostarsi** da `btscout/lib/ricostruisci.js` a `app/src/lib/`, **non essere copiata**: due versioni direbbero prima o poi cose diverse sulla stessa schedina |
+| **tre partite rinviate DOPPIE in `prossime_partite`** | trovate il 24/10: Paris SG-Lyon (25 e 26/10), Toulouse-Troyes (24 e 25), Montpellier-Red Star (24 e 26) — resta la riga con la data vecchia. Possono entrare due volte nella stessa spin e nel Builder. Da guardare in `riconcilia-prossime` / importazione, **prima** di cancellare qualcosa: `prossime_partite` non si cancella a mano (`note/dati.md`) |
 | **idea 9** | `CompilaPerQuota` riempie le caselle **vuote** di una spin: va capito se Mattia voleva compilarne una **intera**. Domanda ancora senza risposta |
 | **«solo sopra soglia»** | tolto il 22/10 insieme alle slitte, **deciso da me**: diceva la stessa cosa di «attendibilità ≥» in lingua spin. Una riga per rimetterlo |
 | ~~**le casse le vedono tutti**~~ | ✅ **chiuso il 24/10** (`1.57.02`): in Road to weekend casse e archivio erano **già** solo per gli admin (lotto 1, `ScalataPage` `{isAdmin && …}`), e questa riga era rimasta indietro. Mattia ha chiesto di togliere agli `user` anche il tasto **Bilancio** del menu: `soloAdmin:true` in `VOCI_MENU`. ⚠️ Nasconde il tasto, **non** i dati: la lettura resta quella delle policy |

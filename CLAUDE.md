@@ -31,6 +31,28 @@ git** — mai ribattuti a mano.
 la sessione dopo riparte da informazioni sbagliate: aggiornarlo fa parte del
 lavoro, non è un extra.
 
+### 🤝 Il passaggio di consegne — come si chiude una sessione
+
+Si chiama così dal 24/10/2026: quando Mattia dice **«passaggio di consegne»**
+(o «chiudiamo»), si fa questo, in quest'ordine, e alla fine **si dice cosa è
+stato toccato**:
+
+1. **STATO.md** — la riga *«Ultimo aggiornamento»* (data, versione, ultimo
+   commit dell'app); *«Dove siamo»*; una riga per commit in *«Cos'è
+   cambiato»*; gli aperti nuovi in *«Quello che resta aperto»* e i chiusi
+   barrati con la data; *«Da dove ripartire»* rivalutato.
+2. **`note/`** — la nota dell'area toccata riceve la regola nuova, con la data
+   e il **perché**. È lì che vive il dettaglio, non qui.
+3. **CLAUDE.md** — **solo** se cambia una regola o la conclusione di una riga
+   della tabella *«Dove sta scritto il resto»*: una riga, mai la storia.
+   Questo file si paga in ogni sessione.
+4. **STORICO.md** — quando una **sezione intera** di STATO è chiusa, scende
+   là **con uno script** e si verifica contro git. Mai ribattuta a mano.
+5. **`app/src/versione.js`** allineata all'ultimo commit che cambia l'app, e
+   `npm run lint` a 0 errori.
+6. **Commit** dei documenti. Il **push** solo se Mattia lo chiede.
+7. Se il server di sviluppo è ancora acceso, **lo si dice**.
+
 ⚠️ **In cima a STATO ci sono due blocchi fatti per questo**: *«Per ripartire»*
 (il comando del server di sviluppo e lo stato dei dati) e *«Da dove ripartire,
 in ordine di valore»* — cinque voci con il costo di ciascuna. ⛔ Nessuna di
@@ -226,7 +248,7 @@ non tutti**.
 | `note/dati.md` | import, quote, ESPN, controlli, calendario | `partite` e `prossime_partite` sono **due cose diverse** e nessuna delle due si cancella. ⚠️ In `partite` le `avg_*` sono di **chiusura**, in `prossime_partite` di **apertura**: confrontarle è la trappola. La quota giocata è **Bet365 → media**. ESPN **non indovina mai**: nel dubbio la riga aspetta una persona. |
 | `note/scalata.md` | Road to weekend, in qualunque punto | Metodo **uno solo**: pavimenti di accumulo **0,7× · 1,3× · 2,8×** la posta, quota schedina **2,00**, selezione consigliata **61%**. **Le casse sono DERIVATE**, mai memorizzate. I passi si scoprono **uno per volta**. I soldi (casse e archivio) li vedono **solo gli admin**. ⚠️ Il backtest dice che la scalata meccanica **perde**: il registro esiste per dire se la scelta a mano fa meglio. |
 | `note/betbuilder.md` | Bet Builder | Schedine a quota obiettivo, **private per utente** (`sql/36`-`38`): nessuno vede quelle di un altro, admin compresi. Compone con **`componiPasso` della scalata** — un passo e una schedina sono la stessa cosa — e si ferma **appena supera** la quota. Le già usate e le **scartate** (`preferenze`, riga personale) escono dalle candidate. ⚠️ **Una schedina salvata non cambia mai da sola**: le gambe sono una **copia**, non un collegamento — l'unica cosa che la tocca è la **quota corretta a mano**, perché c'è l'importo e una quota sbagliata è una vincita sbagliata. Esito **per schedina** e a mano; l'automatico vuole prima che la regola *"questa giocata è arrivata"* **si sposti** dal motore a `src/lib/`, non si copi. ⚠️ **Interruttore `ATTIVE \| ARCHIVIO`**: una chiusa ci scende **dieci secondi dopo l'esito** — il criterio è lo **stato**, non il tempo, e i dieci secondi sono il tempo per disfare un tocco sbagliato. ⚠️ I **filtri si salvano da sé, senza tasto**, perché lì la riga di `preferenze` è **personale** (nella scalata è condivisa, e il tasto serve). ⚠️ Le partite aggiunte **a mano sono fisse** e l'automatico punta a `obiettivo ÷ quota delle aggiunte`: in fondo darebbero quota 9 a chi ne ha chieste 5. |
-| `note/spin.md` | Slot, Spin provvisorie | La spunta **GIOCATA** è l'unica cosa che fa partire i conti della Dashboard. |
+| `note/spin.md` | Slot, Spin provvisorie | La spunta **GIOCATA** è l'unica cosa che fa partire i conti della Dashboard. ⚠️ **Dal 24/10/2026 le spin si compongono per SCELTA** con soglie proprie 75/72/68 (`SOGLIE_SPIN`), solo lì; la griglia «A mano» parte vuota, e «S1» guarda automatica, a mano **e Slot**, anche per la spin che si compila. |
 | `note/interfaccia.md` | **qualunque** modifica a una pagina o a un componente | Colori, caratteri, spaziature e raggi **solo da `theme.js`**, ma **dove finisce la pagina** sta in `lib/layout.js` (`COLONNA`, `bordoDestro`) — un componente che la importasse da `App.jsx` chiuderebbe un anello col `lazy` delle pagine. Le tre barre fisse si misurano con `--barra-alta` e `--barra-bassa` di `index.css`, e **`--barra-bassa` È l'altezza della tab bar**: se non sale con lei, nasconde le ultime righe. ⚠️ `SOTTO_BARRA` **non viene da `SP`**: è la distanza dei bersagli dal bordo dell'iPhone (Siri e l'indicatore Home), un vincolo del telefono. I segni **solo da `Icona.jsx`** (niente emoji); le superfici da `stileCard`; le righe della lista sono `memo` e vogliono proprietà stabili; ogni pagina è `lazy`. **`npm run lint` deve dare 0 errori.** |
 | `note/trappole.md` | **prima** di toccare layout, migrazioni, date, query o script di misura | 45 difetti veri, ciascuno costato una sessione. L'elenco dei titoli è qui sotto: **se quello che stai per fare somiglia a uno di questi, apri il file.** |
 

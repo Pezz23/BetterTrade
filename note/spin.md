@@ -52,3 +52,33 @@ Auth, RLS, tema e script si tengono — non c'entrano con il problema.
 
 ---
 
+
+## La pagina Spin provvisorie dal 24/10/2026
+
+Tre cambi chiesti da Mattia, nello stesso giorno (`a115a23`, 1.58.00):
+
+- ⚠️⚠️ **L'automatica ordina e colora per SCELTA**, non per attendibilità, con
+  soglie proprie **verde 75 · giallo 72 · blu 68** (`SOGLIE_SPIN` e
+  `valoreSpin` in `lib/spin.js`). Il motivo e i limiti stanno in
+  `note/criterio.md`: in breve, la regola dell'over portava i favoriti più
+  forti a blu, e il 24/10 c'erano zero verdi. ⚠️ **Solo nelle spin**: fuori
+  dalla pagina i colori restano dell'attendibilità con `SOGLIE_DEFAULT`.
+  Casella, finestra e card «LE VOTATE» mostrano **la scelta**, così colore e
+  numero dicono la stessa cosa.
+- **La seconda griglia si chiama «A mano» e parte VUOTA.** Prima («Con le
+  stelline») la riempivano le votate da sole. Si riempie toccando le caselle,
+  il tasto «↺ svuota» la rimette vuota, e resta un'anteprima finché non si
+  preme «Compila». `conStelline` è stata tolta: non la usava più nessuno.
+- **La finestra della casella** ha le schede di sempre (votate · verdi · gialle
+  · blu · tutte, con le soglie delle spin) e sotto **«ordina per» attendibilità
+  · voto · VPM · scelta**: questi non filtrano, ordinano **tutte** le partite
+  fino a martedì, sotto soglia comprese, e a destra mostrano il loro numero.
+  Le chiavi sono quelle di `lib/ordine.js`, le stesse dei tasti delle Partite.
+- ⚠️⚠️ **«S1 · S2 · S3» serve a non mettere la stessa partita in due spin.**
+  Guarda **tre fonti** per ogni spin — l'automatica, quella a mano e **la
+  griglia già salvata in Slot** (per `prossima_id`) — e nella finestra compare
+  **anche per la spin che si sta compilando**. Solo il segno «↔» dentro le
+  caselle esclude la propria spin, altrimenti ogni casella della spin 1
+  direbbe «↔1».
+- ⚠️ VPM arriva con una chiamata a parte: finché non c'è, la pagina compone
+  sull'attendibilità **e lo scrive**, invece di restare ferma.
