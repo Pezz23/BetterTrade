@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { C, F, alpha, S, SP } from '../theme'
+import { C, F, alpha, S, SP, R } from '../theme'
 import { Card, Etichetta, Attesa } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { usaProssime } from '../hooks/usaProssime'
@@ -55,10 +55,23 @@ const GIORNI = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab']
 const nomeGiorno = (d) => d ? GIORNI[new Date(d + 'T12:00:00').getDay()] : ''
 
 
+/**
+ * ⚠️⚠️ **BOZZA del 26/10/2026 — la card in evidenza del passo da giocare.**
+ * Mattia: *"la parte passi è troppo confusionaria"*. La card di prima mette
+ * sullo stesso piano una ventina di cose; qui sopra la piega ce n'è **una**:
+ * quanto punto, a che quota, e cosa succede se vince. Le partite e i conti
+ * scendono in due **tendine**, che dentro disegnano la card di prima (`Passo`
+ * con `parte` e `nudo`) — non una seconda versione.
+ * ⚠️ **Reversibile**: `NUOVO_PASSO = false` rimette la card di prima per
+ * tutti i passi, senza toccare altro.
+ */
+const NUOVO_PASSO = true
+
 function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumulato, colore, classifiche,
                 quote, setQuote, perc, setPerc, esito, setEsito, onToglie, prossima, onAggiunge,
                 onQuota = null, onSpezza = null, onApri = null, onManuale = null, tocca = true,
-                stelleDi = () => 0, anteprima = false, fissato = false, onFissa = null, fermo = false }) {
+                stelleDi = () => 0, anteprima = false, fissato = false, onFissa = null, fermo = false,
+                parte = 'tutto', nudo = false }) {
   // ⚠️ La quota della schedina è il **prodotto delle quote modificate**, non di
   // quelle scaricate: Mattia gioca su book diversi e con i bonus, e una pagina
   // che mostra la quota del consenso gli racconterebbe un piano che non è il suo.
@@ -90,9 +103,12 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
     }}>{fissato ? '✓ fissato' : 'fissa passo'}</button>
   )
 
-  return (
-    <Card style={{ marginBottom: 8, borderColor: alpha(tinta, 0.35) }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+  // ⚠️ `parte` e `nudo` servono alla **card in evidenza** (`PassoHero`, bozza
+  // del 26/10/2026): lì le partite e i conti stanno in due tendine, e questa
+  // card ne disegna un pezzo per volta, senza cornice né intestazione. Il
+  // disegno resta **uno solo**: la tendina mostra questa card, non una copia.
+  const contenuto = (<>
+      {!nudo && <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
         <Etichetta colore={tinta}>
           ● PASSO {numero} · {nomeGiorno(gio)} {gg(gio)} {ora && `· ${ora}`}
         </Etichetta>
@@ -111,8 +127,9 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
             </span>
           )}
         </span>
-      </div>
+      </div>}
 
+      {parte !== 'conti' && <>
       {gambe.map((g, iG) => (
         <div key={g.id}>
         {/* ⚠️⚠️ **Il taglio sta FRA due gambe, non su una** (richiesta di
@@ -276,6 +293,7 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
           {' '}<span style={{ color: C.fioco }}>({nomeGiorno(giorno(prossima.data))} {gg(prossima.data)} {prossima.ora?.slice(0, 5)})</span>
         </button>
       )}
+      </>}
 
       {/* ⚠️⚠️ **In anteprima i soldi non si mostrano, e non è pudore.** Un
           passo staccato a mano si vede subito — è quello che hai appena fatto,
@@ -284,7 +302,7 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
           numero lì vorrebbe dire inventarlo, ed è esattamente il motivo per
           cui i passi successivi restano nascosti. Qui si vede **cosa** si
           gioca, non **quanto**. */}
-      {anteprima ? (<>
+      {parte !== 'gambe' && (anteprima ? (<>
         <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${alpha(C.testo, 0.1)}`,
           fontFamily: F.sans, fontSize: S.minuta, color: C.fioco, textAlign: 'center', lineHeight: 1.5 }}>
           {/* ⚠️ Dopo un passo perso la puntata non arriva dal passo prima:
@@ -345,7 +363,12 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
 
       {/* ⚠️ I tre tasti dell'esito spariscono per chi guarda e basta: sono
           l'unica cosa della card che **scrive nel registro**. */}
-      {tocca && <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+      {tocca && parte === 'tutto' && NUOVO_PASSO && (
+        <div style={{ marginTop: SP.m }}>
+          <TastiEsito esito={esito} setEsito={setEsito} fissato={fissato} onFissa={tocca ? onFissa : null} />
+        </div>
+      )}
+      {tocca && parte === 'tutto' && !NUOVO_PASSO && <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
         {/* ⚠️⚠️ **Nessun blocco, nemmeno a scalata aperta** (Mattia, 18/10:
             *"tutto troppo vincolante"*). Si può annullare un esito, cambiare
             una quota, togliere o aggiungere una gamba in qualunque momento:
@@ -365,9 +388,190 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
             sull'esito. */}
         {tastoFissa}
       </div>}
-      </>}
+      </>)}
+  </>)
+  return nudo ? <div>{contenuto}</div>
+    : <Card style={{ marginBottom: 8, borderColor: alpha(tinta, 0.35) }}>{contenuto}</Card>
+}
+
+/**
+ * I tasti dell'esito, **piccoli** (Mattia, 26/10/2026: *"occupano troppo
+ * spazio, facciamoli icone o più piccoli"*): quattro quadratini allineati a
+ * destra invece di una fila a tutta larghezza. Il significato sta nel segno e
+ * nel colore, la parola nel `title`.
+ * ⚠️ 34×30 e non meno: è il bersaglio di un dito, non di un mouse.
+ */
+function TastiEsito({ esito, setEsito, fissato = false, onFissa = null }) {
+  const tasto = (attivo, col, onClick, segno, titolo) => (
+    <button key={titolo} onClick={onClick} title={titolo} aria-label={titolo} style={{
+      width: 34, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontFamily: F.sans, fontSize: S.grande, cursor: 'pointer', borderRadius: R.m,
+      color: attivo ? col : C.spento,
+      background: attivo ? `linear-gradient(${alpha(col, 0.16)},${alpha(col, 0.16)}), ${C.card}` : C.card,
+      border: `1px solid ${alpha(col, attivo ? 0.55 : 0.2)}`,
+    }}>{segno}</button>
+  )
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: SP.s, justifyContent: 'flex-end' }}>
+      <span style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco, marginRight: 'auto' }}>
+        {esito === 'vinto' ? 'vinto' : esito === 'perso' ? 'perso' : fissato ? 'fissato' : 'da giocare'}
+      </span>
+      {tasto(esito === 'vinto', C.verde, () => setEsito('vinto'), '✓', 'vinto')}
+      {tasto(esito === 'perso', C.rosso, () => setEsito('perso'), '✗', 'perso')}
+      {tasto(!esito, C.spento, () => setEsito(null), '·', 'da giocare')}
+      {onFissa && !esito && tasto(fissato, C.viola, onFissa, <Icona nome="lucchetto" misura={14} />, fissato ? 'togli il fissato' : 'fissa il passo')}
+    </div>
+  )
+}
+
+
+/** Una tendina: un titolo con un riassunto, che si apre toccandolo. */
+function Tendina({ titolo, riassunto, children, colore = C.spento }) {
+  const [aperta, setAperta] = useState(false)
+  return (
+    <div style={{ borderTop: `1px solid ${alpha(C.testo, 0.08)}` }}>
+      <button onClick={() => setAperta(a => !a)} style={{
+        display: 'flex', alignItems: 'baseline', gap: SP.m, width: '100%', padding: `${SP.l}px 0`,
+        background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', color: C.testo,
+      }}>
+        <span style={{ fontFamily: F.mono, fontSize: S.base, color: colore, flexShrink: 0 }}>{aperta ? '▾' : '▸'}</span>
+        <span style={{ fontFamily: F.sans, fontSize: S.corpo, fontWeight: 600, color: C.testo, flexShrink: 0 }}>{titolo}</span>
+        {/* ⚠️ Il riassunto si **taglia** e non va a capo: è una riga sola per
+            costruzione, e una larghezza elastica senza `minWidth: 0` uscirebbe. */}
+        {!aperta && riassunto && (
+          <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            fontFamily: F.sans, fontSize: S.minuta, color: C.spento }}>{riassunto}</span>
+        )}
+      </button>
+      {aperta && <div style={{ paddingBottom: SP.m }}>{children}</div>}
+    </div>
+  )
+}
+
+/**
+ * La card in evidenza: il passo da giocare adesso. Riceve **le stesse
+ * proprietà di `Passo`**, così la pagina sceglie quale disegnare senza
+ * calcolare niente due volte.
+ */
+function PassoHero(props) {
+  const { numero, gambe, giorno: gio, ora, posta, postaIniziale, accumulato, quote, perc, esito, setEsito,
+    tocca = true, onFissa, fissato } = props
+  const quota = gambe.map(g => Number(quote[g.id] ?? g.quota) || 1).reduce((a, q) => a * q, 1)
+  const montante = posta * quota
+  const consiglio = percentualeConsigliata({ numero, montante, puntata: posta, posta: postaIniziale, accumulato })
+  const r = applicaIncasso(montante, perc ?? consiglio, posta)
+  const sotto = quota < QUOTA_MINIMA_SCHEDINA
+  const virgola = (x) => x.toFixed(2).replace('.', ',')
+  return (
+    <Card style={{ marginBottom: SP.ml, borderColor: alpha(C.oro, 0.5),
+      background: `linear-gradient(${alpha(C.oro, 0.05)},${alpha(C.oro, 0.05)}), ${C.card}` }}>
+      <Etichetta colore={C.oro}>
+        PASSO {numero} · {nomeGiorno(gio)} {gg(gio)}{ora ? ` · ${ora}` : ''}
+      </Etichetta>
+
+      {/* ⚠️⚠️ **I due numeri che servono al banco**, e nient'altro alla stessa
+          altezza: quanto punto e a che quota. La puntata in oro e grande — è
+          il punto focale — la quota accanto, con il minimo sotto. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', alignItems: 'end', gap: SP.m, marginTop: SP.m }}>
+        <div>
+          <div style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.spento }}>punta</div>
+          <div style={{ fontFamily: F.mono, fontSize: S.cifra, fontWeight: 700, color: C.oro, lineHeight: 1.1 }}>{eur(posta)}</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.spento }}>quota</div>
+          <div style={{ fontFamily: F.mono, fontSize: S.evidenza, fontWeight: 700, color: sotto ? C.ambra : C.oro, lineHeight: 1.1 }}>
+            {virgola(quota)}
+          </div>
+          <div style={{ fontFamily: F.sans, fontSize: S.micro, color: sotto ? C.ambra : C.fioco }}>
+            {sotto ? `manca ${virgola(QUOTA_MINIMA_SCHEDINA - quota)} al minimo` : `minimo ${virgola(QUOTA_MINIMA_SCHEDINA)}`}
+          </div>
+        </div>
+      </div>
+
+      {/* ⚠️ **Il guadagno possibile in verde, su una riga**: cosa succede se
+          vince, già diviso come lo divide il metodo. Il dettaglio — utile e
+          percentuale da cambiare a mano — sta nella tendina «Conti». */}
+      {/* ⚠️ **Senza fondo verde** (Mattia, 26/10/2026: *"ingannevole"*): un
+          riquadro verde si legge come «vinto», mentre qui è un *se*. Resta solo
+          un divisore sopra, e il verde sui numeri. */}
+      <div style={{ marginTop: SP.l, paddingTop: SP.m, borderTop: `1px solid ${alpha(C.testo, 0.1)}`,
+        fontFamily: F.sans, fontSize: S.base, color: C.spento, lineHeight: 1.5 }}>
+        se vince incassi <b style={{ color: C.verde, fontFamily: F.mono }}>{eur(montante)}</b>
+        {' · '}metti via <b style={{ color: C.verde, fontFamily: F.mono }}>{eur(r.via)}</b>
+        {' · '}rigiochi <b style={{ color: C.oro, fontFamily: F.mono }}>{eur(r.rigioca)}</b>
+      </div>
+
+      {tocca && (
+        <div style={{ marginTop: SP.l }}>
+          <TastiEsito esito={esito} setEsito={setEsito} fissato={fissato} onFissa={onFissa} />
+        </div>
+      )}
+
+      <div style={{ marginTop: SP.m }}>
+        <Tendina titolo={`Partite (${gambe.length})`} colore={C.oro}
+          riassunto={gambe.map(g => `${g.casa} ${g.giocata}`).join(' · ')}>
+          <Passo {...props} parte="gambe" nudo />
+        </Tendina>
+        <Tendina titolo="Conti" colore={C.verde}
+          riassunto={`utile ${eur(r.utile)} · metti via ${(perc ?? consiglio) === consiglio ? 'il consigliato' : `${perc}%`}`}>
+          <Passo {...props} parte="conti" nudo />
+        </Tendina>
+      </div>
     </Card>
   )
+}
+
+/**
+ * Gli altri passi — quelli già giocati e quelli in anteprima — in **una
+ * riga**: numero, giorno, quota, esito. Toccandola si apre la card di prima.
+ * ⚠️ La riga di un passo giocato porta il colore dell'esito, come la card.
+ */
+function PassoRiga(props) {
+  const { numero, gambe, giorno: gio, ora, quote, esito, anteprima, fissato } = props
+  const [aperta, setAperta] = useState(false)
+  const quota = gambe.map(g => Number(quote[g.id] ?? g.quota) || 1).reduce((a, q) => a * q, 1)
+  const tinta = esito === 'vinto' ? C.verde : esito === 'perso' ? C.rosso : C.spento
+  // ⚠️⚠️ **Una card sola, chiusa o aperta** (Mattia, 26/10/2026: *"la card
+  // che si apre ha i bordi tondi, la testata quadrati, ed è staccata: sembrano
+  // due card diverse"*). La barra è l'intestazione della card, e aperta il
+  // contenuto le scende sotto, dopo un divisore, **dentro la stessa cornice**.
+  // Si chiude toccando la barra: il bersaglio è grande quanto quello per aprire.
+  return (
+    <Card style={{ marginBottom: SP.s, padding: `${SP.m}px ${SP.l}px`,
+      borderColor: alpha(tinta, esito ? 0.35 : aperta ? 0.2 : 0.1) }}>
+      <button onClick={() => setAperta(a => !a)} style={{
+        display: 'flex', alignItems: 'baseline', gap: SP.m, width: '100%', padding: 0,
+        background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left',
+      }}>
+        <span style={{ fontFamily: F.mono, fontSize: S.base, color: C.spento, flexShrink: 0 }}>{aperta ? '▾' : '▸'}</span>
+        <span style={{ fontFamily: F.sans, fontSize: S.corpo, fontWeight: 600, color: esito ? tinta : C.testo, flexShrink: 0 }}>
+          {esito === 'vinto' ? '✓ ' : esito === 'perso' ? '✗ ' : ''}PASSO {numero}
+        </span>
+        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          fontFamily: F.sans, fontSize: S.minuta, color: C.spento }}>
+          {nomeGiorno(gio)} {gg(gio)}{ora ? ` ${ora}` : ''} · {gambe.length} partite
+          {anteprima && !esito ? ' · in anteprima' : ''}{fissato ? ' · fissato' : ''}
+        </span>
+        <span style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700, color: esito ? tinta : C.oro, flexShrink: 0 }}>
+          {quota.toFixed(2).replace('.', ',')}
+        </span>
+      </button>
+      {aperta && (
+        <div style={{ marginTop: SP.m, borderTop: `1px solid ${alpha(C.testo, 0.08)}` }}>
+          <Passo {...props} nudo />
+        </div>
+      )}
+    </Card>
+  )
+}
+
+/**
+ * Quale card disegnare. Con la bozza accesa il passo **da giocare** è in
+ * evidenza e gli altri sono righe; spenta, tutti tornano la card di prima.
+ */
+function QualePasso({ attivo, ...props }) {
+  if (!NUOVO_PASSO) return <Passo {...props} />
+  return attivo ? <PassoHero {...props} /> : <PassoRiga {...props} />
 }
 
 /**
@@ -1373,7 +1577,7 @@ export default function ScalataPage() {
                numero della colonna il consiglio scritto nella card e quello
                applicato alle casse erano due numeri diversi (al primo passo
                della catena: tutto l'utile contro il 70%). */
-            <Passo key={riga.id} numero={i + 1} gambe={gambe} giorno={riga.giorno} ora={gambe[0]?.ora?.slice(0, 5)} stelleDi={votiDi} anteprima={inAnteprima}
+            <QualePasso key={riga.id} attivo={i === frontiera && !inAnteprima} numero={i + 1} gambe={gambe} giorno={riga.giorno} ora={gambe[0]?.ora?.slice(0, 5)} stelleDi={votiDi} anteprima={inAnteprima}
               fermo={fermo} fissato={eFissato(i)} onFissa={() => fissa(i)}
               posta={p} postaIniziale={posta} accumulato={acc} colore={coloreDi(i)} classifiche={classifiche}
               quote={quote} setQuote={setQuote} onApri={setApertaId}
@@ -1452,7 +1656,7 @@ export default function ScalataPage() {
                dalla stessa fascia hanno lo stesso giorno e la stessa ora,
                quindi `giorno + ora` ne faceva due chiavi uguali — e React con
                due chiavi uguali ridisegna la cosa sbagliata, in silenzio. */
-            <Passo key={f.partite[0]?.id ?? f.giorno + f.ora} numero={i + 1} gambe={f.partite} giorno={f.giorno} ora={f.ora} stelleDi={votiDi} anteprima={inAnteprima}
+            <QualePasso key={f.partite[0]?.id ?? f.giorno + f.ora} attivo={i === frontiera && !inAnteprima} numero={i + 1} gambe={f.partite} giorno={f.giorno} ora={f.ora} stelleDi={votiDi} anteprima={inAnteprima}
               /* ⚠️ Solo nel piano: a scalata aperta i passi si scoprono con
                  l'esito, che lì è un fatto registrato e non una simulazione. */
               fermo={fermo} fissato={eFissato(i)}

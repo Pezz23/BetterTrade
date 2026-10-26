@@ -8,7 +8,7 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 26 ottobre 2026 · app alla versione **1.60.00** ·
+**Ultimo aggiornamento:** 26 ottobre 2026 · app alla versione **1.61.00** ·
 passaggio di consegne: 24/10 (prima della 1.59.01)
 
 ## ▶️ DOVE SIAMO — 24 ottobre 2026, leggi questo per primo
@@ -30,7 +30,8 @@ Il 24/10, in ordine:
 | il **passaggio di consegne** diventa una procedura (CLAUDE.md) | — | `3aeace7` |
 | **Road to weekend, un conto personale per account** (`sql/41`): ricariche, conto calcolato, ⟳ RIPARTI, «fissato» salvato, ognuno la sua, flag a tutti | `1.59.00` | `39d7021` |
 | **Il piano non si perde più col passare delle partite**: calendario fermo fino a «⟳ Aggiorna calendario», esiti agganciati al passo, conferma sul tasto rosso, registro delle cancellazioni (`sql/42`), il ciclo di scritture del Bet Builder | `1.59.01` | `2232d38` |
-| **«Metà utile»** al posto della Scalata madre (26/10): puntata al 1° passo poi 50% dell'utile, schedina ≥ 1,90, consigliato solo attendibilità 61; `prova-prelievi.js` e `--solo-att` in `prova-soglie-scalata.js` (`sql/43`) | `1.60.00` | il commit dopo `2232d38` |
+| **«Metà utile»** al posto della Scalata madre (26/10): puntata al 1° passo poi 50% dell'utile, schedina ≥ 1,90, consigliato solo attendibilità 61; `prova-prelievi.js` e `--solo-att` in `prova-soglie-scalata.js` (`sql/43`) | `1.60.00` | `6eec5dd` |
+| **La card in evidenza del passo da giocare** (26/10): puntata e quota in grande, partite e conti in tendine, gli altri passi in righe che si aprono nella stessa card, tasti dell'esito piccoli. Reversibile con `NUOVO_PASSO` | `1.61.00` | il commit dopo `6eec5dd` |
 
 **Road to weekend in tre righe** (il dettaglio in `note/scalata.md`):
 - ogni account — admin e user — ha **il suo conto e la sua scalata**, e

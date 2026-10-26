@@ -752,3 +752,24 @@ La variante di Mattia: puntata al 1° passo, 30% al 2°, 50% dal 3° al 6°, poi
   giorno, resa 99,5% ±2,4, 85% dei weekend con almeno un passo;
 - le scalate vecchie restano `madre` nell'archivio, e i pavimenti restano
   scritti in `lib/scalata.js` come storia.
+
+### 🎯 La card in evidenza del passo da giocare (26/10/2026)
+
+Mattia: *"la parte filtri è accettabile, la parte passi troppo confusionaria"*.
+La card di prima metteva sullo stesso piano una ventina di cose (`1.61.00`):
+- **il passo da giocare** è `PassoHero`: bordo e fondo dorati, **«punta» in
+  grande in oro** e la **quota** accanto col minimo (ambra e «manca x» se non
+  ci arriva), una riga «se vince incassi · metti via · rigiochi» con i numeri
+  in verde e oro. ⚠️ **Senza riquadro verde**: Mattia l'ha trovato
+  *"ingannevole"* — un fondo verde si legge come «vinto», qui è un *se*;
+- **partite e conti in due tendine** chiuse, con un riassunto di una riga.
+  Dentro c'è **la card di prima** (`Passo` con `parte` e `nudo`), non una
+  copia: il disegno delle gambe e dei conti resta uno solo;
+- **gli altri passi sono righe** (`PassoRiga`), che si aprono **nella stessa
+  card**: ⚠️ la prima versione apriva una card sotto una testata quadrata, e
+  *"sembrano 2 card diverse"*;
+- **i tasti dell'esito sono quadratini** (`TastiEsito`) ✓ · ✗ · · · 🔒 a
+  destra, 34×30 px: a tutta larghezza *"occupavano troppo spazio"*.
+⚠️ **Si torna indietro con `NUOVO_PASSO = false`** in `ScalataPage.jsx`.
+⚠️ Resta grande il «fissa passo» dei passi **in anteprima**, che non hanno
+esiti; e la card in evidenza non porta il colore della fascia.
