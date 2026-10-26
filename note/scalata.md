@@ -706,3 +706,49 @@ svuota il passo dopo) e **non si è potuto sapere quale**. Per questo
 cancellato — chi, quando, numero, esito, fissato, le partite, e lo stato
 della scalata (`null` = cancellata insieme, cioè una cascata). **La prossima
 volta che sparisce qualcosa, si guarda lì prima di indovinare.**
+
+### ✂️ «Metà utile» al posto della Scalata madre (26/10/2026)
+
+Mattia ha giocato una serie di **7 passi vinti** a quote 3,12 · 3,14 · 2,74 ·
+1,98 · 2,59 · 3,00 · 2,34 prelevando a sentimento, e ha portato a casa ~150 €
+su 100 di bankroll. Tutto in gioco avrebbe fatto 9.664 € — ma una serie così
+capita **una volta ogni ~1.400** (probabilità di ogni passo ≈ 0,95 / quota),
+e un piano si giudica su tutte le serie possibili, non su quella capitata.
+Il conto di quella sera, sette regole sulla stessa serie, sta nella
+conversazione del 26/10; la conclusione è qui sotto.
+
+**Il backtest** (`btscout/scripts/prova-prelievi.js`, 6 stagioni europee,
+attendibilità ≥ 61%, gamba ≥ 1,30, schedina ≥ 1,90, partendo da 100 € e
+ricaricando 100 € quando la puntata scende sotto 1 €):
+
+| passo | regola | risultato | mediana/stagione | stagioni in utile |
+|---|---|---|---|---|
+| fino a 4 insieme (q. media 3,24, vince 33%) | metà utile | −382 € | −81 € | 0/6 |
+| fino a 4 insieme | variante di Mattia | −416 € | −84 € | 0/6 |
+| **taglio a 1,90** (q. media 2,29, vince 45%) | **metà utile** (codice dell'app) | **−174 €** | **−63 €** | **1/6** |
+| taglio a 1,90 | variante di Mattia | −256 € | −69 € | 0/6 |
+
+La variante di Mattia: puntata al 1° passo, 30% al 2°, 50% dal 3° al 6°, poi
+60 · 70 · 80 · 90 e 100% con STOP all'11°.
+
+⚠️⚠️ **Quello che dice davvero:**
+- **la leva è la quota del passo, non il prelievo**: a 4 partite insieme la
+  perdita raddoppia. Su 277 scalate a quota ~2, 24 arrivano a 3 passi vinti,
+  4 a 5, **nessuna a 7** — per questo i gradini alti della variante non
+  contano: tengono in gioco più soldi in passi che non arrivano;
+- **nessuna regola ribalta il segno**: il passo da solo rende 100,5% ±10. Il
+  prelievo decide come si perde e quanto spesso si torna in utile;
+- *"partiamo con questo schema, più avanti capiamo come migliorarlo"* —
+  Mattia, 26/10.
+
+**Cosa è cambiato nell'app** (`1.60.00`, `sql/43`):
+- `METODO` è **«Metà utile»** (`regola = 'meta'`): al primo passo vinto si
+  riprende la puntata, poi il 50% dell'utile. ⚠️ Sotto quota 2,00 l'utile è
+  meno della puntata: al primo passo si mette via tutto l'utile e si rigioca
+  la puntata (`percentualeConsigliata`, che usa anche il backtest);
+- `QUOTA_MINIMA_SCHEDINA` **1,90** (era 2,00: serviva ai pavimenti);
+- il consigliato è **attendibilità ≥ 61%, scelta spenta**: rimisurato con
+  `prova-soglie-scalata.js --dettaglio=61 --solo-att` — 2.883 partite, 2,4 al
+  giorno, resa 99,5% ±2,4, 85% dei weekend con almeno un passo;
+- le scalate vecchie restano `madre` nell'archivio, e i pavimenti restano
+  scritti in `lib/scalata.js` come storia.

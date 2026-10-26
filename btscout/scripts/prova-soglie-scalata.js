@@ -28,6 +28,11 @@ const QUOTA = Number(arg('quota', QUOTA_MINIMA_GAMBA));
 const SOGLIE = String(arg('soglie', '50,54,58,61,62,65,68,70,72')).split(',').map(Number);
 // la soglia di cui si vuole il dettaglio stagione per stagione
 const DETTAGLIO = Number(arg('dettaglio', 61));
+// ⚠️ `--solo-att` (26/10/2026): dal metodo «Metà utile» il consigliato della
+// pagina è **solo l'attendibilità** (Mattia), senza la scelta. Senza
+// l'opzione resta il filtro di prima, attendibilità **e** scelta.
+const SOLO_ATT = process.argv.includes('--solo-att');
+const passa = (v, soglia) => v.att >= soglia && (SOLO_ATT || (v.scelta != null && v.scelta >= soglia));
 
 const { valutate, stagioni } = await ricostruisci({ stagioni: STAGIONI, daGiornata: 5 });
 
@@ -55,7 +60,7 @@ for (const s of SOGLIE) {
   // il filtro della card SELEZIONE: attendibilità **e** scelta sopra la soglia.
   // ⚠️ `scelta` è null quando il campo contraddice il mercato, e quelle restano
   // fuori da sole — è il motivo per cui la soglia sulla scelta non è un doppione.
-  const dentro = base.filter(v => v.att >= soglia && v.scelta != null && v.scelta >= soglia);
+  const dentro = base.filter(v => passa(v, soglia));
   if (!dentro.length) { console.log(`   ${String(s).padStart(5)}% nessuna partita`); continue }
   const vinte = dentro.filter(v => v.vinta).length;
   const ritorno = dentro.reduce((a, v) => a + (v.vinta ? Number(v.quota) : 0), 0);
@@ -89,7 +94,7 @@ console.log(`── e per WEEKEND (${weekendTotali} in otto stagioni) ──`);
 console.log(`   ${'soglia'.padStart(6)} ${'con 1 passo'.padStart(12)} ${'con 2 passi'.padStart(12)} ${'con 4 passi'.padStart(12)}`);
 for (const s of SOGLIE) {
   const soglia = s / 100;
-  const dentro = base.filter(v => v.att >= soglia && v.scelta != null && v.scelta >= soglia);
+  const dentro = base.filter(v => passa(v, soglia));
   const perWk = new Map();
   for (const v of dentro) {
     const wk = weekendDi(v.data), g = giornoLocale(v.data);
@@ -126,7 +131,7 @@ for (const s of SOGLIE) {
   for (const st of stagioni) {
     const della = base.filter(v => v.stagione === st);
     const giorniSt = new Set(della.map(v => giornoLocale(v.data))).size;
-    const dentro = della.filter(v => v.att >= soglia && v.scelta != null && v.scelta >= soglia);
+    const dentro = della.filter(v => passa(v, soglia));
     if (!dentro.length) { console.log(`   ${String(st).padStart(6)} nessuna partita`); continue }
     const n = dentro.length;
     const vinte = dentro.filter(v => v.vinta).length, p = vinte / n;

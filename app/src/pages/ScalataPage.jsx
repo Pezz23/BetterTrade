@@ -541,7 +541,7 @@ export default function ScalataPage() {
   // 22/10/2026), non una costante: sceglie **quali partite** entrano nella
   // scaletta, esattamente come attendibilità, scelta e VPM. Da non confondere
   // con `QUOTA_MINIMA_SCHEDINA`, che invece non si tocca — quella decide
-  // quando una schedina è chiusa, e il metodo la fissa a 2,00.
+  // quando una schedina è chiusa, e il metodo la fissa a 1,90 (2,00 fino al 26/10).
   // ⚠️ Parte da **1,30 perché è misurato**: dentro `att ≥ 67%`, sotto 1,20 la
   // resa è 88,5%, fra 1,20 e 1,30 il 95,1%, fra 1,30 e 1,45 il 99,0%. Si può
   // abbassare, e la misura dice cosa si compra.
@@ -1176,11 +1176,11 @@ export default function ScalataPage() {
                 p = inc.rigioca
                 if (p < 1) break
               }
-              // ⚠️ `regola: 'madre'` è il metodo di oggi, e si scrive nel
+              // ⚠️ `regola: METODO.id` ('meta' dal 26/10/2026) è il metodo di oggi, e si scrive nel
               // registro perché l'archivio deve poter dire **come si giocava**
               // quando quella scalata è stata aperta: le righe vecchie hanno
               // 'capitale' o 'gioco' e restano così.
-              const r = await reg.apri({ bankroll: bankrollIniziale, posta, quotaMinima: QUOTA_MINIMA_SCHEDINA, regola: 'madre', piano })
+              const r = await reg.apri({ bankroll: bankrollIniziale, posta, quotaMinima: QUOTA_MINIMA_SCHEDINA, regola: METODO.id, piano })
               // ⚠️ L'errore va **a schermo**: un tasto che non fa niente e non
               // dice perché è il modo di non capire mai cosa è andato storto.
               if (r.errore) setErroreApri(r.errore)
@@ -1221,7 +1221,7 @@ export default function ScalataPage() {
             }}>
             <div style={{ fontSize: S.micro, color: C.verde, letterSpacing: '0.08em' }}>✓ CONSIGLIATO</div>
             <div style={{ fontSize: S.corpo, fontWeight: 700, color: C.testo }}>
-              att {CONSIGLIATO.att}% · scelta {CONSIGLIATO.scelta}%
+              att {CONSIGLIATO.att}%{CONSIGLIATO.scelta ? ` · scelta ${CONSIGLIATO.scelta}%` : ''}
             </div>
             {/* ⚠️ **Il numero dei weekend sta qui e non è un di più**: a
                 soglie più strette la resa sale e il materiale sparisce — a 68%
@@ -1239,12 +1239,12 @@ export default function ScalataPage() {
           <Numero label="scelta ≥" valore={sceMin} passo={1} set={setSceMin} suffisso="%" />
           <Numero label="VPM ≥" valore={vpmMin ? vpmMin.toFixed(1).replace('.', ',') : 'tutti'} passo={0.5} set={setVpmMin} />
           {/* ⚠️ **"quota gamba", non "quota"**: a due centimetri da qui c'è la
-              quota della schedina (2,00, fissa), e due filtri chiamati "quota"
+              quota della schedina (1,90, fissa), e due filtri chiamati "quota"
               nella stessa card sono il modo di girare la manopola sbagliata. */}
           <Numero label="quota gamba ≥" valore={quotaGamba.toFixed(2).replace('.', ',')} passo={0.05} set={setQuotaGamba} />
         </div>
         {/* ⚠️⚠️ **Qui non ci sono più né la quota schedina né le due regole**
-            (Mattia, 21/10/2026). La quota minima è **2,00 e basta**: era una
+            (Mattia, 21/10/2026). La quota minima è **una e basta** (1,90 dal 26/10/2026): era una
             manopola quando si cercava dove stare, adesso il metodo l'ha fissata
             — e il posto dove dirlo è la card del passo che non ci arriva.
             Le due regole di incasso servivano a misurare quale conviene, e la

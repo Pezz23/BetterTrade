@@ -26,9 +26,17 @@ export const FRAZIONE_BANKROLL = 0.10
 export const QUOTA_MINIMA_GAMBA = 1.30
 
 /**
- * ⚠️⚠️ **La quota minima della SCHEDINA: 2,00 "a salire"** (decisione di
- * Mattia, 21/10/2026), e non è un numero tondo scelto per comodità — **è il
- * numero che fa stare in piedi il metodo**.
+ * ⚠️⚠️ **La quota minima della SCHEDINA: 1,90 dal 26/10/2026** (Mattia: *"ho
+ * raggiunto una quota di minimo 2 o poco sotto, almeno 1,9"*), insieme al
+ * metodo «Metà utile». È lo schema misurato con `prova-prelievi.js
+ * --passo=taglio`: si prendono le più attendibili finché il prodotto supera
+ * 1,90, e lì ci si ferma. Giocare fino a 4 partite insieme (quota media 3,24)
+ * nello stesso backtest perdeva **il doppio**.
+ * ⚠️ Il 2,00 di prima serviva ai **pavimenti** della Scalata madre, che sono
+ * usciti con lei; il ragionamento qui sotto è la sua storia.
+ *
+ * Prima (21/10/2026): *2,00 "a salire"*, e non era un numero tondo scelto per
+ * comodità — **era il numero che faceva stare in piedi quel metodo**.
  *
  * Il piano della Scalata madre chiede due cose insieme: *"stesso piano di
  * rientro in percentuale"* e *"in due giornate DEVO recuperare il capitale"*.
@@ -40,7 +48,7 @@ export const QUOTA_MINIMA_GAMBA = 1.30
  * toglie (*"il passo mi deve avvisare"*) — il minimo è uno, e il posto dove
  * dirlo è la card del passo che non ci arriva.
  */
-export const QUOTA_MINIMA_SCHEDINA = 2.00
+export const QUOTA_MINIMA_SCHEDINA = 1.90
 
 /**
  * ⚠️ **Quattro gambe al massimo** (scelta di Mattia), e il motivo è che
@@ -54,6 +62,10 @@ export const MAX_GAMBE = 4
 export const MAX_PASSI = 4
 
 /**
+ * ⚠️ **LA STORIA — il metodo dal 21 al 26/10/2026, la Scalata madre.** Non è
+ * più in uso (vedi «Metà utile» qui sotto): resta scritto perché spiega da
+ * dove vengono le scalate dell'archivio con `regola = 'madre'`.
+ *
  * ⚠️⚠️ **IL METODO, e adesso è UNO SOLO** (Mattia, 21/10/2026: *"togliamo
  * l'opzione prima il capitale e tutto in gioco, abbiamo definito il nostro
  * metodo"*). Le due regole servivano a **misurare** dove conviene stare, e la
@@ -85,11 +97,27 @@ export const MAX_PASSI = 4
  * traguardo, e lasciare un pavimento vuoto vorrebbe dire "non accantonare
  * niente" proprio dove la cassa è più grande.
  */
-export const PAVIMENTI = [0.7, 1.3, 2.8]
-
+/**
+ * ⚠️⚠️ **IL METODO DAL 26/10/2026: «Metà utile»** (Mattia: *"partiamo con
+ * questo schema, più avanti capiamo come migliorarlo"*). Al **primo passo
+ * vinto si riprende la puntata**, da lì in poi si mette via **metà
+ * dell'utile** a ogni passo, senza stop.
+ *
+ * Perché questo e non i pavimenti qui sopra: misurato con
+ * `btscout/scripts/prova-prelievi.js` su 6 stagioni, col passo tagliato a
+ * 1,90, contro la variante di Mattia (puntata, 30%, 50% per quattro passi, poi
+ * 60…100% e stop all'11°): **−189 € contro −256 €** partendo da 100 €,
+ * mediana per stagione **−64 € contro −69 €**. ⚠️⚠️ **Perdono tutte e due, in
+ * tutte le stagioni**: il prelievo decide *come* si perde e quanto spesso si
+ * torna a casa in utile, **non il segno** — quello lo decide il passo, che da
+ * solo rende il 100,5% ±10. La variante perdeva di più perché dal 7° passo
+ * teneva in gioco una quota crescente, e al 7° passo non ci arriva nessuno:
+ * su 277 scalate, 24 arrivano a 3 passi vinti, 4 a 5, nessuna a 7.
+ */
 export const METODO = {
-  nome: 'Scalata madre',
-  desc: 'pavimenti di accumulo 0,7× · 1,3× · 2,8× la posta — il capitale rientra al 2° passo',
+  id: 'meta',
+  nome: 'Metà utile',
+  desc: 'al 1° passo vinto riprendi la puntata, poi metà dell’utile a ogni passo',
 }
 
 /**
@@ -100,7 +128,9 @@ export const METODO = {
  * si chiamavano.
  */
 export const NOMI_REGOLA = {
-  madre: METODO.nome,
+  meta: METODO.nome,
+  // ⚠️ La Scalata madre (pavimenti 0,7× · 1,3× · 2,8×) dal 21 al 26/10/2026.
+  madre: 'Scalata madre',
   capitale: 'Prima il capitale',
   gioco: 'Tutto in gioco',
 }
@@ -163,30 +193,25 @@ export function fasce(partite) {
 }
 
 /**
- * La percentuale che l'app **consiglia** di mettere via, 0-100: quella che
- * porta l'accumulo **esattamente al pavimento** di questo passo.
+ * La percentuale **dell'utile** che l'app consiglia di mettere via, 0-100:
+ * la regola di «Metà utile» (`METODO`).
  *
  * ⚠️⚠️ **Resta un consiglio e non un comando** (richiesta di Mattia,
- * 15/10/2026): la pagina ha un campo in percentuale e decide lui. Il consiglio
- * nasce da una regola media, lui guarda *quella* partita — e un'app che impone
- * la frazione gli toglie l'unica cosa che la misura non sa fare.
- * ⚠️ **Si calcola da quanto MANCA**, non da una frazione fissa: se il passo
- * prima ha messo via più del dovuto (i centesimi dell'arrotondamento, o una
- * percentuale scelta a mano), qui si mette via **meno**. È quello che rende i
- * pavimenti un traguardo invece di una tassa.
- * ⚠️ `posta` è la posta **iniziale** della scalata, non la puntata di questo
- * passo: i pavimenti sono multipli del capitale messo in gioco all'inizio, ed
- * è l'unico numero che non cambia mentre la scalata sale.
+ * 15/10/2026): la pagina ha un campo in percentuale e decide lui.
+ * ⚠️ **Al primo passo «la puntata» si traduce in percentuale dell'utile**,
+ * perché `applicaIncasso` lavora sull'utile: a quota 2,50 l'utile è 1,5 volte
+ * la puntata e se ne mette via il 67%. ⚠️ **Sotto quota 2,00 l'utile è meno
+ * della puntata**, quindi non la si può riprendere tutta: si mette via tutto
+ * l'utile (100%) e si rigioca la puntata. Il backtest lo fa nello stesso modo,
+ * perché usa questa funzione.
+ * ⚠️ `posta` e `accumulato` non servono più (servivano ai pavimenti), ma le
+ * chiamate li passano ancora e non fanno danno.
  */
-export function percentualeConsigliata({ numero, montante, puntata, posta, accumulato = 0 }) {
+export function percentualeConsigliata({ numero, montante, puntata }) {
   const utile = Number(montante) - Number(puntata)
   if (!(utile > 0)) return 0
-  const fattore = PAVIMENTI[numero - 1]
-  // oltre l'ultimo pavimento: tutto l'utile.
-  if (fattore == null) return 100
-  const manca = fattore * (Number(posta) || 0) - (Number(accumulato) || 0)
-  if (manca <= 0) return 0
-  return Math.min(100, manca / utile * 100)
+  if (numero === 1) return Math.min(100, Number(puntata) / utile * 100)
+  return 50
 }
 
 /**
@@ -259,10 +284,20 @@ export function applicaIncasso(montante, percentuale, puntata, tutto = false) {
  * giocabili dipendono da quanti campionati e quante quote abbiamo, e *quello*
  * cambia negli anni. ⚠️ La 26/27 non si legge: 7 weekend e 54 partite.
  */
+/*
+ * ⚠️⚠️ **Dal 26/10/2026 il consigliato è SOLO l'attendibilità** (Mattia, con
+ * «Metà utile»): la scelta è spenta (0), come nel backtest dei prelievi.
+ * Rimisurato con `prova-soglie-scalata.js --dettaglio=61 --solo-att`: 2.883
+ * partite, 2,4 al giorno, resa **99,5% ±2,4**, l'85% dei weekend con almeno
+ * un passo a 1,90. ⚠️ Le «8 stagioni» di oggi sono **6 europee**: le altre
+ * due sono le stagioni ad anno solare del Giappone, senza quote. I numeri del
+ * 22/10 (3.915 partite) non si confrontano con questi: l'archivio da cui
+ * partono le otto stagioni non è più lo stesso.
+ */
 export const CONSIGLIATO = {
-  att: 61, scelta: 61,
-  resa: 99.5, partite: 3915, aGiornata: 2.4, weekend: 82,
-  perche: 'resa 99,5% su 3.915 partite · 2,4 al giorno',
+  att: 61, scelta: 0,
+  resa: 99.5, partite: 2883, aGiornata: 2.4, weekend: 85,
+  perche: 'resa 99,5% su 2.883 partite · 2,4 al giorno',
 }
 
 /** La posta di partenza di una scalata: il 10% del bankroll, per difetto. */
