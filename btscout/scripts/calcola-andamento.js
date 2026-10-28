@@ -9,7 +9,8 @@
 // cambierebbe.
 //
 // Due ambiti, come li ha chiesti Mattia (12/10/2026):
-//   giorno   → le prime **15** di ogni singolo giorno di gioco, per metodo
+//   giorno   → **tutte** le partite di ogni giorno di gioco, per metodo (fino al
+//              28/10/2026 erano le prime 15)
 //   weekend  → le prime **36** del weekend intero, **senza data**
 // ⚠️ "Azzeccata" = la giocata **per intero**: il segno, e per le combinate
 // anche l'over 1,5.
@@ -21,7 +22,14 @@ const arg = (n, d) => { const a = process.argv.find(x => x.startsWith(`--${n}=`)
 const STAGIONI = arg('stagioni', 1);
 const DA_GIORNATA = arg('giornata', 5);
 const ESEGUI = process.argv.includes('--esegui');
-const PRIME_GIORNO = 15, PRIME_WEEKEND = 36;
+// ⚠️⚠️ **Nel giorno TUTTE le partite, dal 28/10/2026** (Mattia: *"dimentica
+// l'idea delle prime 15 della giornata: voglio tutte le partite con quei
+// filtri, sia nel csv sia nella pagina; tieni le prime 36 del weekend"*).
+// Le soglie della pagina fanno già da filtro: le prime 15 erano un secondo
+// taglio, che su un sabato pieno teneva fuori partite sopra soglia — la card
+// diceva 529 e la lista vera ne aveva 532. `Infinity` e non un numero grande:
+// nessun tetto, e chi legge non deve chiedersi perché proprio quello.
+const PRIME_GIORNO = Infinity, PRIME_WEEKEND = 36;
 
 const METODI = [
   { id: 'att',  val: x => x.att },
@@ -89,10 +97,9 @@ for (const M of METODI) for (const amb of ['giorno', 'weekend']) {
 // numeri coincidono. Non è un difetto del calcolo, è che non c'è niente da
 // selezionare — ma senza dirlo si legge come "gli indicatori sono uguali".
 {
-  const perGiorno = raggruppa(valutate, x => x.data);
-  const corti = [...perGiorno.values()].filter(l => l.length <= PRIME_GIORNO).length;
-  if (corti) console.log(`\n⚠️  ${corti} giorni su ${perGiorno.size} hanno ${PRIME_GIORNO} partite o meno:` +
-    ` lì i quattro metodi scelgono per forza le stesse e i numeri coincidono.`);
+  // ⚠️ Solo il weekend: nel giorno non c'è più un tetto (28/10/2026), e
+  // senza tetto i quattro metodi non scelgono, contano — l'avviso non ha
+  // più niente da dire.
   const perWk = raggruppa(valutate, x => x.weekend);
   const wkCorti = [...perWk.values()].filter(l => l.length <= PRIME_WEEKEND).length;
   if (wkCorti) console.log(`⚠️  ${wkCorti} weekend su ${perWk.size} hanno ${PRIME_WEEKEND} partite o meno: idem.`);

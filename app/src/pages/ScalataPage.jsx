@@ -621,7 +621,116 @@ function Riparti({ quante, onAzzera }) {
   )
 }
 
-function Archivio({ storico, ricariche = [], conto, onAzzera, onAnnulla, tocca = true }) {
+/**
+ * Un giro chiuso dell'archivio: **una card che si apre** e mostra il
+ * resoconto delle giocate (Mattia, 26/10/2026: *"non deve dirmi solo gli
+ * importi"*). Chiusa dice i soldi, come prima; aperta, in testa **passi
+ * giocati · vinti · persi**, poi passo per passo le partite, ognuna col suo
+ * risultato e il suo esito vero (`resoconto` in `usaScalate`).
+ * ⚠️ Il resoconto si legge **alla prima apertura** e poi resta: riaprire non
+ * rifà i tre giri al database.
+ */
+function GiroArchivio({ s, onResoconto }) {
+  const [aperta, setAperta] = useState(false)
+  const [dati, setDati] = useState(null)
+  const [errore, setErrore] = useState(null)
+  useEffect(() => {
+    if (!aperta || dati || !onResoconto) return
+    let vivo = true
+    onResoconto(s.id).then(r => { if (!vivo) return; if (r.errore) setErrore(r.errore); else setDati(r) })
+    return () => { vivo = false }
+  }, [aperta, dati, onResoconto, s.id])
+  const d = Number(s.bankroll_finale) - Number(s.bankroll_iniziale)
+  const giocati = (dati?.passi || []).filter(p => p.esito !== 'aperto')
+  const vinti = giocati.filter(p => p.esito === 'vinto').length
+  const virgola = (x) => Number(x).toFixed(2).replace('.', ',')
+  return (
+    <Card style={{ marginBottom: SP.s, padding: `${SP.m}px ${SP.l}px`, borderColor: alpha(d >= 0 ? C.verde : C.rosso, aperta ? 0.25 : 0.1) }}>
+      <button onClick={() => setAperta(a => !a)} style={{ display: 'block', width: '100%', padding: 0,
+        background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+          <span style={{ fontFamily: F.sans, fontSize: S.base, color: C.testo }}>
+            <span style={{ fontFamily: F.mono, color: C.spento }}>{aperta ? '▾' : '▸'} </span>
+            {String(s.chiusa_il).slice(8, 10)}/{String(s.chiusa_il).slice(5, 7)}
+            <span style={{ color: C.spento }}> · {NOMI_REGOLA[s.regola] ?? s.regola}</span>
+          </span>
+          <span style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700, color: d >= 0 ? C.verde : C.rosso }}>
+            {d >= 0 ? '+' : ''}{eur(d)}
+          </span>
+        </div>
+        <div style={{ fontFamily: F.mono, fontSize: S.minuta, color: C.spento, marginTop: 3 }}>
+          {eur(s.bankroll_iniziale)} → {eur(s.bankroll_finale)} · puntata {eur(s.posta)} · quota min {virgola(s.quota_minima)}
+          {/* ⚠️ L'accumulo si scrive solo se c'è stato: le scalate chiuse prima
+              del 18/10/2026 ce l'hanno a zero perché nessuno lo congelava, e
+              *"accumulo € 0,00"* su una scalata in utile è una riga falsa. */}
+          {Number(s.accumulo) > 0 && <>{' · '}accumulo {eur(s.accumulo)}</>}
+        </div>
+      </button>
+
+      {aperta && (
+        <div style={{ marginTop: SP.m, paddingTop: SP.m, borderTop: `1px solid ${alpha(C.testo, 0.08)}` }}>
+          {errore && <div style={{ fontFamily: F.sans, fontSize: S.base, color: C.rosso }}>resoconto: {errore}</div>}
+          {!errore && !dati && <Attesa style={{ padding: 0 }} />}
+          {dati && <>
+            <div style={{ fontFamily: F.sans, fontSize: S.corpo, color: C.testo, marginBottom: SP.m }}>
+              <b>{giocati.length}</b> {giocati.length === 1 ? 'passo giocato' : 'passi giocati'}
+              {' · '}<b style={{ color: C.verde }}>{vinti} {vinti === 1 ? 'vinto' : 'vinti'}</b>
+              {' · '}<b style={{ color: C.rosso }}>{giocati.length - vinti} {giocati.length - vinti === 1 ? 'perso' : 'persi'}</b>
+              {dati.passi.length > giocati.length && (
+                <span style={{ color: C.fioco }}>{' · '}{dati.passi.length - giocati.length} non giocati</span>
+              )}
+            </div>
+            {!dati.passi.length && (
+              <div style={{ fontFamily: F.sans, fontSize: S.base, color: C.spento }}>
+                Nessun passo registrato in questo giro.
+              </div>
+            )}
+            {dati.passi.map((p, i) => {
+              const tinta = p.esito === 'vinto' ? C.verde : p.esito === 'perso' ? C.rosso : C.fioco
+              return (
+                <div key={p.id} style={{ marginBottom: SP.m, paddingLeft: SP.m, borderLeft: `2px solid ${alpha(tinta, 0.5)}` }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8,
+                    fontFamily: F.sans, fontSize: S.base }}>
+                    <span style={{ color: tinta, fontWeight: 600 }}>
+                      {p.esito === 'vinto' ? '✓' : p.esito === 'perso' ? '✗' : '·'} PASSO {i + 1}
+                      <span style={{ color: C.spento, fontWeight: 400 }}> · {nomeGiorno(p.giorno)} {gg(p.giorno)}</span>
+                    </span>
+                    <span style={{ fontFamily: F.mono, color: C.oro }}>{virgola(p.quota)}</span>
+                  </div>
+                  {/* I soldi del passo, solo se è stato giocato: un passo
+                      «non giocato» non ha incassato niente. */}
+                  {p.esito === 'vinto' && p.montante != null && (
+                    <div style={{ fontFamily: F.mono, fontSize: S.minuta, color: C.spento, marginTop: 2 }}>
+                      incassato <b style={{ color: C.verde }}>{eur(p.montante)}</b>
+                      {p.messo_via != null && <> · messo via <b style={{ color: C.verde }}>{eur(p.messo_via)}</b></>}
+                    </div>
+                  )}
+                  {p.gambe.map(g => {
+                    const col = g.arrivata === true ? C.verde : g.arrivata === false ? C.rosso : C.fioco
+                    return (
+                      <div key={g.id} style={{ display: 'grid', gridTemplateColumns: '14px minmax(0,1fr) auto auto', gap: SP.s,
+                        alignItems: 'baseline', marginTop: SP.xs, fontFamily: F.sans, fontSize: S.minuta }}>
+                        <span style={{ color: col, fontWeight: 700 }}>{g.arrivata === true ? '✓' : g.arrivata === false ? '✗' : '·'}</span>
+                        <span style={{ color: C.testo, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {g.casa} – {g.trasferta}
+                          <span style={{ color: C.spento }}> · {g.giocata} @{virgola(g.quota)}</span>
+                        </span>
+                        <span style={{ fontFamily: F.mono, color: col }}>{g.risultato ?? 'in attesa'}</span>
+                        <span style={{ fontFamily: F.mono, color: C.fioco }}>att {pct(g.att)}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })}
+          </>}
+        </div>
+      )}
+    </Card>
+  )
+}
+
+function Archivio({ storico, ricariche = [], conto, onAzzera, onAnnulla, onResoconto, tocca = true }) {
   const chiuse = (storico || []).filter(s => s.stato === 'chiusa')
   if (!storico) return <Card><Attesa style={{ padding: 0 }} /></Card>
   // ⚠️ Si annulla **solo l'ultima ricarica, e solo se dopo non si è aperta
@@ -686,30 +795,7 @@ function Archivio({ storico, ricariche = [], conto, onAzzera, onAnnulla, tocca =
             </div>
           </Card>
         )
-        const d = Number(s.bankroll_finale) - Number(s.bankroll_iniziale)
-        return (
-          <Card key={s.id} style={{ marginBottom: 6, padding: '9px 12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
-              <span style={{ fontFamily: F.sans, fontSize: S.base, color: C.testo }}>
-                {String(s.chiusa_il).slice(8, 10)}/{String(s.chiusa_il).slice(5, 7)}
-                <span style={{ color: C.spento }}> · {NOMI_REGOLA[s.regola] ?? s.regola}</span>
-              </span>
-              <span style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700, color: d >= 0 ? C.verde : C.rosso }}>
-                {d >= 0 ? '+' : ''}{eur(d)}
-              </span>
-            </div>
-            <div style={{ fontFamily: F.mono, fontSize: S.minuta, color: C.spento, marginTop: 3 }}>
-              {eur(s.bankroll_iniziale)} → {eur(s.bankroll_finale)} · puntata {eur(s.posta)} · quota min {Number(s.quota_minima).toFixed(2).replace('.', ',')}
-              {/* ⚠️ L'accumulo si scrive solo se c'è stato. Le scalate chiuse
-                  **prima** del 18/10/2026 ce l'hanno a zero perché le casse
-                  erano diventate derivate e nessuno le congelava alla chiusura:
-                  scrivere *"accumulo € 0,00"* su una scalata che ha portato 100
-                  a 131 è una riga falsa, e un archivio che mente su una cifra
-                  non si crede più sulle altre. */}
-              {Number(s.accumulo) > 0 && <>{' · '}accumulo {eur(s.accumulo)}</>}
-            </div>
-          </Card>
-        )
+        return <GiroArchivio key={s.id} s={s} onResoconto={onResoconto} />
       })}
       {tocca && <Riparti quante={storico.length} onAzzera={onAzzera} />}
     </div>
@@ -1228,7 +1314,7 @@ export default function ScalataPage() {
       {/* ⚠️ Azzerare il registro azzera anche lo stato della pagina: esiti e
           percentuali sono indicizzati per passo, e passi non ce ne sono più. */}
       {vista === 'archivio' && (
-        <Archivio storico={reg.storico} ricariche={reg.ricariche} conto={conto}
+        <Archivio storico={reg.storico} ricariche={reg.ricariche} conto={conto} onResoconto={reg.resoconto}
           onAnnulla={async (id) => { const x = await reg.annullaRicarica(id); setAvviso(x?.errore ?? null) }}
           onAzzera={async () => {
             await reg.azzeraTutto()

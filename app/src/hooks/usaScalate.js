@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../supabase'
+import { giocataArrivata } from '../lib/esito'
 
 // ROAD TO WEEKEND — il registro: apre, segna, chiude, rilegge.
 //
@@ -432,6 +433,52 @@ export function usaScalate(userId) {
   }, [ricarica])
 
   /**
+   * ⚠️⚠️ **Il resoconto di una scalata chiusa** (Mattia, 26/10/2026: *"quando
+   * chiudo la scalata non deve dirmi solo gli importi, voglio un resoconto
+   * delle giocate"*): passo per passo, ogni partita con il **suo** esito vero.
+   * ⚠️ Il registro sa solo se il PASSO è vinto: le gambe copiano l'esito del
+   * passo (`segna`). L'esito di ogni partita si ricava dal risultato in
+   * archivio — gamba → `prossime_partite.partita_id` → `partite` — con la
+   * regola di `lib/esito.js`, la stessa che usa il motore.
+   * ⚠️ Si legge **solo quando si apre** una scalata dell'archivio: sono tre
+   * giri al database, e il costo di questa pagina sono i giri.
+   * ⚠️ Una partita non ancora collegata al suo risultato (football-data in
+   * ritardo) torna `arrivata: null` — *in attesa*, non *persa*.
+   */
+  const resoconto = useCallback(async (scalataId) => {
+    const { data: p, error } = await supabase.from('scalata_passi')
+      .select('*, scalata_gambe(*)').eq('scalata_id', scalataId).order('numero')
+    if (error) return { errore: error.message }
+    const gambe = (p || []).flatMap(r => r.scalata_gambe || [])
+    const idProssime = [...new Set(gambe.map(g => g.prossima_id).filter(Boolean))]
+    let golDi = new Map()
+    if (idProssime.length) {
+      const { data: pr, error: e2 } = await supabase.from('prossime_partite').select('id, partita_id').in('id', idProssime)
+      if (e2) return { errore: e2.message }
+      const idPartite = [...new Set((pr || []).map(x => x.partita_id).filter(Boolean))]
+      if (idPartite.length) {
+        const { data: pa, error: e3 } = await supabase.from('partite').select('id, gol_casa, gol_trasferta').in('id', idPartite)
+        if (e3) return { errore: e3.message }
+        const perPartita = new Map((pa || []).map(x => [x.id, x]))
+        golDi = new Map((pr || []).map(x => [x.id, perPartita.get(x.partita_id)]).filter(([, v]) => v))
+      }
+    }
+    return {
+      passi: (p || []).map(r => ({
+        ...senzaGambe(r),
+        gambe: (r.scalata_gambe || []).sort((a, b) => a.id - b.id).map(g => {
+          const ris = golDi.get(g.prossima_id)
+          return {
+            ...g,
+            risultato: ris ? `${ris.gol_casa}-${ris.gol_trasferta}` : null,
+            arrivata: ris ? giocataArrivata(g.giocata, ris.gol_casa, ris.gol_trasferta) : null,
+          }
+        }),
+      })),
+    }
+  }, [])
+
+  /**
    * ⚠️⚠️ **Riparti da 0: cancella tutto il registro di questo utente**, come
    * se fosse il primo giorno (Mattia, 18/10). È l'unica operazione
    * irreversibile della pagina, e non ha una via di ritorno: non esiste un
@@ -467,7 +514,7 @@ export function usaScalate(userId) {
   }
 
   return {
-    ...stato, occupato, ricarica,
+    ...stato, occupato, ricarica, resoconto,
     riparti: attendendo(riparti),
     ricaricaConto: attendendo(ricaricaConto),
     annullaRicarica: attendendo(annullaRicarica),

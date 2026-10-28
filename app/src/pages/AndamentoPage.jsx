@@ -2,10 +2,12 @@ import { useState, useEffect, useMemo } from 'react'
 import { C, F, alpha, S, SP } from '../theme'
 import { Card, Etichetta, TastoRipeti, Attesa } from '../components/ui'
 import { gg } from '../lib/formato'
+import { testoCsv, scarica } from '../lib/csv'
+import { sigla } from '../lib/campionati'
 import {
   METODI, SOGLIE_BASE, FASCE_QUOTA, FASCIA_BASE, QUOTA_MIN, QUOTA_MAX, PASSO_QUOTA,
   conSoglie, scrivi, sopra, quota,
-  usaRiassunto, usaChiavi, usaStagioni, partiteDi, partiteVerdi,
+  usaRiassunto, usaChiavi, usaStagioni, partiteDi, partiteVerdi, fasciaValida, partiteDaEsportare,
 } from '../hooks/usaAndamento'
 
 // ANDAMENTO — quanto sono attendibili i nostri indicatori, sulle partite vere.
@@ -23,7 +25,9 @@ import {
 // anche dal riassunto.
 
 const AMBITI = [
-  { id: 'giorno',  label: 'Per giorno',  quante: 15 },
+  // ⚠️ Nel giorno **tutte** le partite dal 28/10/2026 (Mattia), nel weekend
+  // restano le prime 36.
+  { id: 'giorno',  label: 'Per giorno',  quante: null },
   { id: 'weekend', label: 'Per weekend', quante: 36 },
 ]
 
@@ -165,11 +169,11 @@ function Tendina({ etichetta, conteggio, aperta, onTocca, ambito, metodo, chiave
   useEffect(() => {
     if (!aperta) return
     let vivo = true
-    partiteDi(ambito, metodo, chiave, fascia)
+    partiteDi(ambito, metodo, chiave, fascia, soglie)
       .then(r => { if (vivo) setRighe(r) })
       .catch(e => { if (vivo) setRighe(String(e.message || e)) })
     return () => { vivo = false }
-  }, [aperta, ambito, metodo, chiave, fascia])
+  }, [aperta, ambito, metodo, chiave, fascia, soglie])
   const c = quota(conteggio)
   return (
     <div>
@@ -188,6 +192,64 @@ function Tendina({ etichetta, conteggio, aperta, onTocca, ambito, metodo, chiave
         </Card>
       )}
     </div>
+  )
+}
+
+/**
+ * ⤓ **Esporta**: le partite di una card in un CSV per Excel (Mattia,
+ * 28/10/2026) — **esattamente quelle che la card conta**, nella vista scelta
+ * (giorno: tutte; weekend: le prime 36), con data, quota, i quattro
+ * indicatori, il risultato e l'esito.
+ * ⚠️ Il nome del file porta i filtri: fra tre file scaricati la stessa sera
+ * si deve capire quale è quale senza aprirli.
+ */
+const COLONNE_CSV = [
+  { titolo: 'data', valore: r => { const d = String(r.data).slice(0, 10); return `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}` } },
+  { titolo: 'giorno', valore: r => ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'][new Date(`${String(r.data).slice(0, 10)}T12:00:00`).getDay()] },
+  { titolo: 'stagione', valore: r => r.stagione },
+  { titolo: 'campionato', valore: r => sigla(r.div) },
+  { titolo: 'casa', valore: r => r.casa },
+  { titolo: 'trasferta', valore: r => r.trasferta },
+  { titolo: 'giocata', valore: r => r.giocata },
+  { titolo: 'quota', valore: r => (r.quota == null ? null : Number(Number(r.quota).toFixed(2))) },
+  { titolo: 'attendibilita %', valore: r => (r.att == null ? null : Number((r.att * 100).toFixed(1))) },
+  { titolo: 'scelta %', valore: r => (r.scelta == null ? null : Number((r.scelta * 100).toFixed(1))) },
+  { titolo: 'VPM', valore: r => (r.vpm == null ? null : Number(Number(r.vpm).toFixed(2))) },
+  { titolo: 'voto', valore: r => (r.voto == null ? null : Number(Number(r.voto).toFixed(1))) },
+  { titolo: 'risultato', valore: r => (r.gol_casa == null ? '' : `${r.gol_casa}-${r.gol_trasferta}`) },
+  { titolo: 'arrivata', valore: r => (r.azzeccata == null ? '' : r.azzeccata ? 'si' : 'no') },
+]
+
+function Esporta({ metodo, ambito, soglie, stagione, fascia }) {
+  const [stato, setStato] = useState(null)   // null · 'leggo' · { n, filtri } · { errore }
+  const f = fasciaValida(fascia)
+  const filtri = `${stagione || 'tutte'} · ${ambito} · ${metodo.breve} ≥ ${scrivi(metodo.id, conSoglie(soglie)[metodo.id])}` +
+    ` · quota ${f.min.toFixed(2).replace('.', ',')}–${f.max.toFixed(2).replace('.', ',')}`
+  // ⚠️⚠️ **La scritta si azzera quando cambiano i filtri** (Mattia, 28/10/2026:
+  // *"mi dice 364 su 529, ma sotto dice esporta · ultimo 72 partite"*). Il 72
+  // era un file fatto **prima**, con i filtri di partenza: un numero rimasto
+  // accanto a una card che ne conta un altro sembra un errore del file.
+  useEffect(() => { setStato(null) }, [filtri])
+  async function clic() {
+    setStato('leggo')
+    const r = await partiteDaEsportare(metodo.id, ambito, soglie, stagione, fascia)
+    if (r.errore) return setStato({ errore: r.errore })
+    const nome = [`andamento-${metodo.id}-${ambito}`, scrivi(metodo.id, conSoglie(soglie)[metodo.id]).replace('%', ''),
+      `q${f.min.toFixed(2)}-${f.max.toFixed(2)}`.replace(/\./g, ','), stagione || 'tutte'].join('_') + '.csv'
+    scarica(nome, testoCsv(COLONNE_CSV, r.righe))
+    setStato({ n: r.righe.length, filtri })
+  }
+  return (
+    <button onClick={clic} disabled={stato === 'leggo'} style={{
+      padding: `${SP.s}px 10px`, cursor: stato === 'leggo' ? 'default' : 'pointer', textAlign: 'left',
+      background: 'transparent', border: 'none', borderTop: `1px solid ${alpha(C.testo, 0.08)}`,
+      fontFamily: F.sans, fontSize: S.minuta, color: stato?.errore ? C.rosso : C.oro,
+    }}>
+      {stato === 'leggo' ? 'preparo il file…'
+        : stato?.errore ? `⚠️ ${stato.errore}`
+        : stato?.n != null ? `✓ scaricate ${stato.n} partite · ${stato.filtri}`
+        : '⤓ esporta .csv'}
+    </button>
   )
 }
 
@@ -421,7 +483,7 @@ export default function AndamentoPage() {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
         {AMBITI.map(a => (
           <Tasto key={a.id} attivo={ambito === a.id} onClick={() => { setAmbito(a.id); setAperta(null) }}>
-            {a.label} · prime {a.quante}
+            {a.label} · {a.quante ? `prime ${a.quante}` : 'tutte'}
           </Tasto>
         ))}
       </div>
@@ -437,10 +499,17 @@ export default function AndamentoPage() {
           const basePerc = base && Number(base.giocate) ? Number(base.azzeccate) / Number(base.giocate) : null
           const scarto = c.perc == null || basePerc == null ? null : c.perc - basePerc
           return (
-            <button key={M.id} onClick={() => { setMetodo(M.id); setAperta(null) }} style={{
-              textAlign: 'left', cursor: 'pointer', padding: '9px 10px', color: C.testo,
+            /* ⚠️ Un **riquadro con due tasti**, non un tasto solo (28/10/2026):
+               un `<button>` non può contenerne un altro, e la card ha bisogno
+               di «esporta» oltre che di «scegli quest'indicatore». */
+            <div key={M.id} style={{
+              display: 'flex', flexDirection: 'column',
               background: scelto ? `linear-gradient(${alpha(C.celestePieno, 0.08)},${alpha(C.celestePieno, 0.08)}), ${C.card}` : C.card,
               border: `1px solid ${alpha(scelto ? C.celestePieno : C.testo, scelto ? 0.5 : 0.1)}`,
+            }}>
+            <button onClick={() => { setMetodo(M.id); setAperta(null) }} style={{
+              flex: 1, textAlign: 'left', cursor: 'pointer', padding: '9px 10px', color: C.testo,
+              background: 'transparent', border: 'none',
             }}>
               <div style={{ fontSize: S.minuta, fontFamily: F.sans, letterSpacing: '0.08em',
                 color: scelto ? C.celestePieno : C.spento, marginBottom: 2 }}>
@@ -453,7 +522,7 @@ export default function AndamentoPage() {
                   e una su 9.349 non si leggono allo stesso modo */}
               <div style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.spento, marginTop: 3, lineHeight: 1.35 }}>
                 {c.giocate
-                  ? <>{c.ok} azzeccate<br />su {c.giocate} scelte</>
+                  ? <>{c.ok} azzeccate<br />su {c.giocate} {ambito === 'giorno' ? 'partite' : 'scelte'}</>
                   : 'nessuna partita sopra soglia'}
               </div>
               {/* ⚠️ Lo **scarto dalla base**, che è la risposta vera a "quale
@@ -469,6 +538,8 @@ export default function AndamentoPage() {
                 sopra {scrivi(M.id, soglie[M.id])}
               </div>
             </button>
+            <Esporta metodo={M} ambito={ambito} soglie={soglie} stagione={stagione} fascia={fascia} />
+            </div>
           )
         })}
       </div>

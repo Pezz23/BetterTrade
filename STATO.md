@@ -8,7 +8,7 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 26 ottobre 2026 · app alla versione **1.61.00** ·
+**Ultimo aggiornamento:** 26 ottobre 2026 · app alla versione **1.63.00** ·
 passaggio di consegne: 24/10 (prima della 1.59.01)
 
 ## ▶️ DOVE SIAMO — 24 ottobre 2026, leggi questo per primo
@@ -31,7 +31,9 @@ Il 24/10, in ordine:
 | **Road to weekend, un conto personale per account** (`sql/41`): ricariche, conto calcolato, ⟳ RIPARTI, «fissato» salvato, ognuno la sua, flag a tutti | `1.59.00` | `39d7021` |
 | **Il piano non si perde più col passare delle partite**: calendario fermo fino a «⟳ Aggiorna calendario», esiti agganciati al passo, conferma sul tasto rosso, registro delle cancellazioni (`sql/42`), il ciclo di scritture del Bet Builder | `1.59.01` | `2232d38` |
 | **«Metà utile»** al posto della Scalata madre (26/10): puntata al 1° passo poi 50% dell'utile, schedina ≥ 1,90, consigliato solo attendibilità 61; `prova-prelievi.js` e `--solo-att` in `prova-soglie-scalata.js` (`sql/43`) | `1.60.00` | `6eec5dd` |
-| **La card in evidenza del passo da giocare** (26/10): puntata e quota in grande, partite e conti in tendine, gli altri passi in righe che si aprono nella stessa card, tasti dell'esito piccoli. Reversibile con `NUOVO_PASSO` | `1.61.00` | il commit dopo `6eec5dd` |
+| **La card in evidenza del passo da giocare** (26/10): puntata e quota in grande, partite e conti in tendine, gli altri passi in righe che si aprono nella stessa card, tasti dell'esito piccoli. Reversibile con `NUOVO_PASSO` | `1.61.00` | `291d931` |
+| **Il resoconto delle giocate nell'archivio** (26/10): ogni giro chiuso si apre con passi vinti/persi e l'esito vero di ogni partita; `giocataArrivata` spostata dal motore in `app/src/lib/esito.js` | `1.62.00` | il commit dopo `291d931` |
+| **Andamento: nel giorno TUTTE le partite e ⤓ esporta** (28/10): niente più prime 15 nel giorno (163.229 righe), ogni card scarica in CSV per Excel esattamente le partite che conta; e `ricostruisci.js` torna a scegliere **8** stagioni vere (il Giappone ne rubava due) | `1.63.00` | stesso commit |
 
 **Road to weekend in tre righe** (il dettaglio in `note/scalata.md`):
 - ogni account — admin e user — ha **il suo conto e la sua scalata**, e
@@ -69,11 +71,15 @@ del **23 ottobre** — una giornata lunga — su **dati** e **scheda partita**:
 cd app && npm run dev          # il server di sviluppo non resta acceso fra le sessioni
 ```
 
-**I dati del weekend sono già dentro** (caricati il 23/10 sera): risultati
-della stagione, calendario, `andamento` ricalcolata, `controlla-dati` pulito.
-Non serve rilanciare niente prima di lunedì.
+**Dati aggiornati il 26/10 sera** (turno infrasettimanale: Serie A 27-29/10,
+Serie B, Scozia): routine completa, poi i risultati del weekend da ESPN —
+football-data non li aveva ancora pubblicati. `controlla-dati`: resta **1
+partita del Belgio del 23/10** senza risultato e **6 importazioni** da
+decidere nella pagina Importazioni.
+⚠️ Il primo giro è caduto sul DNS (`ENOTFOUND` su football-data e The Odds
+API, trappola nota): due minuti di attesa e al secondo è passato.
 
-⚠️ **Crediti The Odds API: 157 su 500** rimasti questo mese. Un giro completo
+⚠️ **Crediti The Odds API: 106 su 500** rimasti questo mese (26/10). Un giro completo
 ne costa **51** — vedi il blocco «I CREDITI» più sotto prima di lanciarne uno.
 
 ⚠️ **Il contatore di versione si alza a mano** (`app/src/versione.js`), a ogni
@@ -187,9 +193,10 @@ state provate simulando uno user e un admin in una transazione annullata.
 | ~~**U2'**~~ | ✅ **raccolta accesa il 23/10** (`sql/40`, zero crediti: la chiamata era già quella). ⚠️ **Ma non si usa**: l'archivio viene da football-data, che la 3,5 non la pubblica, quindi non c'è un passato su cui misurare se migliori il consiglio come ha fatto il 2,5. `MERCATO_35 = false` finché le partite raccolte non bastano — la query per misurarlo sta in `note/gol.md`. ⚠️ Giro completo lanciato il 23/10 (51 crediti, autorizzati): **89 partite su 246 hanno la 3,5, il 36%** — più del 23% atteso. Champions 17, Eredivisie 15, Bundesliga 15 |
 | **il routing** | era *"da fare prima di aggiungere schermate nuove"*, e da allora ne sono arrivate tre: Bet Builder, le due card dei conteggi, la barra dei campionati. Più si aspetta, più si ricabla |
 | **Europa e Conference senza quote** | The Odds API non ha **nessuna** partita futura per loro (ricontrollato il 23/10): accenderle costerebbe crediti per zero righe. Le voci sono pronte e commentate in `lib/odds-api.js` |
-| **l'esito automatico del Bet Builder** | fattibile, ma prima la regola *"questa giocata è arrivata"* deve **spostarsi** da `btscout/lib/ricostruisci.js` a `app/src/lib/`, **non essere copiata**: due versioni direbbero prima o poi cose diverse sulla stessa schedina |
+| **l'esito automatico del Bet Builder** | ✅ **sbloccato il 26/10**: la regola *"questa giocata è arrivata"* è stata **spostata** in `app/src/lib/esito.js` (`giocataArrivata`) per il resoconto delle scalate, e il motore la importa da lì. Resta da usarla nel Builder |
 | **tre partite rinviate DOPPIE in `prossime_partite`** | trovate il 24/10: Paris SG-Lyon (25 e 26/10), Toulouse-Troyes (24 e 25), Montpellier-Red Star (24 e 26) — resta la riga con la data vecchia. Possono entrare due volte nella stessa spin e nel Builder. Da guardare in `riconcilia-prossime` / importazione, **prima** di cancellare qualcosa: `prossime_partite` non si cancella a mano (`note/dati.md`) |
 | **la scalata 41 senza passi** | aperta 15:28 e chiusa 15:31 del 24/10 con zero passi, senza «nuovo piano»: causa **non trovata**. Da `sql/42` ogni passo cancellato finisce in `scalata_cancellazioni` — **se ricapita, si guarda lì** |
+| **i numeri del 26/10 erano su 6 stagioni, non 8** | `ricostruisci.js` faceva entrare due stagioni giapponesi senza quote fra le «ultime 8» (corretto il 28/10). Sono da **rimisurare**, con l'ok di Mattia perché sono backtest: `prova-prelievi.js` (Metà utile −174 €, variante −256 €) e `prova-soglie-scalata.js --dettaglio=61 --solo-att` (il CONSIGLIATO: 2.883 partite, 99,5%). Zero crediti, pochi minuti |
 | **la 1.60.00 («Metà utile») non è ancora stata vista** | lint e build passano; il consiglio di prelievo del passo e il tasto «consigliato» vanno guardati da Mattia. ⚠️ **Il metodo perde nel backtest** (−174 € su 6 stagioni da 100 €): è stato scelto come quello che perde meno, non come uno che vince — *"più avanti capiamo come migliorarlo"* |
 | **la 1.59.01 non è ancora stata provata** | lint e build passano, la logica è verificata nel codice; il piano che resta fermo e «Aggiorna calendario» vanno visti da Mattia |
 | **il × in «TUTTE LE CONSIGLIATE» a scalata aperta** | barra la partita ma **non la toglie dal passo salvato** (per quello serve il × nella card del passo). Chiesto a Mattia il 24/10 se è il caso che ha visto: senza risposta |

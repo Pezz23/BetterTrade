@@ -18,6 +18,7 @@ import { parametri, forza, vpm, voto, scelta } from '../../app/src/lib/vpm.js';
 import { golAttesi } from '../../app/src/lib/gol.js';
 import { REGOLA_OVER, FATTORE_OVER } from '../../app/src/lib/attendibilita.js';
 import { PARTITE_FINESTRA } from '../../app/src/lib/vpm.js';
+import { giocataArrivata } from '../../app/src/lib/esito.js';
 
 /**
  * @param {object} opzioni
@@ -37,7 +38,18 @@ export async function ricostruisci({ stagioni: quante = 3, daGiornata = 5 } = {}
     order by data, div, casa, id`;
   if (!righe.length) throw new Error('nessuna partita letta: controlla la connessione');
 
-  const stagioni = [...new Set(righe.map(r => r.stagione))].sort().slice(-quante);
+  // ⚠️⚠️ **Le «ultime N» stagioni si scelgono fra quelle CON LE QUOTE, in
+  // ordine di TEMPO** (corretto il 28/10/2026). Prima era `.sort()` sui
+  // codici come testo: dal 23/10 in archivio ci sono le stagioni ad anno
+  // solare del Giappone, «2025» e «2026», che come testo stanno fra «2021» e
+  // «2122» — e due posti delle «ultime 8» andavano a loro, che non hanno
+  // quote e non producono una sola partita valutata. Risultato: **ogni
+  // backtest «su 8 stagioni» dal 23 al 28/10 ne ha misurate 6**, senza la
+  // 19/20 e la 20/21. Le righe arrivano in ordine di data, quindi la prima
+  // volta che si incontra una stagione è il suo inizio.
+  const conQuote = [];
+  for (const r of righe) if (r.avg_ap_1 && r.b365_1 && !conQuote.includes(r.stagione)) conQuote.push(r.stagione);
+  const stagioni = conQuote.slice(-quante);
   const storia = new Map(), totali = new Map(), giornate = new Map();
   const k = (s, d, sq) => `${s}|${d}|${sq}`;
   const somme = l => (l.length ? {
@@ -79,9 +91,12 @@ export async function ricostruisci({ stagioni: quante = 3, daGiornata = 5 } = {}
       const gol = golAttesi({ [r.casa]: fc, [r.trasferta]: ff }, r.casa, r.trasferta,
         med.gol / med.partite, undefined, undefined, med.tiri / med.partite);
 
-      // ⚠️ azzeccata = la giocata PER INTERO: il segno, e se è combinata anche l'over 1,5
+      // ⚠️ azzeccata = la giocata PER INTERO: il segno, e se è combinata anche
+      // l'over 1,5. ⚠️ La regola sta in `app/src/lib/esito.js` dal 26/10/2026
+      // (spostata, non copiata): la usa anche il resoconto delle scalate.
+      const giocata = `${segno === 'H' ? '1' : '2'}${combinata ? ' + over 1,5' : ''}`;
       const segnoGiusto = r.esito === segno;
-      const vinta = segnoGiusto && (!combinata || r.gol_casa + r.gol_trasferta >= 2);
+      const vinta = giocataArrivata(giocata, r.gol_casa, r.gol_trasferta) === true;
       // ⚠️ L'accordo si misura **sul segno**, non sul valore: la giocata può
       // essere "1 + over 1,5" e lì conta solo l'1. Si calcola una volta e lo
       // usano sia `scelta` sia `accordoVpm`, che altrimenti potrebbero
@@ -92,7 +107,7 @@ export async function ricostruisci({ stagioni: quante = 3, daGiornata = 5 } = {}
         id: r.id, data: giornoLocale(r.data), weekend: weekendDi(r.data),
         stagione: r.stagione, div: r.div, casa: r.casa, trasferta: r.trasferta,
         segno, combinata, vinta, segnoGiusto,
-        giocata: `${segno === 'H' ? '1' : '2'}${combinata ? ' + over 1,5' : ''}`,
+        giocata,
         quota, quotaResa, att: probGiocata, resa,
         // ⚠️ **Quanto i bookmaker sono d'accordo fra loro**, sul segno giocato:
         // la distanza fra la quota più generosa delle 34 e la media. Non è il
@@ -115,6 +130,7 @@ export async function ricostruisci({ stagioni: quante = 3, daGiornata = 5 } = {}
         over: gol?.over ?? null,
         // gli esiti veri dei gol, accanto alle previsioni: servono a chi misura
         // over/under e Goal, e tenerli qui evita di rileggere le partite
+        golCasa: r.gol_casa, golTrasferta: r.gol_trasferta,
         golTotali: r.gol_casa + r.gol_trasferta,
         ggVero: r.gol_casa > 0 && r.gol_trasferta > 0,
         accordoVpm,

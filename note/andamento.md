@@ -293,3 +293,46 @@ verdi aveva 4 partite. ⚠️ L'avviso resta valido anche sull'archivio intero:
 ⚠️ `giornoLocale()` nel modulo: il driver postgres consegna oggetti `Date`, e
 `String(data).slice(0,10)` su un Date dà `"Mon Oct 05"`, non la data.
 
+
+#### ⤓ Nel giorno TUTTE le partite, e l'esportazione delle card — 28 ottobre 2026
+
+Mattia: *"io imposto i filtri e per ogni card devo poter fare il download; mi
+serve una lista come quella che crea Road to weekend"*, e poi, vedendo la
+card dire 529 e il file 72: *"dimentica l'idea delle prime 15 della
+giornata: voglio tutte le partite con quei filtri, sia nel csv sia nella
+pagina; tieni le prime 36 del weekend"* (`1.63.00`).
+
+⚠️⚠️ **Nella vista per giorno `andamento` tiene TUTTE le partite**
+(`PRIME_GIORNO = Infinity` in `calcola-andamento.js`): le soglie della pagina
+fanno già da filtro, e le prime 15 erano un secondo taglio che su un sabato
+pieno lasciava fuori partite sopra soglia. La tabella è passata da 100.005 a
+**163.229 righe**. Il weekend resta alle **prime 36**. Il tasto della vista
+dice «Per giorno · tutte»; la card dice «su N **partite**» nel giorno e «su N
+**scelte**» nel weekend, dove scegliere c'è ancora.
+⚠️ **L'elenco di un giorno mostra solo le partite sopra la soglia**
+dell'indicatore (`partiteDi`): senza, un sabato ne mostrerebbe cento accanto
+a un tasto che ne conta dodici.
+
+**«⤓ esporta .csv»** in fondo a ogni card scarica **esattamente le partite
+che la card conta** — stessa tabella, stessa vista, stesso confronto
+**esatto** con la soglia di `andamento_riassunto` (non il numero arrotondato):
+il file e il numero coincidono sempre. Data e risultato si prendono da
+`partite` (le righe del weekend non hanno data). Formato **Excel italiano**:
+`;`, virgola nei decimali, BOM (`lib/csv.js`). Il nome del file porta i
+filtri, e la scritta sotto il tasto **si azzera a ogni cambio di filtro** e
+dice con quali filtri è stato fatto l'ultimo file: il «72» accanto a «529» era
+un file fatto prima, con i filtri di partenza.
+Verificato: att ≥ 61%, quota da 1,30, 25/26, giorno → card **365 su 532**,
+file 532 righe, 365 azzeccate, tutte con data e risultato.
+
+⚠️ Strada facendo è nata e morta `partite_valutate` (`sql/44` la toglie):
+serviva finché il giorno teneva le prime 15. Con tutte le partite in
+`andamento` sarebbe stata una seconda copia dello stesso elenco.
+
+⚠️⚠️ **Trovato strada facendo, e riguarda tutto il motore**: `ricostruisci.js`
+sceglieva le «ultime N» stagioni ordinando i **codici come testo**, e dal
+23/10 le stagioni ad anno solare del Giappone («2025», «2026») si mettevano
+fra «2021» e «2122». **Ogni backtest «su 8 stagioni» dal 23 al 28/10 ne ha
+misurate 6** (24.225 partite valutate invece di 33.418). Corretto il 28/10:
+si scelgono fra le stagioni **con le quote**, in ordine di tempo. `andamento`
+non ne aveva risentito — l'ultimo ricalcolo completo era del 22/10.

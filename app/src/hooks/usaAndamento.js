@@ -235,13 +235,19 @@ export function usaStagioni() {
 }
 
 /** Le partite di un giorno (o weekend): al massimo 15 o 36 righe. */
-export async function partiteDi(ambito, metodo, chiave, fascia) {
+export async function partiteDi(ambito, metodo, chiave, fascia, soglie) {
   const campo = ambito === 'giorno' ? 'data' : 'weekend'
   const f = fasciaValida(fascia)
+  // ⚠️ **Solo quelle sopra la soglia dell'indicatore** (28/10/2026): da quando
+  // il giorno tiene **tutte** le partite, senza questo filtro l'elenco di un
+  // sabato ne mostrerebbe cento, quasi tutte sotto soglia, accanto a un tasto
+  // che ne conta dodici. Stesso confronto esatto del conteggio.
+  const s = conSoglie(soglie)
   // ⚠️ La stessa fascia dei conteggi: il tasto dice `9/14`, e se l'elenco
   // mostrasse anche le partite fuori fascia il conto non tornerebbe.
   const { data, error } = await supabase.from('andamento').select('*')
     .eq('ambito', ambito).eq('metodo', metodo).eq(campo, chiave)
+    .gte(metodo, s[metodo])
     .gte('quota', f.min).lt('quota', f.max)
     .order('posizione')
   // ⚠️ L'errore si **solleva**, non si scarta: scartandolo l'elenco tornava
@@ -256,4 +262,46 @@ export async function partiteVerdi(soglie, stagione, fascia) {
   const { data, error } = await supabase.rpc('andamento_verdi', { ...par(soglie, stagione, fascia), p_limite: 300 })
   if (error) throw new Error(error.message)
   return data || []
+}
+
+/**
+ * ⚠️⚠️ **Le partite di una card, per l'esportazione** (Mattia, 28/10/2026:
+ * *"voglio tutte le partite con quei filtri, sia nel csv sia nella pagina"*).
+ * **Esattamente quelle che la card conta**: stessa tabella (`andamento`),
+ * stessa vista (giorno o weekend), stesso confronto **esatto** con la soglia
+ * di `andamento_riassunto` (`att >= 0,61`, non il numero arrotondato) — così
+ * il file e il numero della card coincidono sempre.
+ * ⚠️ Data e risultato si prendono da `partite`: le righe del weekend non hanno
+ * la data (la loro chiave è il weekend), e `andamento` non tiene i gol.
+ * ⚠️ **Si pagina per `id`, che è unico**: PostgREST dà 1000 righe al colpo e
+ * lo fa in silenzio, e paginare su un ordine con pari merito perde righe.
+ */
+export async function partiteDaEsportare(metodo, ambito, soglie, stagione, fascia) {
+  const s = conSoglie(soglie), f = fasciaValida(fascia)
+  const righe = []
+  for (let da = 0; ; da += 1000) {
+    let q = supabase.from('andamento')
+      .select('id, partita_id, stagione, weekend, div, casa, trasferta, giocata, quota, att, vpm, voto, scelta, azzeccata')
+      .eq('metodo', metodo).eq('ambito', ambito).gte(metodo, s[metodo])
+      .gte('quota', f.min).lt('quota', f.max)
+    if (stagione) q = q.eq('stagione', stagione)
+    const { data, error } = await q.order('id').range(da, da + 999)
+    if (error) return { errore: error.message }
+    righe.push(...data)
+    if (data.length < 1000) break
+  }
+  // data e gol, a gruppi: un elenco di id nell'indirizzo ha un limite di lunghezza
+  const ids = [...new Set(righe.map(r => r.partita_id))]
+  const partite = new Map()
+  for (let i = 0; i < ids.length; i += 300) {
+    const { data, error } = await supabase.from('partite').select('id, data, gol_casa, gol_trasferta').in('id', ids.slice(i, i + 300))
+    if (error) return { errore: error.message }
+    for (const p of data) partite.set(p.id, p)
+  }
+  const tutte = righe.map(r => ({ ...r, ...(partite.get(r.partita_id) ? {
+    data: String(partite.get(r.partita_id).data).slice(0, 10),
+    gol_casa: partite.get(r.partita_id).gol_casa, gol_trasferta: partite.get(r.partita_id).gol_trasferta,
+  } : {}) }))
+    .sort((a, b) => String(a.data).localeCompare(String(b.data)) || a.div.localeCompare(b.div) || a.casa.localeCompare(b.casa))
+  return { righe: tutte }
 }

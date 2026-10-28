@@ -773,3 +773,23 @@ La card di prima metteva sullo stesso piano una ventina di cose (`1.61.00`):
 ⚠️ **Si torna indietro con `NUOVO_PASSO = false`** in `ScalataPage.jsx`.
 ⚠️ Resta grande il «fissa passo» dei passi **in anteprima**, che non hanno
 esiti; e la card in evidenza non porta il colore della fascia.
+
+### 📋 Il resoconto delle giocate nell'archivio (26/10/2026)
+
+Mattia: *"quando chiudo la scalata non deve dirmi solo gli importi, voglio un
+resoconto delle giocate"* (`1.62.00`). Ogni giro chiuso dell'ARCHIVIO è una
+card che si apre (`GiroArchivio`): chiusa dice i soldi come prima, aperta
+mostra **passi giocati · vinti · persi** (e i non giocati), poi passo per
+passo giorno, quota, incassato e messo via, e **ogni partita col suo
+risultato e il suo esito vero**.
+
+⚠️⚠️ **L'esito di ogni partita non sta nel registro**: `segna` scrive l'esito
+del PASSO anche sulle gambe. Quello per partita si ricava dal risultato in
+archivio — gamba → `prossime_partite.partita_id` → `partite` — con
+`giocataArrivata` di **`app/src/lib/esito.js`**: la regola *"la giocata è
+arrivata"* è stata **spostata lì dal motore, non copiata** (`ricostruisci.js`
+la importa). Verificato che il motore dia gli stessi numeri: 24.225 partite
+valutate, 12.419 vinte, stessa impronta prima e dopo.
+⚠️ Una partita non ancora collegata al risultato (football-data in ritardo)
+dice **«in attesa»**, non «persa». Il resoconto si legge **alla prima
+apertura** di un giro (tre giri al database), non a ogni caricamento.
