@@ -118,7 +118,7 @@ i fattori dei cartellini. Il fattore campo c'è già. Mancano:
   `falli_casa`/`falli_trasf`): football-data li pubblicava (`HF`/`AF`) in
   tutti e quindici i campionati e in ogni stagione, nello stesso file dei
   cartellini, ed ESPN li manda (`foulsCommitted`). **50.683 partite**
-  riempite con `recupera-falli.js`, che tocca solo quelle due colonne. Coppe,
+  riempite con `recupera-da-csv.js`, che tocca solo quelle due colonne. Coppe,
   Olanda 2 e Giappone vengono solo da ESPN: da lì solo le partite nuove, il
   recupero dello storico (~13.500, ore) si fa **se la misura dice che
   servono**. ⚠️ **Non ancora misurati**: nessuno sa se migliorino i

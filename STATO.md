@@ -8,8 +8,8 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 29 ottobre 2026 · app alla versione **1.64.00**
-(`4ce1619`, pushato) · motore: `7382c6d` · passaggio di consegne: 29/10
+**Ultimo aggiornamento:** 29 ottobre 2026 · app alla versione **1.64.01**
+· passaggio di consegne: 29/10 · ⚠️ **da pushare** i commit dopo `4ce1619`
 
 ## ▶️ DOVE SIAMO — 24 ottobre 2026, leggi questo per primo
 
@@ -37,7 +37,8 @@ Il 24/10, in ordine:
 | **Il segno di VPM nel CSV di Andamento** (29/10): colonna «segno VPM» accanto al valore (`vpm_segno`, `sql/45`) | `1.63.01` | `4ce1619` |
 | **Le stelline a tutti** (29/10): oro admin, blu user in un tasto solo; nelle Spin contano solo quelle degli admin, in Road to weekend e Builder tutte (`sql/46`) | `1.64.00` | `4ce1619` |
 | **Le partite rinviate non si raddoppiano più** (29/10, lotto 0): gli import **spostano** la riga vecchia alla data nuova (`btscout/lib/rinvii.js`), la riconciliazione non collega il doppione | motore | `1569c0e` |
-| **I falli in archivio** (29/10, lotto 1, prima metà): `sql/47`, **50.683 partite** dai CSV di football-data con `recupera-falli.js`; gli import di football-data ed ESPN li scrivono da qui in avanti | motore | `7382c6d` |
+| **L'ora delle partite nel CSV di Andamento** (29/10): `partite.ora` (`sql/48`), ora italiana da football-data dalla 2019/20 — 38.376 partite con `recupera-da-csv.js`, che ora riempie falli **e** ora. ⚠️ A margine: **455 vecchie righe di `prossime_partite`** (già giocate, prima del 23/10) hanno ancora l'ora **inglese** — la correzione del fuso non le aveva toccate. Non si vedono da nessuna parte; l'archivio ha quella giusta | `1.64.01` | il commit dopo `7e1c1d5` |
+| **I falli in archivio** (29/10, lotto 1, prima metà): `sql/47`, **50.683 partite** dai CSV di football-data con `recupera-da-csv.js`; gli import di football-data ed ESPN li scrivono da qui in avanti | motore | `7382c6d` |
 
 **29/10, le due scoperte che cambiano la lista:**
 - **L'arbitro (lotto 3) è chiuso con un no**: football-data lo pubblica **solo**
@@ -114,9 +115,8 @@ sul telefono non si distingueva il lavoro di oggi dalla cache di ieri.
 
 Nessuna di queste è stata promessa a Mattia: **si propone e decide lui.**
 
-⚠️ **Il 29/10 si è interrotto qui**, e Mattia aveva chiesto prima di tutto
-**l'orario delle partite nel CSV di Andamento** (fatto subito dopo questo
-passaggio di consegne — vedi «Cos'è cambiato»). Poi resta in sospeso la
+⚠️ **Il 29/10 si è interrotto qui**, dopo **l'orario delle partite nel CSV
+di Andamento** (`1.64.01`, da provare in `npm run dev`). Resta in sospeso la
 proposta sugli **indicatori di angoli e cartellini**, a cui Mattia non ha
 ancora risposto:
 1. togliere «O 9,5 · 52%» dalla riga in alto della scheda (si legge come un

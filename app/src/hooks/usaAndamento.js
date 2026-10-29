@@ -290,18 +290,20 @@ export async function partiteDaEsportare(metodo, ambito, soglie, stagione, fasci
     righe.push(...data)
     if (data.length < 1000) break
   }
-  // data e gol, a gruppi: un elenco di id nell'indirizzo ha un limite di lunghezza
+  // data, ora e gol, a gruppi: un elenco di id nell'indirizzo ha un limite di lunghezza.
+  // ⚠️ L'ora c'è dalla 2019/20 (`sql/48`): prima resta vuota.
   const ids = [...new Set(righe.map(r => r.partita_id))]
   const partite = new Map()
   for (let i = 0; i < ids.length; i += 300) {
-    const { data, error } = await supabase.from('partite').select('id, data, gol_casa, gol_trasferta').in('id', ids.slice(i, i + 300))
+    const { data, error } = await supabase.from('partite').select('id, data, ora, gol_casa, gol_trasferta').in('id', ids.slice(i, i + 300))
     if (error) return { errore: error.message }
     for (const p of data) partite.set(p.id, p)
   }
   const tutte = righe.map(r => ({ ...r, ...(partite.get(r.partita_id) ? {
     data: String(partite.get(r.partita_id).data).slice(0, 10),
+    ora: partite.get(r.partita_id).ora,
     gol_casa: partite.get(r.partita_id).gol_casa, gol_trasferta: partite.get(r.partita_id).gol_trasferta,
   } : {}) }))
-    .sort((a, b) => String(a.data).localeCompare(String(b.data)) || a.div.localeCompare(b.div) || a.casa.localeCompare(b.casa))
+    .sort((a, b) => String(a.data).localeCompare(String(b.data)) || String(a.ora ?? '').localeCompare(String(b.ora ?? '')) || a.div.localeCompare(b.div) || a.casa.localeCompare(b.casa))
   return { righe: tutte }
 }

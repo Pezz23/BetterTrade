@@ -205,6 +205,9 @@ function Tendina({ etichetta, conteggio, aperta, onTocca, ambito, metodo, chiave
  */
 const COLONNE_CSV = [
   { titolo: 'data', valore: r => { const d = String(r.data).slice(0, 10); return `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}` } },
+  // ⚠️ Ora italiana, `hh:mm` (Mattia, 29/10/2026). Vuota prima della 2019/20:
+  // football-data non la pubblicava.
+  { titolo: 'ora', valore: r => (r.ora ? String(r.ora).slice(0, 5) : '') },
   { titolo: 'giorno', valore: r => ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'][new Date(`${String(r.data).slice(0, 10)}T12:00:00`).getDay()] },
   { titolo: 'stagione', valore: r => r.stagione },
   { titolo: 'campionato', valore: r => sigla(r.div) },

@@ -11,6 +11,7 @@
 import { sql, chiudi } from '../lib/db.js';
 import { scaricaDaFootballData } from '../lib/rete.js';
 import { pathToFileURL } from 'node:url';
+import { daInglese } from '../lib/date.js';
 
 export const CAMPIONATI = {
   E0: 'Premier League', E1: 'Championship',
@@ -208,8 +209,16 @@ export function estrai(righe, stagione, div) {
       stat[campo] = parseIntero(r[colonna]);
     }
 
+    // ⚠️ L'ora del file è INGLESE e si salva ITALIANA (29/10/2026, `sql/48`).
+    // ⚠️ Si prende **solo l'ora**: la data resta quella del file perché è
+    // nella chiave, e una partita alle 23:30 inglesi cambierebbe giorno e
+    // diventerebbe un doppione. In quel caso — mai visto in questi
+    // campionati — l'ora resta vuota piuttosto che sbagliata.
+    const t = /^\d{2}:\d{2}$/.test(r.Time || '') ? daInglese(data, r.Time) : null;
+    const ora = t && t.data === data ? t.ora : null;
+
     partite.push({
-      div, campionato: CAMPIONATI[div], stagione, data, casa, trasferta,
+      div, campionato: CAMPIONATI[div], stagione, data, ora, casa, trasferta,
       gol_casa: golCasa, gol_trasferta: golTrasferta,
       esito: golCasa > golTrasferta ? 'H' : golCasa < golTrasferta ? 'A' : 'D',
       ...stat, ...quote,
@@ -220,7 +229,7 @@ export function estrai(righe, stagione, div) {
 
 // Le colonne della tabella, nell'ordine in cui si scrivono.
 const COLONNE_DB = [
-  'div', 'campionato', 'stagione', 'data', 'casa', 'trasferta',
+  'div', 'campionato', 'stagione', 'data', 'ora', 'casa', 'trasferta',
   'gol_casa', 'gol_trasferta', 'esito',
   'tiri_casa', 'tiri_trasf', 'tirip_casa', 'tirip_trasf',
   'angoli_casa', 'angoli_trasf', 'gialli_casa', 'gialli_trasf',

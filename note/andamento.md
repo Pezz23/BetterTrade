@@ -343,3 +343,11 @@ per più forte. Mattia: *"l'esito dato da VPM oltre al valore"*. `andamento`
 non teneva il segno: ora c'è `vpm_segno`, scritto da `calcola-andamento.js`
 (da `ricostruisci.js`). Controllo di buon senso: concorda con la giocata nel
 **77%** delle partite e nel **98,7%** di quelle con attendibilità ≥ 61%.
+
+⚠️ **L'ora nel CSV** (29/10/2026, `1.64.01`, `sql/48`): colonna **«ora»**
+accanto alla data, ora **italiana** `hh:mm`, e dentro lo stesso giorno le
+righe sono in ordine d'orario. `partite` l'ora non l'aveva mai avuta: ora c'è
+`partite.ora`, da football-data (`Time`, convertita da quella inglese con
+`daInglese`) — **dalla 2019/20**, cioè tutte e otto le stagioni di Andamento;
+prima resta vuota. Riempita con `recupera-da-csv.js` (38.376 partite), e
+`import-storico.js` la scrive da qui in avanti.

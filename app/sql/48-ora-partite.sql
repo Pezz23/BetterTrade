@@ -1,0 +1,13 @@
+-- L'ORA delle partite giocate (29/10/2026).
+--
+-- Mattia vuole l'orario nel CSV di Andamento. `partite` non l'aveva mai avuto:
+-- l'ora stava solo in `prossime_partite`, cioè per le partite viste in
+-- calendario dal settembre 2026. football-data la pubblica (`Time`) **dalla
+-- 2019/20** in tutti e quindici i campionati — le otto stagioni di Andamento.
+--
+-- ⚠️ **Ora ITALIANA**, come in `prossime_partite`: il `Time` di football-data
+-- è inglese e si converte con `daInglese()` (`btscout/lib/date.js`).
+-- ⚠️ `data` resta quella del file: è parte della chiave dell'import, e
+-- spostarla di un giorno per una partita alle 23:30 inglesi creerebbe un
+-- doppione. Per questi campionati non succede: nessuna partita è dopo le 23.
+alter table public.partite add column if not exists ora time;
