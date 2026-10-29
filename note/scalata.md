@@ -793,3 +793,21 @@ valutate, 12.419 vinte, stessa impronta prima e dopo.
 ⚠️ Una partita non ancora collegata al risultato (football-data in ritardo)
 dice **«in attesa»**, non «persa». Il resoconto si legge **alla prima
 apertura** di un giro (tre giri al database), non a ogni caricamento.
+
+### 🧹 In archivio solo i passi GIOCATI (29/10/2026)
+
+Mattia: *"se arrivo a passo 3, in archivio devo vedere solo i 3 passi giocati
+fino a quando ho perso"*. Prima STOP cambiava solo lo stato della scalata, e
+il piano non giocato restava attaccato al giro chiuso: il resoconto lo
+mostrava come se fosse stato giocato.
+- **STOP** (`chiudi` in `usaScalate`) toglie i passi ancora `aperto`
+  **dopo** aver chiuso la scalata: nel registro delle cancellazioni (`sql/42`)
+  risultano con `stato_scalata = 'chiusa'`, distinguibili da quelli tolti a
+  mano a scalata aperta. Mattia: *"mi piace che tracci ciò che cancello,
+  aiuta a migliorare il modello"*.
+- **⟳ RIPARTI** non cambia: sposta già i passi rimasti nel giro nuovo.
+- Il **resoconto** filtra comunque gli `aperto`: le scalate chiuse prima del
+  29/10 hanno ancora dentro il piano, e non si toccano.
+Provato con una sessione simulata da user: la policy `passi_write` guarda la
+proprietà della scalata, non lo stato, quindi il passo di una scalata appena
+chiusa si cancella.

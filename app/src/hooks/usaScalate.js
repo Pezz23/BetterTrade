@@ -204,9 +204,22 @@ export function usaScalate(userId) {
       ...(accumulo != null ? { accumulo } : {}),
     }).eq('id', stato.aperta.id)
     if (error) return { errore: error.message }
+    // ⚠️⚠️ **In archivio restano solo i passi GIOCATI** (Mattia, 29/10/2026:
+    // *"quando chiudo una scalata deve tracciare solo i passi giocati"*). I
+    // passi ancora aperti erano il piano, non una giocata, e il resoconto li
+    // mostrava come se lo fossero. Si tolgono **dopo** la chiusura, così nel
+    // registro delle cancellazioni (`sql/42`, *"aiuta a migliorare il
+    // modello"*) risultano con `stato_scalata = 'chiusa'`: distinguibili dai
+    // passi tolti a mano a scalata aperta.
+    // ⚠️ Solo per STOP: «⟳ RIPARTI» i passi rimasti li sposta nel giro nuovo.
+    const aperti = stato.passi.filter(p => p.esito === 'aperto').map(p => p.id)
+    if (aperti.length) {
+      const { error: e2 } = await supabase.from('scalata_passi').delete().in('id', aperti)
+      if (e2) { await ricarica(); return { errore: `scalata chiusa, ma il piano non giocato è rimasto: ${e2.message}` } }
+    }
     await ricarica()
     return {}
-  }, [stato.aperta, ricarica])
+  }, [stato.aperta, stato.passi, ricarica])
 
   /**
    * Butta via i passi non ancora giocati e tiene i soldi dove sono.
@@ -463,8 +476,10 @@ export function usaScalate(userId) {
         golDi = new Map((pr || []).map(x => [x.id, perPartita.get(x.partita_id)]).filter(([, v]) => v))
       }
     }
+    // ⚠️ Solo i passi con un esito: le scalate chiuse prima del 29/10/2026
+    // hanno ancora dentro il piano non giocato, e il resoconto è delle giocate.
     return {
-      passi: (p || []).map(r => ({
+      passi: (p || []).filter(r => r.esito !== 'aperto').map(r => ({
         ...senzaGambe(r),
         gambe: (r.scalata_gambe || []).sort((a, b) => a.id - b.id).map(g => {
           const ris = golDi.get(g.prossima_id)
