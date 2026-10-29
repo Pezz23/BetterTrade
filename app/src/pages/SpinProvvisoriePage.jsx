@@ -163,7 +163,12 @@ function Griglia({ titolo, colore, celle, riferimento, votiDi, valoreDi, indice,
 }
 
 export default function SpinProvvisoriePage() {
-  const { righe, votiDi, caricamento, errore } = usaProssime()
+  // ⚠️⚠️ **Nelle Spin contano solo le stelline degli ADMIN** (Mattia,
+  // 29/10/2026): le spin sono del gruppo e le compilano gli admin. Le stelline
+  // degli user si vedono nella pagina Partite e contano nella scalata e nel
+  // Builder, che sono personali — qui no. L'alias tiene il resto della pagina
+  // com'era: in questa pagina «i voti» sono quelli degli admin.
+  const { righe, votiAdminDi: votiDi, caricamento, errore } = usaProssime()
   const [quante, setQuante] = useState(3)
   // Quali spin della griglia hanno già qualcosa dentro: per la conferma.
   const [piene, setPiene] = useState([false, false, false])

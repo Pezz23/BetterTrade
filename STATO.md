@@ -8,7 +8,7 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 26 ottobre 2026 · app alla versione **1.63.00** ·
+**Ultimo aggiornamento:** 26 ottobre 2026 · app alla versione **1.64.00** ·
 passaggio di consegne: 24/10 (prima della 1.59.01)
 
 ## ▶️ DOVE SIAMO — 24 ottobre 2026, leggi questo per primo
@@ -32,8 +32,10 @@ Il 24/10, in ordine:
 | **Il piano non si perde più col passare delle partite**: calendario fermo fino a «⟳ Aggiorna calendario», esiti agganciati al passo, conferma sul tasto rosso, registro delle cancellazioni (`sql/42`), il ciclo di scritture del Bet Builder | `1.59.01` | `2232d38` |
 | **«Metà utile»** al posto della Scalata madre (26/10): puntata al 1° passo poi 50% dell'utile, schedina ≥ 1,90, consigliato solo attendibilità 61; `prova-prelievi.js` e `--solo-att` in `prova-soglie-scalata.js` (`sql/43`) | `1.60.00` | `6eec5dd` |
 | **La card in evidenza del passo da giocare** (26/10): puntata e quota in grande, partite e conti in tendine, gli altri passi in righe che si aprono nella stessa card, tasti dell'esito piccoli. Reversibile con `NUOVO_PASSO` | `1.61.00` | `291d931` |
-| **Il resoconto delle giocate nell'archivio** (26/10): ogni giro chiuso si apre con passi vinti/persi e l'esito vero di ogni partita; `giocataArrivata` spostata dal motore in `app/src/lib/esito.js` | `1.62.00` | il commit dopo `291d931` |
-| **Andamento: nel giorno TUTTE le partite e ⤓ esporta** (28/10): niente più prime 15 nel giorno (163.229 righe), ogni card scarica in CSV per Excel esattamente le partite che conta; e `ricostruisci.js` torna a scegliere **8** stagioni vere (il Giappone ne rubava due) | `1.63.00` | stesso commit |
+| **Il resoconto delle giocate nell'archivio** (26/10): ogni giro chiuso si apre con passi vinti/persi e l'esito vero di ogni partita; `giocataArrivata` spostata dal motore in `app/src/lib/esito.js` | `1.62.00` | `9a20c05` |
+| **Andamento: nel giorno TUTTE le partite e ⤓ esporta** (28/10): niente più prime 15 nel giorno (163.229 righe), ogni card scarica in CSV per Excel esattamente le partite che conta; e `ricostruisci.js` torna a scegliere **8** stagioni vere (il Giappone ne rubava due) | `1.63.00` | `9a20c05` |
+| **Il segno di VPM nel CSV di Andamento** (29/10): colonna «segno VPM» accanto al valore (`vpm_segno`, `sql/45`) | `1.63.01` | il commit dopo `9a20c05` |
+| **Le stelline a tutti** (29/10): oro admin, blu user in un tasto solo; nelle Spin contano solo quelle degli admin, in Road to weekend e Builder tutte (`sql/46`) | `1.64.00` | stesso commit |
 
 **Road to weekend in tre righe** (il dettaglio in `note/scalata.md`):
 - ogni account — admin e user — ha **il suo conto e la sua scalata**, e

@@ -336,3 +336,10 @@ fra «2021» e «2122». **Ogni backtest «su 8 stagioni» dal 23 al 28/10 ne ha
 misurate 6** (24.225 partite valutate invece di 33.418). Corretto il 28/10:
 si scelgono fra le stagioni **con le quote**, in ordine di tempo. `andamento`
 non ne aveva risentito — l'ultimo ricalcolo completo era del 22/10.
+
+⚠️ **Il segno di VPM nel CSV** (29/10/2026, `1.63.01`, `sql/45`): accanto al
+valore c'è la colonna **«segno VPM»**, '1' o '2' — la squadra che il campo dà
+per più forte. Mattia: *"l'esito dato da VPM oltre al valore"*. `andamento`
+non teneva il segno: ora c'è `vpm_segno`, scritto da `calcola-andamento.js`
+(da `ricostruisci.js`). Controllo di buon senso: concorda con la giocata nel
+**77%** delle partite e nel **98,7%** di quelle con attendibilità ≥ 61%.

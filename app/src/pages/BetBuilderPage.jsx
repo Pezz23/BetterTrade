@@ -59,8 +59,8 @@ const CRITERI = [
 const ATTESA_ARCHIVIO = 10_000
 
 export default function BetBuilderPage() {
-  const { currentUser, isAdmin } = useAuth()
-  const { righe, flagDi, votiDi, vota, mioVoto } = usaProssime()
+  const { currentUser } = useAuth()
+  const { righe, flagDi, votiDi, votiTipiDi, vota, mioVoto } = usaProssime()
   const datiVpm = usaVpm()
   const reg = usaSchedine(currentUser?.id)
   // ⚠️⚠️ **Le partite scartate stanno in `preferenze`, riga PERSONALE**: è la
@@ -612,7 +612,7 @@ export default function BetBuilderPage() {
       {partitaAperta && (
         <SchedaScorrevole onChiudi={() => setApertaId(null)}>
           <DettaglioPartita p={partitaAperta} cat={categoria(partitaAperta.probGiocata, SOGLIE_DEFAULT)}
-            voti={votiDi(partitaAperta.id)} mio={mioVoto(partitaAperta.id)} puoVotare={isAdmin}
+            voti={votiTipiDi(partitaAperta.id)} mio={mioVoto(partitaAperta.id)} puoVotare
             onVota={() => vota(partitaAperta.id)} onChiudi={() => setApertaId(null)} />
         </SchedaScorrevole>
       )}

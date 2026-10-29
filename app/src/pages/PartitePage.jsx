@@ -1,7 +1,6 @@
 import { useState, useMemo, useCallback } from 'react'
 import { usaProssime } from '../hooks/usaProssime'
 import { usaVpm } from '../hooks/usaVpm'
-import { useAuth } from '../context/AuthContext'
 import { C, F, alpha, S, R } from '../theme'
 import { Card, Etichetta, TastoRipeti, stileCard } from '../components/ui'
 import RigaPartita, { CATEGORIE, giorno } from '../components/RigaPartita'
@@ -73,8 +72,7 @@ const MANOPOLE = [
 const campo = { padding: '6px 10px', borderRadius: R.pastiglia, background: C.pozzo, border: `1px solid ${C.bordo}`, color: C.testo, fontFamily: F.mono, fontSize: S.base, outline: 'none', width: 74 }
 
 export default function PartitePage() {
-  const { isAdmin } = useAuth()
-  const { righe, vota, votiDi, mioVoto, caricamento, errore } = usaProssime()
+  const { righe, vota, votiTipiDi, mioVoto, caricamento, errore } = usaProssime()
   const datiVpm = usaVpm()
   // ⚠️ Non è più uno stato: dal 22/10/2026 le slitte non ci sono, e nessuno
   // può muoverlo. Resta perché decide il **colore** delle card e il conteggio
@@ -534,7 +532,7 @@ export default function PartitePage() {
         {visibili.map(p => (
           <RigaPartita key={p.id} p={p} cat={categoria(p.probGiocata, soglie)}
             vpm={vpmDi.get(p.id) ?? null}
-            voti={votiDi(p.id)} mio={mioVoto(p.id)} puoVotare={isAdmin} onVota={vota}
+            voti={votiTipiDi(p.id)} mio={mioVoto(p.id)} puoVotare onVota={vota}
             onApri={setApertaId} />
         ))}
       </div>
@@ -558,7 +556,7 @@ export default function PartitePage() {
       {aperta && (
         <SchedaScorrevole onChiudi={() => setApertaId(null)}>
           <DettaglioPartita p={aperta} cat={categoria(aperta.probGiocata, soglie)}
-            voti={votiDi(aperta.id)} mio={mioVoto(aperta.id)} puoVotare={isAdmin}
+            voti={votiTipiDi(aperta.id)} mio={mioVoto(aperta.id)} puoVotare
             onVota={() => vota(aperta.id)} onChiudi={() => setApertaId(null)} />
         </SchedaScorrevole>
       )}

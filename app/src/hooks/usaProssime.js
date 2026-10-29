@@ -36,7 +36,7 @@ function carica(forza = false) {
         supabase.from('prossime_partite').select(COLONNE)
           .gte('data', oggi).order('data').order('ora'),
         // I voti: se la tabella non c'è ancora, la lista resta senza stelle attive.
-        supabase.from('voti_partite').select('prossima_id, user_id'),
+        supabase.from('voti_partite').select('prossima_id, user_id, da_admin'),
         // ⚑ I flag della scalata (sql/33): stessa forma delle stelle, altro
         // significato. ⚠️ Parte **insieme** alle altre due e non dopo: qui il
         // tempo non è nei dati, è nel numero di giri.
@@ -92,18 +92,22 @@ export function usaProssime() {
   // risposta del database arriva dopo — e se fallisce si torna indietro.
   // ⚠️ Si aggiorna **anche la memoria di modulo**: senza, una stellina messa
   // nella pagina Partite sparirebbe tornandoci dopo essere passati altrove.
+  // ⚠️⚠️ **Dal 29/10/2026 vota chiunque** (`sql/46`), e la stellina porta
+  // `da_admin`: oro se l'ha messa un admin, blu se un utente. Cosa CONTANO lo
+  // decidono le pagine: le Spin usano `votiAdminDi`, Road to weekend e il
+  // Bet Builder `votiDi` (tutte).
   const vota = useCallback(async (prossimaId) => {
-    if (!isAdmin || !currentUser) return
+    if (!currentUser) return
     const mio = voti.some(v => v.prossima_id === prossimaId && v.user_id === currentUser.id)
     const prima = voti
     const dopo = mio
       ? voti.filter(v => !(v.prossima_id === prossimaId && v.user_id === currentUser.id))
-      : [...voti, { prossima_id: prossimaId, user_id: currentUser.id }]
+      : [...voti, { prossima_id: prossimaId, user_id: currentUser.id, da_admin: isAdmin }]
     setVoti(dopo)
     if (memoria) memoria.voti = dopo
     const { error } = mio
       ? await supabase.from('voti_partite').delete().eq('prossima_id', prossimaId).eq('user_id', currentUser.id)
-      : await supabase.from('voti_partite').insert({ prossima_id: prossimaId, user_id: currentUser.id })
+      : await supabase.from('voti_partite').insert({ prossima_id: prossimaId, user_id: currentUser.id, da_admin: isAdmin })
     if (error) {
       setVoti(prima)
       if (memoria) memoria.voti = prima
@@ -111,6 +115,13 @@ export function usaProssime() {
     }
   }, [isAdmin, currentUser, voti])
   const votiDi = useCallback((id) => voti.filter(v => v.prossima_id === id).length, [voti])
+  // Solo quelle degli admin: le usano le **Spin**, che sono del gruppo.
+  const votiAdminDi = useCallback((id) => voti.filter(v => v.prossima_id === id && v.da_admin).length, [voti])
+  // Quante per ruolo: le disegna `Stella`, oro e blu.
+  const votiTipiDi = useCallback((id) => {
+    const qui = voti.filter(v => v.prossima_id === id)
+    return { admin: qui.filter(v => v.da_admin).length, user: qui.filter(v => !v.da_admin).length }
+  }, [voti])
 
   // ⚑ Il flag della scalata: **identico al voto nel meccanismo** — una riga
   // per admin per partita, scritta prima in memoria e disfatta se il database
@@ -151,5 +162,5 @@ export function usaProssime() {
   const mioVoto = useCallback((id) =>
     !!currentUser && voti.some(v => v.prossima_id === id && v.user_id === currentUser.id), [currentUser, voti])
 
-  return { righe, voti, vota, votiDi, mioVoto, flag, flagga, flagDi, flagTipiDi, mioFlag, caricamento, errore, ricarica }
+  return { righe, voti, vota, votiDi, votiAdminDi, votiTipiDi, mioVoto, flag, flagga, flagDi, flagTipiDi, mioFlag, caricamento, errore, ricarica }
 }

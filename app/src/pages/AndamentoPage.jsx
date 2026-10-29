@@ -215,6 +215,10 @@ const COLONNE_CSV = [
   { titolo: 'attendibilita %', valore: r => (r.att == null ? null : Number((r.att * 100).toFixed(1))) },
   { titolo: 'scelta %', valore: r => (r.scelta == null ? null : Number((r.scelta * 100).toFixed(1))) },
   { titolo: 'VPM', valore: r => (r.vpm == null ? null : Number(Number(r.vpm).toFixed(2))) },
+  // ⚠️ Il segno che dice il campo, '1' o '2' (Mattia, 29/10/2026: *"l'esito
+  // dato da VPM oltre al valore"*): il valore dice *quanto* è netta, il segno
+  // *chi* vince. Vuoto dove VPM non c'è.
+  { titolo: 'segno VPM', valore: r => r.vpm_segno ?? '' },
   { titolo: 'voto', valore: r => (r.voto == null ? null : Number(Number(r.voto).toFixed(1))) },
   { titolo: 'risultato', valore: r => (r.gol_casa == null ? '' : `${r.gol_casa}-${r.gol_trasferta}`) },
   { titolo: 'arrivata', valore: r => (r.azzeccata == null ? '' : r.azzeccata ? 'si' : 'no') },

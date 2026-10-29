@@ -804,7 +804,7 @@ function Archivio({ storico, ricariche = [], conto, onAzzera, onAnnulla, onResoc
 
 export default function ScalataPage() {
   const { currentUser, isAdmin } = useAuth()
-  const { righe, ricarica: ricaricaPartite, vota, votiDi, mioVoto, flagga, flagDi, flagTipiDi, mioFlag } = usaProssime()
+  const { righe, ricarica: ricaricaPartite, vota, votiDi, votiTipiDi, mioVoto, flagga, flagDi, flagTipiDi, mioFlag } = usaProssime()
   const datiVpm = usaVpm()
   const classifiche = usaClassifiche()
   // ⚠️⚠️ **Ognuno il suo registro e il suo conto** (Mattia, 24/10/2026:
@@ -1935,8 +1935,11 @@ export default function ScalataPage() {
                     </button>
                       ) })()}
                     {votiDi(g.id) > 0 && (
-                      <span title={`${votiDi(g.id)} stelle dalla pagina Partite`}
-                        style={{ display: 'flex', alignItems: 'center', gap: 1, color: C.oro }}>
+                      /* ⚠️ Oro se c'è almeno una stellina di admin, blu se sono
+                         solo di user (29/10/2026): qui contano tutte, ma il
+                         colore dice da chi vengono. */
+                      <span title={`${votiTipiDi(g.id).admin} admin · ${votiTipiDi(g.id).user} user, dalla pagina Partite`}
+                        style={{ display: 'flex', alignItems: 'center', gap: 1, color: votiTipiDi(g.id).admin ? C.oro : C.blu }}>
                         <Icona nome="stella" misura={11} pieno={mioVoto(g.id)} />
                         {votiDi(g.id) > 1 && <span style={{ fontSize: S.micro }}>{votiDi(g.id)}</span>}
                       </span>
@@ -2018,7 +2021,7 @@ export default function ScalataPage() {
       {partitaAperta && (
         <SchedaScorrevole onChiudi={() => setApertaId(null)}>
           <DettaglioPartita p={partitaAperta} cat={categoria(partitaAperta.probGiocata, SOGLIE_DEFAULT)}
-            voti={votiDi(partitaAperta.id)} mio={mioVoto(partitaAperta.id)} puoVotare={isAdmin}
+            voti={votiTipiDi(partitaAperta.id)} mio={mioVoto(partitaAperta.id)} puoVotare
             onVota={() => vota(partitaAperta.id)} onChiudi={() => setApertaId(null)} />
         </SchedaScorrevole>
       )}

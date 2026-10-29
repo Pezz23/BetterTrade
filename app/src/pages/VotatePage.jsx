@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react'
 import { usaProssime } from '../hooks/usaProssime'
 import { usaVpm } from '../hooks/usaVpm'
-import { useAuth } from '../context/AuthContext'
 import { C, F, S } from '../theme'
 import { Card, Etichetta } from '../components/ui'
 import RigaPartita, { CATEGORIE } from '../components/RigaPartita'
@@ -19,8 +18,7 @@ import { valutaPartita } from '../lib/vpm'
 // ⚠️ "Voto" = la stellina delle persone. Il numero calcolato è il **Grado**.
 
 export default function VotatePage() {
-  const { isAdmin } = useAuth()
-  const { righe, vota, votiDi, mioVoto, caricamento, errore } = usaProssime()
+  const { righe, vota, votiDi, votiTipiDi, mioVoto, caricamento, errore } = usaProssime()
   const datiVpm = usaVpm()
   const [apertaId, setApertaId] = useState(null)
 
@@ -79,7 +77,7 @@ export default function VotatePage() {
                ⚠️ Dalla mappa e non calcolato qui: dentro il `map` del JSX
                girava a ogni ridisegno, per ogni riga. */
             vpm={vpmDi.get(p.id) ?? null}
-            voti={votiDi(p.id)} mio={mioVoto(p.id)} puoVotare={isAdmin} onVota={vota}
+            voti={votiTipiDi(p.id)} mio={mioVoto(p.id)} puoVotare onVota={vota}
             onApri={setApertaId} />
         ))}
       </div>
@@ -87,7 +85,7 @@ export default function VotatePage() {
       {aperta && (
         <SchedaScorrevole onChiudi={() => setApertaId(null)}>
           <DettaglioPartita p={aperta} cat={categoria(aperta.probGiocata, SOGLIE_DEFAULT)}
-            voti={votiDi(aperta.id)} mio={mioVoto(aperta.id)} puoVotare={isAdmin}
+            voti={votiTipiDi(aperta.id)} mio={mioVoto(aperta.id)} puoVotare
             onVota={() => vota(aperta.id)} onChiudi={() => setApertaId(null)} />
         </SchedaScorrevole>
       )}

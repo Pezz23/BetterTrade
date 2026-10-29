@@ -4,6 +4,7 @@ import { pct, giorno } from '../lib/formato'
 import { pronosticoDa } from '../lib/spin'
 import { Etichetta } from './ui'
 import Icona from './Icona'
+import { useAuth } from '../context/AuthContext'
 import { usaClassifiche, postoDi, fasciaDi } from '../hooks/usaClassifiche'
 import { consiglioOver, consiglioGg, mercatoOver25, BASI_GOL } from '../lib/gol'
 
@@ -279,27 +280,37 @@ export const Barra = ({ frazione, colore, altezza = 6 }) => (
   </div>
 )
 
-// La stella: il voto di un admin. `voti` è il totale, `mio` se l'utente
-// corrente ha già votato, `puoVotare` se è admin. Il massimo naturale è il
-// numero di admin — ognuno vota una volta sola.
+// La stella: il voto. ⚠️⚠️ **Dal 29/10/2026 vota chiunque** (`sql/46`), e
+// le stelline sono di due colori (Mattia: *"separarle da quelle degli admin"*):
+// **oro** gli admin, come prima — `n/3`, perché gli admin sono tre — e **blu**
+// gli user, `+n`, solo se ce ne sono. Un tasto solo e una riga sola: due righe
+// di stelline avrebbero fatto crescere solo alcune card della lista.
+// ⚠️ `voti` è `{ admin, user }` (`votiTipiDi`); un numero vale come «tutte
+// di admin», per chi non è ancora passato al formato nuovo.
+// ⚠️ La mia stellina si riempie **del mio colore**: oro se sono admin, blu se
+// sono user. È lo stesso segno dei flag in Road to weekend.
 export function Stella({ voti, mio, puoVotare, onVota }) {
+  const { isAdmin } = useAuth()
+  const v = typeof voti === 'number' ? { admin: voti, user: 0 } : (voti || { admin: 0, user: 0 })
+  const tot = v.admin + v.user
+  const mioColore = isAdmin ? C.oro : C.blu
   return (
     <button onClick={e => { e.stopPropagation(); if (puoVotare) onVota() }} disabled={!puoVotare}
-      title={puoVotare ? (mio ? 'Togli il tuo voto' : 'Vota questa partita') : `${voti} voti`}
+      title={puoVotare ? (mio ? 'Togli il tuo voto' : 'Vota questa partita') : `${v.admin} admin · ${v.user} user`}
       /* ⚠️⚠️ **`opacity: 1` scritta qui apposta.** `index.css` spegne al 45%
          ogni `<button>` disabilitato, ed è giusto per un comando che non si
-         può premere — ma questo **mostra un dato a chi non lo può toccare**:
-         un utente normale legge da qui quante stelline ha la partita.
-         Spegnerlo vorrebbe dire nascondere l'informazione a metà del gruppo. */
+         può premere — ma questo **mostra un dato a chi non lo può toccare**. */
       style={{ opacity: 1, display: 'flex', alignItems: 'center', gap: SP.s, padding: `${SP.xs}px ${SP.m}px`, borderRadius: R.pastiglia,
-        background: voti ? alpha(C.oro, 0.10) : 'transparent', border: `1px solid ${voti ? alpha(C.oro, 0.3) : C.bordo}`,
+        background: v.admin ? alpha(C.oro, 0.10) : v.user ? alpha(C.blu, 0.10) : 'transparent',
+        border: `1px solid ${v.admin ? alpha(C.oro, 0.3) : v.user ? alpha(C.blu, 0.3) : C.bordo}`,
         cursor: puoVotare ? 'pointer' : 'default' }}>
       {/* ⚠️ Piena quando qualcuno l'ha votata, vuota quando no: è la stessa
           distinzione che facevano `★` e `☆`, con lo spessore del resto del set. */}
-      <span style={{ display: 'flex', color: mio ? C.oro : voti ? alpha(C.oro, 0.55) : C.fioco }}>
-        <Icona nome="stella" misura={15} pieno={!!voti} />
+      <span style={{ display: 'flex', color: mio ? mioColore : v.admin ? alpha(C.oro, 0.55) : v.user ? alpha(C.blu, 0.6) : C.fioco }}>
+        <Icona nome="stella" misura={15} pieno={!!tot} />
       </span>
-      <span style={{ fontSize: S.base, fontFamily: F.mono, fontWeight: 700, color: voti ? C.oro : C.fioco }}>{voti}/3</span>
+      <span style={{ fontSize: S.base, fontFamily: F.mono, fontWeight: 700, color: v.admin ? C.oro : C.fioco }}>{v.admin}/3</span>
+      {v.user > 0 && <span style={{ fontSize: S.base, fontFamily: F.mono, fontWeight: 700, color: C.blu }}>+{v.user}</span>}
     </button>
   )
 }

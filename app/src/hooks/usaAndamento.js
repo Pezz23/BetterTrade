@@ -281,7 +281,7 @@ export async function partiteDaEsportare(metodo, ambito, soglie, stagione, fasci
   const righe = []
   for (let da = 0; ; da += 1000) {
     let q = supabase.from('andamento')
-      .select('id, partita_id, stagione, weekend, div, casa, trasferta, giocata, quota, att, vpm, voto, scelta, azzeccata')
+      .select('id, partita_id, stagione, weekend, div, casa, trasferta, giocata, quota, att, vpm, vpm_segno, voto, scelta, azzeccata')
       .eq('metodo', metodo).eq('ambito', ambito).gte(metodo, s[metodo])
       .gte('quota', f.min).lt('quota', f.max)
     if (stagione) q = q.eq('stagione', stagione)

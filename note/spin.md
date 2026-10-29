@@ -82,3 +82,20 @@ Tre cambi chiesti da Mattia, nello stesso giorno (`a115a23`, 1.58.00):
   direbbe «↔1».
 - ⚠️ VPM arriva con una chiamata a parte: finché non c'è, la pagina compone
   sull'attendibilità **e lo scrive**, invece di restare ferma.
+
+## ⭐ Le stelline a tutti, separate per ruolo (29/10/2026)
+
+Mattia: *"vorrei che anche gli user mettano le stelline dentro Partite, però
+separate da quelle degli admin"* (`1.64.00`, `sql/46`). Ogni stellina porta
+`da_admin` (una fotografia del ruolo, come i flag di `sql/41`; la policy
+rifiuta chi si dichiara admin senza esserlo). A schermo **un tasto solo**:
+**oro `n/3`** gli admin, **blu `+n`** gli user, solo se ci sono; la mia
+stellina si riempie del mio colore. ⚠️ Non due righe: una seconda riga avrebbe
+fatto crescere solo alcune card della lista.
+
+⚠️⚠️ **Cosa CONTANO**, deciso da Mattia:
+- nelle **Spin** (del gruppo) **solo quelle degli admin** —
+  `SpinProvvisoriePage` usa `votiAdminDi`, con l'alias `votiDi` così il resto
+  della pagina non cambia;
+- in **Road to weekend** e **Bet Builder** (personali) **tutte** (`votiDi`):
+  una stellina di chiunque fa entrare la partita in scaletta sotto soglia.

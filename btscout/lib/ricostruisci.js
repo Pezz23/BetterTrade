@@ -123,6 +123,9 @@ export async function ricostruisci({ stagioni: quante = 3, daGiornata = 5 } = {}
           return m > 1 && a > 1 ? m / a - 1 : null
         })(),
         vpm: v?.punti ?? null, voto: voto({ att: probGiocata, resa, accordo: accordoVpm }),
+        // il segno che dice il campo, '1' o '2' (serve all'esportazione di
+        // Andamento, 29/10/2026)
+        vpmSegno: v?.segno ?? null,
         // ⚠️ `scelta` è **null** quando il campo contraddice il mercato: non è
         // un dato che manca, è la formula che dice "questa non si sceglie".
         scelta: scelta(probGiocata, { punti: v?.punti ?? null, accordo: accordoVpm }),
