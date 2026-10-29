@@ -268,7 +268,7 @@ state provate simulando uno user e un admin in una transazione annullata.
 
 | | |
 |---|---|
-| **NickV ha un giro aperto col metodo VECCHIO** (29/10, trovato dal tagliando) | scalata `57`, `regola = 'meta'`, 16 passi di piano e **nessuno giocato**. La pagina lo tratta come un giro a percentuale al 5%, ma al primo ✗ `chiudi_giro_perso` risponde *"solo per le scalate a percentuale"*: il passo resta perso e il giro non si chiude. Correzione proposta: portarlo a `percentuale` (0,05) con backup e prova a vuoto — decide Mattia |
+| ~~**NickV aveva un giro aperto col metodo VECCHIO**~~ | ✅ **29/10**: Mattia, entrato come NickV, ha usato «Azzera tutto» e poi una ricarica di 50 €. Le scalate 48 e 57 non avevano nessun passo giocato, quindi il conto resta 50 € come prima. I 71 passi di piano sono nel registro delle cancellazioni. Era: `regola = 'meta'`, e al primo ✗ `chiudi_giro_perso` l'avrebbe rifiutato |
 | **Road to weekend 1.73 non giocata dal vero** (29/10) | `giocaPrimo`, `perdi` a percentuale, `cambiaPercentuale`, Reset partite in coda (`aggiungiPiano`) e `eliminaGiroVuoto`: provati nel database da user in transazioni annullate e a schermo con Fotografo a conto zero. **Nessun passo vero giocato**: il primo di Mattia è la prova |
 | **«sce —» nelle foto di `guarda.mjs`** (29/10) | con l'utente di prova la Scelta esce quasi sempre vuota, probabilmente perché lo scatto arriva prima dei dati di VPM (1,2 s). Se Mattia lo vede anche sul suo schermo è un difetto vero |
 | **`guarda.mjs` ricompone male le pagine lunghe** (29/10) | la foto «intera» di Road to weekend ha la barra in basso **in mezzo** e copre la card del passo: per guardare quella zona serve uno scatto a finestra, non `fullPage` |
