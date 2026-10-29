@@ -24,6 +24,3 @@ export async function aggiornaBankroll(userId) {
   return data
 }
 
-// I soldi si arrotondano ai centesimi: senza questo i decimali binari si
-// accumulano e il totale non torna.
-export const arrotonda = n => Math.round(n * 100) / 100

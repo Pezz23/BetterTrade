@@ -173,7 +173,7 @@ export function puntataDi(conto, percentuale) {
 
 /**
  * Il conto di un giro a percentuale, **calcolato** dai passi giocati (come
- * `casseDi` per «Metà utile»: un numero scritto a ogni esito andrebbe disfatto
+ * le casse di «Metà utile»: un numero scritto a ogni esito andrebbe disfatto
  * a ogni annullamento). Torna `{ live, poste, prossima }`: il conto adesso, la
  * puntata di ogni passo giocato e quella del prossimo.
  */
@@ -440,38 +440,6 @@ export function componiPasso(candidate, { quotaMinima, maxGambe = MAX_GAMBE,
     gambe: null, quota: null,
     motivo: `con ${buone.length} partite e ${maxGambe} gambe si arriva a ${quota.toFixed(2)}, serve ${quotaMinima.toFixed(2)}`,
   }
-}
-
-/**
- * Le casse di una scalata, **ricalcolate camminando sui passi**.
- *
- * ⚠️⚠️ **Derivate, non memorizzate, ed è la correzione del 18/10/2026.** Prima
- * `scalate.cassa` e `scalate.accumulo` erano aggiornate a ogni esito, quindi
- * ogni modifica successiva — annullare un esito, cambiare una quota, togliere
- * una gamba — avrebbe dovuto "disfare" l'aggiornamento precedente. Per non
- * sbagliare avevo **bloccato tutto**, e Mattia: *"tutto troppo vincolante"*.
- * Aveva ragione due volte: lo strumento serve a cambiare idea, e **la cura non
- * era vietare le modifiche ma smettere di tenere un secondo numero.**
- * Le colonne restano come fotografia di quello che si era scritto al momento,
- * ma **la verità è questa funzione**.
- *
- * `percDi(i)` è la percentuale scelta a mano per il passo `i`, o `undefined`
- * per usare il consiglio del metodo.
- */
-export function casseDi(passi, posta, percDi = () => undefined) {
-  let cassa = Number(posta) || 0, accumulo = 0, vivi = 0
-  for (const [i, p] of (passi || []).entries()) {
-    // ⚠️ Si ferma al primo passo non ancora giocato: è lì che sta la cassa.
-    if (!p || p.esito === 'aperto' || cassa < 1) break
-    vivi++
-    if (p.esito === 'perso') { cassa = 0; break }
-    const montante = cassa * Number(p.quota)
-    const pc = percDi(i) ?? percentualeConsigliata({ numero: i + 1, montante, puntata: cassa, posta, accumulato: accumulo })
-    const r = applicaIncasso(montante, pc, cassa)
-    accumulo += r.via
-    cassa = r.rigioca
-  }
-  return { cassa, accumulo, vivi }
 }
 
 /**

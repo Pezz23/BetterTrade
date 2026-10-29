@@ -79,9 +79,6 @@ export async function chiama(percorso, parametri = {}, tentativi = 4) {
   throw new Error(`${percorso} → rete: ${ultimo.cause?.code || ultimo.message} dopo ${tentativi} tentativi`);
 }
 
-/** Le partite in programma di un campionato, senza quote. Gratis. */
-export const eventi = div => chiama(`/sports/${SPORT[div]}/events/`);
-
 /** Le partite con le quote 1X2 di tutti i bookmaker eu+uk. 2 crediti. */
 export const quote = div => chiama(`/sports/${SPORT[div]}/odds/`, { regions: 'eu,uk', markets: 'h2h', oddsFormat: 'decimal' });
 

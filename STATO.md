@@ -8,9 +8,9 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 29 ottobre 2026, notte · app alla versione **1.73.00**
-(`9fad2f9`) · passaggio di consegne: 29/10, fine sessione · ⚠️ **da pushare**:
-`9fad2f9` e il commit di questo passaggio — dopo il push si guarda su Vercel
+**Ultimo aggiornamento:** 29 ottobre 2026, notte · app alla versione **1.73.01**
+(tagliando del codice) · passaggio di consegne: 29/10, fine sessione · ⚠️ **da pushare**:
+`9fad2f9`, il passaggio e il tagliando — dopo il push si guarda su Vercel
 un ricaricamento su `/partite` (è `app/vercel.json` a evitare il 404)
 
 ## ▶️ DOVE SIAMO — 29 ottobre 2026, leggi questo per primo
@@ -254,6 +254,7 @@ leggi "884 partite" o "440 crediti" e siamo a marzo, sono vecchi di mesi.
 | **Il tasto Bilancio solo per gli admin** (24/10) | `7deafd9` |
 | **Spin**: selezione per **scelta** 75/72/68, griglia «A mano» vuota, «ordina per» i quattro indicatori, «S1» su tre fonti (24/10) | `a115a23` |
 | **Road to weekend, conto personale** (`sql/41`): ricariche, conto calcolato, ⟳ RIPARTI, «fissato» salvato, ognuno la sua, flag a tutti; la partita aggiunta che non si toglieva; backup con le tabelle delle persone (24/10) | `39d7021` |
+| **Tagliando del codice** (29/10, `1.73.01`): via i resti della simulazione del piano (`esiti`, `perc`, «GIRO NUOVO · simulato»), `chiudi` e `riparti` dal registro, `casseDi`, `arrotonda`, `eventi` di Odds API; l'intestazione legge i ruoli da `RUOLO` di `theme.js`; dipendenze aggiornate dentro le versioni e 7 vulnerabilità su 9 chiuse. Restano React 19 e Vite 8 (salti di versione) | tagliando |
 
 Le migrazioni applicate in questi due giorni: **`sql/31`** (numero del passo
 decimale, per inserirne uno in mezzo), **`sql/32`** (il metodo `madre`),
@@ -267,6 +268,7 @@ state provate simulando uno user e un admin in una transazione annullata.
 
 | | |
 |---|---|
+| **NickV ha un giro aperto col metodo VECCHIO** (29/10, trovato dal tagliando) | scalata `57`, `regola = 'meta'`, 16 passi di piano e **nessuno giocato**. La pagina lo tratta come un giro a percentuale al 5%, ma al primo ✗ `chiudi_giro_perso` risponde *"solo per le scalate a percentuale"*: il passo resta perso e il giro non si chiude. Correzione proposta: portarlo a `percentuale` (0,05) con backup e prova a vuoto — decide Mattia |
 | **Road to weekend 1.73 non giocata dal vero** (29/10) | `giocaPrimo`, `perdi` a percentuale, `cambiaPercentuale`, Reset partite in coda (`aggiungiPiano`) e `eliminaGiroVuoto`: provati nel database da user in transazioni annullate e a schermo con Fotografo a conto zero. **Nessun passo vero giocato**: il primo di Mattia è la prova |
 | **«sce —» nelle foto di `guarda.mjs`** (29/10) | con l'utente di prova la Scelta esce quasi sempre vuota, probabilmente perché lo scatto arriva prima dei dati di VPM (1,2 s). Se Mattia lo vede anche sul suo schermo è un difetto vero |
 | **`guarda.mjs` ricompone male le pagine lunghe** (29/10) | la foto «intera» di Road to weekend ha la barra in basso **in mezzo** e copre la card del passo: per guardare quella zona serve uno scatto a finestra, non `fullPage` |

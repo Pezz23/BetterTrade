@@ -185,7 +185,7 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, colore, classifiche,
                 quote, setQuote, esito, setEsito, onToglie, prossima, onAggiunge,
                 onQuota = null, onSpezza = null, onApri = null, onManuale = null, tocca = true,
                 stelleDi = () => 0, anteprima = false, fissato = false, onFissa = null, fermo = false,
-                parte = 'tutto', nudo = false, simulato = false }) {
+                parte = 'tutto', nudo = false }) {
   // ⚠️ La quota della schedina è il **prodotto delle quote modificate**, non di
   // quelle scaricate: Mattia gioca su book diversi e con i bonus, e una pagina
   // che mostra la quota del consenso gli racconterebbe un piano che non è il suo.
@@ -401,7 +401,8 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, colore, classifiche,
         <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${alpha(C.testo, 0.1)}`,
           fontFamily: F.sans, fontSize: S.minuta, color: C.fioco, textAlign: 'center', lineHeight: 1.5 }}>
           {/* ⚠️ Dopo un passo perso la puntata non arriva dal passo prima:
-              arriva da ⟳ RIPARTI, che apre un giro nuovo sul conto. */}
+              `chiudi_giro_perso` apre un giro nuovo sul conto. Si vede solo
+              se quella chiamata è fallita a metà. */}
           {fermo ? 'il giro si è chiuso: questo passo passa al giro nuovo' : `la puntata si calcola quando chiudi il passo ${numero - 1}`}
         </div>
         {tastoFissa && <div style={{ display: 'flex', marginTop: 8 }}>{tastoFissa}</div>}
@@ -429,14 +430,14 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, colore, classifiche,
           l'unica cosa della card che **scrive nel registro**. */}
       {tocca && parte === 'tutto' && NUOVO_PASSO && (
         <div style={{ marginTop: SP.m }}>
-          <TastiEsito esito={esito} setEsito={setEsito} fissato={fissato} onFissa={tocca ? onFissa : null} simulato={simulato} />
+          <TastiEsito esito={esito} setEsito={setEsito} fissato={fissato} onFissa={tocca ? onFissa : null} />
         </div>
       )}
       {tocca && parte === 'tutto' && !NUOVO_PASSO && <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
         {/* ⚠️⚠️ **Nessun blocco, nemmeno a scalata aperta** (Mattia, 18/10:
             *"tutto troppo vincolante"*). Si può annullare un esito, cambiare
             una quota, togliere o aggiungere una gamba in qualunque momento:
-            le casse **si ricalcolano dalla catena** (`casseDi`), quindi non
+            le puntate **si ricalcolano dalla catena** (`contiPercentuale`), quindi non
             c'è niente da disfare. Era il secondo numero memorizzato a rendere
             necessari i divieti, non il registro. */}
         {[['vinto', C.verde], ['perso', C.rosso], [null, C.spento]].map(([e, col]) => (
@@ -465,7 +466,7 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, colore, classifiche,
  * nel colore, la parola nel `title`.
  * ⚠️ 34×30 e non meno: è il bersaglio di un dito, non di un mouse.
  */
-function TastiEsito({ esito, setEsito, fissato = false, onFissa = null, simulato = false }) {
+function TastiEsito({ esito, setEsito, fissato = false, onFissa = null }) {
   // ⚠️⚠️ **Il ✗ vuole due tocchi** (29/10/2026): a percentuale del conto un
   // passo perso **chiude il giro** e lo manda in archivio, e un tocco sbagliato
   // non si disfa con «·». Il primo tocco arma, il secondo segna; dopo cinque
@@ -491,12 +492,9 @@ function TastiEsito({ esito, setEsito, fissato = false, onFissa = null, simulato
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: SP.s, justifyContent: 'flex-end' }}>
       <span style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco, marginRight: 'auto' }}>
-        {/* ⚠️ Nel piano (scalata chiusa) l'esito è una simulazione e in
-            archivio non va niente: la scritta lo dice (Mattia, 29/10/2026:
+        {/* ⚠️ La scritta dice quando si va in archivio (Mattia, 29/10/2026:
             *"la domanda è: quando va in archivio?"*). */}
-        {armato ? <b style={{ color: C.rosso }}>{simulato
-          ? 'Tocca di nuovo ✗: simuli un perso, il giro ricomincia'
-          : 'Tocca di nuovo ✗ per confermare: il giro va in archivio'}</b>
+        {armato ? <b style={{ color: C.rosso }}>Tocca di nuovo ✗ per confermare: il giro va in archivio</b>
           : esito === 'vinto' ? 'vinto' : esito === 'perso' ? 'perso' : fissato ? 'fissato' : 'da giocare'}
       </span>
       {tasto(esito === 'vinto', C.verde, () => { setArmato(false); setEsito('vinto') }, '✓', 'vinto')}
@@ -541,7 +539,7 @@ function Tendina({ titolo, riassunto, children, colore = C.spento }) {
  */
 function PassoHero(props) {
   const { numero, gambe, giorno: gio, ora, posta, quote, esito, setEsito,
-    tocca = true, onFissa, fissato, conto = null, simulato = false, colore = C.oro } = props
+    tocca = true, onFissa, fissato, conto = null, colore = C.oro } = props
   const col = colore
   const quota = gambe.map(g => Number(quote[g.id] ?? g.quota) || 1).reduce((a, q) => a * q, 1)
   const montante = posta * quota
@@ -590,7 +588,7 @@ function PassoHero(props) {
 
       {tocca && (
         <div style={{ marginTop: SP.l }}>
-          <TastiEsito esito={esito} setEsito={setEsito} fissato={fissato} onFissa={onFissa} simulato={simulato} />
+          <TastiEsito esito={esito} setEsito={setEsito} fissato={fissato} onFissa={onFissa} />
         </div>
       )}
 
@@ -966,14 +964,12 @@ export default function ScalataPage() {
   // le partite aggiunte a mano a un passo, per indice di passo
   const [aggiunte, setAggiunte] = useState({})
   const [quote, setQuote] = useState({})
-  const [perc, setPerc] = useState({})
   // ⚠️ La percentuale del conto per il PROSSIMO giro (29/10/2026): si sceglie
   // a scalata chiusa e si salva con le preferenze; a scalata aperta vale
-  // quella scritta sul giro (`aperta.percentuale`), e si cambia solo con STOP.
+  // quella scritta sul giro (`aperta.percentuale`), e si cambia solo dopo un perso.
   const [percScelta, setPercScelta] = useState(PERCENTUALE_DEFAULT)
   // RISULTATO FILTRI: tutte, o solo le «Consigliate» del criterio A (29/10/2026)
   const [soloA, setSoloA] = useState(false)
-  const [esiti, setEsiti] = useState({})
   const [tolte, setTolte] = useState([])
   // ⚠️ Gli id della **prima gamba di ogni pezzo staccato**: il taglio si ancora
   // alla partita, non alla posizione, così non si sposta quando il piano cambia.
@@ -1013,7 +1009,7 @@ export default function ScalataPage() {
     setVpmMin(n(f.vpm, 0))
     setQuotaGamba(n(f.quotaGamba, QUOTA_MINIMA_GAMBA))
     if (PERCENTUALI.includes(Number(f.percentuale))) setPercScelta(Number(f.percentuale))
-    // ⚠️ E il **piano**: tolte, aggiunte, tagli, quote, percentuali ed esiti
+    // ⚠️ E il **piano**: tolte, aggiunte, tagli, quote e passi fissati
     // (Mattia, 22/10: *"gli admin devono vedere tutti la stessa situazione,
     // bankroll e partite del passo x compreso"*). Le partite che nel frattempo
     // sono sparite dal calendario non fanno danno: un taglio o un'aggiunta
@@ -1023,10 +1019,9 @@ export default function ScalataPage() {
     if (Array.isArray(pi.tagli)) setTagli(pi.tagli)
     if (pi.aggiunte && typeof pi.aggiunte === 'object') setAggiunte(pi.aggiunte)
     if (pi.quote && typeof pi.quote === 'object') setQuote(pi.quote)
-    if (pi.perc && typeof pi.perc === 'object') setPerc(pi.perc)
-    // ⚠️ Gli esiti simulati non si rileggono più (29/10/2026): la simulazione
-    // è stata tolta, e quelli salvati prima farebbero sembrare giocati dei
-    // passi che non lo sono.
+    // ⚠️ Gli esiti simulati (`pi.esiti`) e le percentuali per passo
+    // (`pi.perc`) delle versioni di prima non si rileggono: la simulazione e
+    // il metodo a cassa sono stati tolti (29/10/2026).
     if (Array.isArray(pi.fissati)) setFissati(pi.fissati)
     if (Number.isFinite(Number(pi.calendarioDa)) && pi.calendarioDa) setCalendarioDa(Number(pi.calendarioDa))
   }, [pref.pronte, pref.dati])
@@ -1045,7 +1040,7 @@ export default function ScalataPage() {
     if (!letta) return
     const dati = {
       filtri: { att: attMin, scelta: sceMin, vpm: vpmMin, quotaGamba, percentuale: percScelta },
-      piano: { tolte, aggiunte, tagli, quote, perc, esiti, fissati, calendarioDa },
+      piano: { tolte, aggiunte, tagli, quote, fissati, calendarioDa },
     }
     const j = JSON.stringify(dati)
     if (ultimaSalvata.current === null) { ultimaSalvata.current = j; return }
@@ -1056,7 +1051,7 @@ export default function ScalataPage() {
       else ultimaSalvata.current = j
     }, 800)
     return () => clearTimeout(t)
-  }, [letta, attMin, sceMin, vpmMin, quotaGamba, percScelta, tolte, aggiunte, tagli, quote, perc, esiti, fissati, calendarioDa])
+  }, [letta, attMin, sceMin, vpmMin, quotaGamba, percScelta, tolte, aggiunte, tagli, quote, fissati, calendarioDa])
 
   // Dal 24/10/2026 l'archivio è di tutti: ognuno ha il suo.
   const vista = modo
@@ -1175,14 +1170,6 @@ export default function ScalataPage() {
     })).filter(f => f.partite.length)
   }, [candidate, valutate, aggiunte, tagli, tolte])
 
-  // ⚠️⚠️ **Esiti e percentuali si agganciano al PASSO, non alla posizione**
-  // (24/10/2026). Erano `esiti[i]`: quando un passo spariva, quello dopo
-  // ereditava l'esito e la percentuale del passo sparito. La chiave è quella
-  // di «fissa»: la riga salvata a scalata aperta (`s:`), la prima gamba nel
-  // piano (`p:`). Le chiavi vecchie, numeriche, non trovano più niente.
-  const kp = (i) => (aperta
-    ? (reg.passi[i]?.id != null ? `s:${reg.passi[i].id}` : `#${i}`)
-    : (passi[i]?.partite?.[0]?.id != null ? `p:${passi[i].partite[0].id}` : `#${i}`))
 
   // ⚠️⚠️ **Flaggate e votate restano in lista anche se i filtri le tagliano**
   // (Mattia, 22/10/2026). Senza, bastava alzare una soglia per far sparire un
@@ -1268,15 +1255,14 @@ export default function ScalataPage() {
   // inventato, ed è il difetto che questo progetto evita dappertutto.
   // È il **primo senza esito**, non quanti ne hanno uno: se il 2 è segnato e
   // l'1 no, la catena è ferma all'1.
+  // ⚠️ Nel piano nessun passo ha un esito (la simulazione non c'è più): la
+  // frontiera è il passo 1.
   const frontiera = useMemo(() => {
-    const dato = aperta
-      ? (i) => reg.passi[i] && reg.passi[i].esito !== 'aperto'
-      : (i) => !!esiti[kp(i)]
+    if (!aperta) return 0
     let i = 0
-    while (dato(i)) i++
+    while (reg.passi[i] && reg.passi[i].esito !== 'aperto') i++
     return i
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aperta, reg.passi, passi, esiti])
+  }, [aperta, reg.passi])
 
   /**
    * Fin dove si disegna: la frontiera, **più** i pezzi staccati a mano che le
@@ -1339,9 +1325,7 @@ export default function ScalataPage() {
   // nel piano (Mattia, 24/10/2026: *"se metto perso non mi presenta i passi
   // successivi, motivo per il quale ho chiuso la scalata"*). Da lì in poi si
   // vedono **spenti**, come anteprima, e ⟳ RIPARTI li rimette in gioco.
-  const perso = aperta
-    ? reg.passi.findIndex(r => r.esito === 'perso')
-    : passi.findIndex((_, k) => esiti[kp(k)] === 'perso')
+  const perso = aperta ? reg.passi.findIndex(r => r.esito === 'perso') : -1
 
   // ⚠️⚠️ **Le casse si RICALCOLANO dalla catena dei passi**, sempre: né lette
   // dal database né aggiornate a ogni esito. È quello che permette di togliere
@@ -1351,25 +1335,20 @@ export default function ScalataPage() {
   // `contiPercentuale` cammina passo per passo — puntata = % del conto di quel
   // momento, vinto → +utile, perso → −puntata. `poste[i]` è la puntata del
   // passo i già giocato, `prossima` quella del passo da giocare adesso.
-  // ⚠️ Nel piano (scalata chiusa) gli esiti sono simulati, e dopo un perso la
-  // catena **continua** col conto più basso: è quello che succede davvero,
-  // perché il giro riparte da solo con lo stesso conto.
+  // Nel piano nessun passo è giocato: la catena dà solo la puntata del passo 1.
   const giro = useMemo(() => contiPercentuale(bankrollIniziale, aperta
     ? reg.passi
-    : passi.map((f, i) => ({
+    : passi.map(f => ({
       quota: f.partite.reduce((a, g) => a * (Number(quote[g.id] ?? g.quota) || 1), 1),
-      esito: esiti[kp(i)] ?? 'aperto',
+      esito: 'aperto',
     })), percentuale),
-    // ⚠️ `kp` è una funzione nuova a ogni ridisegno: dipende solo da `aperta`,
-    // `reg.passi` e `passi`, che sono già qui.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [aperta, reg.passi, passi, esiti, quote, percentuale, bankrollIniziale])
+    [aperta, reg.passi, passi, quote, percentuale, bankrollIniziale])
   const puntataDel = (i) => (i < giro.poste.length ? giro.poste[i] : i === giro.poste.length ? giro.prossima : 0)
   // `casse` resta come nome per le righe che lo leggono: ora è il giro.
   const casse = { inGioco: giro.prossima, vivi: giro.poste.length, live: giro.live, risultato: giro.live - bankrollIniziale }
 
   // Il conto di adesso: ricariche, giri chiusi e quanto il giro in corso ha
-  // fatto finora (nel piano, quanto farebbe con gli esiti provati).
+  // fatto finora.
   const conto = contoDi({ ricariche: reg.ricariche, storico: reg.storico || [],
     aperta: { bankroll_iniziale: bankrollIniziale }, live: casse.live })
   // Arrotondato al centesimo: è un importo, e i decimali della quota non
@@ -1450,14 +1429,14 @@ export default function ScalataPage() {
         </Card>
       )}
 
-      {/* ⚠️ Azzerare il registro azzera anche lo stato della pagina: esiti e
-          percentuali sono indicizzati per passo, e passi non ce ne sono più. */}
+      {/* ⚠️ Azzerare il registro azzera anche lo stato della pagina: il piano
+          è indicizzato per passo, e passi non ce ne sono più. */}
       {vista === 'archivio' && (
         <Archivio storico={reg.storico} ricariche={reg.ricariche} conto={conto} onResoconto={reg.resoconto}
           onAnnulla={async (id) => { const x = await reg.annullaRicarica(id); setAvviso(x?.errore ?? null) }}
           onAzzera={async () => {
             await reg.azzeraTutto()
-            setEsiti({}); setPerc({}); setTolte([]); setAggiunte({}); setQuote({}); setFissati([])
+            setTolte([]); setAggiunte({}); setQuote({}); setFissati([])
           }} />
       )}
       {vista === 'piano' && <>
@@ -1707,11 +1686,8 @@ export default function ScalataPage() {
                l'ordine con cui i passi sono stati salvati, e **lascia dei
                buchi**: svuotando un passo la riga si cancella, quindi nel
                registro vero di Mattia i passi sono 1, 3, 4… Il numero che
-               conta è la **posizione nella catena**, perché è quella che
-               `casseDi` usa per decidere la percentuale consigliata — col
-               numero della colonna il consiglio scritto nella card e quello
-               applicato alle casse erano due numeri diversi (al primo passo
-               della catena: tutto l'utile contro il 70%). */
+               conta è la **posizione nella catena**: è quello che si vede e
+               quello su cui `contiPercentuale` cammina. */
             <QualePasso key={riga.id} attivo={i === frontiera && !inAnteprima} numero={i + 1} gambe={gambe} giorno={riga.giorno} ora={gambe[0]?.ora?.slice(0, 5)} stelleDi={votiDi} anteprima={inAnteprima}
               fermo={fermo} fissato={eFissato(i)} onFissa={() => fissa(i)}
               posta={p} conto={i === giro.poste.length ? giro.live : null} colore={coloreDi(i)} classifiche={classifiche}
@@ -1773,29 +1749,13 @@ export default function ScalataPage() {
           // ipotetico. ⚠️ Lo spezza del passo 2 si raggiunge segnando l'esito
           // del 1 — e col taglio automatico a 2,00 serve molto di rado.
           const p = puntataDel(i)
-          const fermo = false
           const inAnteprima = i > frontiera
           // ⚠️ Nel piano il passo si vede anche col conto a zero (29/10/2026):
           // nasconderlo lasciava «altri 4 passi in programma» su 5, e l'avviso
           // di ricaricare sta già nella card del conto.
           if (i > limiteVisibile) return null
-          // ⚠️⚠️ **Dopo un perso il giro ricomincia da PASSO 1** (Mattia,
-          // 29/10/2026: *"quando mette in archivio voglio che si riparta da
-          // passo 1"*). Con la scalata aperta succede da solo — il giro nuovo
-          // ha solo i passi rimasti; nel piano la numerazione si azzera dopo
-          // ogni perso simulato, e una riga dice dove comincia il giro nuovo.
-          let inizio = 0
-          for (let k = 0; k < i; k++) if (esiti[kp(k)] === 'perso') inizio = k + 1
-          const nGiro = i - inizio + 1
+          const nGiro = i + 1
           return (<Fragment key={f.partite[0]?.id ?? f.giorno + f.ora}>
-            {i > 0 && inizio === i && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: SP.m, margin: `${SP.m}px 0`,
-                fontFamily: F.sans, fontSize: S.micro, color: C.spento, letterSpacing: '0.08em' }}>
-                <span style={{ flex: 1, height: 1, background: alpha(C.testo, 0.12) }} />
-                GIRO NUOVO · simulato: in archivio va solo a scalata aperta
-                <span style={{ flex: 1, height: 1, background: alpha(C.testo, 0.12) }} />
-              </div>
-            )}
             {/* ⚠️ La chiave (sul `Fragment` sopra) è **l'id della prima gamba**:
                 due pezzi tagliati dalla stessa fascia hanno lo stesso giorno e
                 la stessa ora, quindi `giorno + ora` ne faceva due chiavi uguali
@@ -1803,9 +1763,7 @@ export default function ScalataPage() {
                 silenzio. ⚠️ Fra graffe: dentro il `Fragment` un commento nudo
                 diventa testo a schermo (trappola nota, 29/10/2026). */}
             <QualePasso attivo={i === frontiera && !inAnteprima} numero={nGiro} gambe={f.partite} giorno={f.giorno} ora={f.ora} stelleDi={votiDi} anteprima={inAnteprima}
-              /* ⚠️ Solo nel piano: a scalata aperta i passi si scoprono con
-                 l'esito, che lì è un fatto registrato e non una simulazione. */
-              fermo={fermo} fissato={eFissato(i)}
+              fissato={eFissato(i)}
               onFissa={() => fissa(i)}
               posta={p} conto={i === giro.poste.length ? giro.live : null} colore={coloreDi(i)} classifiche={classifiche}
               onApri={setApertaId} prossima={prossimaDi(i)}
@@ -1834,7 +1792,7 @@ export default function ScalataPage() {
                   { bankroll: bankrollIniziale, posta, quotaMinima: QUOTA_MINIMA_SCHEDINA, regola: METODO.id, percentuale, piano },
                   e, { posta, quota: piano[0]?.quota ?? 1, finale, conto: cent(contoFermo + finale - bankrollIniziale) })
                 if (x?.errore) setErroreApri(x.errore)
-                else { setErroreApri(null); setEsiti({}); setPerc({}) }
+                else setErroreApri(null)
                 setDaOra(Date.now())
               }}
               /* ⚠️ Toglie **anche dalle aggiunte**: rimessa dall'elenco, la
@@ -1846,13 +1804,6 @@ export default function ScalataPage() {
               }} />
           </Fragment>)
         })}
-
-      {/* ⚠️⚠️ **⟳ RIPARTI** (Mattia, 24/10/2026): dopo un passo perso, chiude
-          il giro e ne apre uno nuovo coi passi programmati che restano, sulla
-          puntata del 10% del conto. Prima l'unico modo di andare avanti era
-          STOP, che si portava via i passi e lasciava da ricomporre tutto. */}
-      {/* ⚠️ ⟳ RIPARTI non c'è più (29/10/2026): a percentuale il giro perso
-          si chiude e riparte da solo (`reg.perdi`, `chiudi_giro_perso`). */}
 
       {/* ⚠️⚠️ **Un passo nascosto deve dire di esserci.** I passi dopo la
           frontiera non si vedono, ma esistono e sono già nel piano salvato:
@@ -1870,14 +1821,6 @@ export default function ScalataPage() {
             Il piano del giro è finito, tutto vinto finora · premi <b style={{ color: C.rosso }}>↻ Reset partite</b> per aggiungere i prossimi passi
           </div>
         )
-        // il numero che il passo ha A SCHERMO: nel piano riparte da 1 dopo
-        // ogni perso simulato, come nei titoli dei passi
-        const numeroNelGiro = (i) => {
-          if (aperta) return i + 1
-          let inizio = 0
-          for (let k = 0; k < i; k++) if (esiti[kp(k)] === 'perso') inizio = k + 1
-          return i - inizio + 1
-        }
         if (nascosti < 1) return null
         return (
           /* ⚠️ Compatto dal 29/10/2026 (giro C): una riga, niente riquadro
@@ -1891,7 +1834,7 @@ export default function ScalataPage() {
             <span style={{ color: C.fioco }}>
               · {casse.inGioco < 1
                 ? 'il conto è sotto 1 €: serve una ricarica'
-                : `si scoprono quando segni l'esito del passo ${numeroNelGiro(frontiera)}`}
+                : `si scoprono quando segni l'esito del passo ${frontiera + 1}`}
             </span>
           </div>
         )

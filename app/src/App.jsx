@@ -2,7 +2,7 @@ import { useState, useEffect, lazy, Suspense } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
-import { C, F, alpha, S, SP, R } from './theme'
+import { C, F, alpha, S, SP, R, RUOLO } from './theme'
 import Icona from './components/Icona'
 import { COLONNA } from './lib/layout'
 import { VERSIONE } from './versione'
@@ -223,9 +223,7 @@ function Menu({ aperto, onChiudi, attivo, isAdmin }) {
 }
 
 function Header({ currentUser, onLogout, onMenu, menuAperto }) {
-  const roleColor = { superadmin:C.oro, admin:C.blu, user:C.menta }
-  const roleLabel = { superadmin:'SuperAdmin', admin:'Admin', user:'User' }
-  const rc = roleColor[currentUser?.role] || C.grigio
+  const rc = RUOLO[currentUser?.role]?.colore || C.grigio
   return (
     <div style={{
       background:C.barra, borderBottom:`1px solid ${C.bordoRiga}`,
@@ -266,7 +264,7 @@ function Header({ currentUser, onLogout, onMenu, menuAperto }) {
                         overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
             {currentUser?.display_name||currentUser?.username}
           </div>
-          <div style={{ fontSize:S.micro, color:rc, fontFamily:F.mono }}>{roleLabel[currentUser?.role]}</div>
+          <div style={{ fontSize:S.micro, color:rc, fontFamily:F.mono }}>{RUOLO[currentUser?.role]?.nome}</div>
         </div>
         <button onClick={onLogout} title="Esci" aria-label="Esci" style={{
           width:32, height:32, borderRadius:R.m, background:'transparent', border:`1px solid ${C.bordo}`,

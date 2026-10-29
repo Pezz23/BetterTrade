@@ -249,7 +249,7 @@ export function usaScalate(userId) {
   /**
    * Segna l'esito di un passo.
    * ⚠️⚠️ **Non tocca le casse**: quelle si ricalcolano dalla catena
-   * (`casseDi` in `lib/scalata.js`). Tenerle aggiornate qui voleva dire
+   * (`contiPercentuale` in `lib/scalata.js`). Tenerle aggiornate qui voleva dire
    * doverle *disfare* a ogni annullamento — ed è il motivo per cui la prima
    * versione proibiva di annullare. Le colonne `cassa`/`accumulo` restano come
    * fotografia, la verità è il calcolo.
@@ -273,43 +273,6 @@ export function usaScalate(userId) {
     await ricarica()
     return {}
   }, [ricarica])
-
-  /**
-   * Chiude la scalata consolidando: accumulo e cassa rientrano nel capitale.
-   * ⚠️ `bankroll_finale` si scrive **una volta sola, qui**: è il capitale che
-   * la prossima eredita, e averlo scritto evita di ricostruire la catena
-   * sommando i risultati di tutte le precedenti — una somma che basta un
-   * record saltato a sfalsare.
-   */
-  const chiudi = useCallback(async (bankrollFinale, { cassa, accumulo } = {}) => {
-    if (!stato.aperta) return { errore: 'nessuna scalata aperta' }
-    const { error } = await supabase.from('scalate').update({
-      stato: 'chiusa', chiusa_il: new Date().toISOString(), bankroll_finale: bankrollFinale,
-      // ⚠️ **L'unico momento in cui le casse si scrivono.** Finché la scalata
-      // è aperta sono derivate (`casseDi`), e tenerle aggiornate a ogni esito
-      // era il secondo numero che obbligava a vietare le modifiche. Alla
-      // chiusura però la catena non cambia più, e l'archivio ha bisogno del
-      // valore: senza, una scalata in utile dichiarava accumulo zero.
-      ...(cassa != null ? { cassa } : {}),
-      ...(accumulo != null ? { accumulo } : {}),
-    }).eq('id', stato.aperta.id)
-    if (error) return { errore: error.message }
-    // ⚠️⚠️ **In archivio restano solo i passi GIOCATI** (Mattia, 29/10/2026:
-    // *"quando chiudo una scalata deve tracciare solo i passi giocati"*). I
-    // passi ancora aperti erano il piano, non una giocata, e il resoconto li
-    // mostrava come se lo fossero. Si tolgono **dopo** la chiusura, così nel
-    // registro delle cancellazioni (`sql/42`, *"aiuta a migliorare il
-    // modello"*) risultano con `stato_scalata = 'chiusa'`: distinguibili dai
-    // passi tolti a mano a scalata aperta.
-    // ⚠️ Solo per STOP: «⟳ RIPARTI» i passi rimasti li sposta nel giro nuovo.
-    const aperti = stato.passi.filter(p => p.esito === 'aperto').map(p => p.id)
-    if (aperti.length) {
-      const { error: e2 } = await supabase.from('scalata_passi').delete().in('id', aperti)
-      if (e2) { await ricarica(); return { errore: `scalata chiusa, ma il piano non giocato è rimasto: ${e2.message}` } }
-    }
-    await ricarica()
-    return {}
-  }, [stato.aperta, stato.passi, ricarica])
 
   /**
    * Butta via i passi non ancora giocati e tiene i soldi dove sono.
@@ -430,7 +393,7 @@ export function usaScalate(userId) {
    *
    * Le gambe passate restano dove sono, tutte le **altre** scendono in un
    * passo nuovo inserito subito dopo. Da lì in poi sono due schedine distinte,
-   * e la catena delle casse se ne accorge da sola — `casseDi` cammina sui
+   * e la catena del conto se ne accorge da sola — `contiPercentuale` cammina sui
    * passi, quindi la puntata del pezzo nuovo è quella che arriva fin lì.
    *
    * ⚠️⚠️ **Il numero del passo nuovo è un valore DI MEZZO** (3 e 4 → 3,5), ed è
@@ -441,7 +404,7 @@ export function usaScalate(userId) {
    * misurato in giri.
    * ⚠️ La `posta` si copia da quella del passo spezzato solo perché la colonna
    * non ammette nulli: **non la legge nessuno**, la puntata vera la ricalcola
-   * `casseDi` dalla catena.
+   * `contiPercentuale` dalla catena.
    */
   const spezzaPasso = useCallback(async (passo, prossimoNumero, gambeGiu) => {
     if (!gambeGiu.length) return { errore: 'niente da spostare' }
@@ -473,28 +436,6 @@ export function usaScalate(userId) {
     await ricarica()
     return {}
   }, [quotaDi, ricarica])
-
-  /**
-   * ⚠️⚠️ **⟳ RIPARTI dopo un passo perso** (Mattia, 24/10/2026: *"se metto
-   * perso non mi presenta i passi successivi, motivo per il quale ho chiuso la
-   * scalata"*). Chiude il giro come STOP e ne apre uno nuovo coi **passi
-   * programmati che restano** — spostati, non copiati — e la puntata del 10%
-   * del conto. Gli accumuli ripartono dalla prima vittoria del giro nuovo,
-   * perché `casseDi` cammina sui passi del giro.
-   * ⚠️ È una funzione del database (`riparti_scalata`, `sql/41`) e non tre
-   * chiamate: senza transazione, a metà resterebbe un giro chiuso senza il
-   * successivo. I numeri li calcola la pagina, la formula resta in un posto.
-   */
-  const riparti = useCallback(async (passoPerso, { finale, cassa, accumulo, conto, posta }) => {
-    if (!stato.aperta) return { errore: 'nessuna scalata aperta' }
-    const { error } = await supabase.rpc('riparti_scalata', {
-      p_scalata: stato.aperta.id, p_dopo: Number(passoPerso.numero), p_finale: finale,
-      p_cassa: cassa, p_accumulo: accumulo, p_conto: conto, p_posta: posta,
-    })
-    if (error) return { errore: error.message }
-    await ricarica()
-    return {}
-  }, [stato.aperta, ricarica])
 
   /**
    * ⚠️⚠️ **Il passo PERSO a percentuale** (Mattia, 29/10/2026: *"si continua,
@@ -645,13 +586,11 @@ export function usaScalate(userId) {
 
   return {
     ...stato, occupato, ricarica, resoconto,
-    riparti: attendendo(riparti),
     ricaricaConto: attendendo(ricaricaConto),
     annullaRicarica: attendendo(annullaRicarica),
     fissa: attendendo(fissa),
     apri: attendendo(apri),
     segna: attendendo(segna),
-    chiudi: attendendo(chiudi),
     perdi: attendendo(perdi),
     giocaPrimo: attendendo(giocaPrimo),
     cambiaPercentuale: attendendo(cambiaPercentuale),
