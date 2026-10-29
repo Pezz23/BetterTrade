@@ -138,10 +138,49 @@ solo sulle soglie dove quel risultato capita comunque spesso. Contro la base
 (angoli). Per questo `--riassunto` stampa le decise **con la loro base
 accanto**: un numero di «giuste» senza la base è la frequenza travestita.
 
+## ✅ LA VERSIONE 2 — il mercato dei gol, la binomiale negativa, il derby (29/10/2026)
+
+Dall'articolo di Yip, Zou, Hung e Yiu (*Journal of the Operational Research
+Society*, 2024; arXiv 2112.13001), cercato perché Mattia voleva *"migliorare
+l'algoritmo"* invece di toglierlo. Tre cose nuove, in `lib/conteggi.js`:
+
+1. **le quote dei gol** (`ingressiMercato`): dall'over 2,5 e dall'1X2 di
+   **apertura** i gol totali attesi (`tg`) e lo sbilanciamento (`sbil`);
+2. **la binomiale negativa** (`pOltreNB`): angoli e cartellini variano più di
+   una Poisson, e il modello di prima era troppo sicuro di sé;
+3. **il derby**, solo sui cartellini (`lib/derby.js`, ~110 coppie scritte a
+   mano coi nomi dell'archivio): nei derby i gialli sono **×1,21** su 1.347
+   partite (Turchia ×1,50, Portogallo ×1,34), gli angoli **×0,98**.
+
+`log μ = b0 + b1·log(storico) + b2·tg + b3·sbil [+ b4·derby]`, i coefficienti
+per campionato **stampati** da `prova-conteggi-v2.js --tabella` (stimati con
+le regole di `conteggi_dati`: ultime 10 in tre anni, lega su due anni).
+
+**Misurato camminando nel tempo** (coefficienti dalle sole stagioni prima,
+quindici campionati, 31.929 partite dal 2020/21). Il metro principale è il
+**log score contro un modello nullo** (`L`, la frequenza della lega):
+
+| | oggi (v1) | v2 |
+|---|---|---|
+| angoli | **−0,67%** — peggio di non sapere niente | **+0,55%** |
+| cartellini | +0,86% | **+1,85%** (col derby; +1,71% senza) |
+
+⚠️⚠️ **La v1 sugli angoli era peggio di niente**: come probabilità, scrivere
+la media della lega avrebbe fatto meglio. La sola binomiale negativa la
+riporta sopra lo zero (+0,40%).
+⚠️ **Resta poco, e va detto**: le «decise» della v2 non battono la loro base.
+La v2 rende le probabilità **più oneste**, non trova le partite sicure — per
+quello servirebbero le quote dei mercati angoli/cartellini, che The Odds API
+non risulta avere.
+⚠️ **Solo i quindici campionati**: le coppe non hanno lo storico delle quote
+di apertura e lì risponde la v1 (`previsione` sceglie, e il voto di fiducia
+è sempre quello della versione che ha risposto).
+
 ## Quello che manca, e da dove viene
 
 La letteratura (Kruse & Maennig) indica **arbitro, derby e fattore campo** come
-i fattori dei cartellini. Il fattore campo c'è già. Mancano:
+i fattori dei cartellini. Il fattore campo c'è già, il derby dal 29/10 (sopra).
+Il resto:
 
 - **i falli** — ✅ **in archivio dal 29/10/2026** (`sql/47`, colonne
   `falli_casa`/`falli_trasf`): football-data li pubblicava (`HF`/`AF`) in

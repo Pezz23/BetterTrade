@@ -8,7 +8,7 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 29 ottobre 2026 · app alla versione **1.64.02**
+**Ultimo aggiornamento:** 29 ottobre 2026 · app alla versione **1.65.00**
 · passaggio di consegne: 29/10 · ⚠️ **da pushare** i commit dopo `4ce1619`
 
 ## ▶️ DOVE SIAMO — 24 ottobre 2026, leggi questo per primo
@@ -38,6 +38,7 @@ Il 24/10, in ordine:
 | **Le stelline a tutti** (29/10): oro admin, blu user in un tasto solo; nelle Spin contano solo quelle degli admin, in Road to weekend e Builder tutte (`sql/46`) | `1.64.00` | `4ce1619` |
 | **Le partite rinviate non si raddoppiano più** (29/10, lotto 0): gli import **spostano** la riga vecchia alla data nuova (`btscout/lib/rinvii.js`), la riconciliazione non collega il doppione | motore | `1569c0e` |
 | **L'ora delle partite nel CSV di Andamento** (29/10): `partite.ora` (`sql/48`), ora italiana da football-data dalla 2019/20 — 38.376 partite con `recupera-da-csv.js`, che ora riempie falli **e** ora. ⚠️ A margine: **455 vecchie righe di `prossime_partite`** (già giocate, prima del 23/10) hanno ancora l'ora **inglese** — la correzione del fuso non le aveva toccate. Non si vedono da nessuna parte; l'archivio ha quella giusta | `1.64.01` | `02ad162` |
+| **Angoli e cartellini, VERSIONE 2 nella scheda** (29/10): quote dei gol di apertura + binomiale negativa + **derby** sui cartellini, dall'articolo di Yip e altri (2024). Log score contro la frequenza della lega: angoli **−0,67% → +0,55%**, cartellini **+0,86% → +1,85%**. Nuovi: `prova-conteggi-v2.js`, `lib/derby.js` (etichetta **DERBY** nella scheda; nei derby i gialli sono ×1,21). **ANGOLI/GIALLI tornano nella testata** coi numeri della v2 (Mattia: *"dovevi studiare un metodo più attendibile, non toglierlo"*). Dettaglio in `note/conteggi.md`. ⚠️ **Non vista a schermo** | `1.65.00` | vedi git |
 | **La misura dei falli: no** (29/10): cartellini +1,18 punti oggi, −0,09 coi falli, +1,25 misti — rumore; angoli: nessuna variante (tiri, tiri in porta, finestra) supera +0,8. `prova-conteggi.js --riassunto` con la base delle decise accanto. **Tolto «ANGOLI/GIALLI O 9,5 · 52%» dalla testata della scheda**; le due card restano, e Mattia vuole **migliorare l'algoritmo** (ricerca in corso) | `1.64.02` | vedi git |
 | **I falli in archivio** (29/10, lotto 1, prima metà): `sql/47`, **50.683 partite** dai CSV di football-data con `recupera-da-csv.js`; gli import di football-data ed ESPN li scrivono da qui in avanti | motore | `7382c6d` |
 
@@ -116,22 +117,18 @@ sul telefono non si distingueva il lavoro di oggi dalla cache di ieri.
 
 Nessuna di queste è stata promessa a Mattia: **si propone e decide lui.**
 
-⚠️ **Il 29/10 si è interrotto qui**, dopo **l'orario delle partite nel CSV
-di Andamento** (`1.64.01`, da provare in `npm run dev`). Resta in sospeso la
-proposta sugli **indicatori di angoli e cartellini**, a cui Mattia non ha
-ancora risposto:
-1. togliere «O 9,5 · 52%» dalla riga in alto della scheda (si legge come un
-   consiglio); nella card solo i **attesi**, senza soglia;
-2. angoli solo descrittivi, detto chiaro che non prevedono;
-3. cartellini: la **misura coi falli** (seconda metà del lotto 1) — un verso
-   si mostra solo dove il modello è deciso **e** la misura dice che regge.
-   ⚠️ È una misura: **chiedere l'ok** prima di lanciarla.
+⚠️ **Il 29/10 il lotto 1 è stato chiuso** con la versione 2 di angoli e
+cartellini (`1.65.00`) e l'etichetta DERBY nella scheda: **da guardare in
+`npm run dev`** — non è stata vista a schermo. La proposta «angoli solo
+descrittivi» è superata: Mattia ha voluto migliorare il modello, e la v2 lo
+fa (di poco, e la nota lo dice).
 
 | | cosa | costo |
 |---|---|---|
 | 00 | **Un giro dell'app pubblicata sul telefono** (1.59.00): Spin, Road to weekend con una ricarica, un flag da admin e uno da user. E `prova-permessi.js`, che dal 24/10 si aspetta i flag anche dagli utenti — vuole le password, quindi lo lancia Mattia | dieci minuti |
 | ~~0~~ | ~~**Le partite rinviate doppie**~~ — ✅ **fatto il 29/10** (`lib/rinvii.js`) | — |
-| 1 | **I falli — metà fatta il 29/10**: in archivio per i 15 campionati (`7382c6d`). **Resta**: la **misura** in `prova-conteggi.js` (i falli come base dei cartellini, contro quella di oggi — con l'ok di Mattia) e, **solo se servono**, il recupero lento da ESPN di coppe, Olanda 2 e Giappone (~13.500 partite, 3-4 ore in background, zero crediti) | la misura: un'ora |
+| ~~1~~ | ✅ **Lotto 1 chiuso il 29/10**: falli misurati (no), versione 2 di angoli e cartellini nella scheda, derby. Restano solo idee: la lista dei derby si allarga a mano; le quote dei mercati angoli/cartellini (altri fornitori, a pagamento) sarebbero l'unico salto vero | — |
+| ~~1-vecchio~~ | **I falli — metà fatta il 29/10**: in archivio per i 15 campionati (`7382c6d`). **Resta**: la **misura** in `prova-conteggi.js` (i falli come base dei cartellini, contro quella di oggi — con l'ok di Mattia) e, **solo se servono**, il recupero lento da ESPN di coppe, Olanda 2 e Giappone (~13.500 partite, 3-4 ore in background, zero crediti) | la misura: un'ora |
 | 2 | **Il routing** (lotto 3) — era *"da fare prima di aggiungere schermate nuove"* e da allora ne sono arrivate tre. Vuole mezza giornata in cui non si aggiunge niente | mezza giornata |
 | ~~3~~ | ~~**L'arbitro**~~ — ✅ **verificato il 29/10: no.** football-data lo pubblica solo per E0, E1 e SC0 | — |
 | 4 | **La misura `eu` contro `eu,uk`** sull'1X2: se la sola `eu` basta, libera **148 crediti al mese** | 2 crediti, un'ora |

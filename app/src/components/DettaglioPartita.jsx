@@ -12,7 +12,8 @@ import { usaVpm } from '../hooks/usaVpm'
 import { valutaPartita, vociPesate, verso, PESI, ETICHETTE, NOMI_STRATI, PESI_STRATI, VPM_NETTO } from '../lib/vpm'
 import { golAttesi, SOGLIE_OVER, consiglioGg, FIDUCIA_GG, fasciaGol, tagliGol, intervalloGol } from '../lib/gol'
 import { usaConteggi } from '../hooks/usaConteggi'
-import { atteso, pOltre, sogliaCentrale, NOMI, giudizio } from '../lib/conteggi'
+import { atteso, previsione, NOMI } from '../lib/conteggi'
+import { eDerby } from '../lib/derby'
 
 // La scheda di una partita: tutto quello che sappiamo, in blocchi.
 // Pensata prima per il telefono — una colonna, numeri grandi, niente muri di
@@ -136,12 +137,31 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
   const vs = verso(v)
   // I gol attesi: stesso hook, stesse finestre di VPM. Sta nella scheda e non
   // in barra (scelta di Mattia): è un dato da leggere, non da scorrere.
-  // ⚠️⚠️ **Niente più angoli e gialli nella testata** (Mattia, 29/10/2026).
-  // C'erano «ANGOLI O 9,5 · 52%»: la soglia più vicina al totale atteso, cioè
-  // per costruzione quella dove il modello sta intorno al 50%, e accanto ai
-  // consigli dei gol si leggeva come un consiglio. Verificato su ottobre: verso
-  // giusto 53,7% e 52,0% — una moneta. Restano le due card più sotto, che
-  // descrivono (`note/conteggi.md`).
+  // ⚠️⚠️ Le due voci di angoli e gialli per la testata: **gli stessi numeri
+  // delle due card più sotto**, dalla stessa `previsione`. Calcolarli due
+  // volte vorrebbe dire due risultati che un giorno divergono.
+  // ⚠️ Tolte e rimesse il 29/10/2026: tolte quando mostravano la v1 (verso
+  // giusto 53,7% e 52%, sugli angoli peggio della media della lega), rimesse
+  // con la **versione 2** — Mattia: *"dovevi studiare un metodo più
+  // attendibile, non toglierlo"*.
+  const conteggiDati = usaConteggi(p.div)
+  const vociConteggi = useMemo(() => {
+    const sc = conteggiDati?.squadre?.[p.casa], st = conteggiDati?.squadre?.[p.trasferta]
+    if (!conteggiDati?.lega || !sc || !st || !sc.nCasa || !st.nFuori) return null
+    return ['angoli', 'cartellini'].map(mercato => {
+      const lega = { casa: Number(conteggiDati.lega[`${mercato}_casa`]), trasferta: Number(conteggiDati.lega[`${mercato}_trasferta`]) }
+      const a = atteso({
+        casa: { fatti: { m: sc[mercato].fattiCasa, n: sc.nCasa }, subiti: { m: sc[mercato].subitiCasa, n: sc.nCasa } },
+        trasferta: { fatti: { m: st[mercato].fattiFuori, n: st.nFuori }, subiti: { m: st[mercato].subitiFuori, n: st.nFuori } },
+        lega,
+      })
+      const pr = previsione(p, mercato, a)
+      // ⚠️ `O` e non `OVER`: quattro voci su 375px, e la parola intera
+      // allargherebbe la colonna più di quanto la riga può dare.
+      return [mercato === 'angoli' ? 'ANGOLI' : 'GIALLI',
+        { esito: `O ${pr.soglia.toFixed(1).replace('.', ',')}`, p: pr.p }]
+    })
+  }, [conteggiDati, p])
 
   const g = useMemo(() => datiVpm ? golAttesi(datiVpm.squadre?.[p.div], p.casa, p.trasferta) : null,
     [datiVpm, p.div, p.casa, p.trasferta])
@@ -166,6 +186,10 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
             )}
             <span style={{ fontSize: S.minuta, fontWeight: 700, fontFamily: F.sans, padding: '3px 9px', borderRadius: R.pastiglia, background: alpha(C.bluPieno, 0.12), color: C.blu }}>{sigla(p.div)}</span>
             {cat !== 'no' && <span style={{ fontSize: S.minuta, fontWeight: 700, fontFamily: F.sans, padding: '3px 9px', borderRadius: R.pastiglia, background: alpha(c.colore, 0.15), color: c.colore, textTransform: 'uppercase' }}>{c.nome}</span>}
+            {/* ⚠️ Il derby (29/10/2026, `lib/derby.js`): per la letteratura è
+                uno dei fattori dei cartellini. Per ora si **segnala** e basta —
+                nel modello entra solo se la misura dice che serve. */}
+            {eDerby(p) && <span style={{ fontSize: S.minuta, fontWeight: 700, fontFamily: F.sans, padding: '3px 9px', borderRadius: R.pastiglia, background: alpha(C.ambra, 0.15), color: C.ambra }}>DERBY</span>}
           </div>
           {/* ⚠️⚠️ **Data e ora in questa riga** (Mattia, 23/10/2026): qui in
               mezzo c'era solo spazio vuoto fra le targhette e la stella, e la
@@ -186,7 +210,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
         </div>
 
         <div style={{ marginTop: 14 }}>
-          <TestataPartita p={p} cat={cat} gol={g} senzaData />
+          <TestataPartita p={p} cat={cat} gol={g} senzaData conteggi={vociConteggi} />
         </div>
 
         {/* ── I numeri, gli stessi della lista ──────────────────────────
@@ -805,9 +829,12 @@ function Conteggio({ p, mercato, dati, sc, st }) {
     trasferta: { fatti: { m: st[mercato].fattiFuori, n: st.nFuori }, subiti: { m: st[mercato].subitiFuori, n: st.nFuori } },
     lega,
   })
-  const soglia = sogliaCentrale(mercato, a.totale)
-  const prob = pOltre(soglia, a.totale)
-  const voto = giudizio(p.div, mercato)
+  // ⚠️⚠️ **La versione 2 dal 29/10/2026** (`lib/conteggi.js`, `previsione`):
+  // lo storico qui sopra corretto dalle quote dei gol, con la binomiale
+  // negativa. Dove la partita non ha le quote di apertura, o la competizione
+  // non ha i coefficienti (le coppe), risponde il modello di prima — e il
+  // voto di fiducia è sempre quello **della versione che ha risposto**.
+  const { totale, soglia, p: prob, v2, voto } = previsione(p, mercato, a)
   const dove = mercato === 'angoli' ? 'angoli' : 'gialli'
 
   return (
@@ -824,6 +851,8 @@ function Conteggio({ p, mercato, dati, sc, st }) {
         <div style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco, lineHeight: 1.6 }}>
           Nessun bookmaker ha detto la sua su questi numeri, al contrario dell&apos;attendibilità:
           vengono <b style={{ color: C.spento }}>solo dallo storico</b> delle due squadre, casa e fuori tenuti separati.
+          {v2 && <> Il totale tiene conto anche delle <b style={{ color: C.spento }}>quote dei gol</b>{' '}
+            (gol attesi e quanto è squilibrata la partita), come nel modello di Yip e altri (2024).</>}
           {voto && <> Provato camminando nel tempo su <b style={{ color: C.spento }}>{voto.n} partite</b> di questa
             competizione, sulla soglia {n1(voto.soglia)} indovina il verso il{' '}
             <b style={{ color: voto.utile ? C.spento : C.ambra }}>{(voto.nostra * 100).toFixed(1).replace('.', ',')}%</b>
@@ -834,7 +863,7 @@ function Conteggio({ p, mercato, dati, sc, st }) {
 
       {/* la riga sola: quanti se ne aspettano e la soglia che conta */}
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-        <span style={{ fontFamily: F.mono, fontSize: S.evidenza, fontWeight: 700, color: C.oro }}>{n1(a.totale)}</span>
+        <span style={{ fontFamily: F.mono, fontSize: S.evidenza, fontWeight: 700, color: C.oro }}>{n1(totale)}</span>
         <span style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.fioco }}>
           attesi · nella competizione {n1(lega.casa + lega.trasferta)}
         </span>
