@@ -8,8 +8,10 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 29 ottobre 2026 · app alla versione **1.73.00**
-(`dce4621`) · passaggio di consegne: 29/10, sera · ⚠️ **da pushare** i commit del routing e dei documenti — e dopo il push si guarda su Vercel un ricaricamento su `/partite` (è `app/vercel.json` a evitare il 404)
+**Ultimo aggiornamento:** 29 ottobre 2026, notte · app alla versione **1.73.00**
+(`9fad2f9`) · passaggio di consegne: 29/10, fine sessione · ⚠️ **da pushare**:
+`9fad2f9` e il commit di questo passaggio — dopo il push si guarda su Vercel
+un ricaricamento su `/partite` (è `app/vercel.json` a evitare il 404)
 
 ## ▶️ DOVE SIAMO — 29 ottobre 2026, leggi questo per primo
 
@@ -27,8 +29,27 @@ qui sotto e in «Cos'è cambiato»):
 - **lotto 3** — l'arbitro: **no**, football-data lo dà solo per 3 campionati;
 - fuori lotto: **l'ora delle partite nel CSV di Andamento** (`partite.ora`).
 
+**E la sera del 29/10, Road to weekend rifatta** (dettaglio in
+`note/scalata.md`, la verifica in `note/criterio.md`):
+- **il Filtro A e il bankroll al 10%** (briefing di Mattia da ChatGPT)
+  verificati: riprodotto, walk-forward positivo ma con intervallo largo, sulle
+  singole solo ~+2% sopra VPM 7,5; **il 10% è troppo, cresce di più il 3%**
+  (`btscout/scripts/prova-filtro-a.js`);
+- **puntata a PERCENTUALE del conto** (3·5·10·14%, `sql/49`), via cassa,
+  accumulo e «Metà utile»; **a ogni perso il giro va in archivio** e riparte;
+- **niente più APRI e STOP**: il primo esito apre il giro, niente
+  simulazione, percentuale cambiabile solo dopo un giro perso;
+- il **criterio A** (att 61 · scelta 61 · VPM 7,5) evidenziato in viola, e
+  la pagina **ridisegnata** in tre giri (SELEZIONE · GESTIONE BANKROLL · LA
+  SCALETTA · RISULTATO FILTRI con Tutte/Consigliate, il passo come schedina,
+  la puntina 📌). Mattia: *"ora mi piace"*.
+
 Migrazioni del giorno, tutte applicate: **`sql/47`** (falli), **`sql/48`**
-(ora). Solo colonne nuove: la versione pubblicata non se ne accorge.
+(ora), **`sql/49`** (percentuale e `chiudi_giro_perso`). Solo aggiunte: la
+versione pubblicata non se ne accorge.
+⚠️ **Il flusso nuovo di Road to weekend NON è ancora stato giocato dal vero**:
+provato nel database da user (transazioni annullate) e a schermo con
+l'utente di prova a conto zero. Il primo passo vero di Mattia è la prova.
 ⚠️ **Mattia ha provato in `npm run dev` la 1.65.00** (derby ok, poi la riga
 ANGOLI/GIALLI rimessa in testata). **Non vista in produzione**: dopo il push.
 
@@ -140,12 +161,13 @@ sul telefono non si distingueva il lavoro di oggi dalla cache di ieri.
 
 Nessuna di queste è stata promessa a Mattia: **si propone e decide lui.**
 Chiusi il 29/10: lotto 0 (rinvii), lotto 1 (falli, angoli e cartellini v2,
-derby), lotto 2 (routing), lotto 3 (arbitro: no). L'ordine consigliato:
-**6 → 4**.
+derby), lotto 2 (routing), lotto 3 (arbitro: no), e Road to weekend a
+percentuale. L'ordine consigliato: **00 → 6 → 4**.
 
 | | cosa | costo |
 |---|---|---|
-| 00 | **Un giro dell'app pubblicata sul telefono** dopo il push (1.65.00): Spin, Road to weekend con una ricarica, un flag da admin e uno da user, una scheda con angoli/gialli e un derby. E `prova-permessi.js`, che dal 24/10 si aspetta i flag anche dagli utenti — vuole le password, quindi lo lancia Mattia | dieci minuti |
+| 00 | **Il primo giro vero di Road to weekend 1.73** dopo il push, sul telefono: una ricarica, la percentuale, ✓ sul passo 1 (il giro si apre e la percentuale si blocca), ✗ con due tocchi (il giro va in ARCHIVIO e la percentuale torna libera), Reset partite a giro aperto. Più un giro dell'app (Spin, una scheda con angoli/gialli e un derby, un link `/partite/:id`). E `prova-permessi.js`, che ora prova anche che un user **non scrive** la griglia — vuole le password, lo lancia Mattia | quindici minuti |
+| 1F | **Il Filtro A sul futuro vero** (proposto il 29/10, **non deciso**): l'app registra da sola ogni schedina che il filtro proporrebbe, con regole fisse; dopo 100 schedine, ROI > 0 **e** gambe sopra 100% → candidato, altrimenti si archivia. Oggi lo storico non può dire di più | da stimare, mezza giornata |
 | 6 | **L'automazione** — i due `.plist` (`aggiornamento.plist` martedì/venerdì, `aggiornamento-orario.plist` solo risultati, zero crediti) **non sono installati**: oggi i dati si aggiornano solo quando Mattia lo chiede. Due comandi ciascuno, in testa ai file. ⚠️ Con **55 crediti** rimasti il giro del martedì/venerdì ne può fare **uno** fino al rinnovo | dieci minuti |
 | ~~2~~ | ~~**Il routing**~~ — ✅ **fatto il 29/10** (`1.66.00`) | — |
 | 4 | **La misura `eu` contro `eu,uk`** sull'1X2: se la sola `eu` basta, libera **148 crediti al mese** — ⚠️ più urgente da quando ne restano 55 | 2 crediti, un'ora |
@@ -153,8 +175,9 @@ derby), lotto 2 (routing), lotto 3 (arbitro: no). L'ordine consigliato:
 | 8 | **Fonti nuove**: xG da FBref (U4), il live (U5) | da stimare |
 
 Piccoli aperti (mezz'ora l'uno, vedi «Quello che resta aperto»): l'esito
-automatico del Bet Builder con `giocataArrivata`; il × in «TUTTE LE
-CONSIGLIATE» a scalata aperta; la vecchia riga di preferenze condivisa.
+automatico del Bet Builder con `giocataArrivata`; il × in «RISULTATO FILTRI»
+(ex «TUTTE LE CONSIGLIATE») a giro aperto; la vecchia riga di preferenze
+condivisa; «sce —» nelle foto di `guarda.mjs`.
 
 ⏳ **In attesa che passino le partite, non da fare adesso:**
 - **`MERCATO_35`** — 89 partite hanno la quota 3,5 dal 23/10; quando si saranno
@@ -244,6 +267,10 @@ state provate simulando uno user e un admin in una transazione annullata.
 
 | | |
 |---|---|
+| **Road to weekend 1.73 non giocata dal vero** (29/10) | `giocaPrimo`, `perdi` a percentuale, `cambiaPercentuale`, Reset partite in coda (`aggiungiPiano`) e `eliminaGiroVuoto`: provati nel database da user in transazioni annullate e a schermo con Fotografo a conto zero. **Nessun passo vero giocato**: il primo di Mattia è la prova |
+| **«sce —» nelle foto di `guarda.mjs`** (29/10) | con l'utente di prova la Scelta esce quasi sempre vuota, probabilmente perché lo scatto arriva prima dei dati di VPM (1,2 s). Se Mattia lo vede anche sul suo schermo è un difetto vero |
+| **`guarda.mjs` ricompone male le pagine lunghe** (29/10) | la foto «intera» di Road to weekend ha la barra in basso **in mezzo** e copre la card del passo: per guardare quella zona serve uno scatto a finestra, non `fullPage` |
+| **il Filtro A sul futuro** (29/10) | proposta in «Da dove ripartire» (1F), non decisa |
 | **le due automazioni non sono installate** | verificato il 23/10 con `launchctl`: **nessun agente**. Né l'orario (`aggiornamento-orario.plist`, solo risultati, zero crediti) né quello del martedì/venerdì (`aggiornamento.plist`). Due comandi ciascuno, in testa ai file |
 | ~~**i falli e l'arbitro**~~ | ✅ **29/10**: i falli sono in archivio (resta la misura), l'arbitro c'è solo in 3 campionati su 15 e si lascia stare. Era: i due ingressi che la letteratura indica per i cartellini — il mercato dove il modello rende di più. I **falli** ESPN li dà già (`foulsCommitted`) e li buttiamo via, come i cartellini fino al 22/10. L'**arbitro** sta in football-data, ma ⚠️ **la colonna `Referee` non è stata verificata**: il 23/10 il DNS di quel sito era giù tutto il giorno |
 | ~~**U2'**~~ | ✅ **raccolta accesa il 23/10** (`sql/40`, zero crediti: la chiamata era già quella). ⚠️ **Ma non si usa**: l'archivio viene da football-data, che la 3,5 non la pubblica, quindi non c'è un passato su cui misurare se migliori il consiglio come ha fatto il 2,5. `MERCATO_35 = false` finché le partite raccolte non bastano — la query per misurarlo sta in `note/gol.md`. ⚠️ Giro completo lanciato il 23/10 (51 crediti, autorizzati): **89 partite su 246 hanno la 3,5, il 36%** — più del 23% atteso. Champions 17, Eredivisie 15, Bundesliga 15 |
@@ -255,7 +282,7 @@ state provate simulando uno user e un admin in una transazione annullata.
 | **i numeri del 26/10 erano su 6 stagioni, non 8** | `ricostruisci.js` faceva entrare due stagioni giapponesi senza quote fra le «ultime 8» (corretto il 28/10). Sono da **rimisurare**, con l'ok di Mattia perché sono backtest: `prova-prelievi.js` (Metà utile −174 €, variante −256 €) e `prova-soglie-scalata.js --dettaglio=61 --solo-att` (il CONSIGLIATO: 2.883 partite, 99,5%). Zero crediti, pochi minuti |
 | **la 1.60.00 («Metà utile») non è ancora stata vista** | lint e build passano; il consiglio di prelievo del passo e il tasto «consigliato» vanno guardati da Mattia. ⚠️ **Il metodo perde nel backtest** (−174 € su 6 stagioni da 100 €): è stato scelto come quello che perde meno, non come uno che vince — *"più avanti capiamo come migliorarlo"* |
 | **la 1.59.01 non è ancora stata provata** | lint e build passano, la logica è verificata nel codice; il piano che resta fermo e «Aggiorna calendario» vanno visti da Mattia |
-| **il × in «TUTTE LE CONSIGLIATE» a scalata aperta** | barra la partita ma **non la toglie dal passo salvato** (per quello serve il × nella card del passo). Chiesto a Mattia il 24/10 se è il caso che ha visto: senza risposta |
+| **il × in «RISULTATO FILTRI» (ex «TUTTE LE CONSIGLIATE») a giro aperto** | barra la partita ma **non la toglie dal passo salvato** (per quello serve il × nella card del passo). Chiesto a Mattia il 24/10 se è il caso che ha visto: senza risposta |
 | **la vecchia riga di preferenze condivisa della scalata** | `preferenze` con `ambito='scalata'` e `user_id` nullo, col bankroll 100 del 22/10: dal 24/10 non la legge nessuno. Da cancellare **con l'ok di Mattia** |
 | **idea 9** | `CompilaPerQuota` riempie le caselle **vuote** di una spin: va capito se Mattia voleva compilarne una **intera**. Domanda ancora senza risposta |
 | **«solo sopra soglia»** | tolto il 22/10 insieme alle slitte, **deciso da me**: diceva la stessa cosa di «attendibilità ≥» in lingua spin. Una riga per rimetterlo |
