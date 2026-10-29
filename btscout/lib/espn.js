@@ -143,7 +143,7 @@ function leggiEvento(e) {
 
 /**
  * Le statistiche di una partita: tiri, tiri in porta, possesso, angoli,
- * cartellini.
+ * cartellini, falli.
  *
  * ⚠️⚠️ **`tentativi` esiste per il recupero storico** (22/10/2026). ESPN non
  * ha il riepilogo delle partite vecchie, e ogni tentativo a vuoto costa la
@@ -164,7 +164,9 @@ export async function statistiche(div, idEvento, tentativi = 3) {
     // ESPN li espone come `yellowCards` e `redCards` in ogni riepilogo, e la
     // tabella ha `gialli_*` e `rossi_*` da sempre. Nessuno li leggeva.
     return { tiri: num('totalShots'), tirip: num('shotsOnTarget'), possesso: num('possessionPct'),
-      angoli: num('wonCorners'), gialli: num('yellowCards'), rossi: num('redCards') };
+      angoli: num('wonCorners'), gialli: num('yellowCards'), rossi: num('redCards'),
+      // ⚠️ Anche i falli si buttavano via, allo stesso modo (29/10/2026).
+      falli: num('foulsCommitted') };
   };
   // ⚠️ L'ordine in `boxscore.teams` è casa poi trasferta, ma non è documentato:
   // si controlla con `homeAway` quando c'è, altrimenti si rinuncia invece di

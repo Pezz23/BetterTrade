@@ -105,6 +105,9 @@ const STAT = {
   angoli_casa: 'HC', angoli_trasf: 'AC',      // calci d'angolo
   gialli_casa: 'HY', gialli_trasf: 'AY',      // cartellini gialli
   rossi_casa: 'HR', rossi_trasf: 'AR',        // cartellini rossi
+  // ⚠️ I falli erano nel file da sempre e si buttavano via (29/10/2026,
+  // `sql/47`): sono il meccanismo che produce il giallo.
+  falli_casa: 'HF', falli_trasf: 'AF',        // falli commessi
   gol1t_casa: 'HTHG', gol1t_trasf: 'HTAG',    // gol del primo tempo
 };
 
@@ -222,6 +225,7 @@ const COLONNE_DB = [
   'tiri_casa', 'tiri_trasf', 'tirip_casa', 'tirip_trasf',
   'angoli_casa', 'angoli_trasf', 'gialli_casa', 'gialli_trasf',
   'rossi_casa', 'rossi_trasf', 'gol1t_casa', 'gol1t_trasf',
+  'falli_casa', 'falli_trasf',
   'ps_1', 'ps_x', 'ps_2',
   'bfe_ch_1', 'bfe_ch_x', 'bfe_ch_2',
   'bfe_ap_1', 'bfe_ap_x', 'bfe_ap_2',

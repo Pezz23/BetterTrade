@@ -157,13 +157,15 @@ async function unaPartita(e, div, nostri, campionato) {
           const [nuova] = await sql`
             insert into partite (div, campionato, data, casa, trasferta, gol_casa, gol_trasferta, esito,
                                  tirip_casa, tirip_trasf, tiri_casa, tiri_trasf,
-                                 angoli_casa, angoli_trasf, possesso_casa, possesso_trasf,
+                                 angoli_casa, angoli_trasf, falli_casa, falli_trasf,
+                                 possesso_casa, possesso_trasf,
                                  stagione, fonte)
             values (${div}, ${campionato}, ${fut[0].data}, ${casa}, ${trasferta}, ${e.golCasa}, ${e.golTrasferta},
                     ${e.golCasa > e.golTrasferta ? 'H' : e.golCasa < e.golTrasferta ? 'A' : 'D'},
                     ${st?.casa.tirip ?? null}, ${st?.trasferta.tirip ?? null},
                     ${st?.casa.tiri ?? null}, ${st?.trasferta.tiri ?? null},
                     ${st?.casa.angoli ?? null}, ${st?.trasferta.angoli ?? null},
+                    ${st?.casa.falli ?? null}, ${st?.trasferta.falli ?? null},
                     ${st?.casa.possesso ?? null}, ${st?.trasferta.possesso ?? null},
                     ${stagioneDi(fut[0].data)}, 'espn')
             returning id`;

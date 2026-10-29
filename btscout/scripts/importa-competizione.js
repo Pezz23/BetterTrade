@@ -123,7 +123,8 @@ async function unaCompetizione(comp) {
                                  gol_casa, gol_trasferta, esito,
                                  tiri_casa, tiri_trasf, tirip_casa, tirip_trasf,
                                  angoli_casa, angoli_trasf, gialli_casa, gialli_trasf,
-                                 rossi_casa, rossi_trasf, possesso_casa, possesso_trasf, fonte)
+                                 rossi_casa, rossi_trasf, falli_casa, falli_trasf,
+                                 possesso_casa, possesso_trasf, fonte)
             values (${comp}, ${info.nome}, ${stagioneDi(p.data, info.annoSolare)}, ${p.data},
                     ${p.casa}, ${p.trasferta}, ${p.golCasa}, ${p.golTrasferta},
                     ${esitoDi(p.golCasa, p.golTrasferta)},
@@ -132,6 +133,7 @@ async function unaCompetizione(comp) {
                     ${st?.casa.angoli ?? null}, ${st?.trasferta.angoli ?? null},
                     ${st?.casa.gialli ?? null}, ${st?.trasferta.gialli ?? null},
                     ${st?.casa.rossi ?? null}, ${st?.trasferta.rossi ?? null},
+                    ${st?.casa.falli ?? null}, ${st?.trasferta.falli ?? null},
                     ${st?.casa.possesso ?? null}, ${st?.trasferta.possesso ?? null}, 'espn')
             on conflict (div, stagione, data, casa, trasferta) do nothing`);
         }
