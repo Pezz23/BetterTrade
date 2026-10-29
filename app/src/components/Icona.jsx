@@ -103,6 +103,12 @@ const SEGNI = {
   lucchetto: <>
     <rect x="4" y="10.5" width="16" height="10.5" rx="2.5" /><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" />
   </>,
+  // 📌 la puntina del «fissa passo» (29/10/2026, Mattia: *"la classica
+  // graffetta del pinnare"*): al posto del lucchetto, che diceva «chiuso»
+  // mentre il gesto vuol dire «tienilo qui»
+  puntina: <>
+    <path d="M12 16.5V22" /><path d="M9 4h6M10 4v5.2l-3.2 3.3a1.2 1.2 0 0 0 .9 2h8.6a1.2 1.2 0 0 0 .9-2L14 9.2V4" />
+  </>,
   bersaglio: <>
     <circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="4.6" /><circle cx="12" cy="12" r="1" />
   </>,

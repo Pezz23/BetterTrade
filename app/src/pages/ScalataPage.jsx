@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { Fragment, useState, useMemo, useEffect, useRef } from 'react'
 import { C, F, alpha, S, SP, R } from '../theme'
 import { Card, Etichetta, Attesa } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
@@ -14,12 +14,12 @@ import Icona from '../components/Icona'
 import ScegliGamba from '../components/ScegliGamba'
 import { valutaPartita } from '../lib/vpm'
 import { sigla } from '../lib/campionati'
-import { weekendDi, categoria, SOGLIE_DEFAULT, iniziaDopo } from '../lib/attendibilita'
-import { pct, eur, gg, quando } from '../lib/formato'
+import { categoria, SOGLIE_DEFAULT, iniziaDopo } from '../lib/attendibilita'
+import { pct, eur, gg } from '../lib/formato'
 import {
   METODO, NOMI_REGOLA, QUOTA_MINIMA_GAMBA, QUOTA_MINIMA_SCHEDINA, CONSIGLIATO,
-  postaDi, fasce, spezzaFasce, spezzaAlMinimo, giorno, casseDi, percentualeConsigliata, applicaIncasso,
-  puoSpezzare, contoDi,
+  fasce, FINESTRA_ELENCO_ORE, spezzaFasce, spezzaAlMinimo, giorno, puoSpezzare, contoDi, eCriterioA,
+  PERCENTUALI, PERCENTUALE_DEFAULT, puntataDi, contiPercentuale,
 } from '../lib/scalata'
 
 // ROAD TO WEEKEND — la road map delle giocate del weekend.
@@ -48,7 +48,9 @@ import {
  * chiesto si continua con gli altri token del tema, mai con valori scritti a
  * mano (convenzione del progetto).
  */
-const COLORI_PASSO = [C.verde, C.giallo, C.rosso, C.blu, C.viola, C.menta, C.ambra, C.celestePieno, C.oroChiaro, C.acciaio]
+// ⚠️ Niente viola fra i colori dei passi (29/10/2026): il viola è riservato al
+// criterio A, e un passo viola accanto a una partita A si confondeva.
+const COLORI_PASSO = [C.verde, C.giallo, C.rosso, C.blu, C.celeste, C.menta, C.ambra, C.celestePieno, C.oroChiaro, C.acciaio]
 const coloreDi = (i) => COLORI_PASSO[i % COLORI_PASSO.length]
 
 const GIORNI = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab']
@@ -67,20 +69,132 @@ const nomeGiorno = (d) => d ? GIORNI[new Date(d + 'T12:00:00').getDay()] : ''
  */
 const NUOVO_PASSO = true
 
-function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumulato, colore, classifiche,
-                quote, setQuote, perc, setPerc, esito, setEsito, onToglie, prossima, onAggiunge,
+
+/**
+ * ⚠️ Il titolo di una card (29/10/2026, Mattia: *"dobbiamo dare un titolo a
+ * tutte le card"*): uno solo per tutta la pagina, così SELEZIONE, GESTIONE
+ * BANKROLL e LA SCALETTA si leggono come tre capitoli della stessa cosa.
+ */
+function TitoloCard({ children, destra = null, colore = C.testo }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: SP.m, flexWrap: 'wrap' }}>
+      <span style={{ fontFamily: F.sans, fontSize: S.media, fontWeight: 700, letterSpacing: '0.08em', color: colore }}>{children}</span>
+      {destra != null && <span style={{ marginLeft: 'auto', minWidth: 0 }}>{destra}</span>}
+    </div>
+  )
+}
+
+/** Un selettore a segmenti, compatto: lo stato scelto ha fondo e colore. */
+function Segmenti({ opzioni, valore, onScegli, colore = C.oro }) {
+  return (
+    <div style={{ display: 'inline-flex', border: `1px solid ${C.bordo}`, borderRadius: R.m, overflow: 'hidden' }}>
+      {opzioni.map(([v, etichetta]) => (
+        <button key={String(v)} onClick={() => onScegli(v)} aria-pressed={valore === v} style={{
+          padding: '5px 11px', border: 'none', cursor: 'pointer', fontFamily: F.mono, fontSize: S.base,
+          fontVariantNumeric: 'tabular-nums', fontWeight: valore === v ? 700 : 400,
+          background: valore === v ? alpha(colore, 0.18) : 'transparent', color: valore === v ? colore : C.spento }}>{etichetta}</button>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * ⚠️ La quota di una gamba: **un numero, che diventa un campo quando lo tocchi**
+ * (29/10/2026, la «schedina» del passo). La casella col bordo d'oro sempre
+ * aperta attirava più dei nomi delle squadre. Si scrive uscendo dal campo
+ * (`onCommit`), come prima: a ogni tasto «1,85» passerebbe per «1».
+ * ⚠️ Il campo è a **16px**: sotto, iOS ingrandisce la pagina da solo.
+ */
+function QuotaModificabile({ valore, segnaposto, onChange, onCommit, sola = false, etichetta }) {
+  const [apri, setApri] = useState(false)
+  const num = { fontFamily: F.mono, fontVariantNumeric: 'tabular-nums' }
+  const mostrata = valore !== '' && valore != null ? Number(valore) : Number(segnaposto)
+  const cambiata = valore !== '' && valore != null && Number(valore) !== Number(segnaposto)
+  if (!apri || sola) return (
+    <button onClick={() => !sola && setApri(true)} aria-label={etichetta} title={sola ? undefined : 'tocca per correggere la quota'}
+      style={{ ...num, background: 'transparent', border: 'none', padding: 0, cursor: sola ? 'default' : 'pointer', textAlign: 'right',
+        fontSize: S.media, fontWeight: 700, color: C.oro, textDecoration: cambiata ? 'underline dotted' : 'none' }}>
+      {Number.isFinite(mostrata) ? mostrata.toFixed(2).replace('.', ',') : '—'}
+    </button>
+  )
+  return (
+    <input autoFocus value={valore ?? ''} placeholder={Number(segnaposto).toFixed(2)} inputMode="decimal" aria-label={etichetta}
+      onChange={e => onChange(e.target.value.replace(',', '.'))}
+      onBlur={() => { setApri(false); onCommit?.() }}
+      onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
+      style={{ ...num, width: '100%', minWidth: 0, background: C.pozzo, color: C.oro, border: `1px solid ${alpha(C.oro, 0.4)}`,
+        borderRadius: R.m, padding: '2px 4px', fontSize: 16, fontWeight: 700, textAlign: 'right' }} />
+  )
+}
+
+/**
+ * ⚠️⚠️ **Una partita di RISULTATO FILTRI** (29/10/2026, ridisegno chiesto da
+ * Mattia). Due righe, tutto sempre in vista:
+ *   orario · squadre · segno · quota · ×
+ *   [passo] · att · sce · VPM            · bandiera · stella
+ * ⚠️ Colonne fisse per orario, segno e quota, **cifre tabulari**: le quote si
+ * confrontano in colonna. Lo spazio che resta va ai nomi, che **vanno a capo**
+ * invece di tagliarsi (`overflowWrap`), con `minmax(0,1fr)` — un `1fr` non
+ * scende sotto il contenuto e su 360px sfonderebbe.
+ * ⚠️ Il criterio A: filo viola a sinistra, fondo appena tinto, «A». I nomi
+ * restano chiari anche lì.
+ */
+function SchedaRisultato({ g, fuori, soloSegno, spostata, iPasso, colorePasso, segni, onApri, onTogli }) {
+  const a = !fuori && eCriterioA(g)
+  const num = { fontFamily: F.mono, fontVariantNumeric: 'tabular-nums' }
+  const virgola = (x) => (x == null ? '—' : Number(x).toFixed(2).replace('.', ','))
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '38px minmax(0,1fr) auto 40px 20px', columnGap: SP.m, rowGap: 3,
+      alignItems: 'baseline', padding: `${SP.m}px ${SP.m}px ${SP.m}px ${SP.l}px`, borderRadius: R.m,
+      // ⚠️ Più spenta dal 29/10/2026 (Mattia: *"illumina di meno, tieni il
+      // bordo sinistro"*): resta il filo viola, il fondo è appena tinto e il
+      // bordo è quello di tutte le altre.
+      background: a ? `linear-gradient(${alpha(C.viola, 0.04)},${alpha(C.viola, 0.04)}), ${C.card}` : C.card,
+      border: `1px solid ${C.bordoTenue}`,
+      boxShadow: a ? `inset 3px 0 0 ${C.viola}` : 'none', opacity: fuori ? 0.5 : 1 }}>
+      <span style={{ ...num, fontSize: S.base, color: C.spento }}>{g.ora?.slice(0, 5)}</span>
+      <span onClick={onApri} role="button" style={{ minWidth: 0, cursor: 'pointer', fontFamily: F.sans, fontSize: S.corpo,
+        fontWeight: 600, lineHeight: 1.25, color: C.testo, overflowWrap: 'anywhere',
+        textDecoration: fuori || spostata ? 'line-through' : 'none' }}>
+        {/* ⚠️ Niente «A» qui (Mattia, 29/10/2026): la scheda viola basta. */}
+        {g.casa} <span style={{ color: C.fioco, fontWeight: 400 }}>–</span> {g.trasferta}
+      </span>
+      <span style={{ ...num, fontSize: S.base, color: C.testo, textAlign: 'center', whiteSpace: 'nowrap' }}>{g.giocata}</span>
+      <span style={{ ...num, fontSize: S.media, fontWeight: 700, color: C.oro, textAlign: 'right' }}>{virgola(g.quota)}</span>
+      <button onClick={onTogli} title={fuori ? 'rimetti in scaletta' : 'togli dalla scaletta'}
+        style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0,
+          color: fuori ? C.verde : C.fioco, fontSize: S.media, lineHeight: 1 }}>{fuori ? '+' : '×'}</button>
+
+      <span>{iPasso >= 0 && (
+        <span title={`nel passo ${iPasso + 1}`} style={{ ...num, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          minWidth: 18, height: 16, padding: '0 4px', borderRadius: 8, background: alpha(colorePasso, 0.18),
+          color: colorePasso, fontSize: S.micro, fontWeight: 700 }}>{iPasso + 1}</span>
+      )}</span>
+      <span style={{ minWidth: 0, fontFamily: F.sans, fontSize: S.micro, color: C.fioco }}>
+        att <b style={{ ...num, color: C.spento }}>{pct(g.att)}</b>
+        {' · '}sce <b style={{ ...num, color: C.spento }}>{pct(g.scelta)}</b>
+        {g.vpm != null && <>{' · '}VPM <b style={{ ...num, color: C.spento }}>{virgola(g.vpm)}</b></>}
+        {soloSegno && <span style={{ color: C.ambra }}> · fuori filtri</span>}
+      </span>
+      <span style={{ gridColumn: '3 / span 3', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: SP.s }}>{segni}</span>
+    </div>
+  )
+}
+
+function Passo({ numero, gambe, giorno: gio, ora, posta, colore, classifiche,
+                quote, setQuote, esito, setEsito, onToglie, prossima, onAggiunge,
                 onQuota = null, onSpezza = null, onApri = null, onManuale = null, tocca = true,
                 stelleDi = () => 0, anteprima = false, fissato = false, onFissa = null, fermo = false,
-                parte = 'tutto', nudo = false }) {
+                parte = 'tutto', nudo = false, simulato = false }) {
   // ⚠️ La quota della schedina è il **prodotto delle quote modificate**, non di
   // quelle scaricate: Mattia gioca su book diversi e con i bonus, e una pagina
   // che mostra la quota del consenso gli racconterebbe un piano che non è il suo.
   const quoteGambe = gambe.map(g => Number(quote[g.id] ?? g.quota) || 1)
   const quota = quoteGambe.reduce((a, q) => a * q, 1)
   const montante = posta * quota
-  const consiglio = percentualeConsigliata({ numero, montante, puntata: posta, posta: postaIniziale, accumulato })
-  const p = perc ?? consiglio
-  const r = applicaIncasso(montante, p, posta)
+  // ⚠️ A percentuale del conto (29/10/2026) l'utile resta tutto nel conto:
+  // niente da dividere fra «metti via» e «rigioca».
+  const utile = montante - posta
   // ⚠️ L'esito vince sul colore del blocco: a piano finito conta com'è andata,
   // non quale fascia era.
   const tinta = esito === 'vinto' ? C.verde : esito === 'perso' ? C.rosso : colore
@@ -169,98 +283,71 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
           </button>
           )
         })()}
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 34px 58px 20px',
-          gap: 6, alignItems: 'center', padding: '6px 0', borderTop: `1px solid ${alpha(C.testo, 0.06)}` }}>
-          {/* ⚠️⚠️ **Si apre la scheda toccando i NOMI, non tutta la riga**
-              (Mattia, 22/10/2026: *"vorrei cliccare la partita e vedere la
-              scheda"*). Nella riga ci sono già due comandi — il campo della
-              quota e la × che la toglie dal passo — e un contenitore
-              cliccabile sopra di loro vuol dire aprire un foglio a tutto
-              schermo mentre si cerca di correggere una quota.
-              ⚠️ **È la stessa scheda della pagina Partite**, non una versione
-              ridotta: `DettaglioPartita` dentro `SchedaScorrevole`. Un secondo
-              posto per la stessa cosa prima o poi diverge — ed è la regola per
-              cui `TestataPartita` è condivisa fra lista e scheda.
-              ⚠️ L'id da aprire è `prossima_id` quando la gamba viene dal
-              registro: lì `id` è la gamba, non la partita. */}
+        {/* ⚠️⚠️ **La partita dentro il passo, come nell'elenco** (29/10/2026,
+            giro B del ridisegno): una schedina su due righe —
+              orario · squadre (con la posizione in classifica) · segno · quota · ×
+              campionato · att · sce · VPM · ★
+            Stesse colonne e cifre tabulari di `SchedaRisultato`, così la stessa
+            partita si legge allo stesso modo sopra e sotto. Il criterio A ha lo
+            stesso viola, senza la «A» (Mattia: la scheda viola basta).
+            ⚠️ **Si apre la scheda toccando i NOMI, non tutta la riga** (22/10):
+            nella riga ci sono il campo della quota e la ×.
+            ⚠️ L'id da aprire è `prossima_id` quando la gamba viene dal
+            registro: lì `id` è la gamba, non la partita.
+            ⚠️ `Number(g.vpm)`: dal database i numerici arrivano come stringhe.
+            ⚠️ La quota si scrive nel registro **uscendo dal campo** (`onBlur`):
+            a ogni tasto «1,85» passerebbe per «1», che non è una quota. */}
+        {(() => {
+          const a = eCriterioA(g)
+          const num = { fontFamily: F.mono, fontVariantNumeric: 'tabular-nums' }
+          return (
+        /* ⚠️ **Righe piatte, come una schedina stampata** (29/10/2026,
+           Mattia sceglie «schedina sempre aperta»): niente bordo né fondo
+           per partita — erano card dentro la card del passo — solo un filo
+           sopra. Il criterio A tiene il suo filo viola a sinistra. */
+        <div style={{ display: 'grid', gridTemplateColumns: '38px minmax(0,1fr) auto 48px 20px', columnGap: SP.m, rowGap: 2,
+          alignItems: 'center', padding: `${SP.m}px ${SP.s}px ${SP.m}px ${a ? SP.m : 0}px`,
+          borderTop: `1px solid ${alpha(C.testo, 0.07)}`,
+          boxShadow: a ? `inset 3px 0 0 ${C.viola}` : 'none' }}>
+          <span style={{ ...num, fontSize: S.base, color: C.spento }}>{g.ora?.slice(0, 5)}</span>
           <div onClick={() => onApri?.(g.prossima_id ?? g.id)} role={onApri ? 'button' : undefined}
-            style={{ minWidth: 0, cursor: onApri ? 'pointer' : 'default' }}>
-            {/* ⚠️ **I numeri SOPRA le squadre** (richiesta di Mattia, 18/10):
-                att · scelta · VPM · campionato · orario. Si guarda prima
-                *quanto vale la partita* e poi *quale partita è* — chi compone
-                una schedina cerca i numeri, i nomi li riconosce comunque.
-                ⚠️ `Number(g.vpm)` e non `g.vpm.toFixed()`: dal database i
-                numerici arrivano come **stringhe**, e sul piano salvato quel
-                `.toFixed` sarebbe stato uno schermo bianco. */}
-            {/* ⚠️ **Acceso il VALORE, spenta l'etichetta**: `att` e `scelta`
-                sono parole che si imparano una volta, i numeri si leggono ogni
-                volta. Accendere anche le etichette raddoppierebbe il peso della
-                riga senza aggiungere niente da leggere. */}
-            <div style={{ fontSize: S.micro, fontFamily: F.mono, color: C.spento, marginBottom: 3 }}>
-              att <b style={{ color: C.testo }}>{pct(g.att)}</b>
-              {' · '}scelta <b style={{ color: C.testo }}>{pct(g.scelta)}</b>
-              {g.vpm != null && <> · VPM <b style={{ color: C.testo }}>{Number(g.vpm).toFixed(2).replace('.', ',')}</b></>}
-              {' · '}{sigla(g.div)} · {g.ora?.slice(0, 5)}
-              {/* ⚠️⚠️ **La stella si vede DENTRO il passo** (23/10/2026). Da
-                  quando scavalca i filtri, una gamba può stare lì con
-                  l'attendibilità al 40% — e senza questo segno sembrerebbe un
-                  errore del programma invece di una scelta di chi l'ha
-                  stellata. ⚠️ È anche l'unico modo di capire perché il passo
-                  si è spezzato in quel punto: una stella a quota bassa sposta
-                  il taglio. */}
-              {stelleDi(g.prossima_id ?? g.id) > 0 && (
-                <span title="entrata perché stellata" style={{ color: C.oro }}> · ★</span>
-              )}
-            </div>
-            {/* ⚠️ **La posizione sta a destra di OGNI squadra**, non in una
-                colonna a parte (richiesta di Mattia, 18/10/2026): così si legge
-                *"Nott'm Forest 15/20"* come una cosa sola, invece di dover
-                accoppiare due targhette incolonnate ai due nomi.
-                ⚠️ È la stessa `Posizione` della testata — formato `1/20`,
-                colorata a terzi del campionato — solo rimpicciolita con uno
-                `style`: **non una copia**, perché un secondo posto per la stessa
-                cosa prima o poi diverge.
-                ⚠️ `flexWrap` e `minWidth: 0` sui nomi: su un telefono i due
-                blocchi vanno a capo invece di tagliare il nome, e senza
-                `minWidth: 0` un elemento flessibile non scende sotto il suo
-                contenuto — la trappola della griglia della Slot. */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', fontSize: S.corpo, color: C.testo }}>
-              {[g.casa, g.trasferta].map((sq, n) => (
-                <span key={sq} style={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0 }}>
-                  {n === 1 && <span style={{ color: C.fioco, marginRight: 1 }}>—</span>}
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sq}</span>
-                  {/* ⚠️ **Alta come il testo che le sta accanto, non di più**
-                      (correzione di Mattia, 18/10): corpo 7 senza riempimento
-                      verticale fa ~11px, cioè appena sotto i 12 del nome. Una
-                      targhetta più alta del nome diventa l'elemento principale
-                      della riga, mentre è un contesto. Il riempimento resta
-                      solo ai lati, o le cifre toccherebbero il bordo. */}
-                  <Posizione nome={sq} colore={C.grigioFioco} posto={postoDi(classifiche, g.div, sq)}
-                    style={{ fontSize: S.micro, padding: '0 3px', borderRadius: 3, lineHeight: 1.3, fontWeight: 600 }} />
-                </span>
-              ))}
-            </div>
+            style={{ minWidth: 0, cursor: onApri ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap',
+              fontFamily: F.sans, fontSize: S.corpo, fontWeight: 600, color: C.testo, lineHeight: 1.25 }}>
+            {[g.casa, g.trasferta].map((sq, n) => (
+              <span key={sq} style={{ display: 'flex', alignItems: 'center', gap: 3, minWidth: 0 }}>
+                {n === 1 && <span style={{ color: C.fioco, fontWeight: 400 }}>–</span>}
+                <span style={{ overflowWrap: 'anywhere' }}>{sq}</span>
+                {/* la stessa `Posizione` della testata, rimpicciolita */}
+                <Posizione nome={sq} colore={C.grigioFioco} posto={postoDi(classifiche, g.div, sq)}
+                  style={{ fontSize: S.micro, padding: '0 3px', borderRadius: 3, lineHeight: 1.3, fontWeight: 600 }} />
+              </span>
+            ))}
           </div>
-          <div style={{ fontFamily: F.mono, fontSize: S.corpo, fontWeight: 700, color: C.testo, textAlign: 'center' }}>
-            {g.giocata}
-          </div>
-          {/* ⚠️ La quota è **modificabile**: book diversi e bonus. Il valore
-              scaricato resta come segnaposto, così si vede se l'hai cambiata. */}
-          {/* ⚠️ `readOnly` e non `disabled`: la quota si deve **leggere** anche
-              da spettatori, e un campo disabilitato in questo tema diventa
-              quasi invisibile (`fantasma` è 2,27:1). */}
-          <input value={quote[g.id] ?? ''} placeholder={Number(g.quota).toFixed(2)} readOnly={!tocca}
-                onChange={e => setQuote(q => ({ ...q, [g.id]: e.target.value.replace(',', '.') }))}
-                /* ⚠️ Si scrive nel registro **uscendo dal campo**, non a ogni
-                   tasto: altrimenti "1,85" passerebbe per "1", "1,", "1,8" —
-                   e "1" non è una quota valida. */
-                onBlur={() => { if (onQuota && quote[g.id]) onQuota(g.id, quote[g.id]) }}
-                inputMode="decimal" style={{ width: '100%', background: C.pozzo, color: C.oro,
-                  border: `1px solid ${alpha(C.oro, 0.3)}`, borderRadius: 6, padding: '4px 6px',
-                  fontFamily: F.mono, fontSize: S.corpo, textAlign: 'center' }} />
-          {tocca && <button onClick={() => onToglie(g.id)} title="togli dal passo"
-            style={{ background: 'transparent', border: 'none', color: C.fioco, cursor: 'pointer', fontSize: S.grande }}>×</button>}
+          <span style={{ ...num, fontSize: S.base, color: C.testo, textAlign: 'center', whiteSpace: 'nowrap' }}>{g.giocata}</span>
+          {/* La quota scaricata finché non la correggi; corretta, è
+              sottolineata a puntini. */}
+          <QuotaModificabile valore={quote[g.id]} segnaposto={g.quota} sola={!tocca} etichetta={`quota di ${g.casa}`}
+            onChange={(v) => setQuote(q => ({ ...q, [g.id]: v }))}
+            onCommit={() => { if (onQuota && quote[g.id]) onQuota(g.id, quote[g.id]) }} />
+          {tocca ? <button onClick={() => onToglie(g.id)} title="togli dal passo" aria-label="togli dal passo"
+            style={{ background: 'transparent', border: 'none', color: C.fioco, cursor: 'pointer', fontSize: S.media, padding: 0, lineHeight: 1 }}>×</button>
+            : <span />}
+
+          <span style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco }}>{sigla(g.div)}</span>
+          <span style={{ gridColumn: '2 / span 4', minWidth: 0, fontFamily: F.sans, fontSize: S.micro, color: C.fioco }}>
+            att <b style={{ ...num, color: C.spento }}>{pct(g.att)}</b>
+            {' · '}sce <b style={{ ...num, color: C.spento }}>{pct(g.scelta)}</b>
+            {g.vpm != null && <>{' · '}VPM <b style={{ ...num, color: C.spento }}>{Number(g.vpm).toFixed(2).replace('.', ',')}</b></>}
+            {/* ⚠️ La stella dentro il passo (23/10): una gamba stellata può
+                stare lì anche sotto i filtri, e senza il segno sembrerebbe un
+                errore invece di una scelta. */}
+            {stelleDi(g.prossima_id ?? g.id) > 0 && (
+              <span title="entrata perché stellata" style={{ color: C.oro }}> · ★</span>
+            )}
+          </span>
         </div>
+          )
+        })()}
         </div>
       ))}
 
@@ -272,11 +359,18 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
           vero: lì sotto la qualità la giudichi tu.
           ⚠️ C'è **anche quando non c'è niente da consigliare**: è il caso in
           cui serve di più — la fascia è finita e il passo è sotto quota. */}
-      {onManuale && !esito && tocca && (
-        <button onClick={onManuale} style={{ width: '100%', marginTop: 6, padding: '6px 8px',
-          background: 'transparent', border: `1px dashed ${alpha(C.testo, 0.18)}`, color: C.spento,
+      {/* ⚠️ Compatti dal 29/10/2026: due comandi di testo su una riga, sotto
+          le partite, invece di due riquadri tratteggiati larghi quanto la
+          card. Il primo sceglie, il secondo propone la prossima consigliata
+          — e la proposta si distingue da una partita inserita perché è
+          scritta in piccolo e preceduta da «+». */}
+      {((onManuale && !esito) || prossima) && tocca && (
+        <div style={{ display: 'flex', gap: SP.l, flexWrap: 'wrap', alignItems: 'baseline',
+          paddingTop: SP.s, borderTop: `1px solid ${alpha(C.testo, 0.07)}` }}>
+      {onManuale && !esito && (
+        <button onClick={onManuale} style={{ padding: '4px 0', background: 'transparent', border: 'none', color: C.spento,
           fontFamily: F.sans, fontSize: S.minuta, cursor: 'pointer', textAlign: 'left' }}>
-          + aggiungi partita manuale
+          + aggiungi partita
         </button>
       )}
 
@@ -285,13 +379,14 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
           tasto che pesca al buio costringe a premere per sapere cosa fa. Prende
           la prima consigliata non ancora in nessun passo, in ordine di data e
           ora — che è il senso di *"aggiungo le partite successive"*. */}
-      {prossima && tocca && (
-        <button onClick={onAggiunge} style={{ width: '100%', marginTop: 6, padding: '6px 8px',
-          background: 'transparent', border: `1px dashed ${alpha(colore, 0.4)}`, color: colore,
-          fontFamily: F.sans, fontSize: S.minuta, cursor: 'pointer', textAlign: 'left' }}>
+      {prossima && (
+        <button onClick={onAggiunge} style={{ padding: '4px 0', background: 'transparent', border: 'none', color: colore,
+          fontFamily: F.sans, fontSize: S.minuta, cursor: 'pointer', textAlign: 'left', minWidth: 0 }}>
           + {prossima.casa} — {prossima.trasferta} @{Number(prossima.quota).toFixed(2).replace('.', ',')}
           {' '}<span style={{ color: C.fioco }}>({nomeGiorno(giorno(prossima.data))} {gg(prossima.data)} {prossima.ora?.slice(0, 5)})</span>
         </button>
+      )}
+        </div>
       )}
       </>}
 
@@ -307,7 +402,7 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
           fontFamily: F.sans, fontSize: S.minuta, color: C.fioco, textAlign: 'center', lineHeight: 1.5 }}>
           {/* ⚠️ Dopo un passo perso la puntata non arriva dal passo prima:
               arriva da ⟳ RIPARTI, che apre un giro nuovo sul conto. */}
-          {fermo ? 'la scalata è ferma: questo passo riparte con ⟳ RIPARTI' : `la puntata si calcola quando chiudi il passo ${numero - 1}`}
+          {fermo ? 'il giro si è chiuso: questo passo passa al giro nuovo' : `la puntata si calcola quando chiudi il passo ${numero - 1}`}
         </div>
         {tastoFissa && <div style={{ display: 'flex', marginTop: 8 }}>{tastoFissa}</div>}
       </>) : <>
@@ -319,7 +414,7 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
           tradurre mentre si decide. */}
       <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${alpha(C.testo, 0.1)}`,
         display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4, textAlign: 'center' }}>
-        {[['PUNTATA', eur(posta), C.testo], ['INCASSATO', eur(montante), C.verde], ['UTILE', eur(r.utile), C.oroChiaro]].map(([l, v, col]) => (
+        {[['PUNTATA', eur(posta), C.testo], ['INCASSATO', eur(montante), C.verde], ['UTILE', eur(utile), C.oroChiaro]].map(([l, v, col]) => (
           <div key={l}>
             <Etichetta>{l}</Etichetta>
             <div style={{ fontFamily: F.mono, fontSize: S.grande, fontWeight: 700, color: col, marginTop: 2 }}>{v}</div>
@@ -327,45 +422,14 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
         ))}
       </div>
 
-      {/* ── Staccato: quanto se ne mette via, in % DELL'UTILE ───────────── */}
-      {/* ⚠️ La percentuale è l'unica cosa che resta in percentuale (richiesta
-          di Mattia): tutto il resto è in euro, perché è in euro che si decide. */}
-      <div style={{ marginTop: 10, padding: '8px 10px',
-        background: `linear-gradient(${alpha(C.oro, .05)},${alpha(C.oro, .05)}), ${C.card}`,
-        border: `1px solid ${alpha(C.oro, 0.22)}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
-          <Etichetta>METTI VIA</Etichetta>
-          <input value={perc ?? ''} placeholder={consiglio.toFixed(0)} inputMode="decimal" readOnly={!tocca}
-            onChange={e => setPerc(e.target.value.replace(',', '.'))}
-            style={{ width: 54, background: C.pozzo, color: C.testo, border: `1px solid ${C.bordo}`,
-              borderRadius: 6, padding: '4px 6px', fontFamily: F.mono, fontSize: S.media, textAlign: 'center' }} />
-          <span style={{ color: C.spento, fontFamily: F.sans, fontSize: S.base }}>% dell&apos;utile</span>
-          {/* ⚠️ Il consiglio si vede sempre, anche quando lo si scavalca: è
-              l'unico modo di sapere *da cosa* ti stai scostando. */}
-          <span style={{ color: C.fioco, fontFamily: F.sans, fontSize: S.minuta }}>consigliato {consiglio.toFixed(0)}%</span>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 8, textAlign: 'center' }}>
-          <div>
-            <Etichetta colore={C.verde}>ACCUMULO</Etichetta>
-            <div style={{ fontFamily: F.mono, fontSize: S.titolo, fontWeight: 700, color: C.verde, marginTop: 2 }}>{eur(r.via)}</div>
-          </div>
-          <div>
-            <Etichetta colore={C.oro}>DA RIGIOCARE</Etichetta>
-            <div style={{ fontFamily: F.mono, fontSize: S.titolo, fontWeight: 700, color: C.oro, marginTop: 2 }}>{eur(r.rigioca)}</div>
-          </div>
-        </div>
-        {r.resto > 0.005 && (
-          <div style={{ fontSize: S.micro, fontFamily: F.sans, color: C.fioco, marginTop: 5, textAlign: 'center' }}>
-            l&apos;arrotondamento per difetto manda {eur(r.resto)} in accumulo
-          </div>
-        )}
-      </div>
+      {/* ⚠️ «METTI VIA» non c'è più dal 29/10/2026: a percentuale del conto
+          non si accantona niente, l'utile resta tutto nel conto. */}
 
       {/* ⚠️ I tre tasti dell'esito spariscono per chi guarda e basta: sono
           l'unica cosa della card che **scrive nel registro**. */}
       {tocca && parte === 'tutto' && NUOVO_PASSO && (
         <div style={{ marginTop: SP.m }}>
-          <TastiEsito esito={esito} setEsito={setEsito} fissato={fissato} onFissa={tocca ? onFissa : null} />
+          <TastiEsito esito={esito} setEsito={setEsito} fissato={fissato} onFissa={tocca ? onFissa : null} simulato={simulato} />
         </div>
       )}
       {tocca && parte === 'tutto' && !NUOVO_PASSO && <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
@@ -401,25 +465,47 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, postaIniziale, accumula
  * nel colore, la parola nel `title`.
  * ⚠️ 34×30 e non meno: è il bersaglio di un dito, non di un mouse.
  */
-function TastiEsito({ esito, setEsito, fissato = false, onFissa = null }) {
+function TastiEsito({ esito, setEsito, fissato = false, onFissa = null, simulato = false }) {
+  // ⚠️⚠️ **Il ✗ vuole due tocchi** (29/10/2026): a percentuale del conto un
+  // passo perso **chiude il giro** e lo manda in archivio, e un tocco sbagliato
+  // non si disfa con «·». Il primo tocco arma, il secondo segna; dopo cinque
+  // secondi si disarma da solo — come il tasto rosso del piano.
+  const [armato, setArmato] = useState(false)
+  useEffect(() => {
+    if (!armato) return
+    const t = setTimeout(() => setArmato(false), 5000)
+    return () => clearTimeout(t)
+  }, [armato])
   const tasto = (attivo, col, onClick, segno, titolo) => (
-    <button key={titolo} onClick={onClick} title={titolo} aria-label={titolo} style={{
+    /* ⚠️ Acceso = **pieno** (29/10/2026): il tasto scelto si riconosce
+       anche senza distinguere i colori, dal fondo pieno contro il bordo. E
+       un nome per chi usa la lettura vocale (`aria-label`, `aria-pressed`). */
+    <button key={titolo} onClick={onClick} title={titolo} aria-label={titolo} aria-pressed={attivo} style={{
       width: 34, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontFamily: F.sans, fontSize: S.grande, cursor: 'pointer', borderRadius: R.m,
-      color: attivo ? col : C.spento,
-      background: attivo ? `linear-gradient(${alpha(col, 0.16)},${alpha(col, 0.16)}), ${C.card}` : C.card,
-      border: `1px solid ${alpha(col, attivo ? 0.55 : 0.2)}`,
+      fontFamily: F.sans, fontSize: S.grande, fontWeight: 700, cursor: 'pointer', borderRadius: R.m,
+      color: attivo ? C.fondo : C.spento,
+      background: attivo ? col : C.card,
+      border: `1px solid ${attivo ? col : alpha(col, 0.3)}`,
     }}>{segno}</button>
   )
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: SP.s, justifyContent: 'flex-end' }}>
       <span style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco, marginRight: 'auto' }}>
-        {esito === 'vinto' ? 'vinto' : esito === 'perso' ? 'perso' : fissato ? 'fissato' : 'da giocare'}
+        {/* ⚠️ Nel piano (scalata chiusa) l'esito è una simulazione e in
+            archivio non va niente: la scritta lo dice (Mattia, 29/10/2026:
+            *"la domanda è: quando va in archivio?"*). */}
+        {armato ? <b style={{ color: C.rosso }}>{simulato
+          ? 'Tocca di nuovo ✗: simuli un perso, il giro ricomincia'
+          : 'Tocca di nuovo ✗ per confermare: il giro va in archivio'}</b>
+          : esito === 'vinto' ? 'vinto' : esito === 'perso' ? 'perso' : fissato ? 'fissato' : 'da giocare'}
       </span>
-      {tasto(esito === 'vinto', C.verde, () => setEsito('vinto'), '✓', 'vinto')}
-      {tasto(esito === 'perso', C.rosso, () => setEsito('perso'), '✗', 'perso')}
+      {tasto(esito === 'vinto', C.verde, () => { setArmato(false); setEsito('vinto') }, '✓', 'vinto')}
+      {tasto(esito === 'perso' || armato, C.rosso, () => {
+        if (esito === 'perso') return
+        if (armato) { setArmato(false); setEsito('perso') } else setArmato(true)
+      }, '✗', 'perso')}
       {tasto(!esito, C.spento, () => setEsito(null), '·', 'da giocare')}
-      {onFissa && !esito && tasto(fissato, C.viola, onFissa, <Icona nome="lucchetto" misura={14} />, fissato ? 'togli il fissato' : 'fissa il passo')}
+      {onFissa && !esito && tasto(fissato, C.viola, onFissa, <Icona nome="puntina" misura={15} />, fissato ? 'togli il fissato' : 'fissa il passo')}
     </div>
   )
 }
@@ -454,66 +540,74 @@ function Tendina({ titolo, riassunto, children, colore = C.spento }) {
  * calcolare niente due volte.
  */
 function PassoHero(props) {
-  const { numero, gambe, giorno: gio, ora, posta, postaIniziale, accumulato, quote, perc, esito, setEsito,
-    tocca = true, onFissa, fissato } = props
+  const { numero, gambe, giorno: gio, ora, posta, quote, esito, setEsito,
+    tocca = true, onFissa, fissato, conto = null, simulato = false, colore = C.oro } = props
+  const col = colore
   const quota = gambe.map(g => Number(quote[g.id] ?? g.quota) || 1).reduce((a, q) => a * q, 1)
   const montante = posta * quota
-  const consiglio = percentualeConsigliata({ numero, montante, puntata: posta, posta: postaIniziale, accumulato })
-  const r = applicaIncasso(montante, perc ?? consiglio, posta)
+  const utile = montante - posta
   const sotto = quota < QUOTA_MINIMA_SCHEDINA
   const virgola = (x) => x.toFixed(2).replace('.', ',')
   return (
-    <Card style={{ marginBottom: SP.ml, borderColor: alpha(C.oro, 0.5),
-      background: `linear-gradient(${alpha(C.oro, 0.05)},${alpha(C.oro, 0.05)}), ${C.card}` }}>
-      <Etichetta colore={C.oro}>
-        PASSO {numero} · {nomeGiorno(gio)} {gg(gio)}{ora ? ` · ${ora}` : ''}
-      </Etichetta>
+    /* ⚠️⚠️ **Ridisegnata il 29/10/2026** (giro B): niente più cornice d'oro e
+       numeri enormi — l'oro è dei soldi, e la card del bankroll sta sopra. Il
+       passo porta il **suo colore** (filo a sinistra e titolo), lo stesso del
+       pallino nell'elenco: è il legame fra il passo e le sue partite. */
+    // ⚠️ Senza il filo spesso a sinistra (Mattia, 29/10/2026): il colore del
+    // passo lo portano il bordo sottile e il titolo.
+    <Card style={{ marginBottom: SP.ml, borderColor: alpha(col, 0.5) }}>
+      <TitoloCard colore={col} destra={
+        <span style={{ fontFamily: F.sans, fontSize: S.base, color: C.spento }}>
+          {nomeGiorno(gio)} {gg(gio)}{ora ? ` · ${ora}` : ''}
+        </span>}>PASSO {numero}</TitoloCard>
 
-      {/* ⚠️⚠️ **I due numeri che servono al banco**, e nient'altro alla stessa
-          altezza: quanto punto e a che quota. La puntata in oro e grande — è
-          il punto focale — la quota accanto, con il minimo sotto. */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', alignItems: 'end', gap: SP.m, marginTop: SP.m }}>
+      {/* I due numeri del banco — quanto punto e a che quota — proporzionati,
+          con cifre tabulari. Il minimo sta sotto la quota, vicino al valore. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', alignItems: 'start', gap: SP.m, marginTop: SP.l }}>
         <div>
-          <div style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.spento }}>punta</div>
-          <div style={{ fontFamily: F.mono, fontSize: S.cifra, fontWeight: 700, color: C.oro, lineHeight: 1.1 }}>{eur(posta)}</div>
+          <div style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.spento }}>Puntata</div>
+          <div style={{ fontFamily: F.mono, fontVariantNumeric: 'tabular-nums', fontSize: S.grande, fontWeight: 700, color: C.oro }}>{eur(posta)}</div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.spento }}>quota</div>
-          <div style={{ fontFamily: F.mono, fontSize: S.evidenza, fontWeight: 700, color: sotto ? C.ambra : C.oro, lineHeight: 1.1 }}>
+          <div style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.spento }}>Quota</div>
+          <div style={{ fontFamily: F.mono, fontVariantNumeric: 'tabular-nums', fontSize: S.grande, fontWeight: 700, color: sotto ? C.ambra : C.testo }}>
             {virgola(quota)}
           </div>
           <div style={{ fontFamily: F.sans, fontSize: S.micro, color: sotto ? C.ambra : C.fioco }}>
-            {sotto ? `manca ${virgola(QUOTA_MINIMA_SCHEDINA - quota)} al minimo` : `minimo ${virgola(QUOTA_MINIMA_SCHEDINA)}`}
+            {sotto ? `⚠ mancano ${virgola(QUOTA_MINIMA_SCHEDINA - quota)} alla quota minima` : `minimo ${virgola(QUOTA_MINIMA_SCHEDINA)}`}
           </div>
         </div>
       </div>
 
-      {/* ⚠️ **Il guadagno possibile in verde, su una riga**: cosa succede se
-          vince, già diviso come lo divide il metodo. Il dettaglio — utile e
-          percentuale da cambiare a mano — sta nella tendina «Conti». */}
-      {/* ⚠️ **Senza fondo verde** (Mattia, 26/10/2026: *"ingannevole"*): un
-          riquadro verde si legge come «vinto», mentre qui è un *se*. Resta solo
-          un divisore sopra, e il verde sui numeri. */}
-      <div style={{ marginTop: SP.l, paddingTop: SP.m, borderTop: `1px solid ${alpha(C.testo, 0.1)}`,
-        fontFamily: F.sans, fontSize: S.base, color: C.spento, lineHeight: 1.5 }}>
-        se vince incassi <b style={{ color: C.verde, fontFamily: F.mono }}>{eur(montante)}</b>
-        {' · '}metti via <b style={{ color: C.verde, fontFamily: F.mono }}>{eur(r.via)}</b>
-        {' · '}rigiochi <b style={{ color: C.oro, fontFamily: F.mono }}>{eur(r.rigioca)}</b>
+      {/* ⚠️⚠️ **Le partite sempre in vista** (29/10/2026, Mattia: «schedina
+          sempre aperta»): sono il contenuto del passo, e chiuse in una
+          tendina bisognava toccare per sapere cosa si gioca. Resta a tendina
+          solo «Conti», che è il dettaglio. */}
+      <div style={{ marginTop: SP.m }}>
+        <Passo {...props} parte="gambe" nudo />
       </div>
+
 
       {tocca && (
         <div style={{ marginTop: SP.l }}>
-          <TastiEsito esito={esito} setEsito={setEsito} fissato={fissato} onFissa={onFissa} />
+          <TastiEsito esito={esito} setEsito={setEsito} fissato={fissato} onFissa={onFissa} simulato={simulato} />
         </div>
       )}
 
       <div style={{ marginTop: SP.m }}>
-        <Tendina titolo={`Partite (${gambe.length})`} colore={C.oro}
-          riassunto={gambe.map(g => `${g.casa} ${g.giocata}`).join(' · ')}>
-          <Passo {...props} parte="gambe" nudo />
-        </Tendina>
         <Tendina titolo="Conti" colore={C.verde}
-          riassunto={`utile ${eur(r.utile)} · metti via ${(perc ?? consiglio) === consiglio ? 'il consigliato' : `${perc}%`}`}>
+          riassunto={`puntata ${eur(posta)} · utile ${eur(utile)}`}>
+          {/* ⚠️ Dentro «Conti» dal 29/10/2026 (Mattia): nella card restano
+              partite, esito e puntata/quota; il «se vince» è un dettaglio.
+              ⚠️ **Senza fondo verde** (Mattia, 26/10/2026: *"ingannevole"*):
+              è un *se*, non un «vinto». Su telefono va a capo in ordine. */}
+          <div style={{ marginBottom: SP.m, fontFamily: F.sans, fontSize: S.base, color: C.spento, lineHeight: 1.5 }}>
+            Se vince: incasso <b style={{ color: C.verde, fontFamily: F.mono, fontVariantNumeric: 'tabular-nums' }}>{eur(montante)}</b>
+            {' · '}utile <b style={{ color: C.verde, fontFamily: F.mono, fontVariantNumeric: 'tabular-nums' }}>{eur(utile)}</b>
+            {/* a percentuale l'utile resta nel conto: si dice dove arriva, che
+                è il numero da cui nasce la puntata del passo dopo */}
+            {conto != null && <>{' · '}conto <b style={{ color: C.testo, fontFamily: F.mono, fontVariantNumeric: 'tabular-nums' }}>{eur(conto + utile)}</b></>}
+          </div>
           <Passo {...props} parte="conti" nudo />
         </Tendina>
       </div>
@@ -527,7 +621,7 @@ function PassoHero(props) {
  * ⚠️ La riga di un passo giocato porta il colore dell'esito, come la card.
  */
 function PassoRiga(props) {
-  const { numero, gambe, giorno: gio, ora, quote, esito, anteprima, fissato } = props
+  const { numero, gambe, giorno: gio, ora, quote, esito, anteprima, fissato, colore = C.spento } = props
   const [aperta, setAperta] = useState(false)
   const quota = gambe.map(g => Number(quote[g.id] ?? g.quota) || 1).reduce((a, q) => a * q, 1)
   const tinta = esito === 'vinto' ? C.verde : esito === 'perso' ? C.rosso : C.spento
@@ -537,14 +631,16 @@ function PassoRiga(props) {
   // contenuto le scende sotto, dopo un divisore, **dentro la stessa cornice**.
   // Si chiude toccando la barra: il bersaglio è grande quanto quello per aprire.
   return (
+    /* ⚠️ Il filo nel colore del passo anche qui (29/10/2026), più tenue che
+       nella card del passo da giocare; un passo giocato prende l'esito. */
     <Card style={{ marginBottom: SP.s, padding: `${SP.m}px ${SP.l}px`,
-      borderColor: alpha(tinta, esito ? 0.35 : aperta ? 0.2 : 0.1) }}>
+      borderColor: alpha(esito ? tinta : colore, esito ? 0.35 : aperta ? 0.35 : 0.25) }}>
       <button onClick={() => setAperta(a => !a)} style={{
         display: 'flex', alignItems: 'baseline', gap: SP.m, width: '100%', padding: 0,
         background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left',
       }}>
         <span style={{ fontFamily: F.mono, fontSize: S.base, color: C.spento, flexShrink: 0 }}>{aperta ? '▾' : '▸'}</span>
-        <span style={{ fontFamily: F.sans, fontSize: S.corpo, fontWeight: 600, color: esito ? tinta : C.testo, flexShrink: 0 }}>
+        <span style={{ fontFamily: F.sans, fontSize: S.corpo, fontWeight: 700, color: esito ? tinta : colore, flexShrink: 0 }}>
           {esito === 'vinto' ? '✓ ' : esito === 'perso' ? '✗ ' : ''}PASSO {numero}
         </span>
         <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -552,7 +648,7 @@ function PassoRiga(props) {
           {nomeGiorno(gio)} {gg(gio)}{ora ? ` ${ora}` : ''} · {gambe.length} partite
           {anteprima && !esito ? ' · in anteprima' : ''}{fissato ? ' · fissato' : ''}
         </span>
-        <span style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700, color: esito ? tinta : C.oro, flexShrink: 0 }}>
+        <span style={{ fontFamily: F.mono, fontVariantNumeric: 'tabular-nums', fontSize: S.media, fontWeight: 700, color: esito ? tinta : C.testo, flexShrink: 0 }}>
           {quota.toFixed(2).replace('.', ',')}
         </span>
       </button>
@@ -659,7 +755,9 @@ function GiroArchivio({ s, onResoconto }) {
           </span>
         </div>
         <div style={{ fontFamily: F.mono, fontSize: S.minuta, color: C.spento, marginTop: 3 }}>
-          {eur(s.bankroll_iniziale)} → {eur(s.bankroll_finale)} · puntata {eur(s.posta)} · quota min {virgola(s.quota_minima)}
+          {eur(s.bankroll_iniziale)} → {eur(s.bankroll_finale)} · puntata {eur(s.posta)}
+          {/* la percentuale del giro (29/10/2026): con quale % è stato giocato */}
+          {s.percentuale != null && ` (${Math.round(Number(s.percentuale) * 100)}%)`} · quota min {virgola(s.quota_minima)}
           {/* ⚠️ L'accumulo si scrive solo se c'è stato: le scalate chiuse prima
               del 18/10/2026 ce l'hanno a zero perché nessuno lo congelava, e
               *"accumulo € 0,00"* su una scalata in utile è una riga falsa. */}
@@ -869,6 +967,12 @@ export default function ScalataPage() {
   const [aggiunte, setAggiunte] = useState({})
   const [quote, setQuote] = useState({})
   const [perc, setPerc] = useState({})
+  // ⚠️ La percentuale del conto per il PROSSIMO giro (29/10/2026): si sceglie
+  // a scalata chiusa e si salva con le preferenze; a scalata aperta vale
+  // quella scritta sul giro (`aperta.percentuale`), e si cambia solo con STOP.
+  const [percScelta, setPercScelta] = useState(PERCENTUALE_DEFAULT)
+  // RISULTATO FILTRI: tutte, o solo le «Consigliate» del criterio A (29/10/2026)
+  const [soloA, setSoloA] = useState(false)
   const [esiti, setEsiti] = useState({})
   const [tolte, setTolte] = useState([])
   // ⚠️ Gli id della **prima gamba di ogni pezzo staccato**: il taglio si ancora
@@ -908,6 +1012,7 @@ export default function ScalataPage() {
     setSceMin(n(f.scelta, CONSIGLIATO.scelta))
     setVpmMin(n(f.vpm, 0))
     setQuotaGamba(n(f.quotaGamba, QUOTA_MINIMA_GAMBA))
+    if (PERCENTUALI.includes(Number(f.percentuale))) setPercScelta(Number(f.percentuale))
     // ⚠️ E il **piano**: tolte, aggiunte, tagli, quote, percentuali ed esiti
     // (Mattia, 22/10: *"gli admin devono vedere tutti la stessa situazione,
     // bankroll e partite del passo x compreso"*). Le partite che nel frattempo
@@ -937,7 +1042,7 @@ export default function ScalataPage() {
   useEffect(() => {
     if (!letta) return
     const dati = {
-      filtri: { att: attMin, scelta: sceMin, vpm: vpmMin, quotaGamba },
+      filtri: { att: attMin, scelta: sceMin, vpm: vpmMin, quotaGamba, percentuale: percScelta },
       piano: { tolte, aggiunte, tagli, quote, perc, esiti, fissati, calendarioDa },
     }
     const j = JSON.stringify(dati)
@@ -949,7 +1054,7 @@ export default function ScalataPage() {
       else ultimaSalvata.current = j
     }, 800)
     return () => clearTimeout(t)
-  }, [letta, attMin, sceMin, vpmMin, quotaGamba, tolte, aggiunte, tagli, quote, perc, esiti, fissati, calendarioDa])
+  }, [letta, attMin, sceMin, vpmMin, quotaGamba, percScelta, tolte, aggiunte, tagli, quote, perc, esiti, fissati, calendarioDa])
 
   // Dal 24/10/2026 l'archivio è di tutti: ognuno ha il suo.
   const vista = modo
@@ -959,7 +1064,12 @@ export default function ScalataPage() {
   // si apre il prossimo giro; con un giro aperto vale il suo.
   const contoFermo = contoDi({ ricariche: reg.ricariche, storico: reg.storico || [] }).fermo
   const bankrollIniziale = aperta ? Number(aperta.bankroll_iniziale) : Math.round(contoFermo * 100) / 100
-  const posta = aperta ? Number(aperta.posta) : postaDi(bankrollIniziale)
+  // ⚠️⚠️ **A percentuale del conto** (29/10/2026, `sql/49`): `posta` è la
+  // puntata del PRIMO passo del giro; quelle dopo le calcola `contiPercentuale`
+  // dal conto di quel momento. Un giro vecchio («Metà utile») aperto non
+  // esiste più: se ce ne fosse uno, varrebbe la percentuale di fabbrica.
+  const percentuale = aperta ? (Number(aperta.percentuale) || PERCENTUALE_DEFAULT) : percScelta
+  const posta = puntataDi(bankrollIniziale, percentuale)
 
   // ⚠️ Le candidate: **attendibilità E scelta** sopra le soglie, più il
   // pavimento di quota per gamba — che non è prudenza ma misura (sotto 1,30 la
@@ -1235,19 +1345,26 @@ export default function ScalataPage() {
   // dal database né aggiornate a ogni esito. È quello che permette di togliere
   // tutti i blocchi — annullare un esito o cambiare una quota si propaga da
   // solo, perché non c'è un secondo numero da disfare.
-  const casse = useMemo(() => {
-    const c = aperta
-      ? casseDi(reg.passi, posta, (i) => perc[kp(i)])
-      : casseDi(passi.map((f, i) => ({
-        quota: f.partite.reduce((a, g) => a * (Number(quote[g.id] ?? g.quota) || 1), 1),
-        esito: esiti[kp(i)] ?? 'aperto',
-      })), posta, (i) => perc[kp(i)])
-    const live = bankrollIniziale - posta + c.accumulo + c.cassa
-    return { inGioco: c.cassa, accumulo: c.accumulo, vivi: c.vivi, live, risultato: c.accumulo + c.cassa - posta }
+  // ⚠️⚠️ **Il conto del giro, calcolato dai passi giocati** (29/10/2026):
+  // `contiPercentuale` cammina passo per passo — puntata = % del conto di quel
+  // momento, vinto → +utile, perso → −puntata. `poste[i]` è la puntata del
+  // passo i già giocato, `prossima` quella del passo da giocare adesso.
+  // ⚠️ Nel piano (scalata chiusa) gli esiti sono simulati, e dopo un perso la
+  // catena **continua** col conto più basso: è quello che succede davvero,
+  // perché il giro riparte da solo con lo stesso conto.
+  const giro = useMemo(() => contiPercentuale(bankrollIniziale, aperta
+    ? reg.passi
+    : passi.map((f, i) => ({
+      quota: f.partite.reduce((a, g) => a * (Number(quote[g.id] ?? g.quota) || 1), 1),
+      esito: esiti[kp(i)] ?? 'aperto',
+    })), percentuale),
     // ⚠️ `kp` è una funzione nuova a ogni ridisegno: dipende solo da `aperta`,
     // `reg.passi` e `passi`, che sono già qui.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aperta, reg.passi, passi, esiti, quote, perc, posta, bankrollIniziale])
+    [aperta, reg.passi, passi, esiti, quote, percentuale, bankrollIniziale])
+  const puntataDel = (i) => (i < giro.poste.length ? giro.poste[i] : i === giro.poste.length ? giro.prossima : 0)
+  // `casse` resta come nome per le righe che lo leggono: ora è il giro.
+  const casse = { inGioco: giro.prossima, vivi: giro.poste.length, live: giro.live, risultato: giro.live - bankrollIniziale }
 
   // Il conto di adesso: ricariche, giri chiusi e quanto il giro in corso ha
   // fatto finora (nel piano, quanto farebbe con gli esiti provati).
@@ -1264,16 +1381,23 @@ export default function ScalataPage() {
       color: attivo ? colore : C.spento, background: attivo ? `linear-gradient(${alpha(colore, .14)},${alpha(colore, .14)}), ${C.card}` : C.card,
       border: `1px solid ${alpha(colore, attivo ? .5 : .18)}`, ...style }}>{children}</button>
   )
-  const Numero = ({ label, valore, passo, set, suffisso = '' }) => (
-    <div style={{ display: 'contents' }}>
-      <div style={{ fontSize: S.corpo, fontFamily: F.sans, color: C.testo }}>{label}</div>
-      <Tasto onClick={() => set(v => Math.max(0, Math.round((v - passo) * 100) / 100))} colore={C.spento}>−</Tasto>
-      <div style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700, color: C.oro, minWidth: 54, textAlign: 'center' }}>
-        {valore}{suffisso}
+  // ⚠️ Compatto dal 29/10/2026: etichetta a sinistra, − valore + a destra,
+  // tasti piccoli ma da 30px di altezza — si premono col pollice.
+  const Numero = ({ label, valore, passo, set, suffisso = '' }) => {
+    const mini = { height: 30, padding: 0, border: `1px solid ${C.bordo}`, borderRadius: R.m, background: C.card,
+      color: C.spento, fontFamily: F.sans, fontSize: S.media, cursor: 'pointer' }
+    return (
+      <div style={{ display: 'contents' }}>
+        <div style={{ fontSize: S.base, fontFamily: F.sans, color: C.testo }}>{label}</div>
+        <button onClick={() => set(v => Math.max(0, Math.round((v - passo) * 100) / 100))} aria-label={`${label} meno`} style={mini}>−</button>
+        <div style={{ fontFamily: F.mono, fontVariantNumeric: 'tabular-nums', fontSize: S.media, fontWeight: 700, color: C.oro, textAlign: 'center' }}>
+          {valore}{suffisso}
+        </div>
+        <button onClick={() => set(v => Math.round((v + passo) * 100) / 100)} aria-label={`${label} più`} style={mini}>+</button>
       </div>
-      <Tasto onClick={() => set(v => Math.round((v + passo) * 100) / 100)} colore={C.spento}>+</Tasto>
-    </div>
-  )
+    )
+  }
+
 
   return (
     <div style={{ padding: '12px 12px 90px' }}>
@@ -1338,77 +1462,166 @@ export default function ScalataPage() {
           leggibili per scelta. Questo toglie solo il conto dalla vista. */}
       {/* ⚠️ Dal 24/10/2026 la vede **ognuno sul suo conto**: il motivo per
           nasconderla agli utenti era che il conto era quello di Admin. */}
-      {/* ⚠️ **In cima e col bordo acceso** (richiesta di Mattia): è il conto, e
+      {/* ── I tasti di selezione ───────────────────────────────────────── */}
+      <Card style={{ marginBottom: 10 }}>
+        {/* ⚠️ **Il consigliato sta qui, in testa e a destra** (richiesta di
+            Mattia): accanto ai tasti delle regole non si capiva cosa fosse —
+            sembrava una terza regola. E **dice su cosa si basa**: la prima
+            versione diceva solo "consigliato 62 · 62", su un numero proposto a
+            occhio. Un'app che consiglia deve poter dire perché, o quella parola
+            non va scritta. */}
+        {/* ⚠️ Compatta dal 29/10/2026: il consigliato è un tasto piccolo
+            accanto al titolo, e il perché sta nella riga sotto, in piccolo. */}
+        <TitoloCard destra={
+          <button onClick={() => { setAttMin(CONSIGLIATO.att); setSceMin(CONSIGLIATO.scelta); setVpmMin(0); setQuotaGamba(QUOTA_MINIMA_GAMBA) }}
+            title={`${CONSIGLIATO.perche} · un passo in ${CONSIGLIATO.weekend} weekend su 100`}
+            style={{ cursor: 'pointer', padding: '4px 9px', borderRadius: R.m, fontFamily: F.sans, fontSize: S.minuta,
+              color: attMin === CONSIGLIATO.att && sceMin === CONSIGLIATO.scelta && !vpmMin && quotaGamba === QUOTA_MINIMA_GAMBA ? C.verde : C.spento,
+              background: attMin === CONSIGLIATO.att && sceMin === CONSIGLIATO.scelta && !vpmMin && quotaGamba === QUOTA_MINIMA_GAMBA ? alpha(C.verde, 0.12) : 'transparent',
+              border: `1px solid ${alpha(C.verde, attMin === CONSIGLIATO.att && sceMin === CONSIGLIATO.scelta && !vpmMin && quotaGamba === QUOTA_MINIMA_GAMBA ? 0.5 : 0.25)}` }}>
+            ✓ consigliato · att {CONSIGLIATO.att}%{CONSIGLIATO.scelta ? ` · scelta ${CONSIGLIATO.scelta}%` : ''}
+          </button>}>SELEZIONE</TitoloCard>
+        {/* ⚠️ Il perché del consigliato non è più una riga (Mattia, 29/10/2026):
+            resta nel suggerimento del tasto, tenendoci sopra il dito. */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 34px 58px 34px', gap: '6px 6px',
+          alignItems: 'center', marginTop: SP.l }}>
+          <Numero label="attendibilità ≥" valore={attMin} passo={1} set={setAttMin} suffisso="%" />
+          <Numero label="scelta ≥" valore={sceMin} passo={1} set={setSceMin} suffisso="%" />
+          <Numero label="VPM ≥" valore={vpmMin ? vpmMin.toFixed(1).replace('.', ',') : 'tutti'} passo={0.5} set={setVpmMin} />
+          {/* ⚠️ **"quota gamba", non "quota"**: a due centimetri da qui c'è la
+              quota della schedina (1,90, fissa), e due filtri chiamati "quota"
+              nella stessa card sono il modo di girare la manopola sbagliata. */}
+          <Numero label="quota gamba ≥" valore={quotaGamba.toFixed(2).replace('.', ',')} passo={0.05} set={setQuotaGamba} />
+        </div>
+        {/* ⚠️⚠️ **Qui non ci sono più né la quota schedina né le due regole**
+            (Mattia, 21/10/2026). La quota minima è **una e basta** (1,90 dal 26/10/2026): era una
+            manopola quando si cercava dove stare, adesso il metodo l'ha fissata
+            — e il posto dove dirlo è la card del passo che non ci arriva.
+            Le due regole di incasso servivano a misurare quale conviene, e la
+            misura ha risposto: ne resta una, e un tasto che offre quella
+            bocciata è un modo di giocarla per sbaglio. */}
+        {/* ⚠️ Tolte il 29/10/2026 (Mattia) le righe «metodo …» e «si salva da
+            sola · ultima volta …»: il metodo sta nella card del bankroll, e il
+            salvataggio è automatico. Resta solo l'**errore** di salvataggio,
+            se c'è: quello va detto. */}
+        {pref.errore && (
+          <div style={{ fontSize: S.micro, fontFamily: F.sans, color: C.ambra, marginTop: SP.m }}>
+            le preferenze non si sono salvate: {pref.errore}
+          </div>
+        )}
+        {/* ⚠️⚠️ **«Aggiorna calendario» al posto della riga del metodo**
+            (Mattia, 24/10/2026): il piano è fermo all'istante dell'ultimo
+            aggiornamento, e questo è il gesto che lo sposta ad adesso — le
+            partite già cominciate escono, quelle nuove entrano. ⚠️ **Non
+            cancella niente**: né le tolte, né le aggiunte, né a scalata aperta
+            i passi salvati — quello resta al tasto rosso, con la conferma. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+          <Tasto colore={C.celestePieno} style={{ padding: '4px 10px', fontSize: S.minuta, borderRadius: R.m }} onClick={() => {
+            const ora = Date.now()
+            setCalendarioDa(ora); setDaOra(ora)
+            ricaricaPartite()
+          }}>⟳ Aggiorna calendario</Tasto>
+          <span style={{ fontSize: S.micro, fontFamily: F.sans, color: C.fioco }}>
+            partite dalle {new Date(calendarioDa).toLocaleString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+          </span>
+        </div>
+      </Card>
+
+      {/* ⚠️⚠️ **Sotto i filtri dal 29/10/2026** (Mattia: *"in cima i filtri,
+          sotto la card con apri scalata"*): si sceglie cosa giocare, poi si
+          apre. Prima stava in cima perché *"un conto in mezzo alla pagina si
+          legge dopo aver già deciso"*; ora la decisione è dei filtri.
+          ⚠️ (era: **In cima e col bordo acceso** (richiesta di Mattia): è il conto, e
           un conto che sta in mezzo alla pagina si legge dopo le partite — cioè
           dopo aver già deciso. Il fondo è una tinta d'oro appena accesa su
           fondo opaco (`linear-gradient(tinta,tinta), C.card`): una tinta
           semitrasparente da sola si illuminerebbe su sfondo chiaro. */}
-      <Card style={{ marginBottom: 12, borderColor: alpha(C.oro, 0.45),
-        background: `linear-gradient(${alpha(C.oro, 0.045)},${alpha(C.oro, 0.045)}), ${C.card}` }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, textAlign: 'center' }}>
-          {/* ⚠️ «CONTO» e non più «BANKROLL LIVE»: è lo stesso numero, ma
-              adesso comprende le ricariche e tutti i giri, non solo questo. */}
-          {[['IN GIOCO', casse.inGioco, C.oro], ['ACCUMULO', casse.accumulo, C.verde],
-            ['CONTO', conto.conto, conto.conto >= bankrollIniziale ? C.verde : C.rosso]].map(([l, v, col]) => (
+      {/* ⚠️⚠️ **GESTIONE BANKROLL, un pannello solo e sobrio** (29/10/2026,
+          Mattia con un disegno di riferimento). Niente più cornice d'oro e
+          numeri enormi: conto e puntata in evidenza, versato e risultato più
+          piccoli, poi la percentuale e la ricarica. L'avvio della scalata è
+          sceso sotto «LA SCALETTA», separato dalle operazioni sul conto.
+          ⚠️ Il conto si legge **sempre**: è quello che dice *"se perdo 300 € e
+          ne incasso 200, sono in perdita"* (Mattia, 24/10/2026). */}
+      <Card style={{ marginBottom: 12 }}>
+        <TitoloCard>GESTIONE BANKROLL</TitoloCard>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: SP.m, marginTop: SP.l }}>
+          {[['Conto', conto.conto, C.testo], ['Puntata', casse.inGioco, C.oro]].map(([l, v, col]) => (
             <div key={l}>
-              <Etichetta>{l}</Etichetta>
-              <div style={{ fontFamily: F.mono, fontSize: S.titolo, fontWeight: 700, color: col, marginTop: 3 }}>{eur(v)}</div>
+              <div style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.spento }}>{l}</div>
+              <div style={{ fontFamily: F.mono, fontVariantNumeric: 'tabular-nums', fontSize: S.grande, fontWeight: 700, color: col }}>{eur(v)}</div>
             </div>
           ))}
         </div>
-
-        {/* ⚠️⚠️ **Versato e risultato, sempre in vista** (Mattia, 24/10/2026:
-            *"se perdo 3 bankroll interi e una volta incasso 200 € devo capire
-            di essere in perdita e non in utile"*). Il risultato è **conto
-            meno versato**: è l'unico numero che non si fa ingannare
-            dall'ultimo incasso. Sopra il riepilogo, sotto il gesto che lo
-            muove — la ricarica, l'unico modo in cui entrano soldi. */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: SP.s,
-          marginTop: SP.l, paddingTop: SP.m, borderTop: `1px solid ${alpha(C.testo, 0.1)}` }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: SP.m, flexWrap: 'wrap', fontFamily: F.sans, fontSize: S.base, color: C.spento }}>
-            <span>versato <b style={{ color: C.testo, fontFamily: F.mono }}>{eur(conto.versato)}</b></span>
-            <span style={{ marginLeft: 'auto' }}>risultato{' '}
-              <b style={{ fontFamily: F.mono, color: conto.risultato >= 0 ? C.verde : C.rosso }}>
-                {conto.risultato >= 0 ? '+' : ''}{eur(conto.risultato)}
-              </b>
-            </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: SP.m }}>
-            {/* ⚠️ **16px**: sotto, iOS ingrandisce la pagina da solo quando
-                si tocca il campo (trappola già pagata). */}
-            <input value={importo} onChange={e => setImporto(e.target.value.replace(',', '.'))}
-              inputMode="decimal" placeholder="importo"
-              style={{ width: 90, minWidth: 0, background: C.pozzo, border: `1px solid ${C.bordo}`, padding: '6px 8px',
-                color: C.testo, fontFamily: F.mono, fontSize: 16, outline: 'none' }} />
-            <Tasto colore={C.oro} attivo={Number(importo) > 0} onClick={async () => {
-              if (!(Number(importo) > 0)) return
-              const x = await reg.ricaricaConto(cent(Number(importo)))
-              setAvviso(x?.errore ?? null)
-              if (!x?.errore) setImporto('')
-            }}>＋ ricarica</Tasto>
-            <span style={{ marginLeft: 'auto', fontFamily: F.sans, fontSize: S.base, color: C.spento, textAlign: 'right' }}>
-              puntata <b style={{ color: C.oro }}>{eur(posta)}</b>
-              <span style={{ fontSize: S.micro, color: C.fioco }}> (10%)</span>
-            </span>
-          </div>
-          {!aperta && posta < 1 && (
-            <div style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.ambra }}>
-              {conto.versato > 0
-                ? 'Il conto è sotto 10 €: la puntata sarebbe sotto 1 €. Ricarica per aprire una scalata.'
-                : 'Il conto parte da 0: fai una ricarica per aprire la prima scalata.'}
-            </div>
-          )}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: SP.m, marginTop: SP.s,
+          fontFamily: F.sans, fontSize: S.base, color: C.spento }}>
+          <span>Versato <b style={{ fontFamily: F.mono, fontVariantNumeric: 'tabular-nums', color: C.testo }}>{eur(conto.versato)}</b></span>
+          <span>Risultato <b style={{ fontFamily: F.mono, fontVariantNumeric: 'tabular-nums', color: conto.risultato >= 0 ? C.verde : C.rosso }}>
+            {conto.risultato >= 0 ? '+' : ''}{eur(conto.risultato)}</b></span>
         </div>
 
+        {/* ⚠️⚠️ **La percentuale si sceglie a scalata chiusa** (Mattia,
+            29/10/2026: *"per cambiare la % bisogna stoppare la scalata"*). A
+            scalata aperta il selettore non c'è e lo si dice: un selettore
+            spento inviterebbe a premerlo. */}
+        <div style={{ marginTop: SP.l, paddingTop: SP.m, borderTop: `1px solid ${alpha(C.testo, 0.08)}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: SP.m, flexWrap: 'wrap' }}>
+            <span style={{ fontFamily: F.sans, fontSize: S.base, color: C.testo }}>Percentuale di puntata</span>
+            <span style={{ marginLeft: 'auto' }}>
+              {aperta
+                ? <span style={{ fontFamily: F.sans, fontSize: S.base, color: C.spento }}>
+                    <b style={{ fontFamily: F.mono, color: C.celeste }}>{Math.round(percentuale * 100)}%</b> · si cambia con STOP
+                  </span>
+                : <Segmenti colore={C.celeste} valore={percScelta} onScegli={setPercScelta}
+                    opzioni={PERCENTUALI.map(x => [x, `${Math.round(x * 100)}%`])} />}
+            </span>
+          </div>
+          <div style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco, marginTop: 4 }}>
+            ogni passo punta questa percentuale del conto di quel momento · misurato: cresce di più il 3%
+          </div>
+        </div>
+
+        {/* La ricarica: l'unico modo in cui entrano soldi. ⚠️ Campo a **16px**:
+            sotto, iOS ingrandisce la pagina da solo (trappola già pagata). */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: SP.m, marginTop: SP.l }}>
+          <input value={importo} onChange={e => setImporto(e.target.value.replace(',', '.'))}
+            inputMode="decimal" placeholder="importo €" aria-label="importo della ricarica"
+            style={{ flex: 1, minWidth: 0, maxWidth: 160, background: C.pozzo, border: `1px solid ${C.bordo}`, borderRadius: R.m,
+              padding: '6px 9px', color: C.testo, fontFamily: F.mono, fontSize: 16, outline: 'none' }} />
+          <Tasto colore={C.oro} attivo={Number(importo) > 0} style={{ borderRadius: R.m }} onClick={async () => {
+            if (!(Number(importo) > 0)) return
+            const x = await reg.ricaricaConto(cent(Number(importo)))
+            setAvviso(x?.errore ?? null)
+            if (!x?.errore) setImporto('')
+          }}>＋ Ricarica</Tasto>
+        </div>
+        {!aperta && posta < 1 && (
+          <div style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.ambra, marginTop: SP.m }}>
+            {conto.versato > 0
+              ? 'Il conto è sotto 1 €: non si può puntare. Ricarica per aprire una scalata.'
+              : 'Il conto parte da 0: fai una ricarica per aprire la prima scalata.'}
+          </div>
+        )}
         {casse.vivi > 0 && (
-          <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.spento, marginTop: 8, textAlign: 'center' }}>
-            {casse.vivi} {casse.vivi === 1 ? 'passo giocato' : 'passi giocati'} · risultato{' '}
-            <b style={{ color: casse.risultato >= 0 ? C.verde : C.rosso }}>
+          <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.spento, marginTop: SP.m }}>
+            in questo giro {casse.vivi} {casse.vivi === 1 ? 'passo giocato' : 'passi giocati'} · risultato{' '}
+            <b style={{ fontFamily: F.mono, color: casse.risultato >= 0 ? C.verde : C.rosso }}>
               {casse.risultato >= 0 ? '+' : ''}{eur(casse.risultato)}
             </b>
           </div>
         )}
+      </Card>
 
+      {/* ── La scaletta ───────────────────────────────────────────────── */}
+      {/* ⚠️ «LA SCALETTA» come titolo di sezione, con partite e passi
+          leggibili (Mattia, 29/10/2026), e sotto l'**avvio**: APRI e STOP
+          stanno qui e non più nel bankroll — aprire è l'avvio della scaletta,
+          non un'operazione sul conto. */}
+      <div style={{ marginBottom: SP.m }}>
+        <TitoloCard destra={
+          <span style={{ fontFamily: F.sans, fontSize: S.base, color: C.spento }}>
+            <b style={{ color: C.testo }}>{candidate.length}</b> partite · <b style={{ color: C.testo }}>{passi.length}</b> passi
+          </span>}>LA SCALETTA</TitoloCard>
         {/* ⚠️ Lo stop è l'UNICO modo di fermare la scalata, e **consolida**:
             accumulo e cassa in gioco rientrano nel capitale, che diventa il
             live, e la puntata successiva è il 10% di quello. Senza il
@@ -1432,12 +1645,15 @@ export default function ScalataPage() {
             // ⚠️ **Al centesimo, non per difetto** (24/10/2026): con il conto
             // calcolato dai giri, un `Math.floor` qui toglieva i centesimi
             // dell'accumulo dal conto a ogni STOP.
-            await reg.chiudi(cent(casse.live), { cassa: casse.inGioco, accumulo: casse.accumulo })
+            await reg.chiudi(cent(casse.live), { cassa: 0, accumulo: 0 })
             setEsiti({}); setPerc({}); setTolte([]); setAggiunte({})
           }}
-            style={{ width: '100%', marginTop: 10, padding: '8px 0', background: `linear-gradient(${alpha(C.rosso, .1)},${alpha(C.rosso, .1)}), ${C.card}`,
-              border: `1px solid ${alpha(C.rosso, 0.4)}`, color: C.rosso, fontFamily: F.sans, fontSize: S.base, cursor: 'pointer' }}>
-            ⏹ STOP SCALATA — porta {eur(casse.accumulo + casse.inGioco)} nel capitale e chiudi
+            style={{ width: '100%', marginTop: SP.m, padding: '8px 0', borderRadius: R.m, background: 'transparent',
+              border: `1px solid ${alpha(C.rosso, 0.45)}`, color: C.rosso, fontFamily: F.sans, fontSize: S.base, cursor: 'pointer' }}>
+            ⏹ STOP SCALATA
+            <span style={{ display: 'block', fontSize: S.micro, color: C.spento, marginTop: 2 }}>
+              chiude il giro (conto {eur(conto.conto)}) e sblocca la percentuale
+            </span>
           </button>
         ) : (
           /* ⚠️ **Il record nasce con un tasto, non da solo** (scelta di Mattia):
@@ -1449,39 +1665,38 @@ export default function ScalataPage() {
              aprire due scalate sullo stesso capitale. */
           <button disabled={!passi.length || reg.occupato || posta < 1}
             onClick={async () => {
-              const piano = []
-              let p = posta, acc = 0
-              for (const [i, f] of passi.entries()) {
+              // ⚠️ A percentuale (29/10/2026) la puntata di un passo si sa solo
+              // quando tocca a lui: nel piano si scrive quella del primo, e
+              // `segna` la corregge con quella vera all'esito. Si salvano
+              // **tutti** i passi: un perso non ferma più la catena.
+              const piano = passi.map(f => {
                 const q = f.partite.reduce((a, g) => a * (Number(quote[g.id] ?? g.quota) || 1), 1)
-                piano.push({
-                  giorno: f.giorno, posta: p, quota: Number(q.toFixed(4)),
+                return {
+                  giorno: f.giorno, posta, quota: Number(q.toFixed(4)),
                   gambe: f.partite.map(g => ({ ...g, quota: Number(quote[g.id] ?? g.quota) })),
-                })
-                // il piano salva la catena ipotetica: le puntate vere le
-                // ricalcola la pagina man mano che gli esiti arrivano
-                const m = p * q
-                const pc = perc[kp(i)] ?? percentualeConsigliata({ numero: i + 1, montante: m, puntata: p, posta, accumulato: acc })
-                const inc = applicaIncasso(m, pc, p)
-                acc += inc.via
-                p = inc.rigioca
-                if (p < 1) break
-              }
-              // ⚠️ `regola: METODO.id` ('meta' dal 26/10/2026) è il metodo di oggi, e si scrive nel
-              // registro perché l'archivio deve poter dire **come si giocava**
-              // quando quella scalata è stata aperta: le righe vecchie hanno
-              // 'capitale' o 'gioco' e restano così.
-              const r = await reg.apri({ bankroll: bankrollIniziale, posta, quotaMinima: QUOTA_MINIMA_SCHEDINA, regola: METODO.id, piano })
+                }
+              })
+              // ⚠️ `regola: METODO.id` ('percentuale' dal 29/10/2026) si scrive
+              // nel registro perché l'archivio deve poter dire **come si
+              // giocava**: le righe vecchie hanno 'meta', 'madre', 'capitale'.
+              const r = await reg.apri({ bankroll: bankrollIniziale, posta, quotaMinima: QUOTA_MINIMA_SCHEDINA,
+                regola: METODO.id, percentuale, piano })
               // ⚠️ L'errore va **a schermo**: un tasto che non fa niente e non
               // dice perché è il modo di non capire mai cosa è andato storto.
               if (r.errore) setErroreApri(r.errore)
               else { setErroreApri(null); setEsiti({}); setPerc({}) }
             }}
-            style={{ width: '100%', marginTop: 10, padding: '9px 0',
-              background: passi.length && posta >= 1 ? `linear-gradient(${alpha(C.verde, .12)},${alpha(C.verde, .12)}), ${C.card}` : C.card,
-              border: `1px solid ${alpha(C.verde, passi.length && posta >= 1 ? 0.5 : 0.15)}`,
-              color: passi.length && posta >= 1 ? C.verde : C.fioco, fontFamily: F.sans, fontSize: S.base,
+            /* ⚠️ L'azione principale della pagina, nel colore dell'app (oro):
+               il verde resta per i risultati. */
+            style={{ width: '100%', marginTop: SP.m, padding: '9px 0', borderRadius: R.m,
+              background: passi.length && posta >= 1 ? alpha(C.oro, 0.16) : 'transparent',
+              border: `1px solid ${alpha(C.oro, passi.length && posta >= 1 ? 0.6 : 0.15)}`,
+              color: passi.length && posta >= 1 ? C.oro : C.fioco, fontFamily: F.sans, fontSize: S.media, fontWeight: 700,
               cursor: passi.length && posta >= 1 ? 'pointer' : 'default' }}>
-            {reg.occupato ? 'salvo il piano…' : `▶ APRI SCALATA — congela ${passi.length} passi e comincia a registrare`}
+            {reg.occupato ? 'salvo il piano…' : '▶ APRI SCALATA'}
+            <span style={{ display: 'block', fontSize: S.micro, fontWeight: 400, color: C.spento, marginTop: 2 }}>
+              congela i {passi.length} passi e comincia a registrare
+            </span>
           </button>
         )}
         {erroreApri && (
@@ -1489,129 +1704,6 @@ export default function ScalataPage() {
             {erroreApri}
           </div>
         )}
-      </Card>
-
-      {/* ── I tasti di selezione ───────────────────────────────────────── */}
-      <Card style={{ marginBottom: 10 }}>
-        {/* ⚠️ **Il consigliato sta qui, in testa e a destra** (richiesta di
-            Mattia): accanto ai tasti delle regole non si capiva cosa fosse —
-            sembrava una terza regola. E **dice su cosa si basa**: la prima
-            versione diceva solo "consigliato 62 · 62", su un numero proposto a
-            occhio. Un'app che consiglia deve poter dire perché, o quella parola
-            non va scritta. */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
-          <Etichetta>SELEZIONE</Etichetta>
-          <button onClick={() => { setAttMin(CONSIGLIATO.att); setSceMin(CONSIGLIATO.scelta); setVpmMin(0); setQuotaGamba(QUOTA_MINIMA_GAMBA) }}
-            style={{
-              textAlign: 'right', cursor: 'pointer', padding: '4px 8px', lineHeight: 1.35,
-              color: C.testo, fontFamily: F.sans,
-              background: attMin === CONSIGLIATO.att && sceMin === CONSIGLIATO.scelta && !vpmMin && quotaGamba === QUOTA_MINIMA_GAMBA
-                ? `linear-gradient(${alpha(C.verde, .12)},${alpha(C.verde, .12)}), ${C.card}` : C.card,
-              border: `1px solid ${alpha(C.verde, attMin === CONSIGLIATO.att && sceMin === CONSIGLIATO.scelta && !vpmMin && quotaGamba === QUOTA_MINIMA_GAMBA ? 0.5 : 0.2)}`,
-            }}>
-            <div style={{ fontSize: S.micro, color: C.verde, letterSpacing: '0.08em' }}>✓ CONSIGLIATO</div>
-            <div style={{ fontSize: S.corpo, fontWeight: 700, color: C.testo }}>
-              att {CONSIGLIATO.att}%{CONSIGLIATO.scelta ? ` · scelta ${CONSIGLIATO.scelta}%` : ''}
-            </div>
-            {/* ⚠️ **Il numero dei weekend sta qui e non è un di più**: a
-                soglie più strette la resa sale e il materiale sparisce — a 68%
-                sarebbe stato *"resa 100,2%"*, la frase più bella della
-                tabella, con **metà dei weekend senza un passo componibile**.
-                Un consiglio che tace quanto spesso è giocabile non è un
-                consiglio. */}
-            <div style={{ fontSize: S.micro, color: C.spento }}>{CONSIGLIATO.perche}</div>
-            <div style={{ fontSize: S.micro, color: C.spento }}>un passo in {CONSIGLIATO.weekend} weekend su 100</div>
-          </button>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'auto auto auto auto', gap: '4px 6px',
-          alignItems: 'center', marginTop: 7 }}>
-          <Numero label="attendibilità ≥" valore={attMin} passo={1} set={setAttMin} suffisso="%" />
-          <Numero label="scelta ≥" valore={sceMin} passo={1} set={setSceMin} suffisso="%" />
-          <Numero label="VPM ≥" valore={vpmMin ? vpmMin.toFixed(1).replace('.', ',') : 'tutti'} passo={0.5} set={setVpmMin} />
-          {/* ⚠️ **"quota gamba", non "quota"**: a due centimetri da qui c'è la
-              quota della schedina (1,90, fissa), e due filtri chiamati "quota"
-              nella stessa card sono il modo di girare la manopola sbagliata. */}
-          <Numero label="quota gamba ≥" valore={quotaGamba.toFixed(2).replace('.', ',')} passo={0.05} set={setQuotaGamba} />
-        </div>
-        {/* ⚠️⚠️ **Qui non ci sono più né la quota schedina né le due regole**
-            (Mattia, 21/10/2026). La quota minima è **una e basta** (1,90 dal 26/10/2026): era una
-            manopola quando si cercava dove stare, adesso il metodo l'ha fissata
-            — e il posto dove dirlo è la card del passo che non ci arriva.
-            Le due regole di incasso servivano a misurare quale conviene, e la
-            misura ha risposto: ne resta una, e un tasto che offre quella
-            bocciata è un modo di giocarla per sbaglio. */}
-        <div style={{ display: 'flex', gap: 5, marginTop: 9, flexWrap: 'wrap', alignItems: 'center' }}>
-          <Etichetta colore={C.celestePieno}>METODO · {METODO.nome.toUpperCase()}</Etichetta>
-          {/* ⚠️ Niente più tasto «salva» (24/10/2026): la selezione è
-              personale e **si salva da sola**, come nel Bet Builder. */}
-          {/* ⚠️ A scalata aperta il ricarica **azzera il piano e lascia i
-              soldi dove sono**: è la risposta di Mattia a *"cosa succede alle
-              scalate dimenticate"* — il denaro è lo stato della scalata, il
-              piano è settimanale. */}
-          {/* ⚠️ **Rosso e acceso** (Mattia, 22/10/2026: *"lo voglio ben
-              evidente"*). `C.rosso` è il token già in uso per perdita,
-              prelievo ed errore — qui dice la stessa cosa in un altro modo:
-              **questo tasto butta via qualcosa** (il piano composto a mano, e
-              a scalata aperta i passi non giocati). In oro e spento sembrava
-              un ricarica qualunque, come quello di un browser.
-              ⚠️ `attivo` non vuol dire "selezionato": qui serve solo a dargli
-              fondo e bordo pieni, che è l'unico modo che ha `Tasto` di
-              gridare. */}
-          {/* ⚠️⚠️ **A scalata aperta chiede conferma** (Mattia, 24/10/2026):
-              lì cancella i passi non giocati, e in un tocco solo era il gesto
-              più distruttivo della pagina accanto ai filtri. Il primo tocco lo
-              arma e dice **quanti** passi butta, il secondo esegue; si disarma
-              da sé dopo cinque secondi, come «Riparti da 0». */}
-          <Tasto colore={C.rosso} attivo style={{ marginLeft: 'auto' }}
-            onClick={() => {
-              const daButtare = aperta ? reg.passi.filter(x => x.esito === 'aperto').length : 0
-              if (daButtare && !armaNuovo) { setArmaNuovo(true); return }
-              setArmaNuovo(false)
-              const ora = Date.now()
-              setTolte([]); setAggiunte({}); setDaOra(ora); setCalendarioDa(ora)
-              // ⚠️ **E rilegge davvero le partite.** Finché `usaProssime` non
-              // aveva memoria questo tasto non ricaricava niente — spostava
-              // solo l'orologio — e il nome mentiva: le partite erano quelle
-              // scaricate all'avvio della sessione. Ora la memoria si butta
-              // qui, che è l'unico posto dove qualcuno ha chiesto dati nuovi.
-              ricaricaPartite()
-              if (aperta) reg.azzeraPiano()
-            }}>
-            {armaNuovo
-              ? `⚠️ tocca ancora: cancella ${reg.passi.filter(x => x.esito === 'aperto').length} passi non giocati`
-              : `↻ ${aperta ? 'nuovo piano' : 'ricarica'}`}
-          </Tasto>
-        </div>
-        {/* ⚠️ Una selezione che si salva da sola deve dirlo, e dire **quando**:
-            chi non lo sa crede che le soglie tornino quelle di fabbrica. */}
-        <div style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.spento, marginTop: 7, lineHeight: 1.5 }}>
-          {pref.info ? <>si salva da sola · ultima volta {quando(pref.info.quando)}</> : <>si salva da sola, appena cambi qualcosa</>}
-          {pref.errore && <span style={{ color: C.ambra }}>{' · '}{pref.errore}</span>}
-        </div>
-        {/* ⚠️⚠️ **«Aggiorna calendario» al posto della riga del metodo**
-            (Mattia, 24/10/2026): il piano è fermo all'istante dell'ultimo
-            aggiornamento, e questo è il gesto che lo sposta ad adesso — le
-            partite già cominciate escono, quelle nuove entrano. ⚠️ **Non
-            cancella niente**: né le tolte, né le aggiunte, né a scalata aperta
-            i passi salvati — quello resta al tasto rosso, con la conferma. */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-          <Tasto colore={C.celestePieno} attivo onClick={() => {
-            const ora = Date.now()
-            setCalendarioDa(ora); setDaOra(ora)
-            ricaricaPartite()
-          }}>⟳ Aggiorna calendario</Tasto>
-          <span style={{ fontSize: S.minuta, fontFamily: F.sans, color: C.spento }}>
-            partite dalle {new Date(calendarioDa).toLocaleString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-          </span>
-        </div>
-      </Card>
-
-      {/* ── La scaletta ───────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-        <Etichetta>LA SCALETTA</Etichetta>
-        <span style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.spento }}>
-          {candidate.length} partite · {passi.length} passi
-        </span>
       </div>
 
       {!passi.length && imbuto && (
@@ -1647,7 +1739,7 @@ export default function ScalataPage() {
           // accumulo**: i pavimenti del metodo sono cumulativi, quindi il
           // consiglio di questo passo dipende da quello che i passi prima
           // hanno già messo via — compresi i centesimi dell'arrotondamento.
-          const { cassa: p, accumulo: acc } = casseDi(reg.passi.slice(0, i), posta, (k) => perc[kp(k)])
+          const p = puntataDel(i)
           // ⚠️ Vale anche qui: un passo staccato a mano (numero decimale) si
           // vede subito, in anteprima e senza i soldi.
           const fermo = perso >= 0 && i > perso
@@ -1665,7 +1757,7 @@ export default function ScalataPage() {
                della catena: tutto l'utile contro il 70%). */
             <QualePasso key={riga.id} attivo={i === frontiera && !inAnteprima} numero={i + 1} gambe={gambe} giorno={riga.giorno} ora={gambe[0]?.ora?.slice(0, 5)} stelleDi={votiDi} anteprima={inAnteprima}
               fermo={fermo} fissato={eFissato(i)} onFissa={() => fissa(i)}
-              posta={p} postaIniziale={posta} accumulato={acc} colore={coloreDi(i)} classifiche={classifiche}
+              posta={p} conto={i === giro.poste.length ? giro.live : null} colore={coloreDi(i)} classifiche={classifiche}
               quote={quote} setQuote={setQuote} onApri={setApertaId}
               onQuota={(id, v) => reg.cambiaQuota(id, riga.id, v)}
               onToglie={(id) => reg.togliGamba(id, riga.id)}
@@ -1686,24 +1778,28 @@ export default function ScalataPage() {
                  stato della pagina: da `gambe[iG]` in giù scendono in un passo
                  inserito subito dopo, col numero di mezzo (3 e 4 → 3,5). */
               onSpezza={(iG) => reg.spezzaPasso(riga, reg.passi[i + 1]?.numero ?? null, gambe.slice(iG))}
-              perc={perc[kp(i)]} setPerc={(v) => setPerc(x => ({ ...x, [kp(i)]: v }))}
               esito={riga.esito === 'aperto' ? null : riga.esito}
-              setEsito={(e) => {
+              setEsito={async (e) => {
                 const q = gambe.reduce((a, g) => a * Number(g.quota), 1)
-                const m = p * q
-                const pc = perc[kp(i)] ?? percentualeConsigliata({ numero: i + 1, montante: m, puntata: p, posta, accumulato: acc })
-                const r = applicaIncasso(m, pc, p)
-                // ⚠️ Si scrive **solo l'esito e la fotografia del passo**: le
-                // casse non si toccano, le ricalcola `casseDi`. Annullare è
-                // quindi un'operazione come le altre.
-                reg.segna(riga.id, e || 'aperto', e === 'vinto'
-                  ? { montante: m, messoVia: r.via, resto: r.resto }
-                  : { montante: null, messoVia: null, resto: null })
-                // ⚠️ Segnare un esito è il momento in cui il tempo avanza: da
-                // qui in poi le partite di quell'orario sono **giocate**, e non
-                // devono più comparire fra quelle che il `+` può tirare su. A
-                // scalata aperta i passi sono righe salvate, quindi rinfrescare
-                // l'orologio non ricompone niente — sposta solo il materiale.
+                if (e === 'perso') {
+                  // ⚠️⚠️ **Perso = il giro si chiude e va in archivio** (Mattia,
+                  // 29/10/2026), e ne riparte uno con lo stesso conto e i passi
+                  // che restano. ⚠️ Solo sul passo da giocare: se i passi dopo
+                  // hanno già un esito, chiudere qui li sposterebbe giocati nel
+                  // giro nuovo — prima si annullano quelli.
+                  if (reg.passi.slice(i + 1).some(r => r.esito !== 'aperto')) {
+                    setAvviso('Prima togli l’esito dei passi dopo questo: un perso chiude il giro qui.')
+                    return
+                  }
+                  const finale = cent(contiPercentuale(bankrollIniziale,
+                    reg.passi.map((r, k) => (k === i ? { ...r, esito: 'perso' } : r)), percentuale).live)
+                  const x = await reg.perdi(riga, { posta: p, finale, conto: cent(contoFermo + finale - bankrollIniziale) })
+                  setAvviso(x?.errore ?? null)
+                } else {
+                  reg.segna(riga.id, e || 'aperto', e === 'vinto'
+                    ? { montante: cent(p * q), posta: p }
+                    : { montante: null, messoVia: null, resto: null })
+                }
                 setDaOra(Date.now())
               }} />
           )
@@ -1719,39 +1815,46 @@ export default function ScalataPage() {
           // la cassa che arriva fin lì, quindi senza l'esito del 1 è un numero
           // ipotetico. ⚠️ Lo spezza del passo 2 si raggiunge segnando l'esito
           // del 1 — e col taglio automatico a 2,00 serve molto di rado.
-          let p = posta, acc = 0
-          for (let k = 0; k < i; k++) {
-            if (esiti[kp(k)] !== 'vinto') { p = 0; break }
-            const q = passi[k].partite.reduce((a, g) => a * (Number(quote[g.id] ?? g.quota) || 1), 1)
-            const m = p * q
-            const pc = perc[kp(k)] ?? percentualeConsigliata({ numero: k + 1, montante: m, puntata: p, posta, accumulato: acc })
-            const inc = applicaIncasso(m, pc, p)
-            acc += inc.via
-            p = inc.rigioca
-          }
-          // ⚠️ Un pezzo staccato a mano si vede anche oltre la frontiera, e
-          // **anche se la cassa non c'è ancora**: `p < 1` qui vorrebbe dire
-          // *"non so quanto puntare"*, che in anteprima è proprio il punto.
-          // ⚠️ Nel piano un passo perso è una **prova**, e RIPARTI non c'è:
-          // i passi dopo restano nascosti come prima.
+          const p = puntataDel(i)
           const fermo = false
           const inAnteprima = i > frontiera
-          if ((p < 1 && !inAnteprima) || i > limiteVisibile) return null
-          return (
-            /* ⚠️ La chiave è **l'id della prima gamba**: due pezzi tagliati
-               dalla stessa fascia hanno lo stesso giorno e la stessa ora,
-               quindi `giorno + ora` ne faceva due chiavi uguali — e React con
-               due chiavi uguali ridisegna la cosa sbagliata, in silenzio. */
-            <QualePasso key={f.partite[0]?.id ?? f.giorno + f.ora} attivo={i === frontiera && !inAnteprima} numero={i + 1} gambe={f.partite} giorno={f.giorno} ora={f.ora} stelleDi={votiDi} anteprima={inAnteprima}
+          // ⚠️ Nel piano il passo si vede anche col conto a zero (29/10/2026):
+          // nasconderlo lasciava «altri 4 passi in programma» su 5, e l'avviso
+          // di ricaricare sta già nella card del conto.
+          if (i > limiteVisibile) return null
+          // ⚠️⚠️ **Dopo un perso il giro ricomincia da PASSO 1** (Mattia,
+          // 29/10/2026: *"quando mette in archivio voglio che si riparta da
+          // passo 1"*). Con la scalata aperta succede da solo — il giro nuovo
+          // ha solo i passi rimasti; nel piano la numerazione si azzera dopo
+          // ogni perso simulato, e una riga dice dove comincia il giro nuovo.
+          let inizio = 0
+          for (let k = 0; k < i; k++) if (esiti[kp(k)] === 'perso') inizio = k + 1
+          const nGiro = i - inizio + 1
+          return (<Fragment key={f.partite[0]?.id ?? f.giorno + f.ora}>
+            {i > 0 && inizio === i && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: SP.m, margin: `${SP.m}px 0`,
+                fontFamily: F.sans, fontSize: S.micro, color: C.spento, letterSpacing: '0.08em' }}>
+                <span style={{ flex: 1, height: 1, background: alpha(C.testo, 0.12) }} />
+                GIRO NUOVO · simulato: in archivio va solo a scalata aperta
+                <span style={{ flex: 1, height: 1, background: alpha(C.testo, 0.12) }} />
+              </div>
+            )}
+            {/* ⚠️ La chiave (sul `Fragment` sopra) è **l'id della prima gamba**:
+                due pezzi tagliati dalla stessa fascia hanno lo stesso giorno e
+                la stessa ora, quindi `giorno + ora` ne faceva due chiavi uguali
+                — e React con due chiavi uguali ridisegna la cosa sbagliata, in
+                silenzio. ⚠️ Fra graffe: dentro il `Fragment` un commento nudo
+                diventa testo a schermo (trappola nota, 29/10/2026). */}
+            <QualePasso simulato attivo={i === frontiera && !inAnteprima} numero={nGiro} gambe={f.partite} giorno={f.giorno} ora={f.ora} stelleDi={votiDi} anteprima={inAnteprima}
               /* ⚠️ Solo nel piano: a scalata aperta i passi si scoprono con
                  l'esito, che lì è un fatto registrato e non una simulazione. */
               fermo={fermo} fissato={eFissato(i)}
               onFissa={() => fissa(i)}
-              posta={p} postaIniziale={posta} accumulato={acc} colore={coloreDi(i)} classifiche={classifiche}
+              posta={p} conto={i === giro.poste.length ? giro.live : null} colore={coloreDi(i)} classifiche={classifiche}
               onApri={setApertaId} prossima={prossimaDi(i)}
               onAggiunge={() => { const n = prossimaDi(i); if (n) setAggiunte(a => ({ ...a, [i]: [...(a[i] || []), n.id] })) }}
               onManuale={() => setManuale({
-                titolo: `PASSO ${i + 1}`,
+                titolo: `PASSO ${nGiro}`,
                 nelPasso: f.partite.map(g => g.id),
                 /* ⚠️ Nel piano l'aggiunta è **stato della pagina**, non una
                    scrittura: qui niente è ancora successo. Diventa una riga
@@ -1760,7 +1863,6 @@ export default function ScalataPage() {
               })}
               onSpezza={(iG) => { const id = f.partite[iG]?.id; if (id) setTagli(t => [...t, id]) }}
               quote={quote} setQuote={setQuote}
-              perc={perc[kp(i)]} setPerc={(v) => setPerc(x => ({ ...x, [kp(i)]: v }))}
               esito={esiti[kp(i)] ?? null} setEsito={(e) => setEsiti(x => ({ ...x, [kp(i)]: e }))}
               /* ⚠️ Toglie **anche dalle aggiunte**: rimessa dall'elenco, la
                  partita torna nel suo passo naturale, non in quello dove
@@ -1769,39 +1871,15 @@ export default function ScalataPage() {
                 setTolte(t => [...t, id])
                 setAggiunte(a => Object.fromEntries(Object.entries(a).map(([k, v]) => [k, v.filter(x => x !== id)])))
               }} />
-          )
+          </Fragment>)
         })}
 
       {/* ⚠️⚠️ **⟳ RIPARTI** (Mattia, 24/10/2026): dopo un passo perso, chiude
           il giro e ne apre uno nuovo coi passi programmati che restano, sulla
           puntata del 10% del conto. Prima l'unico modo di andare avanti era
           STOP, che si portava via i passi e lasciava da ricomporre tutto. */}
-      {aperta && perso >= 0 && reg.passi.slice(perso + 1).some(r => r.esito === 'aperto') && (() => {
-        const finale = cent(casse.live)
-        const nuovoConto = cent(contoFermo + finale - bankrollIniziale)
-        const nuovaPosta = postaDi(nuovoConto)
-        const puo = nuovaPosta >= 1 && !reg.occupato
-        return (
-          <div style={{ marginTop: 10 }}>
-            <button disabled={!puo} onClick={async () => {
-              const x = await reg.riparti(reg.passi[perso], {
-                finale, cassa: casse.inGioco, accumulo: casse.accumulo, conto: nuovoConto, posta: nuovaPosta })
-              setAvviso(x?.errore ?? null)
-              if (!x?.errore) setPerc({})
-            }} style={{ width: '100%', padding: '9px 0', cursor: puo ? 'pointer' : 'default',
-              background: puo ? `linear-gradient(${alpha(C.celestePieno, .12)},${alpha(C.celestePieno, .12)}), ${C.card}` : C.card,
-              border: `1px solid ${alpha(C.celestePieno, puo ? 0.5 : 0.15)}`,
-              color: puo ? C.celestePieno : C.fioco, fontFamily: F.sans, fontSize: S.base }}>
-              {reg.occupato ? 'riparto…' : `⟳ RIPARTI dal passo ${perso + 2} — nuovo giro con puntata ${eur(nuovaPosta)}`}
-            </button>
-            <div style={{ marginTop: 4, fontFamily: F.sans, fontSize: S.minuta, color: puo ? C.spento : C.ambra, textAlign: 'center' }}>
-              {puo
-                ? `chiude questo giro (conto ${eur(nuovoConto)}) e rimette in gioco i passi che restano`
-                : `il conto sarebbe ${eur(nuovoConto)}: la puntata scende sotto 1 €, serve prima una ricarica`}
-            </div>
-          </div>
-        )
-      })()}
+      {/* ⚠️ ⟳ RIPARTI non c'è più (29/10/2026): a percentuale il giro perso
+          si chiude e riparte da solo (`reg.perdi`, `chiudi_giro_perso`). */}
 
       {/* ⚠️⚠️ **Un passo nascosto deve dire di esserci.** I passi dopo la
           frontiera non si vedono, ma esistono e sono già nel piano salvato:
@@ -1811,20 +1889,28 @@ export default function ScalataPage() {
       {(() => {
         const totali = aperta ? reg.passi.length : passi.length
         const nascosti = totali - (frontiera + 1)
+        // il numero che il passo ha A SCHERMO: nel piano riparte da 1 dopo
+        // ogni perso simulato, come nei titoli dei passi
+        const numeroNelGiro = (i) => {
+          if (aperta) return i + 1
+          let inizio = 0
+          for (let k = 0; k < i; k++) if (esiti[kp(k)] === 'perso') inizio = k + 1
+          return i - inizio + 1
+        }
         if (nascosti < 1) return null
         return (
-          <div style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.spento, textAlign: 'center',
-            marginTop: 8, padding: '7px 0', border: `1px dashed ${alpha(C.testo, 0.12)}` }}>
-            {nascosti === 1 ? 'un altro passo in programma' : `altri ${nascosti} passi in programma`}
-            {/* ⚠️ **Con la cassa a zero quei passi non arriveranno mai**, e
-                dire *"compare quando segni l'esito del passo 3"* sarebbe una
-                promessa falsa: il passo prima è perso, la catena è finita e
-                non c'è più niente da segnare. Visto provando il ritorno al
-                passo per volta (22/10/2026). */}
-            {' · '}<span style={{ color: C.fioco }}>
-              {casse.inGioco < 1
-                ? (aperta && perso >= 0 ? 'si rimettono in gioco con ⟳ RIPARTI' : 'la scalata si è fermata qui: restano nel piano, non in gioco')
-                : `compare quando segni l'esito del passo ${frontiera + 1}`}
+          /* ⚠️ Compatto dal 29/10/2026 (giro C): una riga, niente riquadro
+             tratteggiato. Il numero in evidenza, la condizione accanto. */
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: SP.s, flexWrap: 'wrap', marginTop: SP.s,
+            padding: `${SP.s}px ${SP.l}px`, fontFamily: F.sans, fontSize: S.minuta, color: C.spento }}>
+            <b style={{ fontFamily: F.mono, color: C.testo }}>+{nascosti}</b>
+            {nascosti === 1 ? 'passo in programma' : 'passi in programma'}
+            {/* ⚠️ Con il conto sotto 1 € quei passi non arriveranno: dire
+                «compare quando segni l'esito» sarebbe una promessa falsa. */}
+            <span style={{ color: C.fioco }}>
+              · {casse.inGioco < 1
+                ? 'il conto è sotto 1 €: serve una ricarica'
+                : `si scoprono quando segni l'esito del passo ${numeroNelGiro(frontiera)}`}
             </span>
           </div>
         )
@@ -1838,163 +1924,144 @@ export default function ScalataPage() {
           quello che hai tolto per sbaglio.
           ⚠️ Mostra anche le **tolte**, barrate: una partita che sparisce
           senza lasciare traccia è un piano che non si può ricostruire. */}
-      {!!candidate.length && (
-        <div style={{ marginTop: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
-            <Etichetta>TUTTE LE CONSIGLIATE</Etichetta>
-            <span style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco }}>
-              {candidate.length} in scaletta{fuoriFiltri.length ? ` · ${fuoriFiltri.length} segnate fuori filtri` : ''}{tolte.length ? ` · ${tolte.length} tolte` : ''}
-            </span>
+      {/* ⚠️ A scalata aperta il ricarica **azzera il piano e lascia i
+          soldi dove sono**: è la risposta di Mattia a *"cosa succede alle
+          scalate dimenticate"* — il denaro è lo stato della scalata, il
+          piano è settimanale. */}
+      {/* ⚠️ **Rosso e acceso** (Mattia, 22/10/2026: *"lo voglio ben
+          evidente"*). `C.rosso` è il token già in uso per perdita,
+          prelievo ed errore — qui dice la stessa cosa in un altro modo:
+          **questo tasto butta via qualcosa** (il piano composto a mano, e
+          a scalata aperta i passi non giocati). In oro e spento sembrava
+          un ricarica qualunque, come quello di un browser.
+          ⚠️ `attivo` non vuol dire "selezionato": qui serve solo a dargli
+          fondo e bordo pieni, che è l'unico modo che ha `Tasto` di
+          gridare. */}
+      {/* ⚠️⚠️ **A scalata aperta chiede conferma** (Mattia, 24/10/2026):
+          lì cancella i passi non giocati, e in un tocco solo era il gesto
+          più distruttivo della pagina accanto ai filtri. Il primo tocco lo
+          arma e dice **quanti** passi butta, il secondo esegue; si disarma
+          da sé dopo cinque secondi, come «Riparti da 0». */}
+      {/* ⚠️⚠️ **«Reset partite», sopra l'elenco** (Mattia, 29/10/2026): era
+          «↻ ricarica» in mezzo ai filtri. Rimette le partite tolte, rilegge il
+          calendario e, a scalata aperta, butta i passi non giocati — con la
+          conferma al secondo tocco. */}
+      {/* ⚠️ Peso secondario dal 29/10/2026 (giro C): è un'azione distruttiva
+          e rara, e stava gridando quanto ▶ APRI. Resta rossa e sopra
+          l'elenco, ma piccola e senza fondo — il fondo arriva solo quando è
+          armata, cioè quando sta per fare qualcosa. */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: SP.l }}>
+      <button style={{ padding: '5px 12px', cursor: 'pointer', borderRadius: R.m,
+        background: armaNuovo ? alpha(C.rosso, 0.18) : 'transparent',
+        border: `1px solid ${alpha(C.rosso, armaNuovo ? 0.7 : 0.35)}`, color: C.rosso, fontFamily: F.sans, fontSize: S.minuta }}
+        onClick={() => {
+          const daButtare = aperta ? reg.passi.filter(x => x.esito === 'aperto').length : 0
+          if (daButtare && !armaNuovo) { setArmaNuovo(true); return }
+          setArmaNuovo(false)
+          const ora = Date.now()
+          setTolte([]); setAggiunte({}); setDaOra(ora); setCalendarioDa(ora)
+          // ⚠️ **E rilegge davvero le partite.** Finché `usaProssime` non
+          // aveva memoria questo tasto non ricaricava niente — spostava
+          // solo l'orologio — e il nome mentiva: le partite erano quelle
+          // scaricate all'avvio della sessione. Ora la memoria si butta
+          // qui, che è l'unico posto dove qualcuno ha chiesto dati nuovi.
+          ricaricaPartite()
+          if (aperta) reg.azzeraPiano()
+        }}>
+        {armaNuovo
+          ? `⚠️ tocca ancora: cancella ${reg.passi.filter(x => x.esito === 'aperto').length} passi non giocati`
+          : '↻ Reset partite'}
+      </button>
+      </div>
+
+      {/* ── RISULTATO FILTRI ─────────────────────────────────────────────
+          ⚠️⚠️ **Ridisegnato il 29/10/2026** (Mattia: *"è inguardabile"*, con
+          un disegno di riferimento): schede piccole, una per partita, su due
+          righe — orario · squadre · segno · quota, poi att · sce · VPM —
+          raggruppate per **giorno e fascia oraria** (`fasce`, le stesse dei
+          passi), così il giorno e l'ora non si ripetono su ogni riga.
+          ⚠️ **Il testo non prende più il colore del passo**: in quale passo
+          sta una partita lo dice un **pallino col numero**, nel colore del
+          passo. Il viola resta solo del criterio A.
+          ⚠️ Era «TUTTE LE CONSIGLIATE»: ora **RISULTATO FILTRI**, e
+          «Consigliate» è il criterio A, con l'interruttore. */}
+      {!!candidate.length && (() => {
+        const tutteRighe = [...elenco, ...(righe || []).filter(r => tolte.includes(r.id))]
+        const nA = elenco.filter(eCriterioA).length
+        const visibili = soloA ? tutteRighe.filter(r => !tolte.includes(r.id) && eCriterioA(r)) : tutteRighe
+        return (
+        <div style={{ marginTop: SP.l }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: SP.m, flexWrap: 'wrap', marginBottom: SP.s }}>
+            {/* lo stesso titolo delle altre sezioni (giro C) */}
+            <TitoloCard>RISULTATO FILTRI</TitoloCard>
+            <div style={{ marginLeft: 'auto', display: 'flex', border: `1px solid ${C.bordo}`, borderRadius: R.m, overflow: 'hidden' }}>
+              {[[false, 'Tutte'], [true, 'Consigliate']].map(([v, et]) => (
+                <button key={et} onClick={() => setSoloA(v)} style={{
+                  padding: '4px 10px', border: 'none', cursor: 'pointer', fontFamily: F.sans, fontSize: S.minuta,
+                  background: soloA === v ? alpha(v ? C.viola : C.oro, 0.16) : 'transparent',
+                  color: soloA === v ? (v ? C.viola : C.oro) : C.spento }}>{et}{v && nA ? ` ${nA}` : ''}</button>
+              ))}
+            </div>
           </div>
-          {/* ⚠️ Un filo meno spenta di prima (0,62 → 0,78): con tutta la riga
-              colorata il velo rendeva illeggibili le tinte scure, soprattutto
-              il blu e il viola dei passi più in là. */}
-          <Card style={{ padding: '4px 10px', opacity: 0.78 }}>
-            {[...elenco, ...(righe || []).filter(r => tolte.includes(r.id))].map((g, k, tutte) => {
-              const fuori = tolte.includes(g.id)
-              // fuori dai filtri: ci sta solo perché qualcuno l'ha segnata
-              const soloSegno = !fuori && fuoriFiltri.some(x => x.id === g.id)
-              // ⚠️⚠️ **Un divisore per weekend** (Mattia, 21/10). L'elenco è
-              // lungo e in ordine di data: senza una riga che separa le
-              // giornate, la partita di sabato prossimo e quella del sabato
-              // dopo si leggono come se fossero lo stesso blocco — e la
-              // scalata è una cosa che vive **dentro** un weekend.
-              // ⚠️⚠️ **Barrate le partite SPOSTATE A MANO**, non tutte quelle
-              // che stanno in un passo (Mattia, 21/10: *"lasciamole ma
-              // barrale, per far capire che sono state scelte"*). Provato a
-              // barrare "chi sta in un passo" e il risultato era **l'elenco
-              // intero sbarrato**: `fasce()` mette *ogni* candidata in un
-              // blocco, quindi "scelta" non distingue niente. Quello che
-              // distingue è il gesto — la partita che hai tirato su col `+` da
-              // un altro passo — ed è esattamente quella che, senza un segno,
-              // si va a cercare due volte.
-              const spostata = Object.values(aggiunte).flat().includes(g.id)
-              const wk = weekendDi(g.data)
-              const nuovoWk = !fuori && (k === 0 || weekendDi(tutte[k - 1].data) !== wk)
-              // ⚠️ Il colore è **quello del passo che la contiene**: è il filo
-              // che lega l'elenco ai passi sopra. Chi non sta in nessun passo
-              // resta grigio, e si vede subito che è materiale non usato.
-              const iPasso = passi.findIndex(f => f.partite.some(x => x.id === g.id))
-              // ⚠️ Una riga che sta in lista **solo** perché è segnata deve
-              // dirlo: altrimenti sembra una candidata come le altre, e non
-              // si capisce perché non finisce in nessun passo.
-              const col = fuori || soloSegno ? C.fioco : iPasso >= 0 ? coloreDi(iPasso) : C.grigio
-              return (
-                <div key={g.id}>
-                {nuovoWk && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 0 4px',
-                    borderTop: k ? `1px solid ${alpha(C.testo, 0.10)}` : 'none' }}>
-                    <Etichetta>WEEKEND DEL {gg(wk)}</Etichetta>
-                    <span style={{ flex: 1, height: 1, background: alpha(C.testo, 0.08) }} />
-                  </div>
-                )}
-                <div style={{ display: 'grid', gridTemplateColumns: '24px 52px minmax(0,1fr) 24px 40px 16px',
-                  gap: 5, alignItems: 'center', padding: '5px 0', fontFamily: F.mono, fontSize: S.minuta,
-                  borderTop: k && !nuovoWk ? `1px solid ${alpha(C.testo, 0.05)}` : 'none',
-                  /* ⚠️⚠️ **Barrata anche quando è GIÀ IN UN PASSO** (Mattia,
-                     21/10: *"lasciamole ma barrale, per far capire che sono
-                     state scelte"*). Prima la riga restava identica a quelle
-                     libere e l'unico segnale era il pallino col numero: con
-                     quaranta righe non si vedeva. ⚠️ Il barrato qui vuol dire
-                     **"non è più da scegliere"**, per due motivi diversi —
-                     tolta o già usata — e a distinguerli è il colore: grigio
-                     fioco la tolta, la tinta del passo quella scelta. */
-                  textDecoration: fuori || spostata ? 'line-through' : 'none' }}>
-                  {/* ⚑ ── I DUE SEGNI, incolonnati a sinistra ──────────────
-                      ⚠️ **Stanno insieme e staccati dal resto** perché sono la
-                      stessa famiglia — *"qualcuno ha detto qualcosa su questa
-                      partita"* — e perché il colore della riga dice già
-                      un'altra cosa (in quale passo sta). Un flag verde in
-                      mezzo a una riga verde sarebbe illeggibile.
-                      ⚠️ **La bandiera si tocca, la stella no**: la stella si
-                      mette nella pagina Partite e qui è un'informazione. Un
-                      segno cliccabile accanto a uno che non lo è vuole che si
-                      veda quale dei due risponde — per questo la stella non ha
-                      né bordo né tasto.
-                      ⚠️ Il numero compare **solo se c'è**: uno zero accanto a
-                      ogni riga è rumore su quaranta righe. */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1,
-                    textDecoration: 'none' }}>
-                    {/* ⚠️⚠️ **Dal 24/10/2026 il flag lo mette chiunque**
-                        (Mattia): **verde** se l'ha messo un admin, **blu** se
-                        un utente. Quando ci sono tutti e due vince il verde,
-                        che è il segno di prima; il numero dice quanti sono. */}
-                    {(() => { const t = flagTipiDi(g.id), mio = mioFlag(g.id)
-                      const tinta = mio ? (isAdmin ? C.verde : C.blu) : t.admin ? C.verde : C.blu
-                      return (
-                    <button onClick={() => flagga(g.id)}
-                      title={mio ? 'togli il flag' : `mi piace per la scalata${t.admin + t.user ? ` · ${t.admin} admin, ${t.user} utenti` : ''}`}
-                      style={{ display: 'flex', alignItems: 'center', gap: 1, background: 'transparent',
-                        border: 'none', padding: 0, cursor: 'pointer',
-                        /* ⚠️ `C.fioco` e non `C.fantasma`: la bandiera spenta è un tasto che
-                           si può premere, e `fantasma` in questo progetto vuol dire
-                           **disabilitato**. Lo stesso grigio della × qui accanto. */
-                        color: mio ? tinta : flagDi(g.id) ? alpha(tinta, 0.75) : C.fioco }}>
-                      <Icona nome="bandiera" misura={13} pieno={mioFlag(g.id)} />
-                      {flagDi(g.id) > 1 && <span style={{ fontSize: S.micro }}>{flagDi(g.id)}</span>}
-                    </button>
-                      ) })()}
-                    {votiDi(g.id) > 0 && (
-                      /* ⚠️ Oro se c'è almeno una stellina di admin, blu se sono
-                         solo di user (29/10/2026): qui contano tutte, ma il
-                         colore dice da chi vengono. */
-                      <span title={`${votiTipiDi(g.id).admin} admin · ${votiTipiDi(g.id).user} user, dalla pagina Partite`}
-                        style={{ display: 'flex', alignItems: 'center', gap: 1, color: votiTipiDi(g.id).admin ? C.oro : C.blu }}>
-                        <Icona nome="stella" misura={11} pieno={mioVoto(g.id)} />
-                        {votiDi(g.id) > 1 && <span style={{ fontSize: S.micro }}>{votiDi(g.id)}</span>}
-                      </span>
-                    )}
-                  </div>
-                  <span style={{ color: col }}>
-                    {iPasso >= 0 && !fuori ? `● ${iPasso + 1} ` : ''}
-                    {nomeGiorno(giorno(g.data))} {gg(g.data)} {g.ora?.slice(0, 5)}
-                  </span>
-                  {/* ⚠️ I tre numeri anche qui (richiesta di Mattia, 18/10):
-                      l'elenco serve a decidere cosa tirare dentro un passo, e
-                      senza att/scelta/VPM bisognerebbe risalire al passo per
-                      saperlo — cioè fare il giro al contrario. */}
-                  <span style={{ minWidth: 0 }}>
-                    {/* ⚠️ **Tutta la riga nel colore del suo passo** (richiesta
-                        di Mattia, 18/10): prima solo la data e la quota erano
-                        colorate e il resto grigio, quindi il filo che lega la
-                        riga al passo si spezzava in mezzo. Il colore è il
-                        legame — o lo porta tutta la riga, o non serve. */}
-                    {/* ⚠️ Anche qui si apre toccando i nomi: l'elenco serve a
-                        decidere cosa tirare dentro un passo, ed è il momento
-                        in cui si vuole guardare la partita per davvero. */}
-                    <span onClick={() => setApertaId(g.id)} role="button"
-                      style={{ color: fuori ? C.fioco : col, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: F.sans, fontSize: S.base, display: 'block', cursor: 'pointer' }}>
-                      {g.casa} — {g.trasferta}
-                    </span>
-                    <span style={{ color: fuori ? C.fioco : alpha(col, 0.75), fontSize: S.micro, display: 'block' }}>
-                      att {pct(g.att)} · sce {pct(g.scelta)}
-                      {g.vpm != null && ` · VPM ${Number(g.vpm).toFixed(2).replace('.', ',')}`}
-                    </span>
-                    {/* ⚠️ **Terza riga, sotto i nomi e i numeri** (Mattia,
-                        22/10/2026): nella colonna della data finiva incastrata
-                        fra l'ora e il bordo, su due righe strette. Qui ha
-                        tutta la larghezza della partita e sta su una riga
-                        sola, dove la si legge insieme a ciò che spiega. */}
-                    {soloSegno && (
-                      <span style={{ display: 'block', color: C.ambra, fontSize: S.micro,
-                        whiteSpace: 'nowrap' }}>
-                        fuori filtri
-                      </span>
-                    )}
-                  </span>
-                  <span style={{ color: fuori ? C.fioco : col, textAlign: 'center' }}>{g.giocata}</span>
-                  <span style={{ color: col, textAlign: 'right' }}>{Number(g.quota).toFixed(2).replace('.', ',')}</span>
-                  <button onClick={() => setTolte(t => fuori ? t.filter(x => x !== g.id) : [...t, g.id])}
-                    title={fuori ? 'rimetti in scaletta' : 'togli dalla scaletta'}
-                    style={{ background: 'transparent', border: 'none', cursor: 'pointer',
-                      textDecoration: 'none', color: fuori ? C.verde : C.fioco, fontSize: S.media }}>{fuori ? '+' : '×'}</button>
-                </div>
-                </div>
-              )
-            })}
-          </Card>
+          <div style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco, marginBottom: SP.m }}>
+            {candidate.length} in scaletta
+            {nA ? <> · <span style={{ color: C.viola, fontWeight: 700 }}>{nA} criterio A</span></> : null}
+            {fuoriFiltri.length ? ` · ${fuoriFiltri.length} segnate fuori filtri` : ''}{tolte.length ? ` · ${tolte.length} tolte` : ''}
+          </div>
+          {soloA && !visibili.length && (
+            <div style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.spento, padding: SP.m }}>
+              Nessuna partita del criterio A fra i risultati dei filtri.
+            </div>
+          )}
+          {fasce(visibili, FINESTRA_ELENCO_ORE).map(gr => (
+            <div key={gr.giorno + gr.ora + gr.partite[0].id} style={{ marginBottom: SP.m }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: SP.m, margin: `${SP.s}px 0`,
+                fontFamily: F.sans, fontSize: S.micro, color: C.spento, letterSpacing: '0.06em' }}>
+                <b style={{ color: C.testo }}>{nomeGiorno(gr.giorno).toUpperCase()} {gg(gr.giorno)}</b>
+                <span>dalle {gr.ora}</span>
+                <span style={{ flex: 1, height: 1, background: alpha(C.testo, 0.08) }} />
+                <span>{gr.partite.length}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {gr.partite.map(g => {
+                  const fuori = tolte.includes(g.id)
+                  const iPasso = passi.findIndex(f => f.partite.some(x => x.id === g.id))
+                  const t = flagTipiDi(g.id), mio = mioFlag(g.id)
+                  const tinta = mio ? (isAdmin ? C.verde : C.blu) : t.admin ? C.verde : C.blu
+                  return (
+                    <SchedaRisultato key={g.id} g={g} fuori={fuori}
+                      soloSegno={!fuori && fuoriFiltri.some(x => x.id === g.id)}
+                      spostata={Object.values(aggiunte).flat().includes(g.id)}
+                      iPasso={fuori ? -1 : iPasso} colorePasso={iPasso >= 0 ? coloreDi(iPasso) : C.grigio}
+                      onApri={() => setApertaId(g.id)}
+                      onTogli={() => setTolte(x => fuori ? x.filter(y => y !== g.id) : [...x, g.id])}
+                      segni={<>
+                        {/* ⚠️ Stessi segni di prima, più piccoli: la bandiera
+                            verde se è di un admin, blu se di un utente; la
+                            stella oro se c'è un admin, blu se solo utenti. */}
+                        <button onClick={() => flagga(g.id)}
+                          title={mio ? 'togli il flag' : `mi piace per la scalata${t.admin + t.user ? ` · ${t.admin} admin, ${t.user} utenti` : ''}`}
+                          style={{ display: 'flex', alignItems: 'center', gap: 1, background: 'transparent', border: 'none', padding: 0, cursor: 'pointer',
+                            color: mio ? tinta : flagDi(g.id) ? alpha(tinta, 0.75) : C.fioco }}>
+                          <Icona nome="bandiera" misura={12} pieno={mio} />
+                          {flagDi(g.id) > 1 && <span style={{ fontSize: S.micro }}>{flagDi(g.id)}</span>}
+                        </button>
+                        {votiDi(g.id) > 0 && (
+                          <span title={`${votiTipiDi(g.id).admin} admin · ${votiTipiDi(g.id).user} user, dalla pagina Partite`}
+                            style={{ display: 'flex', alignItems: 'center', gap: 1, color: votiTipiDi(g.id).admin ? C.oro : C.blu }}>
+                            <Icona nome="stella" misura={11} pieno={mioVoto(g.id)} />
+                            {votiDi(g.id) > 1 && <span style={{ fontSize: S.micro }}>{votiDi(g.id)}</span>}
+                          </span>
+                        )}
+                      </>} />
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </div>
-      )}
+        )
+      })()}
       </>}
 
       {/* ⚠️⚠️ **Fuori dal ramo `modo === 'piano'`**: il foglio copre la pagina,

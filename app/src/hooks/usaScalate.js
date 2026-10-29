@@ -112,7 +112,7 @@ export function usaScalate(userId) {
    * invece di crearne una seconda — due scalate aperte sullo stesso capitale
    * sarebbero due verità sullo stesso conto.
    */
-  const apri = useCallback(async ({ bankroll, posta, quotaMinima, regola, piano }) => {
+  const apri = useCallback(async ({ bankroll, posta, quotaMinima, regola, percentuale = null, piano }) => {
     if (stato.aperta) return { errore: 'c’è già una scalata aperta' }
     // ⚠️ **Si controlla PRIMA di scrivere.** Il database ha i suoi vincoli
     // (puntata > 0, quote > 1) ma scoprirli a metà inserimento lascia una
@@ -128,6 +128,9 @@ export function usaScalate(userId) {
     const { data: s, error } = await supabase.from('scalate').insert({
       user_id: userId, bankroll_iniziale: bankroll, posta, quota_minima: quotaMinima,
       regola, cassa: posta, accumulo: 0,
+      // ⚠️ La percentuale del giro (sql/49, 29/10/2026): resta quella fino a
+      // STOP, e `chiudi_giro_perso` la copia nel giro che riparte.
+      ...(percentuale != null ? { percentuale } : {}),
     }).select().single()
     if (error) return { errore: error.message }
 
@@ -168,7 +171,7 @@ export function usaScalate(userId) {
    * versione proibiva di annullare. Le colonne `cassa`/`accumulo` restano come
    * fotografia, la verità è il calcolo.
    */
-  const segna = useCallback(async (passoId, esito, { montante, messoVia, resto }) => {
+  const segna = useCallback(async (passoId, esito, { montante, messoVia, resto, posta }) => {
     // ⚠️ Le gambe seguono il passo: una schedina è vinta solo se tutte le
     // gambe lo sono, quindi il loro esito è lo stesso del passo. Le due
     // scritture non dipendono l'una dall'altra, quindi partono insieme.
@@ -176,6 +179,10 @@ export function usaScalate(userId) {
       supabase.from('scalata_passi').update({
         esito, montante: montante ?? null, messo_via: messoVia ?? null, resto: resto ?? null,
         deciso_il: new Date().toISOString(),
+        // ⚠️ A percentuale la puntata di un passo si sa solo quando si gioca
+        // (dipende dall'esito di quello prima): si scrive qui, sull'esito, così
+        // l'archivio dice quanto si è puntato davvero.
+        ...(posta >= 1 ? { posta } : {}),
       }).eq('id', passoId),
       supabase.from('scalata_gambe').update({ esito }).eq('passo_id', passoId),
     ]))
@@ -407,6 +414,31 @@ export function usaScalate(userId) {
   }, [stato.aperta, ricarica])
 
   /**
+   * ⚠️⚠️ **Il passo PERSO a percentuale** (Mattia, 29/10/2026: *"si continua,
+   * ma a ogni sconfitta deve salvare i passi in archivio, mi servono per
+   * studiare"*). Segna il perso e poi `chiudi_giro_perso` (sql/49): il giro
+   * va in archivio coi passi giocati fino a qui, e ne riparte uno con lo
+   * stesso conto, la stessa percentuale e i passi del piano che restavano.
+   * Sotto 1 € di conto non riparte niente: serve una ricarica.
+   */
+  const perdi = useCallback(async (passo, { posta, finale, conto }) => {
+    if (!stato.aperta) return { errore: 'nessuna scalata aperta' }
+    const errore = primoErrore(await Promise.all([
+      supabase.from('scalata_passi').update({
+        esito: 'perso', montante: null, messo_via: null, resto: null,
+        deciso_il: new Date().toISOString(), ...(posta >= 1 ? { posta } : {}),
+      }).eq('id', passo.id),
+      supabase.from('scalata_gambe').update({ esito: 'perso' }).eq('passo_id', passo.id),
+    ]))
+    if (errore) { await ricarica(); return { errore } }
+    const { error } = await supabase.rpc('chiudi_giro_perso', {
+      p_scalata: stato.aperta.id, p_dopo: Number(passo.numero), p_finale: finale, p_conto: conto,
+    })
+    await ricarica()
+    return error ? { errore: `il passo è segnato perso, ma il giro non si è chiuso: ${error.message}` } : {}
+  }, [stato.aperta, ricarica])
+
+  /**
    * Una ricarica del conto. ⚠️ È l'**unico** modo in cui entrano soldi: i
    * tasti −/+ sul bankroll non ci sono più, perché cambiavano il conto senza
    * lasciare traccia.
@@ -537,6 +569,7 @@ export function usaScalate(userId) {
     apri: attendendo(apri),
     segna: attendendo(segna),
     chiudi: attendendo(chiudi),
+    perdi: attendendo(perdi),
     azzeraPiano: attendendo(azzeraPiano),
     azzeraTutto: attendendo(azzeraTutto),
     togliGamba: attendendo(togliGamba),

@@ -38,7 +38,7 @@
 // (`componiPasso`, la stessa funzione della pagina).
 
 import { ricostruisci } from '../lib/ricostruisci.js';
-import { postaDi, componiPasso, percentualeConsigliata, applicaIncasso, METODO } from '../../app/src/lib/scalata.js';
+import { postaDi, componiPasso, percentualeConsigliata, applicaIncasso, METODO_META as METODO } from '../../app/src/lib/scalata.js';
 
 const arg = (n, d) => { const a = process.argv.find(x => x.startsWith(`--${n}=`)); return a ? Number(a.split('=')[1]) : d };
 const STAGIONI = arg('stagioni', 8), BANKROLL = arg('bankroll', 100);

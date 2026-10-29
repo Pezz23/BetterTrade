@@ -811,3 +811,41 @@ mostrava come se fosse stato giocato.
 Provato con una sessione simulata da user: la policy `passi_write` guarda la
 proprietà della scalata, non lo stato, quindi il passo di una scalata appena
 chiusa si cancella.
+
+### 💯 La puntata a PERCENTUALE del conto (29/10/2026, `sql/49`, `1.68`-`1.72`)
+
+Mattia, dopo il backtest del Filtro A (`note/criterio.md`): *"accantonare non
+è un buon piano, è meglio giocare il tot % del bankroll"*. «Metà utile» esce
+dal gioco dal vivo (resta `METODO_META` per l'archivio e `prova-prelievi.js`).
+- **Ogni passo punta `percentuale × conto` di quel momento**, all'**euro per
+  eccesso** e mai oltre il conto (`puntataDi`); vinto → +utile, perso →
+  −puntata. Il conto del giro è **calcolato** dai passi (`contiPercentuale`),
+  la puntata vera si scrive sul passo all'esito (`segna`, `perdi`).
+- Percentuali **3 · 5 · 10 · 14%** (scelta di Mattia); misurato, cresce di più
+  il 3% e la pagina lo dice.
+- **A ogni passo perso il giro si chiude da solo** (`chiudi_giro_perso`): va
+  in archivio coi passi giocati e ne riparte uno con lo stesso conto, la
+  stessa percentuale e i passi rimasti. Sotto 1 € di conto non riparte niente.
+  Il ✗ vuole **due tocchi**. ⟳ RIPARTI non esiste più.
+- Nel piano (scalata chiusa) gli esiti sono **simulati**, e dopo un perso la
+  numerazione riparte da PASSO 1 con la riga «GIRO NUOVO · simulato».
+- **Il criterio A** (att ≥ 61 · scelta ≥ 61 · VPM ≥ 7,5, `eCriterioA`) si
+  evidenzia in **viola** — filo a sinistra, fondo appena tinto — nell'elenco e
+  nei passi; il viola è tolto dai colori dei passi.
+
+### 🎨 Il ridisegno della pagina (29/10/2026, tre giri con Mattia)
+
+Ordine: **SELEZIONE** (compatta) → **GESTIONE BANKROLL** (conto, puntata,
+versato, risultato, percentuale a segmenti, ricarica) → **LA SCALETTA** con
+▶ APRI → il passo da giocare → «+N passi in programma» → **Reset partite**
+(piccolo, ex «↻ ricarica») → **RISULTATO FILTRI** (ex «TUTTE LE
+CONSIGLIATE»), con l'interruttore **Tutte | Consigliate** (= criterio A).
+- L'elenco: schede su due righe, gruppi per giorno e fascia di **2 ore**
+  (`FINESTRA_ELENCO_ORE`; i passi restano a 3), il passo come **pallino col
+  numero**, testo mai colorato dal passo.
+- Il passo da giocare è una **schedina sempre aperta**: partite in righe
+  piatte, quota come numero che si tocca per correggerla
+  (`QuotaModificabile`), «se vince» dentro «Conti»; bordo sottile e titolo
+  nel colore del passo; **📌 puntina** al posto del lucchetto per fissare.
+- L'oro è dei soldi e dell'avvio, il viola del criterio A, ogni passo ha il
+  suo colore.

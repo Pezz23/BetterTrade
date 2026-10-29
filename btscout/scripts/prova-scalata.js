@@ -17,7 +17,7 @@
 import { sql } from '../lib/db.js';
 import { ricostruisci } from '../lib/ricostruisci.js';
 import { weekendDi } from '../lib/date.js';
-import { componiPasso, simula, METODO, QUOTA_MINIMA_GAMBA } from '../../app/src/lib/scalata.js';
+import { componiPasso, simula, METODO_META, QUOTA_MINIMA_GAMBA } from '../../app/src/lib/scalata.js';
 
 const arg = (n, d) => { const a = process.argv.find(x => x.startsWith(`--${n}=`)); return a ? Number(a.split('=')[1]) : d };
 const STAGIONI = arg('stagioni', 8), QUOTA = arg('quota', 1.7);
@@ -124,7 +124,7 @@ const mediana = (l) => { const s = [...l].sort((a, b) => a - b); return s.length
     if (bankroll < 10) break;                      // sotto i 10 la posta è 1: si chiude
   }
 
-  const R = METODO;
+  const R = METODO_META;
   const tot = risultati.reduce((a, x) => a + x, 0);
   console.log(`── ${R.nome} — ${R.desc}`);
   console.log(`   ${scalate} scalate · ${saltati} weekend saltati (nessun passo costruibile)`);
@@ -161,7 +161,7 @@ console.log('── il bankroll stagione per stagione (parte da 100 ogni volta) 
     finali.push(bankroll);
   }
   const ord = [...finali].sort((a, b) => a - b);
-  console.log(`   ${METODO.nome.padEnd(20)} ${finali.map(x => x.toFixed(0)).join(' · ')}`);
+  console.log(`   ${METODO_META.nome.padEnd(20)} ${finali.map(x => x.toFixed(0)).join(' · ')}`);
   console.log(`   ${''.padEnd(20)} mediana ${ord[Math.floor(ord.length / 2)].toFixed(0)} · in utile ${finali.filter(x => x > 100).length} stagioni su ${finali.length}`);
 }
 

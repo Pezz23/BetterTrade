@@ -137,18 +137,18 @@ for (const vista of viste) {
   await pagina.getByPlaceholder('Il tuo username').fill(utente)
   await pagina.getByPlaceholder('••••••••').fill(pw)
   await pagina.getByRole('button', { name: 'Accedi' }).click()
-  await pagina.getByRole('button', { name: 'Dashboard' }).waitFor({ timeout: 15000 })
+  await pagina.getByRole('link', { name: 'Dashboard' }).waitFor({ timeout: 15000 })
 
   for (const p of pagine) {
     if (p.via === 'prima') continue   // già fatta sopra, prima di entrare
     try {
       if (p.via === 'pannello') {
-        await pagina.getByRole('button', { name: 'Partite' }).first().click()
+        await pagina.getByRole('link', { name: 'Partite' }).first().click()
         const tasto = pagina.getByRole('button', { name: /filtri/ }).first()
         await tasto.waitFor({ timeout: 20000 })
         await tasto.click()
       } else if (p.via === 'partita') {
-        await pagina.getByRole('button', { name: 'Partite' }).first().click()
+        await pagina.getByRole('link', { name: 'Partite' }).first().click()
         // ⚠️⚠️ **Si aspetta la riga, non un tempo.** C'era un `waitForTimeout`
         // di 1,5 s: bastava con 67 partite in calendario, **non con 207** — il
         // 22/10/2026 il clic è andato in timeout di trenta secondi e la riga

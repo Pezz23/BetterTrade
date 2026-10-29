@@ -51,6 +51,24 @@ export const QUOTA_MINIMA_GAMBA = 1.30
 export const QUOTA_MINIMA_SCHEDINA = 1.90
 
 /**
+ * ⚠️⚠️ **Il CRITERIO A** (Mattia, 29/10/2026: *"evidenziare in modo evidente
+ * le partite che rispettano 61 61 7,5"*): attendibilità ≥ 61%, scelta ≥ 61%,
+ * VPM ≥ 7,5. La scelta è `null` quando VPM contraddice il segno, quindi la
+ * concordanza è già dentro.
+ * ⚠️ È il «Filtro A» verificato con `btscout/scripts/prova-filtro-a.js`
+ * (`note/criterio.md`): sulle singole rende ~+2% sopra VPM 7,5, non
+ * dimostrato. **Si evidenzia, non si sceglie da solo**: i passi restano quelli
+ * dei filtri.
+ * ⚠️ `Number()`: dal database (piano salvato) i numerici arrivano come
+ * stringhe.
+ */
+export const CRITERIO_A = { att: 0.61, scelta: 0.61, vpm: 7.5 }
+export function eCriterioA(g) {
+  if (g?.att == null || g?.scelta == null || g?.vpm == null) return false
+  return Number(g.att) >= CRITERIO_A.att && Number(g.scelta) >= CRITERIO_A.scelta && Number(g.vpm) >= CRITERIO_A.vpm
+}
+
+/**
  * ⚠️ **Quattro gambe al massimo** (scelta di Mattia), e il motivo è che
  * **ogni gamba moltiplica il margine**: una gamba al 99% diventa 98% in due e
  * 97% in tre. Chiedere più quota non allunga la scalata, la fa morire prima —
@@ -114,10 +132,61 @@ export const MAX_PASSI = 4
  * teneva in gioco una quota crescente, e al 7° passo non ci arriva nessuno:
  * su 277 scalate, 24 arrivano a 3 passi vinti, 4 a 5, nessuna a 7.
  */
-export const METODO = {
+export const METODO_META = {
   id: 'meta',
   nome: 'Metà utile',
   desc: 'al 1° passo vinto riprendi la puntata, poi metà dell’utile a ogni passo',
+}
+
+/**
+ * ⚠️⚠️ **Il metodo dal 29/10/2026: una PERCENTUALE DEL CONTO a ogni passo**
+ * (`sql/49`). Mattia, dopo il backtest del Filtro A: *"accantonare non è un
+ * buon piano, è meglio giocare il tot % del bankroll"* — misurato in
+ * `btscout/scripts/prova-filtro-a.js`: sulle schedine mai viste la crescita
+ * massima sta al **3%**, il 10% rende meno e il 20% brucia il conto.
+ *   · ogni passo punta `percentuale × conto` di quel momento, **all'euro per
+ *     eccesso** e mai oltre il conto (`puntataDi`); vinto → il conto sale
+ *     dell'utile, perso → scende della puntata;
+ *   · niente cassa, accumulo né prelievi: il conto è tutto in gioco;
+ *   · **a ogni passo perso il giro si chiude da solo** e va in archivio, e ne
+ *     riparte un altro con lo stesso conto e la stessa percentuale
+ *     (`chiudi_giro_perso`);
+ *   · la percentuale si sceglie aprendo e **si cambia solo con STOP**.
+ * «Metà utile» (`METODO_META`) resta per l'archivio e per `prova-prelievi.js`.
+ */
+export const METODO = {
+  id: 'percentuale',
+  nome: 'Percentuale del conto',
+  desc: 'ogni passo punta la stessa percentuale del conto di quel momento',
+}
+export const PERCENTUALI = [0.03, 0.05, 0.10, 0.14]
+export const PERCENTUALE_DEFAULT = 0.05
+
+/** La puntata di un passo: `percentuale × conto`, all'euro per eccesso, mai oltre il conto. 0 sotto 1 €. */
+export function puntataDi(conto, percentuale) {
+  const c = Number(conto), p = Number(percentuale)
+  if (!(c >= 1) || !(p > 0)) return 0
+  // ⚠️ Prima ai centesimi, poi per eccesso: `100 × 0,03` in virgola mobile è
+  // 3,0000000000000004, e un `ceil` diretto farebbe 4.
+  return Math.min(Math.ceil(Math.round(c * p * 100) / 100), Math.floor(c))
+}
+
+/**
+ * Il conto di un giro a percentuale, **calcolato** dai passi giocati (come
+ * `casseDi` per «Metà utile»: un numero scritto a ogni esito andrebbe disfatto
+ * a ogni annullamento). Torna `{ live, poste, prossima }`: il conto adesso, la
+ * puntata di ogni passo giocato e quella del prossimo.
+ */
+export function contiPercentuale(iniziale, passi, percentuale) {
+  let conto = Number(iniziale)
+  const poste = []
+  for (const p of passi || []) {
+    if (!p || p.esito === 'aperto') break
+    const posta = puntataDi(conto, percentuale)
+    poste.push(posta)
+    conto = Math.round((conto + (p.esito === 'vinto' ? posta * (Number(p.quota) - 1) : -posta)) * 100) / 100
+  }
+  return { live: conto, poste, prossima: puntataDi(conto, percentuale) }
 }
 
 /**
@@ -128,7 +197,8 @@ export const METODO = {
  * si chiamavano.
  */
 export const NOMI_REGOLA = {
-  meta: METODO.nome,
+  percentuale: METODO.nome,
+  meta: METODO_META.nome,
   // ⚠️ La Scalata madre (pavimenti 0,7× · 1,3× · 2,8×) dal 21 al 26/10/2026.
   madre: 'Scalata madre',
   capitale: 'Prima il capitale',
@@ -143,6 +213,13 @@ export const NOMI_REGOLA = {
  * successivo**, o la scalata non è una scalata.
  */
 export const FINESTRA_ORE = 3
+
+/**
+ * ⚠️ I separatori dell'elenco RISULTATO FILTRI: **2 ore** dalla prima partita
+ * del gruppo (Mattia, 29/10/2026). Solo l'elenco: i passi si compongono
+ * ancora con `FINESTRA_ORE`, e cambiarla cambierebbe i piani.
+ */
+export const FINESTRA_ELENCO_ORE = 2
 
 /**
  * Il giorno in `AAAA-MM-GG`, da una stringa **o da un oggetto `Date`**.
@@ -178,14 +255,14 @@ const minuti = (ora) => {
  * togliere e aggiungere partite a mano, perché il tocco personale è il motivo
  * per cui questa pagina esiste.
  */
-export function fasce(partite) {
+export function fasce(partite, ore = FINESTRA_ORE) {
   const ord = [...(partite || [])].sort((a, b) =>
     giorno(a.data).localeCompare(giorno(b.data)) || minuti(a.ora) - minuti(b.ora))
   const out = []
   for (const p of ord) {
     const ultima = out[out.length - 1]
     const vicina = ultima && ultima.giorno === giorno(p.data)
-      && minuti(p.ora) - minuti(ultima.partite[0].ora) <= FINESTRA_ORE * 60
+      && minuti(p.ora) - minuti(ultima.partite[0].ora) <= ore * 60
     if (vicina) ultima.partite.push(p)
     else out.push({ giorno: giorno(p.data), ora: String(p.ora || '').slice(0, 5), partite: [p] })
   }
