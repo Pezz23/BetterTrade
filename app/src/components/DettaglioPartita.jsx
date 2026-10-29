@@ -136,28 +136,12 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
   const vs = verso(v)
   // I gol attesi: stesso hook, stesse finestre di VPM. Sta nella scheda e non
   // in barra (scelta di Mattia): è un dato da leggere, non da scorrere.
-  // ⚠️⚠️ Le due voci di angoli e gialli per la testata: **gli stessi numeri
-  // delle due card più sotto**, calcolati qui una volta e passati. Calcolarli
-  // due volte vorrebbe dire due risultati che un giorno divergono — e sono
-  // sotto gli occhi nella stessa schermata.
-  const conteggiDati = usaConteggi(p.div)
-  const vociConteggi = useMemo(() => {
-    const sc = conteggiDati?.squadre?.[p.casa], st = conteggiDati?.squadre?.[p.trasferta]
-    if (!conteggiDati?.lega || !sc || !st || !sc.nCasa || !st.nFuori) return null
-    return ['angoli', 'cartellini'].map(mercato => {
-      const lega = { casa: Number(conteggiDati.lega[`${mercato}_casa`]), trasferta: Number(conteggiDati.lega[`${mercato}_trasferta`]) }
-      const a = atteso({
-        casa: { fatti: { m: sc[mercato].fattiCasa, n: sc.nCasa }, subiti: { m: sc[mercato].subitiCasa, n: sc.nCasa } },
-        trasferta: { fatti: { m: st[mercato].fattiFuori, n: st.nFuori }, subiti: { m: st[mercato].subitiFuori, n: st.nFuori } },
-        lega,
-      })
-      const soglia = sogliaCentrale(mercato, a.totale)
-      // ⚠️ `O` e non `OVER`: quattro voci su 375px, e la parola intera
-      // allargherebbe la colonna più di quanto la riga può dare.
-      return [mercato === 'angoli' ? 'ANGOLI' : 'GIALLI',
-        { esito: `O ${soglia.toFixed(1).replace('.', ',')}`, p: pOltre(soglia, a.totale) }]
-    })
-  }, [conteggiDati, p.casa, p.trasferta])
+  // ⚠️⚠️ **Niente più angoli e gialli nella testata** (Mattia, 29/10/2026).
+  // C'erano «ANGOLI O 9,5 · 52%»: la soglia più vicina al totale atteso, cioè
+  // per costruzione quella dove il modello sta intorno al 50%, e accanto ai
+  // consigli dei gol si leggeva come un consiglio. Verificato su ottobre: verso
+  // giusto 53,7% e 52,0% — una moneta. Restano le due card più sotto, che
+  // descrivono (`note/conteggi.md`).
 
   const g = useMemo(() => datiVpm ? golAttesi(datiVpm.squadre?.[p.div], p.casa, p.trasferta) : null,
     [datiVpm, p.div, p.casa, p.trasferta])
@@ -202,7 +186,7 @@ export default function DettaglioPartita({ p, cat, voti = 0, mio = false, puoVot
         </div>
 
         <div style={{ marginTop: 14 }}>
-          <TestataPartita p={p} cat={cat} gol={g} senzaData conteggi={vociConteggi} />
+          <TestataPartita p={p} cat={cat} gol={g} senzaData />
         </div>
 
         {/* ── I numeri, gli stessi della lista ──────────────────────────

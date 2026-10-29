@@ -8,7 +8,7 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 29 ottobre 2026 · app alla versione **1.64.01**
+**Ultimo aggiornamento:** 29 ottobre 2026 · app alla versione **1.64.02**
 · passaggio di consegne: 29/10 · ⚠️ **da pushare** i commit dopo `4ce1619`
 
 ## ▶️ DOVE SIAMO — 24 ottobre 2026, leggi questo per primo
@@ -38,6 +38,7 @@ Il 24/10, in ordine:
 | **Le stelline a tutti** (29/10): oro admin, blu user in un tasto solo; nelle Spin contano solo quelle degli admin, in Road to weekend e Builder tutte (`sql/46`) | `1.64.00` | `4ce1619` |
 | **Le partite rinviate non si raddoppiano più** (29/10, lotto 0): gli import **spostano** la riga vecchia alla data nuova (`btscout/lib/rinvii.js`), la riconciliazione non collega il doppione | motore | `1569c0e` |
 | **L'ora delle partite nel CSV di Andamento** (29/10): `partite.ora` (`sql/48`), ora italiana da football-data dalla 2019/20 — 38.376 partite con `recupera-da-csv.js`, che ora riempie falli **e** ora. ⚠️ A margine: **455 vecchie righe di `prossime_partite`** (già giocate, prima del 23/10) hanno ancora l'ora **inglese** — la correzione del fuso non le aveva toccate. Non si vedono da nessuna parte; l'archivio ha quella giusta | `1.64.01` | `02ad162` |
+| **La misura dei falli: no** (29/10): cartellini +1,18 punti oggi, −0,09 coi falli, +1,25 misti — rumore; angoli: nessuna variante (tiri, tiri in porta, finestra) supera +0,8. `prova-conteggi.js --riassunto` con la base delle decise accanto. **Tolto «ANGOLI/GIALLI O 9,5 · 52%» dalla testata della scheda**; le due card restano, e Mattia vuole **migliorare l'algoritmo** (ricerca in corso) | `1.64.02` | vedi git |
 | **I falli in archivio** (29/10, lotto 1, prima metà): `sql/47`, **50.683 partite** dai CSV di football-data con `recupera-da-csv.js`; gli import di football-data ed ESPN li scrivono da qui in avanti | motore | `7382c6d` |
 
 **29/10, le due scoperte che cambiano la lista:**

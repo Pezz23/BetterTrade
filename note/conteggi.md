@@ -109,6 +109,35 @@ in **421 partite su 423**. Proposta (non ancora decisa): via la soglia dalla
 testata, angoli solo descrittivi, cartellini col verso **solo** dove il
 modello è deciso e la misura coi falli dice che regge.
 
+## ⛔ I falli NON aiutano, e nemmeno le altre varianti (29/10/2026)
+
+Misurato con `prova-conteggi.js --riassunto` sui quindici campionati,
+camminando nel tempo, K=12. Lo «scarto» è quanti punti il modello fa meglio
+di chi dice sempre il più frequente, sulla soglia con la base più vicina al
+50%:
+
+| | base | scarto |
+|---|---|---|
+| cartellini | i cartellini stessi (oggi) | **+1,18** |
+| | i **falli** | −0,09 |
+| | metà e metà | +1,25 |
+| | finestra 20 invece di 10 | +1,54 |
+| angoli | gli angoli stessi (oggi) | **+0,61** |
+| | i tiri | −0,26 |
+| | i tiri in porta | −0,24 |
+| | metà angoli, metà tiri in porta | +0,80 |
+| | finestra 20 | +0,72 |
+
+Nessuna supera il punto e mezzo: sono decimali, cioè rumore. **Il recupero
+dei falli da ESPN per le coppe non serve.**
+⚠️⚠️ **E una correzione di metodo, da non ripetere**: il 29/10 si era detto
+che sui cartellini «quando il modello si sbilancia» indovina il 59% (e il
+74% su tutte le soglie). **Non è merito suo**: il modello si sbilancia quasi
+solo sulle soglie dove quel risultato capita comunque spesso. Contro la base
+**sulle stesse partite** il vantaggio è **+0,4 punti** (cartellini) e **+0,2**
+(angoli). Per questo `--riassunto` stampa le decise **con la loro base
+accanto**: un numero di «giuste» senza la base è la frequenza travestita.
+
 ## Quello che manca, e da dove viene
 
 La letteratura (Kruse & Maennig) indica **arbitro, derby e fattore campo** come
