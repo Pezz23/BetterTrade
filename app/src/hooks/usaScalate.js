@@ -51,6 +51,31 @@ const annulla = async (id, messaggio) => {
   return { errore: messaggio }
 }
 
+/**
+ * Inserisce i passi di un piano (e le loro gambe) in un giro, numerandoli da
+ * `primo`. Torna `{ salvati }` (le righe dei passi, in ordine di numero) o
+ * `{ errore }`. ⚠️ Due scritture, non una per passo: tutti i passi insieme,
+ * poi tutte le gambe — le gambe hanno bisogno degli id dei passi. Gli id si
+ * riagganciano per **numero**, non per posizione: `insert` non promette
+ * l'ordine.
+ */
+async function inseriscipiano(scalataId, piano, primo = 1) {
+  const { data: salvati, error: e2 } = await supabase.from('scalata_passi').insert(
+    piano.map((p, i) => ({
+      scalata_id: scalataId, numero: primo + i, giorno: p.giorno, posta: p.posta, quota: p.quota,
+    }))).select()
+  if (e2) return { errore: e2.message }
+  const perNumero = new Map((salvati || []).map(r => [Number(r.numero), r.id]))
+  const { error: e3 } = await supabase.from('scalata_gambe').insert(
+    piano.flatMap((p, i) => p.gambe.map(g => ({
+      passo_id: perNumero.get(primo + i), prossima_id: g.id, div: g.div, data: g.data, ora: g.ora,
+      casa: g.casa, trasferta: g.trasferta, giocata: g.giocata,
+      quota: g.quota, att: g.att, scelta: g.scelta, vpm: g.vpm,
+    }))))
+  if (e3) return { errore: e3.message }
+  return { salvati: [...(salvati || [])].sort((a, b) => Number(a.numero) - Number(b.numero)) }
+}
+
 /** Le scalate dell'utente: la aperta (se c'è) e lo storico. */
 export function usaScalate(userId) {
   const [stato, setStato] = useState({ aperta: null, passi: [], gambe: [], storico: null, ricariche: [], errore: null })
@@ -112,7 +137,7 @@ export function usaScalate(userId) {
    * invece di crearne una seconda — due scalate aperte sullo stesso capitale
    * sarebbero due verità sullo stesso conto.
    */
-  const apri = useCallback(async ({ bankroll, posta, quotaMinima, regola, percentuale = null, piano }) => {
+  const apri = useCallback(async ({ bankroll, posta, quotaMinima, regola, percentuale = null, piano, senzaRilettura = false }) => {
     if (stato.aperta) return { errore: 'c’è già una scalata aperta' }
     // ⚠️ **Si controlla PRIMA di scrivere.** Il database ha i suoi vincoli
     // (puntata > 0, quote > 1) ma scoprirli a metà inserimento lascia una
@@ -140,28 +165,86 @@ export function usaScalate(userId) {
     // alla rilettura erano i secondi che Mattia vedeva girare dopo APRI
     // SCALATA. Le gambe hanno bisogno degli id dei passi, quindi i due gruppi
     // restano in ordine: due attese, non nove.
-    const { data: salvati, error: e2 } = await supabase.from('scalata_passi').insert(
-      piano.map((p, i) => ({
-        scalata_id: s.id, numero: i + 1, giorno: p.giorno, posta: p.posta, quota: p.quota,
-      }))).select()
-    if (e2) return annulla(s.id, e2.message)
+    // (passi e gambe: `inseriscipiano`, due scritture e non nove)
+    const ins = await inseriscipiano(s.id, piano)
+    if (ins.errore) return annulla(s.id, ins.errore)
 
-    // ⚠️ Gli id si riagganciano per **numero**, non per posizione nell'array:
-    // `insert` non promette di restituire le righe nell'ordine in cui le hai
-    // mandate, e un piano con le gambe sul passo sbagliato è un registro che
-    // mente senza dare errore.
-    const perNumero = new Map((salvati || []).map(r => [r.numero, r.id]))
-    const { error: e3 } = await supabase.from('scalata_gambe').insert(
-      piano.flatMap((p, i) => p.gambe.map(g => ({
-        passo_id: perNumero.get(i + 1), prossima_id: g.id, div: g.div, data: g.data, ora: g.ora,
-        casa: g.casa, trasferta: g.trasferta, giocata: g.giocata,
-        quota: g.quota, att: g.att, scelta: g.scelta, vpm: g.vpm,
-      }))))
-    if (e3) return annulla(s.id, e3.message)
-
-    await ricarica()
-    return { id: s.id }
+    if (!senzaRilettura) await ricarica()
+    return { id: s.id, passi: ins.salvati }
   }, [userId, stato.aperta, ricarica])
+
+  /**
+   * ⚠️⚠️ **Il PRIMO esito apre il giro** (Mattia, 29/10/2026: *"il concetto
+   * di apri e chiudi scalata con bankroll dinamico è inutile"*). Niente più
+   * ▶ APRI e ⏹ STOP: segnando ✓ o ✗ sul passo 1 del piano, il piano si salva
+   * (come faceva APRI) e il passo 1 prende l'esito, con la puntata vera.
+   * Se è un perso, il giro si chiude subito e ne riparte uno coi passi
+   * rimasti (`chiudi_giro_perso`), come per ogni altro perso.
+   */
+  const giocaPrimo = useCallback(async (apertura, esito, { posta, quota, finale, conto }) => {
+    const r = await apri({ ...apertura, senzaRilettura: true })
+    if (r.errore) return r
+    const primo = r.passi?.[0]
+    if (!primo) { await ricarica(); return { errore: 'il piano si è salvato senza passi' } }
+    const errore = primoErrore(await Promise.all([
+      supabase.from('scalata_passi').update({
+        esito, posta, montante: esito === 'vinto' ? Math.round(posta * quota * 100) / 100 : null,
+        deciso_il: new Date().toISOString(),
+      }).eq('id', primo.id),
+      supabase.from('scalata_gambe').update({ esito }).eq('passo_id', primo.id),
+    ]))
+    if (errore) { await ricarica(); return { errore } }
+    if (esito === 'perso') {
+      const { error } = await supabase.rpc('chiudi_giro_perso', {
+        p_scalata: r.id, p_dopo: Number(primo.numero), p_finale: finale, p_conto: conto,
+      })
+      if (error) { await ricarica(); return { errore: `il passo è perso, ma il giro non si è chiuso: ${error.message}` } }
+    }
+    await ricarica()
+    return {}
+  }, [apri, ricarica])
+
+  /**
+   * ⚠️ **La percentuale si cambia solo dopo un giro perso** (Mattia,
+   * 29/10/2026): cioè in un giro appena ripartito, quando nessun passo è
+   * ancora stato giocato. La pagina offre il selettore solo lì; qui si
+   * riscrive il giro (percentuale e puntata del primo passo).
+   */
+  const cambiaPercentuale = useCallback(async (percentuale, posta) => {
+    if (!stato.aperta) return { errore: 'nessun giro aperto' }
+    if (stato.passi.some(p => p.esito !== 'aperto')) return { errore: 'in questo giro si è già giocato: la percentuale si cambia dopo un perso' }
+    const { error } = await supabase.from('scalate').update({ percentuale, posta, cassa: posta })
+      .eq('id', stato.aperta.id)
+    if (error) return { errore: error.message }
+    await ricarica()
+    return {}
+  }, [stato.aperta, stato.passi, ricarica])
+
+  /**
+   * Un piano nuovo in coda a un giro aperto (Reset partite, 29/10/2026): i
+   * passi non giocati si tolgono (`azzeraPiano`) e qui entrano quelli
+   * ricomposti dalla scaletta, numerati dopo l'ultimo giocato.
+   */
+  const aggiungiPiano = useCallback(async (piano) => {
+    if (!stato.aperta || !piano?.length) return {}
+    const ultimo = stato.passi.filter(p => p.esito !== 'aperto').reduce((m, p) => Math.max(m, Number(p.numero)), 0)
+    const ins = await inseriscipiano(stato.aperta.id, piano, Math.floor(ultimo) + 1)
+    await ricarica()
+    return ins.errore ? { errore: ins.errore } : {}
+  }, [stato.aperta, stato.passi, ricarica])
+
+  /**
+   * Un giro senza passi giocati si butta via intero (Reset partite): non c'è
+   * niente da mettere in archivio, e la pagina torna al piano. ⚠️ I suoi passi
+   * finiscono comunque nel registro delle cancellazioni (`sql/42`).
+   */
+  const eliminaGiroVuoto = useCallback(async () => {
+    if (!stato.aperta) return {}
+    if (stato.passi.some(p => p.esito !== 'aperto')) return { errore: 'il giro ha passi giocati: non si butta' }
+    const { error } = await supabase.from('scalate').delete().eq('id', stato.aperta.id)
+    await ricarica()
+    return error ? { errore: error.message } : {}
+  }, [stato.aperta, stato.passi, ricarica])
 
   /**
    * Segna l'esito di un passo.
@@ -570,6 +653,10 @@ export function usaScalate(userId) {
     segna: attendendo(segna),
     chiudi: attendendo(chiudi),
     perdi: attendendo(perdi),
+    giocaPrimo: attendendo(giocaPrimo),
+    cambiaPercentuale: attendendo(cambiaPercentuale),
+    aggiungiPiano: attendendo(aggiungiPiano),
+    eliminaGiroVuoto: attendendo(eliminaGiroVuoto),
     azzeraPiano: attendendo(azzeraPiano),
     azzeraTutto: attendendo(azzeraTutto),
     togliGamba: attendendo(togliGamba),

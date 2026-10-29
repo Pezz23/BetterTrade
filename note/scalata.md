@@ -849,3 +849,22 @@ CONSIGLIATE»), con l'interruttore **Tutte | Consigliate** (= criterio A).
   nel colore del passo; **📌 puntina** al posto del lucchetto per fissare.
 - L'oro è dei soldi e dell'avvio, il viola del criterio A, ogni passo ha il
   suo colore.
+
+### 🚫 Niente più APRI e STOP (29/10/2026, `1.73.00`)
+
+Mattia: *"con il bankroll dinamico il concetto di apri e chiudi scalata è
+inutile"*. A percentuale ogni passo è indipendente: non c'è una catena da
+aprire né un accumulo da incassare.
+- **Il primo ✓/✗ sul passo 1 del piano è vero** (`giocaPrimo`): salva il piano,
+  apre il giro e registra il passo con la puntata vera. **Niente simulazione**
+  (scelta di Mattia): gli esiti di prova non esistono più e quelli salvati
+  prima non si rileggono.
+- Un **perso** chiude il giro (archivio) e ne riparte uno coi passi rimasti;
+  un giro tutto vinto resta aperto, e i prossimi passi li compone **Reset
+  partite** (`aggiungiPiano`, in coda, senza le partite già giocate). Un giro
+  senza passi giocati, con Reset, si butta intero (`eliminaGiroVuoto`).
+- **La percentuale si cambia solo dopo un giro perso** (scelta di Mattia): il
+  selettore c'è senza giro o in un giro senza passi giocati
+  (`cambiaPercentuale` riscrive il giro).
+Provati da user in una transazione annullata: cambio percentuale ed
+eliminazione del giro vuoto (i passi finiscono nel registro).
