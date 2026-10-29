@@ -29,7 +29,7 @@ import { giocataArrivata } from '../../app/src/lib/esito.js';
  */
 export async function ricostruisci({ stagioni: quante = 3, daGiornata = 5 } = {}) {
   const righe = await sql`
-    select id, data, stagione, div, casa, trasferta, esito, gol_casa, gol_trasferta,
+    select id, data, to_char(ora, 'HH24:MI') as ora, stagione, div, casa, trasferta, esito, gol_casa, gol_trasferta,
            coalesce(tirip_casa,0) as tfc, coalesce(tirip_trasf,0) as tft,
            b365_1, b365_2, avg_ap_1, avg_ap_x, avg_ap_2,
            max_ap_1, max_ap_2
@@ -104,7 +104,10 @@ export async function ricostruisci({ stagioni: quante = 3, daGiornata = 5 } = {}
       const accordoVpm = v ? (v.segno === '1' ? 'H' : 'A') === segno : null;
 
       valutate.push({
-        id: r.id, data: giornoLocale(r.data), weekend: weekendDi(r.data),
+        // ⚠️ `ora` (italiana, `partite.ora` dal 29/10/2026, sql/48): serve a chi
+        // ricostruisce le schedine in ordine di calcio d'inizio. Vuota prima
+        // della 2019/20.
+        id: r.id, data: giornoLocale(r.data), ora: r.ora, weekend: weekendDi(r.data),
         stagione: r.stagione, div: r.div, casa: r.casa, trasferta: r.trasferta,
         segno, combinata, vinta, segnoGiusto,
         giocata,

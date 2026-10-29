@@ -483,3 +483,34 @@ Dettagli, tabelle e limiti in STATO.md.
 
 ---
 
+
+### 🧪 Il «Filtro A» e il bankroll al 10% — verificati (29/10/2026)
+
+Da un briefing di Mattia costruito con ChatGPT sui CSV di Andamento: **att ≥
+61%, VPM ≥ 7,5 concorde, Scelta > 61%, gamba ≥ 1,30, schedina ≥ 1,90 con al
+massimo 3 gambe**, capitale al 10%. Misurato con
+`btscout/scripts/prova-filtro-a.js` (regole di composizione fisse e scritte in
+testa; `--att=61 --vpm=6.5` per le varianti).
+- ⚠️ **«Scelta > 61%» e la concordanza sono ridondanti**: `scelta = att +
+  0,10·(VPM−5,5)/4,5` ed è `null` nel disaccordo, quindi con att ≥ 61 e VPM ≥
+  7,5 è sempre sopra il 65%. Il Filtro A è **due** filtri, non tre conferme.
+- **Riprodotto**: 229 schedine contro 230, 56,8% vinte, +18,3% ±13,5 a
+  puntata fissa (ChatGPT +13,64%: la differenza è la composizione).
+- **Walk-forward** (filtro scelto solo sulle stagioni prima): sceglie da solo
+  att ≥ 61 + VPM ≥ 7,5 già dalle prime tre stagioni; fuori campione **+24%
+  ±22 su 84 schedine**, positivo in 4 stagioni su 4.
+- ⚠️⚠️ **Sulle singole il segnale è piccolo**: att ≥ 61 e gamba ≥ 1,30 rende
+  99,7% (4.010 partite); con VPM concorde c'è un **gradino a 7,5** — sotto
+  ~98%, sopra **~102% ±3** — positivo in 5 stagioni su 7. Con att 54-61 lo
+  stesso filtro rende il **94%**: non si estende. Realistico: **+2% sulla
+  singola, ~+3,6% sulla doppia**, non +13-18%.
+- **VPM ≥ 6,5** (chiesto da Mattia): 680 schedine, +3,6% ±8, gambe 100,8% —
+  il vantaggio si scioglie.
+- ⛔ **Il 10% è troppo, anche se il vantaggio fosse vero.** Kelly con +3,6%
+  sulla doppia ≈ 3,4%. Le 95 schedine fuori campione giocate di fila da 100 €:
+  3% → **108 €** (il massimo), 10% → 78 €, 20% → 15 €, 30% → 0,70 €. Scegliere
+  filtro, formato e puntata «per il massimo» dalle stagioni prima porta a
+  puntate del 16-20% e a **25 €**: lo storico gonfia il vantaggio. Simulato
+  con vantaggio realistico, 100 doppie: mediana 109 € al 3-5%, 91 € al 10%.
+- **Il prossimo passo proposto**: la prova sul futuro vero, con una regola
+  decisa prima (100 schedine: ROI > 0 **e** gambe sopra 100%).
