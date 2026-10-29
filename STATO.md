@@ -9,8 +9,8 @@
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
 **Ultimo aggiornamento:** 29 ottobre 2026, notte · app alla versione **1.73.01**
-(tagliando del codice) · passaggio di consegne: 29/10, fine sessione · ⚠️ **da pushare**:
-`9fad2f9`, il passaggio e il tagliando — dopo il push si guarda su Vercel
+(`6a0ce2a`, tagliando del codice) · passaggio di consegne: 29/10, fine sessione · pushato fino a
+`b01f082`, ⚠️ **da pushare** solo l'ultimo commit dei documenti — su Vercel si guarda
 un ricaricamento su `/partite` (è `app/vercel.json` a evitare il 404)
 
 ## ▶️ DOVE SIAMO — 29 ottobre 2026, leggi questo per primo
@@ -303,7 +303,7 @@ state provate simulando uno user e un admin in una transazione annullata.
 | **5** | **La barra dei campionati** (idea 3) | ✅ **fatta il 22/10 sera** (`6bf18ae`), anticipata da Mattia prima del routing. La domanda *"cosa si restringe"* ha avuto risposta: **niente** — lo spazio si **riserva** (40px di margine a destra) invece di lasciar galleggiare la striscia sopra la lista |
 | **6** | **L'automazione** (lotto F) | ⚠️ Ora i `.plist` sono **due** e **nessuno dei due è installato** (verificato con `launchctl` il 23/10): `aggiornamento.plist` (martedì/venerdì, la routine intera) e `aggiornamento-orario.plist` (solo i risultati da ESPN, **zero crediti**). Due comandi ciascuno, scritti in testa ai file |
 | **7** | **Quello che aspetta i dati**: il riepilogo della scalata (a 10-20 chiuse), il Satellite, la spin 2 sotto soglia, i backtest vecchi | non anticipabile |
-| **8** | 🧬 **UPGRADE MODELLO DI DATI — fonti** | 🟡 **in corso, e la parte grossa è fatta**: le cinque competizioni nuove da ESPN, angoli e cartellini letti e misurati (U1), la linea 3,5 raccolta (U2'). **Resta**: i falli, l'arbitro, l'xG da FBref (U4), il live (U5) |
+| **8** | 🧬 **UPGRADE MODELLO DI DATI — fonti** | 🟡 **in corso, e la parte grossa è fatta**: le cinque competizioni nuove da ESPN, angoli e cartellini letti e misurati (U1), la linea 3,5 raccolta (U2'). **Resta**: l'xG da FBref (U4), il live (U5). I falli sono fatti e misurati (29/10, non aiutano); l'arbitro si lascia stare (3 campionati su 15). ⚠️ **Serie C verificata il 29/10 e lasciata perdere** (Mattia): non c'è su football-data (solo I1, I2), né su The Odds API (solo Serie A, Serie B, Coppa Italia), ed ESPN ha `ita.3` ma vuoto, senza squadre né partite. Servirebbe una fonte nuova (API-Football, non verificata) |
 | **9** | 🧬 **UPGRADE MODELLO DI DATI — evoluzione predittiva** (U3): matrice dei risultati esatti e fair odds. ⚠️ Il Poisson **esiste già** in `lib/gol.js` con le sue correzioni misurate: qui si estende, non si riscrive — e **non in Python**, o nascono due verità | ⛔ **da decidere**, mai iniziato |
 
 ⚠️ Restano fuori dai lotti, **non dimenticate**: la **scala a sette colori per

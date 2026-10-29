@@ -868,3 +868,18 @@ aprire né un accumulo da incassare.
   (`cambiaPercentuale` riscrive il giro).
 Provati da user in una transazione annullata: cambio percentuale ed
 eliminazione del giro vuoto (i passi finiscono nel registro).
+
+### Tagliando del codice (29/10/2026, `1.73.01`)
+
+Tolti perché nessuno li chiamava più dopo l'addio ad APRI/STOP: `chiudi` (STOP)
+e `riparti` (⟳ RIPARTI, la funzione `riparti_scalata` di `sql/41` resta nel
+database) da `usaScalate`, `casseDi` da `lib/scalata.js`, e nella pagina gli
+esiti e le percentuali per passo del piano (`esiti`, `perc`) con la riga
+«GIRO NUOVO · simulato». **Le citazioni di `casseDi` e `chiudi` qui sopra sono
+storia.** Restano `METODO_META`, `incassa`, `applicaIncasso` e
+`percentualeConsigliata`: li usano `prova-prelievi.js` e gli altri script del
+motore.
+⚠️ **Un giro col metodo vecchio (`meta`) non si chiude più da un perso**:
+`chiudi_giro_perso` accetta solo `percentuale`. L'unico che c'era (NickV) è
+stato azzerato il 29/10; un altro non può nascere, perché ogni giro nuovo
+nasce `percentuale`.
