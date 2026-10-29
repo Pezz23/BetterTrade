@@ -8,8 +8,8 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 26 ottobre 2026 · app alla versione **1.64.00** ·
-passaggio di consegne: 24/10 (prima della 1.59.01)
+**Ultimo aggiornamento:** 29 ottobre 2026 · app alla versione **1.64.00**
+(`4ce1619`, pushato) · motore: `7382c6d` · passaggio di consegne: 29/10
 
 ## ▶️ DOVE SIAMO — 24 ottobre 2026, leggi questo per primo
 
@@ -34,8 +34,23 @@ Il 24/10, in ordine:
 | **La card in evidenza del passo da giocare** (26/10): puntata e quota in grande, partite e conti in tendine, gli altri passi in righe che si aprono nella stessa card, tasti dell'esito piccoli. Reversibile con `NUOVO_PASSO` | `1.61.00` | `291d931` |
 | **Il resoconto delle giocate nell'archivio** (26/10): ogni giro chiuso si apre con passi vinti/persi e l'esito vero di ogni partita; `giocataArrivata` spostata dal motore in `app/src/lib/esito.js` | `1.62.00` | `9a20c05` |
 | **Andamento: nel giorno TUTTE le partite e ⤓ esporta** (28/10): niente più prime 15 nel giorno (163.229 righe), ogni card scarica in CSV per Excel esattamente le partite che conta; e `ricostruisci.js` torna a scegliere **8** stagioni vere (il Giappone ne rubava due) | `1.63.00` | `9a20c05` |
-| **Il segno di VPM nel CSV di Andamento** (29/10): colonna «segno VPM» accanto al valore (`vpm_segno`, `sql/45`) | `1.63.01` | il commit dopo `9a20c05` |
-| **Le stelline a tutti** (29/10): oro admin, blu user in un tasto solo; nelle Spin contano solo quelle degli admin, in Road to weekend e Builder tutte (`sql/46`) | `1.64.00` | stesso commit |
+| **Il segno di VPM nel CSV di Andamento** (29/10): colonna «segno VPM» accanto al valore (`vpm_segno`, `sql/45`) | `1.63.01` | `4ce1619` |
+| **Le stelline a tutti** (29/10): oro admin, blu user in un tasto solo; nelle Spin contano solo quelle degli admin, in Road to weekend e Builder tutte (`sql/46`) | `1.64.00` | `4ce1619` |
+| **Le partite rinviate non si raddoppiano più** (29/10, lotto 0): gli import **spostano** la riga vecchia alla data nuova (`btscout/lib/rinvii.js`), la riconciliazione non collega il doppione | motore | `1569c0e` |
+| **I falli in archivio** (29/10, lotto 1, prima metà): `sql/47`, **50.683 partite** dai CSV di football-data con `recupera-falli.js`; gli import di football-data ed ESPN li scrivono da qui in avanti | motore | `7382c6d` |
+
+**29/10, le due scoperte che cambiano la lista:**
+- **L'arbitro (lotto 3) è chiuso con un no**: football-data lo pubblica **solo**
+  per Premier, Championship e Scozia — 3 campionati su 15, verificato sui CSV.
+- **Angoli e cartellini, Mattia: *"sbagliano quasi sempre"*. Confermato** su
+  423 partite giocate dal 1/10, con la formula della scheda e solo dati
+  precedenti: le probabilità sono **tarate** (dice 48%, esce 49%) ma il verso
+  è giusto il **53,7%** sugli angoli e il **52,0%** sui cartellini — una
+  moneta. Il difetto di presentazione: la card mostra la soglia **più vicina
+  al totale atteso**, cioè quella dove il modello è più incerto, e «O 9,5 ·
+  52%» si legge come un consiglio. L'unico segnale: cartellini quando il
+  modello si sbilancia (≥60% o ≤40%), **59% su 91**. Il dettaglio in
+  `note/conteggi.md`; la proposta è in «Da dove ripartire».
 
 **Road to weekend in tre righe** (il dettaglio in `note/scalata.md`):
 - ogni account — admin e user — ha **il suo conto e la sua scalata**, e
@@ -73,6 +88,13 @@ del **23 ottobre** — una giornata lunga — su **dati** e **scheda partita**:
 cd app && npm run dev          # il server di sviluppo non resta acceso fra le sessioni
 ```
 
+⚠️ **Al 29/10 i risultati dal 24 al 28/10 NON sono ancora in archivio**
+(la riconciliazione li dà «in attesa»): serve la routine
+(`btscout: node --env-file=.env scripts/aggiorna.js --esegui`, 51 crediti —
+o almeno `import-storico.js --stagioni=2627` + `aggiorna-risultati.js
+--esegui`, zero crediti). Al primo giro si vedrà anche, per la prima volta,
+la riconciliazione che **lascia scollegati i doppioni** dei rinvii.
+
 **Dati aggiornati il 26/10 sera** (turno infrasettimanale: Serie A 27-29/10,
 Serie B, Scozia): routine completa, poi i risultati del weekend da ESPN —
 football-data non li aveva ancora pubblicati. `controlla-dati`: resta **1
@@ -92,13 +114,25 @@ sul telefono non si distingueva il lavoro di oggi dalla cache di ieri.
 
 Nessuna di queste è stata promessa a Mattia: **si propone e decide lui.**
 
+⚠️ **Il 29/10 si è interrotto qui**, e Mattia aveva chiesto prima di tutto
+**l'orario delle partite nel CSV di Andamento** (fatto subito dopo questo
+passaggio di consegne — vedi «Cos'è cambiato»). Poi resta in sospeso la
+proposta sugli **indicatori di angoli e cartellini**, a cui Mattia non ha
+ancora risposto:
+1. togliere «O 9,5 · 52%» dalla riga in alto della scheda (si legge come un
+   consiglio); nella card solo i **attesi**, senza soglia;
+2. angoli solo descrittivi, detto chiaro che non prevedono;
+3. cartellini: la **misura coi falli** (seconda metà del lotto 1) — un verso
+   si mostra solo dove il modello è deciso **e** la misura dice che regge.
+   ⚠️ È una misura: **chiedere l'ok** prima di lanciarla.
+
 | | cosa | costo |
 |---|---|---|
 | 00 | **Un giro dell'app pubblicata sul telefono** (1.59.00): Spin, Road to weekend con una ricarica, un flag da admin e uno da user. E `prova-permessi.js`, che dal 24/10 si aspetta i flag anche dagli utenti — vuole le password, quindi lo lancia Mattia | dieci minuti |
 | ~~0~~ | ~~**Le partite rinviate doppie**~~ — ✅ **fatto il 29/10** (`lib/rinvii.js`) | — |
-| 1 | **I falli** — ESPN li manda (`foulsCommitted`) in ogni riepilogo e **li buttiamo via**, esattamente com'era per i cartellini fino al 22/10. Sono il meccanismo che produce il giallo, e i cartellini sono il mercato dove il modello rende di più. Serve: una colonna, due righe in `lib/espn.js`, il recupero, **e la rimisura** | mezza giornata, zero crediti |
+| 1 | **I falli — metà fatta il 29/10**: in archivio per i 15 campionati (`7382c6d`). **Resta**: la **misura** in `prova-conteggi.js` (i falli come base dei cartellini, contro quella di oggi — con l'ok di Mattia) e, **solo se servono**, il recupero lento da ESPN di coppe, Olanda 2 e Giappone (~13.500 partite, 3-4 ore in background, zero crediti) | la misura: un'ora |
 | 2 | **Il routing** (lotto 3) — era *"da fare prima di aggiungere schermate nuove"* e da allora ne sono arrivate tre. Vuole mezza giornata in cui non si aggiunge niente | mezza giornata |
-| 3 | **L'arbitro** — la letteratura lo chiama cruciale per i cartellini. ⚠️ **Prima va verificato** che football-data abbia davvero la colonna `Referee`: il 23/10 il DNS di quel sito era giù tutto il giorno e **non l'ho potuto controllare** | da stimare dopo la verifica |
+| ~~3~~ | ~~**L'arbitro**~~ — ✅ **verificato il 29/10: no.** football-data lo pubblica solo per E0, E1 e SC0 | — |
 | 4 | **La misura `eu` contro `eu,uk`** sull'1X2: se la sola `eu` basta, libera **148 crediti al mese** | 2 crediti, un'ora |
 | 5 | **U3** — matrice dei risultati esatti e fair odds | 1 giorno |
 
@@ -191,7 +225,7 @@ state provate simulando uno user e un admin in una transazione annullata.
 | | |
 |---|---|
 | **le due automazioni non sono installate** | verificato il 23/10 con `launchctl`: **nessun agente**. Né l'orario (`aggiornamento-orario.plist`, solo risultati, zero crediti) né quello del martedì/venerdì (`aggiornamento.plist`). Due comandi ciascuno, in testa ai file |
-| **i falli e l'arbitro** | i due ingressi che la letteratura indica per i cartellini — il mercato dove il modello rende di più. I **falli** ESPN li dà già (`foulsCommitted`) e li buttiamo via, come i cartellini fino al 22/10. L'**arbitro** sta in football-data, ma ⚠️ **la colonna `Referee` non è stata verificata**: il 23/10 il DNS di quel sito era giù tutto il giorno |
+| ~~**i falli e l'arbitro**~~ | ✅ **29/10**: i falli sono in archivio (resta la misura), l'arbitro c'è solo in 3 campionati su 15 e si lascia stare. Era: i due ingressi che la letteratura indica per i cartellini — il mercato dove il modello rende di più. I **falli** ESPN li dà già (`foulsCommitted`) e li buttiamo via, come i cartellini fino al 22/10. L'**arbitro** sta in football-data, ma ⚠️ **la colonna `Referee` non è stata verificata**: il 23/10 il DNS di quel sito era giù tutto il giorno |
 | ~~**U2'**~~ | ✅ **raccolta accesa il 23/10** (`sql/40`, zero crediti: la chiamata era già quella). ⚠️ **Ma non si usa**: l'archivio viene da football-data, che la 3,5 non la pubblica, quindi non c'è un passato su cui misurare se migliori il consiglio come ha fatto il 2,5. `MERCATO_35 = false` finché le partite raccolte non bastano — la query per misurarlo sta in `note/gol.md`. ⚠️ Giro completo lanciato il 23/10 (51 crediti, autorizzati): **89 partite su 246 hanno la 3,5, il 36%** — più del 23% atteso. Champions 17, Eredivisie 15, Bundesliga 15 |
 | **il routing** | era *"da fare prima di aggiungere schermate nuove"*, e da allora ne sono arrivate tre: Bet Builder, le due card dei conteggi, la barra dei campionati. Più si aspetta, più si ricabla |
 | **Europa e Conference senza quote** | The Odds API non ha **nessuna** partita futura per loro (ricontrollato il 23/10): accenderle costerebbe crediti per zero righe. Le voci sono pronte e commentate in `lib/odds-api.js` |

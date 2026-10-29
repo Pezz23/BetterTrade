@@ -85,13 +85,44 @@ scritto accanto** che una media lunga e falsa.
 stagioni vecchie ESPN non ha il riepilogo, e una media su righe vuote sarebbe
 uno zero travestito da dato.
 
+## ⚠️⚠️ La verifica sulle partite vere — ottobre 2026 (29/10)
+
+Mattia: *"gli indicatori cartellini e calci d'angolo sbagliano quasi sempre
+nelle partite che ho guardato"*. Rifatto il conto su **423 partite giocate
+dal 1/10/2026**, con la stessa formula della scheda (`atteso`,
+`sogliaCentrale`, `pOltre`) e **solo i dati precedenti** a ogni partita:
+
+| | angoli | cartellini |
+|---|---|---|
+| probabilità media data all'over della soglia | 48% | 46% |
+| over uscito davvero | 49% | 47% |
+| verso giusto | **53,7%** | **52,0%** |
+| partite «decise» (≥60% o ≤40%) | 2 | 91, giuste il **59%** |
+
+**Le probabilità sono tarate, il modello non è rotto: non sa quasi niente.**
+⚠️⚠️ **E il difetto è di presentazione**: la card sceglie la soglia **più
+vicina al totale atteso**, cioè per costruzione quella dove il modello sta
+intorno al 50%. «O 9,5 · 52%» si legge *"gioca over 9,5"*, e l'over esce meno
+di metà delle volte: letto così, sbaglia più di quanto indovina — è
+esattamente quello che Mattia ha visto. Sugli angoli la card è stata incerta
+in **421 partite su 423**. Proposta (non ancora decisa): via la soglia dalla
+testata, angoli solo descrittivi, cartellini col verso **solo** dove il
+modello è deciso e la misura coi falli dice che regge.
+
 ## Quello che manca, e da dove viene
 
 La letteratura (Kruse & Maennig) indica **arbitro, derby e fattore campo** come
 i fattori dei cartellini. Il fattore campo c'è già. Mancano:
 
-- **i falli** — ESPN li dà (`foulsCommitted`) in ogni riepilogo e **li
-  buttiamo via**, esattamente com'era per i cartellini fino al 22/10/2026.
-  Sono il meccanismo che produce il giallo;
-- **l'arbitro** — football-data ha la colonna `Referee` e non la importiamo.
-  ⚠️ Non verificata: il 23/10 il DNS di quel sito era giù tutto il giorno.
+- **i falli** — ✅ **in archivio dal 29/10/2026** (`sql/47`, colonne
+  `falli_casa`/`falli_trasf`): football-data li pubblicava (`HF`/`AF`) in
+  tutti e quindici i campionati e in ogni stagione, nello stesso file dei
+  cartellini, ed ESPN li manda (`foulsCommitted`). **50.683 partite**
+  riempite con `recupera-falli.js`, che tocca solo quelle due colonne. Coppe,
+  Olanda 2 e Giappone vengono solo da ESPN: da lì solo le partite nuove, il
+  recupero dello storico (~13.500, ore) si fa **se la misura dice che
+  servono**. ⚠️ **Non ancora misurati**: nessuno sa se migliorino i
+  cartellini, e finché la misura non c'è non entrano nella scheda;
+- **l'arbitro** — ⛔ **verificato il 29/10: football-data lo pubblica solo
+  per Premier, Championship e Scozia** (`Referee` vuota negli altri dodici,
+  in ogni stagione). Tre campionati su quindici: lasciato stare.
