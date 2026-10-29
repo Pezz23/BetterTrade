@@ -34,7 +34,7 @@ const daFare = await sql`
 console.log(ESEGUI ? '── ESECUZIONE\n' : '── PROVA A VUOTO — nessuna scrittura. Aggiungi --esegui per procedere.\n');
 console.log(`  partite future già giocate e non ancora collegate: ${daFare.length}\n`);
 
-const collegate = [], rinviate = [], nonTrovate = [], quoteDiverse = [];
+const collegate = [], rinviate = [], nonTrovate = [], quoteDiverse = [], doppioni = [];
 
 for (const p of daFare) {
   // Prima la data esatta, poi i giorni vicini (rinvii).
@@ -47,6 +47,16 @@ for (const p of daFare) {
                       and data between ${p.data}::date - 7 and ${p.data}::date + 7
                     order by abs(data - ${p.data}::date) limit 1`;
     rinviata = !!m;
+    // ⚠️⚠️ **Il doppione di un rinvio** (29/10/2026). Se in calendario c'è
+    // ANCHE la riga con la data vera, questa è la fotografia della data
+    // vecchia rimasta indietro (prima di `lib/rinvii.js` un rinvio creava una
+    // riga nuova): collegarle tutte e due metterebbe la stessa partita due
+    // volte in Storico. Si collega quella con la data giusta, e questa no.
+    if (m) {
+      const [vera] = await sql`select id from prossime_partite
+        where div=${p.div} and casa=${p.casa} and trasferta=${p.trasferta} and data=${m.data} and id <> ${p.id}`;
+      if (vera) { doppioni.push({ ...p, partita: m, vera: vera.id }); continue; }
+    }
   }
   if (!m) { nonTrovate.push(p); continue; }
 
@@ -76,6 +86,10 @@ if (rinviate.length) {
   console.log(`\n  ↻ trovate a una data diversa — rinviate (${rinviate.length}):`);
   for (const v of rinviate) console.log(`      ${fmt(v)} → giocata il ${v.partita.data.toISOString().slice(0, 10)}  ${ris(v.partita)}`);
 }
+if (doppioni.length) {
+  console.log(`\n  ⧉ doppioni di un rinvio, NON collegati (${doppioni.length}) — la riga con la data vera è un'altra:`);
+  for (const v of doppioni) console.log(`      ${fmt(v)} → giocata il ${v.partita.data.toISOString().slice(0, 10)}, riga giusta ${v.vera}`);
+}
 if (quoteDiverse.length) {
   console.log(`\n  ⚠️  quote viste diverse da quelle registrate oltre il ${TOLLERANZA_QUOTE * 100}% (${quoteDiverse.length}):`);
   for (const v of quoteDiverse) console.log(`      ${fmt(v)} segno ${v.peggiore.s}: vista ${v.peggiore.nostra}, registrata ${v.peggiore.loro} (${(v.peggiore.diff * 100).toFixed(1)}%)`);
@@ -88,6 +102,7 @@ if (nonTrovate.length) {
 }
 
 const fedeli = collegate.length + rinviate.length - quoteDiverse.length;
-console.log(`\n  riepilogo: ${collegate.length + rinviate.length} collegate (${fedeli} con quote fedeli), ${nonTrovate.length} in attesa`);
+console.log(`\n  riepilogo: ${collegate.length + rinviate.length} collegate (${fedeli} con quote fedeli), ${nonTrovate.length} in attesa` +
+  (doppioni.length ? `, ${doppioni.length} doppioni lasciati scollegati` : ''));
 if (!ESEGUI && daFare.length) console.log('  (nessuna scrittura: rilancia con --esegui per salvare i collegamenti)');
 await chiudi();

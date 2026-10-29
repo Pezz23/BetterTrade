@@ -23,6 +23,7 @@ import { scaricaDaFootballData } from '../lib/rete.js';
 // senza la conversione tutto il calendario risultava indietro di un'ora
 // (trovato da Mattia il 23/10/2026). Il perché sta in `lib/date.js`.
 import { daInglese } from '../lib/date.js';
+import { spostaRinviate, descriviSpostamenti } from '../lib/rinvii.js';
 
 const ESEGUI = process.argv.includes('--esegui');
 
@@ -88,6 +89,11 @@ if (righe.length) {
     console.log(`  ${r.div.padEnd(4)} ${r.data} ${(r.ora || '     ')}  ${(r.casa + ' - ' + r.trasferta).padEnd(36)} b365 ${r.b365_1}/${r.b365_x}/${r.b365_2}  ${ex}`);
   }
 }
+
+// ⚠️ Una partita rinviata si SPOSTA alla data nuova invece di nascere due
+// volte: la chiave contiene la data (29/10/2026, `lib/rinvii.js`).
+const spostate = await spostaRinviate(sql, righe, { esegui: ESEGUI });
+if (spostate.length) console.log(`\n  rinviate (${spostate.length}):\n${descriviSpostamenti(spostate).join('\n')}`);
 
 if (!ESEGUI || !righe.length) { await chiudi(); process.exit(0); }
 

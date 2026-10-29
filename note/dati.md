@@ -405,5 +405,22 @@ punta alla riga di `partite`. Non si sposta e non si cancella: la futura resta
 la fotografia di cosa si vedeva prima, e il confronto con le quote registrate
 dice se era fedele. Tutto in un comando: `scripts/aggiorna.js --esegui`.
 
+⚠️⚠️ **Una partita rinviata si SPOSTA, non si raddoppia** (29/10/2026). La
+chiave di `prossime_partite` è `(div, data, casa, trasferta)`: quando una
+partita cambiava giorno l'upsert creava una riga nuova e lasciava la vecchia,
+e finché tutt'e due le date erano future la stessa partita compariva **due
+volte** in Partite, spin e Builder (Paris SG-Lyon, Toulouse-Troyes,
+Montpellier-Red Star, 24/10). Ora i due import chiamano `lib/rinvii.js`
+**prima** dell'upsert, e la riga vecchia si porta alla data nuova — spostata e
+non cancellata, così stelline, flag e gambe restano attaccate al suo `id`.
+Si sposta solo se è non giocata, futura, entro 21 giorni, **dentro il periodo
+del file e assente dal file**: se la fonte elenca tutt'e due le date sono due
+partite vere (la Scozia dopo la divisione in gironi). E
+`riconcilia-prossime.js` **non collega** una riga vecchia se c'è anche quella
+con la data vera: altrimenti la partita finiva due volte in Storico.
+⚠️ **Resta scoperto il rinvio "a data da destinarsi"**: la partita sparisce
+dal file senza una data nuova, e la riga vecchia resta in calendario finché
+la data non passa.
+
 ---
 

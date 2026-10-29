@@ -41,6 +41,7 @@ import { CAMPIONATI } from './import-storico.js';
 // farebbe cercare un CSV che non esiste. Il nome sta dov'è la competizione.
 import { COMPETIZIONI } from '../lib/espn.js';
 import { dataOraItaliana } from '../lib/date.js';
+import { spostaRinviate, descriviSpostamenti } from '../lib/rinvii.js';
 
 const ESEGUI = process.argv.includes('--esegui');
 // Un campionato per volta: ogni chiamata costa un credito, e quando il DNS ne
@@ -196,6 +197,11 @@ if (sconosciute.size) {
 const soloEspn = new Set(Object.keys(COMPETIZIONI));
 const gravi = [...sconosciute.keys()].filter(k => !soloEspn.has(k.split('|')[0]));
 if (sconosciute.size && !gravi.length) console.log('  (tutte in competizioni ESPN: la routine prosegue)');
+// ⚠️ Una partita rinviata si SPOSTA alla data nuova invece di nascere due
+// volte: la chiave contiene la data (29/10/2026, `lib/rinvii.js`). Si
+// guardano solo i campionati presi in questo giro: uno caduto non sposta niente.
+const spostate = await spostaRinviate(sql, righe, { esegui: ESEGUI });
+if (spostate.length) console.log(`\n  rinviate (${spostate.length}):\n${descriviSpostamenti(spostate).join('\n')}`);
 if (!ESEGUI || !righe.length) { await chiudi(); process.exit(gravi.length ? 1 : 0); }
 
 const COL = ['div', 'campionato', 'data', 'ora', 'casa', 'trasferta', 'fonte',
