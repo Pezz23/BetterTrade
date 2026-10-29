@@ -62,6 +62,15 @@ if (!eRpc) {
 const { data: upd } = await N.s.from('users').update({ bankroll: 99999 }).eq('id', N.me.id).select();
 esito(false, !!(upd && upd.length), 'scrive users.bankroll a mano');
 
+// ⚠️ La griglia delle spin (lotto 2, 29/10/2026): da quando le pagine hanno un
+// indirizzo, `/slot` e `/provvisorie` si possono digitare anche da utente
+// normale. La pagina lo rimanda alla Dashboard, ma a proteggere è
+// `griglia_write` (sql/02): qui si prova che **scrivere** è negato, non solo
+// che leggere è permesso. ⚠️ `.select()` perché RLS blocca **in silenzio**:
+// senza, un update respinto torna senza errore e sembrerebbe riuscito.
+const { data: gUpd } = await N.s.from('griglia').update({ updated_at: new Date().toISOString() }).eq('id', 1).select();
+esito(false, !!(gUpd && gUpd.length), 'scrive la griglia delle spin');
+
 // ⚠️ `andamento` (sql/21) non si scrive dall'app da nessun ruolo: la riempie
 // `btscout/scripts/calcola-andamento.js` con la service_role. C'è la sola
 // policy di lettura, e la prova serve a non scoprirlo fra sei mesi.

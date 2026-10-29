@@ -1,11 +1,12 @@
-import { useState, useMemo } from 'react'
+import { useMemo, useCallback } from 'react'
 import { usaProssime } from '../hooks/usaProssime'
 import { usaVpm } from '../hooks/usaVpm'
 import { C, F, S } from '../theme'
 import { Card, Etichetta } from '../components/ui'
 import RigaPartita, { CATEGORIE } from '../components/RigaPartita'
-import SchedaScorrevole from '../components/SchedaScorrevole'
-import DettaglioPartita from '../components/DettaglioPartita'
+import SchedaPartita from '../components/SchedaPartita'
+import { vai } from '../lib/indirizzi'
+import { usaPercorso } from '../hooks/usaPercorso'
 import { categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
 import { valutaPartita } from '../lib/vpm'
 
@@ -20,15 +21,15 @@ import { valutaPartita } from '../lib/vpm'
 export default function VotatePage() {
   const { righe, vota, votiDi, votiTipiDi, mioVoto, caricamento, errore } = usaProssime()
   const datiVpm = usaVpm()
-  const [apertaId, setApertaId] = useState(null)
+  // La partita aperta sta nell'indirizzo (`/votate/123`, lotto 2, 29/10/2026).
+  const apertaId = usaPercorso().split('/')[2] || null
+  const apri = useCallback(id => vai(`/votate/${id}`), [])
 
   // Prima le più votate, poi per attendibilità. (Era lo stesso ordine della
   // griglia "con le stelline" delle spin, che dal 24/10/2026 parte vuota.)
   const votate = useMemo(
     () => righe.filter(r => votiDi(r.id) > 0).sort((a, b) => votiDi(b.id) - votiDi(a.id) || b.probGiocata - a.probGiocata),
     [righe, votiDi])
-
-  const aperta = righe.find(r => r.id === apertaId)
 
   // ⚠️ VPM una volta per partita, come nella pagina Partite: nel `map` del JSX
   // girava a ogni ridisegno per ogni riga, ed è il calcolo più grosso dell'app.
@@ -78,17 +79,12 @@ export default function VotatePage() {
                girava a ogni ridisegno, per ogni riga. */
             vpm={vpmDi.get(p.id) ?? null}
             voti={votiTipiDi(p.id)} mio={mioVoto(p.id)} puoVotare onVota={vota}
-            onApri={setApertaId} />
+            onApri={apri} />
         ))}
       </div>
 
-      {aperta && (
-        <SchedaScorrevole onChiudi={() => setApertaId(null)}>
-          <DettaglioPartita p={aperta} cat={categoria(aperta.probGiocata, SOGLIE_DEFAULT)}
-            voti={votiTipiDi(aperta.id)} mio={mioVoto(aperta.id)} puoVotare
-            onVota={() => vota(aperta.id)} onChiudi={() => setApertaId(null)} />
-        </SchedaScorrevole>
-      )}
+      <SchedaPartita id={apertaId} righe={righe} caricamento={caricamento} lista="/votate" soglie={SOGLIE_DEFAULT}
+        votiTipiDi={votiTipiDi} mioVoto={mioVoto} vota={vota} />
     </div>
   )
 }

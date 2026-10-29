@@ -164,3 +164,44 @@ export function usaProssime() {
 
   return { righe, voti, vota, votiDi, votiAdminDi, votiTipiDi, mioVoto, flag, flagga, flagDi, flagTipiDi, mioFlag, caricamento, errore, ricarica }
 }
+
+/**
+ * La partita di una scheda aperta **da un indirizzo** (`/partite/123`).
+ *
+ * ⚠️⚠️ **Un link mandato al gruppo scade** (lotto 2, 29/10/2026): la lista
+ * carica solo le partite da oggi in poi, quindi un link di venerdì aperto
+ * martedì non troverebbe la sua partita. La riga di `prossime_partite` però
+ * non si cancella mai: se non è nella lista la si chiede **per id**, e la
+ * scheda si apre lo stesso con i dati di allora, `passata` e il risultato
+ * quando c'è (scelta di Mattia).
+ * Torna `{ riga, passata, risultato, nonTrovata }`; `riga` è valutata con la
+ * stessa `valuta` della lista, quindi la scheda non vede differenze.
+ */
+export function usaPartitaAperta(id, righe, caricamento) {
+  const inLista = id ? righe.find(r => String(r.id) === id) : null
+  const [fuori, setFuori] = useState(null)    // { id, riga, risultato } o { id, nonTrovata }
+
+  useEffect(() => {
+    if (!id || inLista || caricamento || fuori?.id === id) return
+    let vivo = true
+    ;(async () => {
+      const { data, error } = await supabase.from('prossime_partite').select(`${COLONNE}, partita_id`).eq('id', id).maybeSingle()
+      if (!vivo) return
+      if (error || !data) { setFuori({ id, nonTrovata: true }); return }
+      let risultato = null
+      if (data.partita_id) {
+        const { data: g } = await supabase.from('partite').select('gol_casa, gol_trasferta').eq('id', data.partita_id).maybeSingle()
+        if (g?.gol_casa != null) risultato = `${g.gol_casa}-${g.gol_trasferta}`
+      }
+      // ⚠️ «Passata» dalla DATA, non dall'assenza in lista: una partita futura
+      // può mancare dalla lista anche solo perché non ha il consenso.
+      if (vivo) setFuori({ id, riga: valuta(data), risultato, passata: String(data.data).slice(0, 10) < oggiLocale() })
+    })()
+    return () => { vivo = false }
+  }, [id, inLista, caricamento, fuori?.id])
+
+  if (!id) return { riga: null }
+  if (inLista) return { riga: inLista, passata: false }
+  if (fuori?.id !== id) return { riga: null }
+  return fuori.nonTrovata ? { riga: null, nonTrovata: true } : { riga: fuori.riga, passata: fuori.passata, risultato: fuori.risultato }
+}

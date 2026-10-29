@@ -4,8 +4,9 @@ import { usaVpm } from '../hooks/usaVpm'
 import { C, F, alpha, S, R } from '../theme'
 import { Card, Etichetta, TastoRipeti, stileCard } from '../components/ui'
 import RigaPartita, { CATEGORIE, giorno } from '../components/RigaPartita'
-import SchedaScorrevole from '../components/SchedaScorrevole'
-import DettaglioPartita from '../components/DettaglioPartita'
+import SchedaPartita from '../components/SchedaPartita'
+import { vai } from '../lib/indirizzi'
+import { usaPercorso } from '../hooks/usaPercorso'
 import { categoria, FINESTRE, SOGLIE_DEFAULT } from '../lib/attendibilita'
 import { etichetta, sigla } from '../lib/campionati'
 import BarraCampionati, { LARGHEZZA_BARRA } from '../components/BarraCampionati'
@@ -106,14 +107,18 @@ export default function PartitePage() {
   const [ordine, setOrdine] = useState(ORDINE_DEFAULT)
   const [crescente, setCrescente] = useState(false)   // secondo tocco: si inverte
   const [pannello, setPannello] = useState(false)   // i filtri, chiusi di default
-  const [apertaId, setApertaId] = useState(null)    // la partita aperta a tutto schermo
+  // ⚠️⚠️ **La partita aperta sta nell'INDIRIZZO** (`/partite/123`, lotto 2,
+  // 29/10/2026): così si condivide, sopravvive al ricaricamento e il tasto
+  // indietro del telefono la chiude.
+  const apertaId = usaPercorso().split('/')[2] || null
 
   // Lo scorrimento non si salva più: da quando la scheda è un foglio sopra la
   // lista (SchedaScorrevole), la lista non viene smontata e il punto resta suo.
   // ⚠️ Le righe sono `memo`, quindi quello che si passa deve restare lo stesso
-  // fra un ridisegno e l'altro: `setApertaId` di `useState` è stabile per
-  // costruzione, un `id => setApertaId(id)` scritto qui **no** — ed è il modo
-  // di annullare il `memo` senza accorgersene.
+  // fra un ridisegno e l'altro: `apri` è un `useCallback` senza dipendenze
+  // (`vai` è del modulo), un `id => vai(…)` scritto nel JSX **no** — ed è il
+  // modo di annullare il `memo` senza accorgersene.
+  const apri = useCallback(id => vai(`/partite/${id}`), [])
 
   // Per il menu a tendina: "I1 – Serie A"
   const campionati = useMemo(() => {
@@ -251,7 +256,7 @@ export default function PartitePage() {
 
   // La scheda di una partita prende tutta la pagina: sul telefono è l'unico
   // modo di leggerla, e la lista resta dov'era quando si torna indietro.
-  const aperta = righe.find(r => r.id === apertaId)
+  // (La scheda è `SchedaPartita`, in fondo: trova anche le partite passate.)
 
 
   return (
@@ -533,7 +538,7 @@ export default function PartitePage() {
           <RigaPartita key={p.id} p={p} cat={categoria(p.probGiocata, soglie)}
             vpm={vpmDi.get(p.id) ?? null}
             voti={votiTipiDi(p.id)} mio={mioVoto(p.id)} puoVotare onVota={vota}
-            onApri={setApertaId} />
+            onApri={apri} />
         ))}
       </div>
 
@@ -549,17 +554,12 @@ export default function PartitePage() {
           qualcosa. Non è una probabilità e non entra nella scelta delle spin: serve a vedere dove mercato e campo litigano.
           Il <b style={{ color: C.fioco }}>Grado</b> da 1 a 10 dice quanto conviene: 70% la resa (quota × probabilità), 30% quanto paga la quota.
           La quota è di <b style={{ color: C.fioco }}>Codere</b> quando c'è; altrimenti Bet365, altrimenti la massima sul mercato — sotto ogni quota c'è scritto quale.
-          Gli orari sono quelli del Regno Unito.
+          Gli orari sono italiani.
         </div>
       )}
 
-      {aperta && (
-        <SchedaScorrevole onChiudi={() => setApertaId(null)}>
-          <DettaglioPartita p={aperta} cat={categoria(aperta.probGiocata, soglie)}
-            voti={votiTipiDi(aperta.id)} mio={mioVoto(aperta.id)} puoVotare
-            onVota={() => vota(aperta.id)} onChiudi={() => setApertaId(null)} />
-        </SchedaScorrevole>
-      )}
+      <SchedaPartita id={apertaId} righe={righe} caricamento={caricamento} lista="/partite" soglie={soglie}
+        votiTipiDi={votiTipiDi} mioVoto={mioVoto} vota={vota} />
     </div>
   )
 }

@@ -8,19 +8,22 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 29 ottobre 2026 · app alla versione **1.65.00**
-(`4abf288`) · passaggio di consegne: 29/10, fine giornata · pushato fino a `4abf288`,
-⚠️ **da pushare** solo il commit di questo passaggio di consegne
+**Ultimo aggiornamento:** 29 ottobre 2026 · app alla versione **1.66.00**
+(routing, vedi git) · passaggio di consegne: 29/10, sera · ⚠️ **da pushare** i commit del routing e dei documenti — e dopo il push si guarda su Vercel un ricaricamento su `/partite` (è `app/vercel.json` a evitare il 404)
 
 ## ▶️ DOVE SIAMO — 29 ottobre 2026, leggi questo per primo
 
-**Il 29/10 si sono chiusi i lotti 0, 1 e 3** (il dettaglio nella tabella
+**Il 29/10 si sono chiusi i lotti 0, 1, 2 e 3** (il dettaglio nella tabella
 qui sotto e in «Cos'è cambiato»):
 - **lotto 0** — le partite rinviate **si spostano** invece di raddoppiare
   (`btscout/lib/rinvii.js`), provato dal vero nell'aggiornamento del 29/10;
 - **lotto 1** — i falli in archivio (misurati: **non** aiutano) e la
   **versione 2 di angoli e cartellini** nella scheda (quote dei gol,
   binomiale negativa, **derby**), più l'etichetta **DERBY**;
+- **lotto 2** — **il routing**: ogni pagina ha il suo indirizzo, la scheda
+  di una partita è `/partite/:id` e un link scaduto si apre con «GIÀ
+  GIOCATA» (`lib/indirizzi.jsx`, niente libreria). Provato da Mattia in
+  `npm run dev`;
 - **lotto 3** — l'arbitro: **no**, football-data lo dà solo per 3 campionati;
 - fuori lotto: **l'ora delle partite nel CSV di Andamento** (`partite.ora`).
 
@@ -57,6 +60,7 @@ Il 24/10, in ordine:
 | **Le stelline a tutti** (29/10): oro admin, blu user in un tasto solo; nelle Spin contano solo quelle degli admin, in Road to weekend e Builder tutte (`sql/46`) | `1.64.00` | `4ce1619` |
 | **Le partite rinviate non si raddoppiano più** (29/10, lotto 0): gli import **spostano** la riga vecchia alla data nuova (`btscout/lib/rinvii.js`), la riconciliazione non collega il doppione | motore | `1569c0e` |
 | **L'ora delle partite nel CSV di Andamento** (29/10): `partite.ora` (`sql/48`), ora italiana da football-data dalla 2019/20 — 38.376 partite con `recupera-da-csv.js`, che ora riempie falli **e** ora. ⚠️ A margine: **455 vecchie righe di `prossime_partite`** (già giocate, prima del 23/10) hanno ancora l'ora **inglese** — la correzione del fuso non le aveva toccate. Non si vedono da nessuna parte; l'archivio ha quella giusta | `1.64.01` | `02ad162` |
+| **Il routing** (29/10, lotto 2): ogni pagina ha un indirizzo (`/partite`, `/scalata`…, Dashboard `/`), la scheda è `/partite/:id` e `/votate/:id` (`components/SchedaPartita.jsx`), un link scaduto si apre con «GIÀ GIOCATA» e il risultato (`usaPartitaAperta`), indirizzo sconosciuto o solo-admin → Dashboard. Senza libreria: `lib/indirizzi.jsx` + `hooks/usaPercorso.js`; `app/vercel.json` per Vercel; `guarda.mjs` cerca `link`; `prova-permessi.js` prova che un user **non scrive** la griglia (verificato con sessione simulata). A margine: «Gli orari sono quelli del Regno Unito» in Partite → «italiani» | `1.66.00` | vedi git |
 | **Angoli e cartellini, VERSIONE 2 nella scheda** (29/10): quote dei gol di apertura + binomiale negativa + **derby** sui cartellini, dall'articolo di Yip e altri (2024). Log score contro la frequenza della lega: angoli **−0,67% → +0,55%**, cartellini **+0,86% → +1,85%**. Nuovi: `prova-conteggi-v2.js`, `lib/derby.js` (etichetta **DERBY** nella scheda; nei derby i gialli sono ×1,21). **ANGOLI/GIALLI tornano nella testata** coi numeri della v2 (Mattia: *"dovevi studiare un metodo più attendibile, non toglierlo"*). Dettaglio in `note/conteggi.md`. provata da Mattia in `npm run dev` | `1.65.00` | `4abf288` |
 | **La misura dei falli: no** (29/10): cartellini +1,18 punti oggi, −0,09 coi falli, +1,25 misti — rumore; angoli: nessuna variante (tiri, tiri in porta, finestra) supera +0,8. `prova-conteggi.js --riassunto` con la base delle decise accanto. **Tolto «ANGOLI/GIALLI O 9,5 · 52%» dalla testata della scheda**; le due card restano, e Mattia vuole **migliorare l'algoritmo** (ricerca in corso) | `1.64.02` | `e6fdd96` |
 | **I falli in archivio** (29/10, lotto 1, prima metà): `sql/47`, **50.683 partite** dai CSV di football-data con `recupera-da-csv.js`; gli import di football-data ed ESPN li scrivono da qui in avanti | motore | `7382c6d` |
@@ -133,14 +137,14 @@ sul telefono non si distingueva il lavoro di oggi dalla cache di ieri.
 
 Nessuna di queste è stata promessa a Mattia: **si propone e decide lui.**
 Chiusi il 29/10: lotto 0 (rinvii), lotto 1 (falli, angoli e cartellini v2,
-derby), lotto 3 (arbitro: no). L'ordine consigliato a Mattia a fine giornata:
-**6 → 2 → 4**.
+derby), lotto 2 (routing), lotto 3 (arbitro: no). L'ordine consigliato:
+**6 → 4**.
 
 | | cosa | costo |
 |---|---|---|
 | 00 | **Un giro dell'app pubblicata sul telefono** dopo il push (1.65.00): Spin, Road to weekend con una ricarica, un flag da admin e uno da user, una scheda con angoli/gialli e un derby. E `prova-permessi.js`, che dal 24/10 si aspetta i flag anche dagli utenti — vuole le password, quindi lo lancia Mattia | dieci minuti |
 | 6 | **L'automazione** — i due `.plist` (`aggiornamento.plist` martedì/venerdì, `aggiornamento-orario.plist` solo risultati, zero crediti) **non sono installati**: oggi i dati si aggiornano solo quando Mattia lo chiede. Due comandi ciascuno, in testa ai file. ⚠️ Con **55 crediti** rimasti il giro del martedì/venerdì ne può fare **uno** fino al rinnovo | dieci minuti |
-| 2 | **Il routing** — era *"da fare prima di aggiungere schermate nuove"* e da allora ne sono arrivate tre. Vuole mezza giornata in cui non si aggiunge niente | mezza giornata |
+| ~~2~~ | ~~**Il routing**~~ — ✅ **fatto il 29/10** (`1.66.00`) | — |
 | 4 | **La misura `eu` contro `eu,uk`** sull'1X2: se la sola `eu` basta, libera **148 crediti al mese** — ⚠️ più urgente da quando ne restano 55 | 2 crediti, un'ora |
 | 5 | **U3** — matrice dei risultati esatti e fair odds | 1 giorno |
 | 8 | **Fonti nuove**: xG da FBref (U4), il live (U5) | da stimare |
@@ -240,7 +244,7 @@ state provate simulando uno user e un admin in una transazione annullata.
 | **le due automazioni non sono installate** | verificato il 23/10 con `launchctl`: **nessun agente**. Né l'orario (`aggiornamento-orario.plist`, solo risultati, zero crediti) né quello del martedì/venerdì (`aggiornamento.plist`). Due comandi ciascuno, in testa ai file |
 | ~~**i falli e l'arbitro**~~ | ✅ **29/10**: i falli sono in archivio (resta la misura), l'arbitro c'è solo in 3 campionati su 15 e si lascia stare. Era: i due ingressi che la letteratura indica per i cartellini — il mercato dove il modello rende di più. I **falli** ESPN li dà già (`foulsCommitted`) e li buttiamo via, come i cartellini fino al 22/10. L'**arbitro** sta in football-data, ma ⚠️ **la colonna `Referee` non è stata verificata**: il 23/10 il DNS di quel sito era giù tutto il giorno |
 | ~~**U2'**~~ | ✅ **raccolta accesa il 23/10** (`sql/40`, zero crediti: la chiamata era già quella). ⚠️ **Ma non si usa**: l'archivio viene da football-data, che la 3,5 non la pubblica, quindi non c'è un passato su cui misurare se migliori il consiglio come ha fatto il 2,5. `MERCATO_35 = false` finché le partite raccolte non bastano — la query per misurarlo sta in `note/gol.md`. ⚠️ Giro completo lanciato il 23/10 (51 crediti, autorizzati): **89 partite su 246 hanno la 3,5, il 36%** — più del 23% atteso. Champions 17, Eredivisie 15, Bundesliga 15 |
-| **il routing** | era *"da fare prima di aggiungere schermate nuove"*, e da allora ne sono arrivate tre: Bet Builder, le due card dei conteggi, la barra dei campionati. Più si aspetta, più si ricabla |
+| ~~**il routing**~~ | ✅ **fatto il 29/10** (`1.66.00`). Era: *"da fare prima di aggiungere schermate nuove"*, e da allora ne sono arrivate tre: Bet Builder, le due card dei conteggi, la barra dei campionati. Più si aspetta, più si ricabla |
 | **Europa e Conference senza quote** | The Odds API non ha **nessuna** partita futura per loro (ricontrollato il 23/10): accenderle costerebbe crediti per zero righe. Le voci sono pronte e commentate in `lib/odds-api.js` |
 | **l'esito automatico del Bet Builder** | ✅ **sbloccato il 26/10**: la regola *"questa giocata è arrivata"* è stata **spostata** in `app/src/lib/esito.js` (`giocataArrivata`) per il resoconto delle scalate, e il motore la importa da lì. Resta da usarla nel Builder |
 | ~~**tre partite rinviate DOPPIE in `prossime_partite`**~~ | ✅ **chiuso il 29/10**: i due import **spostano** la riga vecchia alla data nuova (`btscout/lib/rinvii.js`) e la riconciliazione non collega più il doppione (dettaglio in `note/dati.md`). Le tre righe vecchie del 24-25/10 restano, ormai passate, e la riconciliazione le lascia scollegate. Era:  trovate il 24/10: Paris SG-Lyon (25 e 26/10), Toulouse-Troyes (24 e 25), Montpellier-Red Star (24 e 26) — resta la riga con la data vecchia. Possono entrare due volte nella stessa spin e nel Builder. Da guardare in `riconcilia-prossime` / importazione, **prima** di cancellare qualcosa: `prossime_partite` non si cancella a mano (`note/dati.md`) |
@@ -262,7 +266,7 @@ state provate simulando uno user e un admin in una transazione annullata.
 | # | lotto | stato |
 |---|---|---|
 | **2** | **Le quattro rifiniture** (idee 2 · 4 · 5 · 7) | ✅ **fatto il 22/10** (`a542cf9`), più la testata rifatta su tre righe (`a095ce0`) e il difetto che Mattia ha fotografato nei filtri (`6bf1468`) |
-| **3** | **Gli indirizzi delle pagine** (lotto Q, routing) | da fare — **prima di aggiungere schermate nuove**, o si ricablano dopo. E toglie la trappola della mappa di `guarda.mjs` |
+| **3** | **Gli indirizzi delle pagine** (lotto Q, routing) | ✅ **fatto il 29/10/2026** (`1.66.00`, lotto «2» nella lista di ripartenza). Era: da fare — **prima di aggiungere schermate nuove**, o si ricablano dopo. E toglie la trappola della mappa di `guarda.mjs` |
 | **4** | ✅ **La schedina a schermo — fatta il 22/10 come 🎟️ BET BUILDER** (`sql/36`): schedine a quota obiettivo, private per utente, con «giocata» e «cancella», e le partite già usate escluse dalle successive. ⚠️ **Resta aperta solo l'idea 9**: `CompilaPerQuota` riempie le caselle **vuote** di una spin — va capito con Mattia se voleva compilarne una **intera**. |
 | **5** | **La barra dei campionati** (idea 3) | ✅ **fatta il 22/10 sera** (`6bf18ae`), anticipata da Mattia prima del routing. La domanda *"cosa si restringe"* ha avuto risposta: **niente** — lo spazio si **riserva** (40px di margine a destra) invece di lasciar galleggiare la striscia sopra la lista |
 | **6** | **L'automazione** (lotto F) | ⚠️ Ora i `.plist` sono **due** e **nessuno dei due è installato** (verificato con `launchctl` il 23/10): `aggiornamento.plist` (martedì/venerdì, la routine intera) e `aggiornamento-orario.plist` (solo i risultati da ESPN, **zero crediti**). Due comandi ciascuno, scritti in testa ai file |
@@ -832,7 +836,9 @@ lavoro quindi non è inventare il criterio — **è portarlo a schermo**, e il
 calcolo sta già in `src/lib/`, cioè è usabile dal browser senza riscriverlo.
 
 
-## 🔵 Lotto Q — URL veri per le pagine (routing)
+## ✅ Lotto Q — URL veri per le pagine (routing) — FATTO il 29/10/2026
+*Fatto senza libreria router, con le decisioni di Mattia: link scaduto → si apre con «GIÀ GIOCATA»; pagina solo-admin → Dashboard. Le regole in `note/interfaccia.md`. Il testo qui sotto è la valutazione del 12/10.*
+
 *Da un briefing del secondo cervello: `briefing/2026-10-12-routing-v1.0.md`.
 Valutato il 12/10/2026, **non sviluppato**: la risposta completa sta in
 `briefing/risposte/2026-10-12-routing-v1.0-risposta.md`.*

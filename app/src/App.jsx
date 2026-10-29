@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
@@ -6,6 +6,8 @@ import { C, F, alpha, S, SP, R } from './theme'
 import Icona from './components/Icona'
 import { COLONNA } from './lib/layout'
 import { VERSIONE } from './versione'
+import { vai, Collegamento } from './lib/indirizzi'
+import { usaPercorso } from './hooks/usaPercorso'
 
 // ⚠️⚠️ **Ogni pagina è un pezzo a parte, scaricato quando la apri** (21/10/2026).
 // Prima stavano tutte in un file solo da **437 kB**: aprendo l'app si
@@ -89,6 +91,14 @@ const VOCI_MENU = [
   { id:'importazioni',label:'Importazioni',     icona:'importazioni', desc:'Partite da ESPN che non si agganciano da sole' },
 ]
 
+// ⚠️⚠️ **Ogni pagina ha il suo indirizzo** (29/10/2026, lotto 2): `/partite`,
+// `/scalata`, `/andamento`…, la Dashboard è `/`. L'id della pagina È il
+// percorso, così l'elenco delle pagine resta uno solo (`TABS_BASE` +
+// `VOCI_MENU`). Il perché e le regole in `lib/indirizzi.jsx`.
+const percorsoDi = id => (id === 'dashboard' ? '/' : `/${id}`)
+const PAGINE = new Set([...TABS_BASE, ...VOCI_MENU].map(v => v.id))
+const SOLO_ADMIN = new Set([...TABS_BASE, ...VOCI_MENU].filter(v => v.soloAdmin).map(v => v.id))
+
 /**
  * ⚠️⚠️ **Quanto spazio resta sotto l'etichetta della tab bar.** Non è una
  * spaziatura come le altre, ed è il motivo per cui non viene da `SP`: è la
@@ -102,7 +112,7 @@ const VOCI_MENU = [
  */
 const SOTTO_BARRA = 20
 
-function TabBar({ active, onChange, isAdmin }) {
+function TabBar({ active, isAdmin }) {
   // ⚠️ Stesso filtro del menu: senza, un utente normale vedrebbe il tasto Spin
   // e finirebbe su una pagina che la RLS gli svuota. Con tre tasti invece di
   // quattro la barra si ridistribuisce da sola (`flex:1`).
@@ -118,7 +128,9 @@ function TabBar({ active, onChange, isAdmin }) {
       {tabs.map(t => {
         const on = t.id === active
         return (
-          <button key={t.id} onClick={()=>onChange(t.id)} aria-current={on ? 'page' : undefined} style={{
+          // ⚠️ `<a href>` vero e non un tasto (lotto 2): «apri in una nuova
+          // scheda» deve funzionare, e un tasto non ha un indirizzo.
+          <Collegamento key={t.id} a={percorsoDi(t.id)} aria-current={on ? 'page' : undefined} style={{
             // ⚠️⚠️ **Più alta del 15% e con il riempimento sbilanciato in
             // basso** (Mattia, 22/10/2026: *"è troppo bassa e rischio di
             // attivare Siri su iPhone quando clicco"*). Non è una questione di
@@ -143,7 +155,7 @@ function TabBar({ active, onChange, isAdmin }) {
               <Icona nome={t.icona} misura={S.icona} />
             </span>
             {t.label.toUpperCase()}
-          </button>
+          </Collegamento>
         )
       })}
       </div>
@@ -152,7 +164,7 @@ function TabBar({ active, onChange, isAdmin }) {
 }
 
 // ── Header ────────────────────────────────────────────────────────────────────
-function Menu({ aperto, onChiudi, onVai, attivo, isAdmin }) {
+function Menu({ aperto, onChiudi, attivo, isAdmin }) {
   const voci = VOCI_MENU.filter(v => !v.soloAdmin || isAdmin)
   return (
     <>
@@ -186,7 +198,7 @@ function Menu({ aperto, onChiudi, onVai, attivo, isAdmin }) {
           {voci.map(v => {
             const on = v.id === attivo
             return (
-              <button key={v.id} onClick={() => { onVai(v.id); onChiudi() }} aria-current={on ? 'page' : undefined} style={{
+              <Collegamento key={v.id} a={percorsoDi(v.id)} onClick={onChiudi} aria-current={on ? 'page' : undefined} style={{
                 display:'flex', alignItems:'center', gap:SP.xl, width:'100%', textAlign:'left',
                 padding:`${SP.l}px ${SP.xl}px`, borderRadius:R.g, cursor:'pointer', border:'none', marginBottom:2,
                 background: on ? alpha(C.oro, 0.1) : 'transparent',
@@ -201,7 +213,7 @@ function Menu({ aperto, onChiudi, onVai, attivo, isAdmin }) {
                   <div style={{ fontSize:S.grande, fontWeight:600, color: on ? C.oro : C.testo, fontFamily:F.sans }}>{v.label}</div>
                   <div style={{ fontSize:S.minuta, color:C.spento, fontFamily:F.sans, lineHeight:1.4 }}>{v.desc}</div>
                 </span>
-              </button>
+              </Collegamento>
             )
           })}
         </div>
@@ -280,8 +292,28 @@ function Header({ currentUser, onLogout, onMenu, menuAperto }) {
 // ── App Shell ─────────────────────────────────────────────────────────────────
 function AppShell() {
   const { currentUser, logout, isAdmin, booting } = useAuth()
-  const [tab, setTab] = useState('dashboard')
   const [menu, setMenu] = useState(false)
+  // La pagina È l'indirizzo: `/partite/123` è la pagina Partite con una
+  // scheda aperta, e la scheda la legge la pagina stessa.
+  const percorso = usaPercorso()
+  const richiesta = percorso.split('/')[1] || 'dashboard'
+  const ammessa = PAGINE.has(richiesta) && (!SOLO_ADMIN.has(richiesta) || isAdmin)
+  const tab = ammessa ? richiesta : 'dashboard'
+
+  // ⚠️ Un indirizzo che non esiste, o una pagina solo-admin aperta da un
+  // utente normale, **torna alla Dashboard** (scelta di Mattia, 29/10/2026) —
+  // e si corregge anche l'indirizzo, senza lasciarlo nella cronologia.
+  // ⚠️⚠️ **Solo dopo `booting`**: prima `isAdmin` non è ancora noto, e un
+  // admin che ricarica `/utenti` verrebbe buttato fuori dalla sua pagina.
+  // Non protegge niente: a impedire di scrivere è RLS. Serve a non mostrare
+  // una pagina che il database svuota in silenzio.
+  useEffect(() => {
+    if (!booting && currentUser && !ammessa && percorso !== '/') vai('/', { sostituisci: true })
+  }, [booting, currentUser, ammessa, percorso])
+
+  // Cambiando pagina si riparte dall'alto. ⚠️ Non aprendo una scheda: quella
+  // sta sopra la lista, e la lista deve restare dov'era.
+  useEffect(() => { window.scrollTo(0, 0) }, [tab])
 
   // Il ripristino della sessione è asincrono: senza questa attesa comparirebbe
   // un lampo di schermata di login a ogni ricaricamento.
@@ -315,7 +347,7 @@ function AppShell() {
   return (
     <div style={{ minHeight:'100vh', background:C.fondo, color:C.testo, display:'flex', flexDirection:'column' }}>
       <Header currentUser={currentUser} onLogout={logout} onMenu={() => setMenu(m => !m)} menuAperto={menu} />
-      <Menu aperto={menu} onChiudi={() => setMenu(false)} onVai={setTab} attivo={tab} isAdmin={isAdmin} />
+      <Menu aperto={menu} onChiudi={() => setMenu(false)} attivo={tab} isAdmin={isAdmin} />
       {/* `flex:1` fa arrivare la pagina fino in fondo qualunque sia l'altezza
           della testata; il padding lascia lo spazio della tab bar, che è fissa
           e senza di esso coprirebbe le ultime righe. */}
@@ -333,7 +365,7 @@ function AppShell() {
           {renderPage()}
         </Suspense>
       </div>
-      <TabBar active={tab} onChange={setTab} isAdmin={isAdmin} />
+      <TabBar active={tab} isAdmin={isAdmin} />
     </div>
   )
 }

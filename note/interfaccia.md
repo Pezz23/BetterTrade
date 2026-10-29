@@ -28,6 +28,32 @@
   porta su una pagina che la RLS gli svuota. Con tre tasti invece di quattro la
   barra si ridistribuisce da sola (`flex:1`). Come sempre, `soloAdmin` nasconde
   e basta: **la protezione è la policy**.
+- ⚠️⚠️ **Ogni pagina ha il suo INDIRIZZO dal 29/10/2026** (lotto 2, il
+  routing): `/` è la Dashboard, le altre sono `/<id>` con l'id di `TABS_BASE`
+  e `VOCI_MENU` — **un elenco solo**, l'indirizzo è l'id. La scheda di una
+  partita è `/partite/:id` e `/votate/:id` (`components/SchedaPartita.jsx`).
+  **Niente libreria router**: `lib/indirizzi.jsx` (`vai`, `chiudiVerso`,
+  `Collegamento`) e `hooks/usaPercorso.js` sulla History API, una cinquantina
+  di righe. Le regole:
+  · i tasti sono **`<a href>` veri** (`Collegamento`), non `onClick` e basta:
+    «apri in una nuova scheda» deve funzionare;
+  · una scheda si chiude con **`chiudiVerso(lista)`**: se ci si è arrivati
+    dalla lista è un «indietro» vero, se ci si è arrivati da un link
+    sostituisce l'indirizzo — indietro porterebbe fuori dall'app;
+  · un **link scaduto si apre lo stesso** (scelta di Mattia): la lista ha solo
+    le future, quindi `usaPartitaAperta` chiede la riga **per id** e la scheda
+    dice «GIÀ GIOCATA» col risultato; la stellina lì è spenta;
+  · indirizzo sconosciuto o pagina solo-admin da utente normale → **Dashboard**,
+    con `replace` e **solo dopo `booting`** (prima `isAdmin` non si sa).
+    Non protegge niente: a impedire di scrivere è RLS, e `prova-permessi.js`
+    ora prova anche che un utente normale **non scrive** la griglia;
+  · **mai `vai()` dentro `onAuthStateChange`**: dopo il login l'indirizzo è
+    già giusto, perché il login si mostra al posto della pagina;
+  · su Vercel serve **`app/vercel.json`** (tutto → `index.html`), o un
+    ricaricamento su `/partite` è un 404. In sviluppo lo fa Vite da solo;
+  · `guarda.mjs` cerca i tasti in basso come **`link`**, non più `button`.
+  Fuori, per scelta: i filtri nell'indirizzo, le schede aperte da Road to
+  weekend e dal Builder (restano finestre della pagina).
   ⚠️ In basso l'etichetta è **"Spin"**, non "Spin provvisorie": i tasti sono a
   9px e il nome intero non ci sta.
   ⚠️ **L'ordine è quello del gesto, non dell'importanza**: Dashboard · Slot ·

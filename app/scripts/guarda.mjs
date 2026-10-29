@@ -202,7 +202,9 @@ for (const vista of viste) {
         // quattro. Ora le icone sono SVG con `aria-hidden`, quindi il nome è
         // pulito, ma il confronto largo resta: costa niente e regge il
         // prossimo cambio di etichetta.
-        await pagina.getByRole('button', { name: p.testo }).first().click()
+        // ⚠️ `link` e non più `button` dal 29/10/2026 (lotto 2): i tasti in
+        // basso sono `<a href>` veri, perché ogni pagina ha il suo indirizzo.
+        await pagina.getByRole('link', { name: p.testo }).first().click()
       } else {
         await pagina.locator('.icona-menu').click()
         await pagina.getByText(p.testo, { exact: true }).first().click()
