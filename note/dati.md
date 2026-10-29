@@ -418,6 +418,9 @@ del file e assente dal file**: se la fonte elenca tutt'e due le date sono due
 partite vere (la Scozia dopo la divisione in gironi). E
 `riconcilia-prossime.js` **non collega** una riga vecchia se c'è anche quella
 con la data vera: altrimenti la partita finiva due volte in Storico.
+✅ **Provato dal vero nell'aggiornamento del 29/10**: Nice-Rennes (31/10 →
+30/10) e Lorient-Brest (31/10 → 2/11) spostate, e i tre doppioni vecchi
+lasciati scollegati dalla riconciliazione.
 ⚠️ **Resta scoperto il rinvio "a data da destinarsi"**: la partita sparisce
 dal file senza una data nuova, e la riga vecchia resta in calendario finché
 la data non passa.
