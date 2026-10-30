@@ -109,6 +109,11 @@ const SEGNI = {
   puntina: <>
     <path d="M12 16.5V22" /><path d="M9 4h6M10 4v5.2l-3.2 3.3a1.2 1.2 0 0 0 .9 2h8.6a1.2 1.2 0 0 0 .9-2L14 9.2V4" />
   </>,
+  // ✎ la matita del «modifica la schedina» (30/10/2026, Mattia): toglie un
+  // esito o la conferma, un passo indietro alla volta. Prima era «·».
+  matita: <>
+    <path d="M4 20l1-4.2L15.6 5.2a1.8 1.8 0 0 1 2.6 0l.6.6a1.8 1.8 0 0 1 0 2.6L8.2 19 4 20z" /><path d="M13.8 7l3.2 3.2" />
+  </>,
   bersaglio: <>
     <circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="4.6" /><circle cx="12" cy="12" r="1" />
   </>,

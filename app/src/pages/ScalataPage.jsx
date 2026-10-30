@@ -141,7 +141,7 @@ function QuotaModificabile({ valore, segnaposto, onChange, onCommit, sola = fals
  */
 // ⚠️ `iniziata` (30/10/2026): la partita è cominciata ma resta in elenco per
 // 12 ore (`ORE_VISIBILI`), spenta e con l'ora in ambra.
-function SchedaRisultato({ g, fuori, soloSegno, spostata, iPasso, colorePasso, segni, onApri, onTogli, iniziata = false }) {
+function SchedaRisultato({ g, fuori, soloSegno, iPasso, colorePasso, segni, onApri, onTogli, iniziata = false }) {
   const a = !fuori && eCriterioA(g)
   const num = { fontFamily: F.mono, fontVariantNumeric: 'tabular-nums' }
   const virgola = (x) => (x == null ? '—' : Number(x).toFixed(2).replace('.', ','))
@@ -157,7 +157,10 @@ function SchedaRisultato({ g, fuori, soloSegno, spostata, iPasso, colorePasso, s
       <span title={iniziata ? 'già cominciata' : undefined} style={{ ...num, fontSize: S.base, color: iniziata ? C.ambra : C.spento }}>{g.ora?.slice(0, 5)}</span>
       <span onClick={onApri} role="button" style={{ minWidth: 0, cursor: 'pointer', fontFamily: F.sans, fontSize: S.corpo,
         fontWeight: 600, lineHeight: 1.25, color: C.testo, overflowWrap: 'anywhere',
-        textDecoration: fuori || spostata ? 'line-through' : 'none' }}>
+        // ⚠️ Barrata vuol dire **tolta**, e basta (Mattia, 30/10/2026: una
+        // partita spostata a mano in un passo era barrata come una tolta, e
+        // sembrava fuori dalla schedina). In quale passo sta lo dice il pallino.
+        textDecoration: fuori ? 'line-through' : 'none' }}>
         {/* ⚠️ Niente «A» qui (Mattia, 29/10/2026): la scheda viola basta. */}
         {g.casa} <span style={{ color: C.fioco, fontWeight: 400 }}>–</span> {g.trasferta}
       </span>
@@ -187,7 +190,7 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, colore, classifiche,
                 quote, setQuote, esito, setEsito, onToglie, prossima, onAggiunge,
                 onQuota = null, onSpezza = null, onApri = null, onManuale = null, tocca = true,
                 stelleDi = () => 0, anteprima = false, fissato = false, onFissa = null, fermo = false,
-                parte = 'tutto', nudo = false }) {
+                parte = 'tutto', nudo = false, confermato = false }) {
   // ⚠️ La quota della schedina è il **prodotto delle quote modificate**, non di
   // quelle scaricate: Mattia gioca su book diversi e con i bonus, e una pagina
   // che mostra la quota del consenso gli racconterebbe un piano che non è il suo.
@@ -269,7 +272,7 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, colore, classifiche,
             ⚠️ `puoSpezzare` **non si butta**: qui serve a colorare il comando,
             cioè a far vedere *prima* di toccare che quel taglio lascia un
             pezzo corto. */}
-        {iG > 0 && onSpezza && !esito && tocca && (() => {
+        {iG > 0 && onSpezza && !esito && !confermato && tocca && (() => {
           const aNorma = puoSpezzare(quoteGambe, iG)
           return (
           <button onClick={() => onSpezza(iG)}
@@ -331,7 +334,10 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, colore, classifiche,
           <QuotaModificabile valore={quote[g.id]} segnaposto={g.quota} sola={!tocca} etichetta={`quota di ${g.casa}`}
             onChange={(v) => setQuote(q => ({ ...q, [g.id]: v }))}
             onCommit={() => { if (onQuota && quote[g.id]) onQuota(g.id, quote[g.id]) }} />
-          {tocca ? <button onClick={() => onToglie(g.id)} title="togli dal passo" aria-label="togli dal passo"
+          {/* ⚠️ Una schedina confermata non perde partite (30/10/2026): per
+              cambiarla si tocca prima la matita. La quota invece resta
+              correggibile: al banco può essere diversa da quella scaricata. */}
+          {tocca && !confermato ? <button onClick={() => onToglie(g.id)} title="togli dal passo" aria-label="togli dal passo"
             style={{ background: 'transparent', border: 'none', color: C.fioco, cursor: 'pointer', fontSize: S.media, padding: 0, lineHeight: 1 }}>×</button>
             : <span />}
 
@@ -366,7 +372,9 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, colore, classifiche,
           card. Il primo sceglie, il secondo propone la prossima consigliata
           — e la proposta si distingue da una partita inserita perché è
           scritta in piccolo e preceduta da «+». */}
-      {((onManuale && !esito) || prossima) && tocca && (
+      {/* ⚠️ Spariscono a schedina confermata (Mattia, 30/10/2026): è giocata,
+          non si allunga. Per cambiarla, la matita. */}
+      {((onManuale && !esito) || prossima) && tocca && !confermato && (
         <div style={{ display: 'flex', gap: SP.l, flexWrap: 'wrap', alignItems: 'baseline',
           paddingTop: SP.s, borderTop: `1px solid ${alpha(C.testo, 0.07)}` }}>
       {onManuale && !esito && (
@@ -505,11 +513,14 @@ function TastiEsito({ esito, setEsito, fissato = false, onFissa = null, conferma
         if (esito === 'perso') return
         if (armato) { setArmato(false); setEsito('perso') } else setArmato(true)
       }, '✗', 'perso')}
-      {/* ⚠️ Senza esito, su un passo confermato, «·» annulla la conferma
-          (30/10/2026): è il modo di disfare un ✓ Conferma toccato per sbaglio. */}
-      {tasto(!esito && !confermato, C.spento,
-        () => (esito || !onAnnullaConferma ? setEsito(null) : onAnnullaConferma()),
-        '·', esito ? 'da giocare' : onAnnullaConferma ? 'annulla la conferma' : 'da giocare')}
+      {/* ⚠️⚠️ **La matita al posto di «·»** (Mattia, 30/10/2026): «modifica
+          la schedina», un passo indietro alla volta — con un esito lo toglie
+          (torna «giocata · segna l'esito»), senza esito toglie la conferma e
+          la schedina torna una proposta da cambiare. ⚠️ Un ✗ perso non torna
+          indietro da qui: ha già chiuso il giro (per questo vuole due tocchi). */}
+      {(esito || onAnnullaConferma) && tasto(false, C.spento,
+        () => { setArmato(false); if (esito) setEsito(null); else onAnnullaConferma() },
+        <Icona nome="matita" misura={15} />, esito ? 'modifica: togli l’esito' : 'modifica la schedina: togli la conferma')}
       {onFissa && !esito && tasto(fissato, C.viola, onFissa, <Icona nome="puntina" misura={15} />, fissato ? 'togli il fissato' : 'fissa il passo')}
     </div>
   )
@@ -2047,13 +2058,16 @@ export default function ScalataPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 {gr.partite.map(g => {
                   const fuori = tolte.includes(g.id)
-                  const iPasso = passi.findIndex(f => f.partite.some(x => x.id === g.id))
+                  // ⚠️ A giro aperto il pallino legge la **schedina salvata**,
+                  // non il piano: dopo la conferma è quella che conta.
+                  const iPasso = aperta
+                    ? reg.passi.findIndex(r => reg.gambe.some(x => x.passo_id === r.id && x.prossima_id === g.id))
+                    : passi.findIndex(f => f.partite.some(x => x.id === g.id))
                   const t = flagTipiDi(g.id), mio = mioFlag(g.id)
                   const tinta = mio ? (isAdmin ? C.verde : C.blu) : t.admin ? C.verde : C.blu
                   return (
                     <SchedaRisultato key={g.id} g={g} fuori={fuori} iniziata={!iniziaDopo(g, daOra)}
                       soloSegno={!fuori && fuoriFiltri.some(x => x.id === g.id)}
-                      spostata={Object.values(aggiunte).flat().includes(g.id)}
                       iPasso={fuori ? -1 : iPasso} colorePasso={iPasso >= 0 ? coloreDi(iPasso) : C.grigio}
                       onApri={() => setApertaId(g.id)}
                       onTogli={() => setTolte(x => fuori ? x.filter(y => y !== g.id) : [...x, g.id])}
