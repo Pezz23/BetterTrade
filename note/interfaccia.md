@@ -406,3 +406,10 @@
 
 ---
 
+
+### `/slot/N` (30/10/2026)
+
+La Slot legge la spin dall'indirizzo (`/slot/2`), e cambiando spin l'indirizzo
+la segue (`vai(..., { sostituisci: true })`, niente voce nuova nella
+cronologia). La Dashboard ci porta toccando una spin, **solo per gli admin**:
+la Slot è loro, e a un utente il link riporterebbe alla Dashboard.

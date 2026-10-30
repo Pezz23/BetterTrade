@@ -8,11 +8,11 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 30 ottobre 2026 · app alla versione **1.77.00**
-(`4ceb93f`) · passaggio di consegne: 30/10 · ⚠️ **da pushare**: `83c5cb8`,
-`4ceb93f` e il commit di questo passaggio (`sql/50`-`51` sono **già applicate**
-al database, che è uno solo: migrazione e push vanno vicini) — su Vercel si guarda
-un ricaricamento su `/partite` (è `app/vercel.json` a evitare il 404)
+**Ultimo aggiornamento:** 30 ottobre 2026, sera · app alla versione **1.77.00**
+(`633c347`, **pushato**) · passaggio di consegne: 30/10 sera · da pushare solo il
+commit di questo passaggio (documenti). Migrazioni del giorno `sql/50`-`53`
+**tutte applicate**, e la funzione `aggiorna-risultati` è **pubblicata** su
+Supabase.
 
 ## ▶️ DOVE SIAMO — 30 ottobre 2026, leggi questo per primo
 
@@ -39,6 +39,23 @@ testo questo weekend"*.
 - **NickV** aveva un giro aperto col metodo vecchio: azzerato da Mattia, conto
   50 € invariato. **Serie C**: verificata, nessuna fonte, lasciata perdere.
 ⚠️ **Non ancora giocata dal vero**: Mattia la prova nel weekend 31/10-1/11.
+
+**Il pomeriggio del 30/10, i risultati e le spin** (`1.75.00`-`1.77.00`,
+dettaglio in `note/dati.md` e `note/spin.md`):
+- **⤓ Scarica risultati** in fondo a Road to weekend e alla Dashboard, solo
+  superadmin: il **telefono** chiede i risultati a ESPN (dai server di
+  Supabase ESPN risponde **403**) e la funzione `aggiorna-risultati` abbina e
+  scrive, coi 15 campionati e gli ultimi 2 giorni. Provato da Mattia: 2
+  risultati scritti, 0 doppioni. L'abbinamento è in `btscout/lib/risultati-espn.js`,
+  **lo stesso** per Mac, telefono e Supabase.
+- In Road to weekend i risultati **«finita 2-1 ✓/✗»** sulle partite, e le
+  partite di ieri **anche dopo mezzanotte** (`usaRecenti`).
+- **Spin**: esiti **automatici** nelle caselle vuote, «2-1 ✓» nelle schedine,
+  **archivio delle spin senza soldi** con resa in unità (scheda «Archivio»
+  nella Slot, si scrive a «↺ Nuova spin»), flag **`in_spin`** in Bilancio per
+  la percentuale delle spin, e toccando una spin in Dashboard si apre `/slot/N`.
+- Decisi **no**: conto demo (fatto e tolto), Serie C (nessuna fonte), app a
+  tutto schermo da computer (si è valutato: mezza sessione per pagina, lasciato).
 
 ---
 
@@ -114,9 +131,9 @@ Il 24/10, in ordine:
 | **Tagliando del codice** (29/10, `1.73.01`): via i resti della simulazione del piano (`esiti`, `perc`, «GIRO NUOVO · simulato»), `chiudi` e `riparti` dal registro, `casseDi`, `arrotonda`, `eventi` di Odds API; l'intestazione legge i ruoli da `RUOLO` di `theme.js`; dipendenze aggiornate dentro le versioni e 7 vulnerabilità su 9 chiuse. Restano React 19 e Vite 8 (salti di versione) | `1.73.01` | `6a0ce2a` |
 | **Road to weekend, ✓ CONFERMA GIOCATA** (30/10, `1.74.00`, `sql/50`-`51`): il passo è una proposta finché non lo si conferma; le partite cominciate restano 12 ore (si confermano o si saltano), così non spariscono più; puntata **all'euro per difetto** (113 € al 10% → 11 €) | `1.74.00` | `83c5cb8` |
 | **La matita al posto di «·»** (30/10): ✓ · ✗ · matita · graffetta; schedina confermata bloccata (via +, consigliata, ×, spezza; quota correggibile); in RISULTATO FILTRI barrata = solo tolta, e a giro aperto il pallino legge la schedina salvata | `1.74.01` | `4ceb93f` |
-| **⤓ Scarica risultati** (30/10): in fondo a Road to weekend, solo superadmin; il telefono scarica da ESPN (che rifiuta i server di Supabase) e la funzione `aggiorna-risultati` abbina e scrive; risultati «finita 2-1 ✓/✗» nel passo e nell'elenco; le partite di ieri restano anche dopo mezzanotte (`usaRecenti`). ESPN in `app/src/lib/espn.js`, abbinamento in `btscout/lib/risultati-espn.js` per tutti | `1.75.00` | risultati |
-| **Spin: l'esito PROPOSTO** (30/10): le caselle collegate a una partita finita propongono ✓/✗ con `giocataArrivata` (pronostico tradotto con `giocataDa`), un tocco o «conferma i N» per confermare, mai sopra un esito scelto; anche sulle spin non spuntate. «Scarica risultati» anche in fondo alla Dashboard | `1.76.00` | spin |
-| **Spin: esiti automatici, archivio, flag** (30/10): esiti scritti da soli nelle caselle vuote (dopo Scarica risultati e all'apertura della Slot); «2-1 ✓» nelle schedine; Dashboard → `/slot/N`; flag `in_spin` in Bilancio (`sql/52`) per la percentuale delle spin; **archivio delle spin** senza soldi, resa in unità (`sql/53`, scheda «Archivio»); `COMBOS` in un posto solo | `1.77.00` | archivio |
+| **⤓ Scarica risultati** (30/10): in fondo a Road to weekend, solo superadmin; il telefono scarica da ESPN (che rifiuta i server di Supabase) e la funzione `aggiorna-risultati` abbina e scrive; risultati «finita 2-1 ✓/✗» nel passo e nell'elenco; le partite di ieri restano anche dopo mezzanotte (`usaRecenti`). ESPN in `app/src/lib/espn.js`, abbinamento in `btscout/lib/risultati-espn.js` per tutti | `1.75.00` | `7029d66` |
+| **Spin: l'esito PROPOSTO** (30/10): le caselle collegate a una partita finita propongono ✓/✗ con `giocataArrivata` (pronostico tradotto con `giocataDa`), un tocco o «conferma i N» per confermare, mai sopra un esito scelto; anche sulle spin non spuntate. «Scarica risultati» anche in fondo alla Dashboard | `1.76.00` | `f647f83` |
+| **Spin: esiti automatici, archivio, flag** (30/10): esiti scritti da soli nelle caselle vuote (dopo Scarica risultati e all'apertura della Slot); «2-1 ✓» nelle schedine; Dashboard → `/slot/N`; flag `in_spin` in Bilancio (`sql/52`) per la percentuale delle spin; **archivio delle spin** senza soldi, resa in unità (`sql/53`, scheda «Archivio»); `COMBOS` in un posto solo | `1.77.00` | `633c347` |
 | **In archivio solo i passi giocati** (29/10): STOP toglie il piano non giocato dopo la chiusura (finisce nel registro con `stato_scalata='chiusa'`), il resoconto filtra gli `aperto`. Ognuno il suo storico (`sql/41`) | `1.66.01` | `bd292d6` |
 | **Il Filtro A e il bankroll al 10%, verificati** (29/10, briefing di Mattia da ChatGPT): riprodotto (229 schedine, +18% ±13,5), walk-forward +24% ±22 su 84, ma sulle singole solo **~+2%** sopra VPM 7,5; **il 10% è troppo** — massimo al **3%** (108 € contro 78 €). `btscout/scripts/prova-filtro-a.js`, dettaglio in `note/criterio.md`. Proposta aperta: la prova sul futuro vero | motore | `bfed9ce` |
 | **Il routing** (29/10, lotto 2): ogni pagina ha un indirizzo (`/partite`, `/scalata`…, Dashboard `/`), la scheda è `/partite/:id` e `/votate/:id` (`components/SchedaPartita.jsx`), un link scaduto si apre con «GIÀ GIOCATA» e il risultato (`usaPartitaAperta`), indirizzo sconosciuto o solo-admin → Dashboard. Senza libreria: `lib/indirizzi.jsx` + `hooks/usaPercorso.js`; `app/vercel.json` per Vercel; `guarda.mjs` cerca `link`; `prova-permessi.js` prova che un user **non scrive** la griglia (verificato con sessione simulata). A margine: «Gli orari sono quelli del Regno Unito» in Partite → «italiani» | `1.66.00` | `dce4621` |
@@ -196,14 +213,16 @@ sul telefono non si distingueva il lavoro di oggi dalla cache di ieri.
 Nessuna di queste è stata promessa a Mattia: **si propone e decide lui.**
 Chiusi il 29/10: lotto 0 (rinvii), lotto 1 (falli, angoli e cartellini v2,
 derby), lotto 2 (routing), lotto 3 (arbitro: no), e Road to weekend a
-percentuale. Il 30/10: la conferma della giocata in Road to weekend.
-L'ordine consigliato: **00 → 6 → 4**.
+percentuale. Il 30/10: la conferma della giocata in Road to weekend, il tasto
+dei risultati, gli esiti automatici e l'archivio delle spin.
+L'ordine consigliato: **00 → RE → 6 → 4**.
 
 | | cosa | costo |
 |---|---|---|
-| 00 | **Il weekend vero di Road to weekend 1.74** (Mattia lo prova il 31/10-1/11): ricarica, ✓ Conferma giocata sul passo 1, esito, ✗ con due tocchi (archivio e giro nuovo), matita, «salta» su una partita cominciata, Reset partite con un passo confermato (non deve sparire). Si raccoglie quello che non torna | il weekend |
+| 00 | **Il weekend vero, versione 1.77** (Mattia lo prova il 31/10-1/11). Road to weekend: ricarica, ✓ Conferma giocata, esito, ✗ con due tocchi (archivio e giro nuovo), matita, «salta» su una partita cominciata, Reset partite con un passo confermato. Poi **⤓ Scarica risultati** dal telefono, i «finita 2-1 ✓» nel passo, gli **esiti automatici delle spin** e la prima spin in **archivio** con «↺ Nuova spin». Si raccoglie quello che non torna | il weekend |
+| RE | **L'esito PROPOSTO dei passi di Road to weekend** (proposto il 30/10, **non deciso**): quando tutte le partite di un passo confermato hanno il risultato, la card propone ✓ o ✗ e si conferma con un tocco — proposto e non automatico, perché un ✗ chiude il giro. La regola c'è già (`giocataArrivata`) | un paio d'ore |
 | 1F | **Il Filtro A sul futuro vero** (proposto il 29/10, **non deciso**): l'app registra da sola ogni schedina che il filtro proporrebbe, con regole fisse; dopo 100 schedine, ROI > 0 **e** gambe sopra 100% → candidato, altrimenti si archivia. Oggi lo storico non può dire di più | da stimare, mezza giornata |
-| 6 | **L'automazione** — i due `.plist` (`aggiornamento.plist` martedì/venerdì, `aggiornamento-orario.plist` solo risultati, zero crediti) **non sono installati**: oggi i dati si aggiornano solo quando Mattia lo chiede. Due comandi ciascuno, in testa ai file. ⚠️ Con **55 crediti** rimasti il giro del martedì/venerdì ne può fare **uno** fino al rinnovo | dieci minuti |
+| 6 | **L'automazione** — i due `.plist` (`aggiornamento.plist` martedì/venerdì, `aggiornamento-orario.plist` solo risultati, zero crediti) **non sono installati**. Dal 30/10 pesa meno: i risultati si scaricano dal telefono col tasto. Resta utile per la routine del martedì e venerdì (quote, football-data, `andamento`). ⚠️ Col Mac in stop non parte: recupera **un** giro al risveglio | 10 minuti |
 | ~~2~~ | ~~**Il routing**~~ — ✅ **fatto il 29/10** (`1.66.00`) | — |
 | 4 | **La misura `eu` contro `eu,uk`** sull'1X2: se la sola `eu` basta, libera **148 crediti al mese** — ⚠️ più urgente da quando ne restano 55 | 2 crediti, un'ora |
 | 5 | **U3** — matrice dei risultati esatti e fair odds | 1 giorno |
@@ -304,7 +323,10 @@ state provate simulando uno user e un admin in una transazione annullata.
 |---|---|
 | ~~**NickV aveva un giro aperto col metodo VECCHIO**~~ | ✅ **29/10**: Mattia, entrato come NickV, ha usato «Azzera tutto» e poi una ricarica di 50 €. Le scalate 48 e 57 non avevano nessun passo giocato, quindi il conto resta 50 € come prima. I 71 passi di piano sono nel registro delle cancellazioni. Era: `regola = 'meta'`, e al primo ✗ `chiudi_giro_perso` l'avrebbe rifiutato |
 | ~~**L'esito delle spin da PROPOSTO ad AUTOMATICO**~~ | ✅ **30/10**, lo stesso giorno (`1.77.00`): automatico, solo nelle caselle vuote |
-| **Road to weekend 1.74 non giocata dal vero** (30/10) | la conferma l'ha vista Mattia in `npm run dev` su una schedina vera (Waregem · Casa Pia · Villarreal, 11 €); matita, «salta» e il resto il giro completo (esito, ✗ con archivio, giro nuovo) lo prova **nel weekend 31/10-1/11**. Nel database: `sql/50` provata da NickV, `sql/51` da Admin, in transazioni annullate |
+| **La chiave personale di Supabase scade** (30/10) | `SUPABASE_ACCESS_TOKEN` in `app/.env`, solo Edge Functions, con scadenza: serve **solo per ripubblicare** la funzione `aggiorna-risultati` (che online continua a girare). Quando la pubblicazione la rifiuta, se ne genera una nuova (istruzioni in `note/dati.md`) |
+| **Il tasto dei risultati non ricalcola `andamento`** (30/10) | scelta: è un lavoro di minuti, lo fa la routine del Mac. Fino ad allora la pagina Andamento resta indietro sui risultati scaricati dal telefono |
+| **Coppe senza il tasto** (30/10) | Champions & co. le scrive solo il Mac (`importa-competizione.js`): ESPN è l'unica fonte, e dal telefono arriverebbero senza statistiche che nessuno completerebbe |
+| **Road to weekend 1.77 non giocata dal vero** (30/10) | la conferma l'ha vista Mattia in `npm run dev` su una schedina vera (Waregem · Casa Pia · Villarreal, 11 €); il giro completo — esito, ✗ con archivio, giro nuovo, matita, «salta» — lo prova **nel weekend 31/10-1/11** (voce 00). Nel database: `sql/50` provata da NickV, `sql/51` da Admin, in transazioni annullate |
 | **«sce —» nelle foto di `guarda.mjs`** (29/10) | con l'utente di prova la Scelta esce quasi sempre vuota, probabilmente perché lo scatto arriva prima dei dati di VPM (1,2 s). Se Mattia lo vede anche sul suo schermo è un difetto vero |
 | **`guarda.mjs` ricompone male le pagine lunghe** (29/10) | la foto «intera» di Road to weekend ha la barra in basso **in mezzo** e copre la card del passo: per guardare quella zona serve uno scatto a finestra, non `fullPage` |
 | **il Filtro A sul futuro** (29/10) | proposta in «Da dove ripartire» (1F), non decisa |

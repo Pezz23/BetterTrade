@@ -937,3 +937,18 @@ In RISULTATO FILTRI **barrata vuol dire tolta, e basta**: le partite spostate
 a mano in un passo erano barrate come le tolte, e sembravano fuori dalla
 schedina (Mattia, con una foto). A giro aperto il pallino del passo legge la
 schedina salvata, non il piano.
+
+### I risultati in Road to weekend (30/10/2026, `1.75.00`)
+
+- **«finita 2-1 ✓/✗»** su ogni partita cominciata, nel passo e in RISULTATO
+  FILTRI: verde se la giocata è arrivata, rosso se no (`giocataArrivata`). Il
+  risultato si legge dal collegamento all'archivio (`partita_id`), con
+  `risultatiDi` in `hooks/usaRecenti.js`.
+- ⚠️ **Le partite di IERI anche dopo mezzanotte** (`usaRecenti`): `usaProssime`
+  carica da oggi in poi, e la partita delle 21 spariva all'una di notte
+  nonostante le 12 ore. Il gancio a parte la riporta **solo qui**: allargare
+  `usaProssime` l'avrebbe messa anche in Partite, Spin e Slot.
+- **⤓ Scarica risultati** in fondo alla pagina (solo superadmin): il dettaglio
+  sta in `note/dati.md`.
+- ⏭ Proposto e **non deciso**: l'esito del passo **proposto** quando tutte le
+  partite hanno il risultato (voce RE di STATO).
