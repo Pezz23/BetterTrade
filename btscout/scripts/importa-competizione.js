@@ -22,7 +22,8 @@
 // la tabella dei nomi (`lib/nomi-espn.js`), e non è questo script a farlo.
 
 import { sql, chiudi } from '../lib/db.js';
-import { CAMPIONATI, COMPETIZIONI, partiteDelMese, statistiche } from '../lib/espn.js';
+import { CAMPIONATI, COMPETIZIONI } from '../lib/espn.js';
+import { aggiornaCompetizione, mesiDi } from '../lib/risultati-espn.js';
 
 const arg = (n, d) => (process.argv.find(a => a.startsWith(`--${n}=`)) || `=${d}`).split('=')[1];
 const ESEGUI = process.argv.includes('--esegui');
@@ -35,22 +36,10 @@ if (!COMPS.length) {
   process.exit(1);
 }
 
-/**
- * La stagione di una data, nella forma che usa l'archivio.
- *
- * ⚠️ Due calendari, non uno: in Europa la stagione va da luglio a giugno
- * (`'2526'`), in Giappone **è l'anno solare** (`'2025'`). Forzare la J1 nello
- * schema europeo spezzerebbe ogni campionato in due stagioni nostre, e
- * `calcola-andamento`, che conta per stagione, conterebbe metà campionati.
- */
-const stagioneDi = (data, annoSolare) => {
-  const d = new Date(data), a = d.getUTCFullYear(), m = d.getUTCMonth() + 1;
-  if (annoSolare) return String(a);
-  const inizio = m >= 7 ? a : a - 1;
-  return `${String(inizio).slice(2)}${String(inizio + 1).slice(2)}`;
-};
+// ⚠️ La stagione (anno solare per il Giappone) e l'inserimento stanno in
+// `lib/risultati-espn.js` dal 30/10/2026: li usa anche la funzione di Supabase
+// del tasto «Aggiorna risultati».
 
-const esitoDi = (gc, gt) => (gc > gt ? 'H' : gc < gt ? 'A' : 'D');
 const dormi = (ms) => new Promise(r => setTimeout(r, ms));
 
 /**
@@ -76,75 +65,23 @@ async function conRipetizione(fn, tentativi = 4) {
     }
   }
 }
-const mesiDi = (anno) => Array.from({ length: 12 }, (_, i) => `${anno}${String(i + 1).padStart(2, '0')}`);
-
 async function unaCompetizione(comp) {
   const info = COMPETIZIONI[comp];
   const daAnno = Math.max(DA || info.da, info.da);
   console.log(`\n── ${comp} · ${info.nome} · ${daAnno}-${A} ${ESEGUI ? '' : '(prova a vuoto)'}`);
-
-  // ⚠️ Quello che c'è già si chiede **una volta**, non una query per partita:
-  // la chiave è la stessa dell'indice unico della tabella.
-  const viste = new Set((await conRipetizione(() => sql`
-    select data, casa, trasferta from partite where div = ${comp}
-  `)).map(r => `${r.data.toISOString().slice(0, 10)}|${r.casa}|${r.trasferta}`));
-  console.log(`   già in archivio: ${viste.size}`);
-
-  let nuove = 0, saltate = 0, senzaStat = 0;
-  for (let anno = daAnno; anno <= A; anno++) {
-    // ⚠️ Un anno solare di mesi, non una stagione: una stagione europea sta a
-    // cavallo di due anni, e chiedere i dodici mesi di ciascuno li copre
-    // entrambi senza doverci ragionare.
-    for (const mese of mesiDi(anno)) {
-      let partite;
-      try { partite = await partiteDelMese(comp, mese); }
-      catch (e) { console.log(`   ⚠ ${mese}: ${e.message}`); continue; }
-
-      for (const p of partite) {
-        if (!p.finita || p.golCasa == null || p.golTrasferta == null) { saltate++; continue; }
-        if (viste.has(`${p.data}|${p.casa}|${p.trasferta}`)) { saltate++; continue; }
-
-        // ⚠️ Le statistiche costano una chiamata a partita, quindi si chiedono
-        // **solo** per le partite che si stanno per scrivere — e **solo quando
-        // si scrive davvero**: una prova a vuoto che fa millecinquecento
-        // richieste a una fonte non documentata non è una prova a vuoto.
-        let st = null;
-        if (ESEGUI) {
-          // ⚠️ **Un tentativo solo**: ESPN non ha il riepilogo delle partite
-          // vecchie, e insistere tre volte su un buco che è un buco e basta
-          // moltiplicava per cinque il tempo di tutto il recupero.
-          try { st = await statistiche(comp, p.id, 1); } catch { /* si scrive lo stesso */ }
-          if (!st) senzaStat++;
-        }
-
-        if (ESEGUI) {
-          await conRipetizione(() => sql`
-            insert into partite (div, campionato, stagione, data, casa, trasferta,
-                                 gol_casa, gol_trasferta, esito,
-                                 tiri_casa, tiri_trasf, tirip_casa, tirip_trasf,
-                                 angoli_casa, angoli_trasf, gialli_casa, gialli_trasf,
-                                 rossi_casa, rossi_trasf, falli_casa, falli_trasf,
-                                 possesso_casa, possesso_trasf, fonte)
-            values (${comp}, ${info.nome}, ${stagioneDi(p.data, info.annoSolare)}, ${p.data},
-                    ${p.casa}, ${p.trasferta}, ${p.golCasa}, ${p.golTrasferta},
-                    ${esitoDi(p.golCasa, p.golTrasferta)},
-                    ${st?.casa.tiri ?? null}, ${st?.trasferta.tiri ?? null},
-                    ${st?.casa.tirip ?? null}, ${st?.trasferta.tirip ?? null},
-                    ${st?.casa.angoli ?? null}, ${st?.trasferta.angoli ?? null},
-                    ${st?.casa.gialli ?? null}, ${st?.trasferta.gialli ?? null},
-                    ${st?.casa.rossi ?? null}, ${st?.trasferta.rossi ?? null},
-                    ${st?.casa.falli ?? null}, ${st?.trasferta.falli ?? null},
-                    ${st?.casa.possesso ?? null}, ${st?.trasferta.possesso ?? null}, 'espn')
-            on conflict (div, stagione, data, casa, trasferta) do nothing`);
-        }
-        viste.add(`${p.data}|${p.casa}|${p.trasferta}`);
-        nuove++;
-        if (nuove % 50 === 0) process.stdout.write(`   ${nuove} nuove…\r`);
-      }
-    }
-  }
-  console.log(`   ${ESEGUI ? 'scritte' : 'da scrivere'}: ${nuove} · già viste o non finite: ${saltate} · senza statistiche: ${senzaStat}`);
-  return nuove;
+  // ⚠️ Un anno solare di mesi, non una stagione: una stagione europea sta a
+  // cavallo di due anni, e chiedere i dodici mesi di ciascuno li copre
+  // entrambi senza doverci ragionare.
+  const mesi = [];
+  for (let anno = daAnno; anno <= A; anno++) mesi.push(...mesiDi(anno));
+  const r = await aggiornaCompetizione(sql, comp, {
+    mesi, esegui: ESEGUI, ripeti: conRipetizione,
+    avanza: (n) => process.stdout.write(`   ${n} nuove…\r`),
+    avviso: (m) => console.log(`   ⚠ ${m}`),
+  });
+  console.log(`   già in archivio: ${r.giaInArchivio}`);
+  console.log(`   ${ESEGUI ? 'scritte' : 'da scrivere'}: ${r.nuove} · già viste o non finite: ${r.saltate} · senza statistiche: ${r.senzaStat}`);
+  return r.nuove;
 }
 
 let totale = 0;

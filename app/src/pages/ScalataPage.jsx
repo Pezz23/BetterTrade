@@ -3,6 +3,7 @@ import { C, F, alpha, S, SP, R } from '../theme'
 import { Card, Etichetta, Attesa } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { usaProssime } from '../hooks/usaProssime'
+import { usaRecenti } from '../hooks/usaRecenti'
 import { usaVpm } from '../hooks/usaVpm'
 import { usaClassifiche, postoDi } from '../hooks/usaClassifiche'
 import { usaScalate } from '../hooks/usaScalate'
@@ -12,6 +13,8 @@ import SchedaScorrevole from '../components/SchedaScorrevole'
 import DettaglioPartita from '../components/DettaglioPartita'
 import Icona from '../components/Icona'
 import ScegliGamba from '../components/ScegliGamba'
+import ScaricaRisultati from '../components/ScaricaRisultati'
+import { giocataArrivata } from '../lib/esito'
 import { valutaPartita } from '../lib/vpm'
 import { sigla } from '../lib/campionati'
 import { categoria, SOGLIE_DEFAULT, iniziaDopo } from '../lib/attendibilita'
@@ -128,6 +131,22 @@ function QuotaModificabile({ valore, segnaposto, onChange, onCommit, sola = fals
 }
 
 /**
+ * Il risultato di una partita finita, col colore della giocata: verde se è
+ * arrivata, rosso se no (30/10/2026, Mattia: *"voglio vedere i risultati in
+ * Road to weekend"*). Niente se il risultato non c'è ancora.
+ */
+function Risultato({ ris, giocata }) {
+  if (!ris) return null
+  const ok = giocataArrivata(giocata, ris.casa, ris.trasferta)
+  const col = ok == null ? C.testo : ok ? C.verde : C.rosso
+  return (
+    <b style={{ fontFamily: F.mono, fontVariantNumeric: 'tabular-nums', color: col }}>
+      {' · '}finita {ris.casa}-{ris.trasferta}{ok == null ? '' : ok ? ' ✓' : ' ✗'}
+    </b>
+  )
+}
+
+/**
  * ⚠️⚠️ **Una partita di RISULTATO FILTRI** (29/10/2026, ridisegno chiesto da
  * Mattia). Due righe, tutto sempre in vista:
  *   orario · squadre · segno · quota · ×
@@ -141,7 +160,7 @@ function QuotaModificabile({ valore, segnaposto, onChange, onCommit, sola = fals
  */
 // ⚠️ `iniziata` (30/10/2026): la partita è cominciata ma resta in elenco per
 // 12 ore (`ORE_VISIBILI`), spenta e con l'ora in ambra.
-function SchedaRisultato({ g, fuori, soloSegno, iPasso, colorePasso, segni, onApri, onTogli, iniziata = false }) {
+function SchedaRisultato({ g, fuori, soloSegno, iPasso, colorePasso, segni, onApri, onTogli, iniziata = false, risultato = null }) {
   const a = !fuori && eCriterioA(g)
   const num = { fontFamily: F.mono, fontVariantNumeric: 'tabular-nums' }
   const virgola = (x) => (x == null ? '—' : Number(x).toFixed(2).replace('.', ','))
@@ -180,6 +199,7 @@ function SchedaRisultato({ g, fuori, soloSegno, iPasso, colorePasso, segni, onAp
         {' · '}sce <b style={{ ...num, color: C.spento }}>{pct(g.scelta)}</b>
         {g.vpm != null && <>{' · '}VPM <b style={{ ...num, color: C.spento }}>{virgola(g.vpm)}</b></>}
         {soloSegno && <span style={{ color: C.ambra }}> · fuori filtri</span>}
+        <Risultato ris={risultato} giocata={g.giocata} />
       </span>
       <span style={{ gridColumn: '3 / span 3', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: SP.s }}>{segni}</span>
     </div>
@@ -190,7 +210,7 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, colore, classifiche,
                 quote, setQuote, esito, setEsito, onToglie, prossima, onAggiunge,
                 onQuota = null, onSpezza = null, onApri = null, onManuale = null, tocca = true,
                 stelleDi = () => 0, anteprima = false, fissato = false, onFissa = null, fermo = false,
-                parte = 'tutto', nudo = false, confermato = false }) {
+                parte = 'tutto', nudo = false, confermato = false, risultatoDi = () => null }) {
   // ⚠️ La quota della schedina è il **prodotto delle quote modificate**, non di
   // quelle scaricate: Mattia gioca su book diversi e con i bonus, e una pagina
   // che mostra la quota del consenso gli racconterebbe un piano che non è il suo.
@@ -346,6 +366,7 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, colore, classifiche,
             att <b style={{ ...num, color: C.spento }}>{pct(g.att)}</b>
             {' · '}sce <b style={{ ...num, color: C.spento }}>{pct(g.scelta)}</b>
             {g.vpm != null && <>{' · '}VPM <b style={{ ...num, color: C.spento }}>{Number(g.vpm).toFixed(2).replace('.', ',')}</b></>}
+            <Risultato ris={risultatoDi(g.prossima_id ?? g.id)} giocata={g.giocata} />
             {/* ⚠️ La stella dentro il passo (23/10): una gamba stellata può
                 stare lì anche sotto i filtri, e senza il segno sembrerebbe un
                 errore invece di una scelta. */}
@@ -970,8 +991,15 @@ function Archivio({ storico, ricariche = [], conto, onAzzera, onAnnulla, onResoc
 }
 
 export default function ScalataPage() {
-  const { currentUser, isAdmin } = useAuth()
-  const { righe, ricarica: ricaricaPartite, vota, votiDi, votiTipiDi, mioVoto, flagga, flagDi, flagTipiDi, mioFlag } = usaProssime()
+  const { currentUser, isAdmin, isSuperAdmin } = useAuth()
+  const { righe: righeProssime, ricarica: ricaricaPartite, vota, votiDi, votiTipiDi, mioVoto, flagga, flagDi, flagTipiDi, mioFlag } = usaProssime()
+  // ⚠️ Più le partite di IERI e i risultati (30/10/2026, `usaRecenti`): una
+  // partita cominciata resta 12 ore, anche a cavallo della mezzanotte, e
+  // `usaProssime` carica solo da oggi.
+  const { ieri, risultatoDi, ricarica: ricaricaRecenti } = usaRecenti()
+  const righe = useMemo(() => (righeProssime
+    ? [...ieri.filter(r => !righeProssime.some(x => x.id === r.id)), ...righeProssime]
+    : righeProssime), [righeProssime, ieri])
   const datiVpm = usaVpm()
   const classifiche = usaClassifiche()
   // ⚠️⚠️ **Ognuno il suo registro e il suo conto** (Mattia, 24/10/2026:
@@ -1771,7 +1799,7 @@ export default function ScalataPage() {
                registro vero di Mattia i passi sono 1, 3, 4… Il numero che
                conta è la **posizione nella catena**: è quello che si vede e
                quello su cui `contiPercentuale` cammina. */
-            <QualePasso key={riga.id} attivo={i === frontiera && !inAnteprima} numero={i + 1} gambe={gambe} giorno={riga.giorno} ora={gambe[0]?.ora?.slice(0, 5)} stelleDi={votiDi} anteprima={inAnteprima}
+            <QualePasso key={riga.id} risultatoDi={risultatoDi} attivo={i === frontiera && !inAnteprima} numero={i + 1} gambe={gambe} giorno={riga.giorno} ora={gambe[0]?.ora?.slice(0, 5)} stelleDi={votiDi} anteprima={inAnteprima}
               fermo={fermo} fissato={eFissato(i)} onFissa={() => fissa(i)}
               posta={p} conto={i === giro.poste.length ? giro.live : null} colore={coloreDi(i)} classifiche={classifiche}
               quote={quote} setQuote={setQuote} onApri={setApertaId}
@@ -1853,7 +1881,7 @@ export default function ScalataPage() {
                 — e React con due chiavi uguali ridisegna la cosa sbagliata, in
                 silenzio. ⚠️ Fra graffe: dentro il `Fragment` un commento nudo
                 diventa testo a schermo (trappola nota, 29/10/2026). */}
-            <QualePasso attivo={i === frontiera && !inAnteprima} numero={nGiro} gambe={f.partite} giorno={f.giorno} ora={f.ora} stelleDi={votiDi} anteprima={inAnteprima}
+            <QualePasso risultatoDi={risultatoDi} attivo={i === frontiera && !inAnteprima} numero={nGiro} gambe={f.partite} giorno={f.giorno} ora={f.ora} stelleDi={votiDi} anteprima={inAnteprima}
               fissato={eFissato(i)}
               onFissa={() => fissa(i)}
               posta={p} conto={i === giro.poste.length ? giro.live : null} colore={coloreDi(i)} classifiche={classifiche}
@@ -2066,7 +2094,7 @@ export default function ScalataPage() {
                   const t = flagTipiDi(g.id), mio = mioFlag(g.id)
                   const tinta = mio ? (isAdmin ? C.verde : C.blu) : t.admin ? C.verde : C.blu
                   return (
-                    <SchedaRisultato key={g.id} g={g} fuori={fuori} iniziata={!iniziaDopo(g, daOra)}
+                    <SchedaRisultato key={g.id} g={g} fuori={fuori} iniziata={!iniziaDopo(g, daOra)} risultato={risultatoDi(g.id)}
                       soloSegno={!fuori && fuoriFiltri.some(x => x.id === g.id)}
                       iPasso={fuori ? -1 : iPasso} colorePasso={iPasso >= 0 ? coloreDi(iPasso) : C.grigio}
                       onApri={() => setApertaId(g.id)}
@@ -2120,6 +2148,10 @@ export default function ScalataPage() {
           }}
           onChiudi={() => setManuale(null)} />
       )}
+
+      {/* ⚠️ In fondo, sopra la barra (Mattia, 30/10/2026), e solo per il
+          superadmin: il controllo vero sta nella funzione `aggiorna-risultati`. */}
+      {isSuperAdmin && <ScaricaRisultati onFinito={ricaricaRecenti} />}
 
       {partitaAperta && (
         <SchedaScorrevole onChiudi={() => setApertaId(null)}>

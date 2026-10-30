@@ -23,3 +23,6 @@ backup/
 
 # Le schermate di scripts/guarda.mjs: si guardano, non si versionano.
 app/.schermate/
+
+# file temporanei dello strumento di Supabase
+supabase/.temp/

@@ -427,3 +427,28 @@ la data non passa.
 
 ---
 
+
+### «Scarica risultati» dal telefono (30/10/2026, `1.75.00`)
+
+Mattia: *"un tasto che lancio dall'app che chiede solo i risultati a ESPN"*.
+In fondo a Road to weekend, **solo superadmin**: per ognuno dei 15 campionati
+la funzione di Supabase `aggiorna-risultati` (`supabase/functions/`) dice
+quali giorni guardare, **il telefono** scarica da ESPN, la funzione abbina e
+scrive. Solo risultati, ultimi 2 giorni, niente coppe.
+- ⚠️⚠️ **ESPN risponde 403 ai server di Supabase** (provato il 30/10): per
+  questo la chiamata la fa il telefono. Non si aggira (cambiare l'identità
+  della richiesta sarebbe aggirare un blocco voluto).
+- **Un codice solo**: l'abbinamento sta in `btscout/lib/risultati-espn.js`,
+  usato da `importa-espn.js`, `importa-competizione.js` e dalla funzione
+  (che riceve le partite dal telefono come `fonte`). ESPN sta in
+  `app/src/lib/espn.js` (il motore la re-esporta da `btscout/lib/espn.js`).
+  Verificato: gli script vecchi e nuovi danno uscite **identiche** a vuoto.
+- Doppioni: regola «una e una sola partita», e football-data il martedì e il
+  venerdì **completa** la riga con la stessa chiave invece di raddoppiarla.
+  Primo giro di Mattia: 2 partite scritte, 0 doppioni.
+- Pubblicare la funzione: `npx supabase@2.122.0 functions deploy
+  aggiorna-risultati --project-ref <ref> --use-api` con
+  `SUPABASE_ACCESS_TOKEN` in `app/.env` (chiave personale, solo Edge
+  Functions, con una scadenza: rinnovarla quando la pubblicazione la rifiuta).
+- ⚠️ `andamento` non si ricalcola col tasto: la pagina Andamento resta
+  indietro fino alla routine.

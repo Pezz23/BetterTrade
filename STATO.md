@@ -8,7 +8,7 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 30 ottobre 2026 · app alla versione **1.74.01**
+**Ultimo aggiornamento:** 30 ottobre 2026 · app alla versione **1.75.00**
 (`4ceb93f`) · passaggio di consegne: 30/10 · ⚠️ **da pushare**: `83c5cb8`,
 `4ceb93f` e il commit di questo passaggio (`sql/50`-`51` sono **già applicate**
 al database, che è uno solo: migrazione e push vanno vicini) — su Vercel si guarda
@@ -114,6 +114,7 @@ Il 24/10, in ordine:
 | **Tagliando del codice** (29/10, `1.73.01`): via i resti della simulazione del piano (`esiti`, `perc`, «GIRO NUOVO · simulato»), `chiudi` e `riparti` dal registro, `casseDi`, `arrotonda`, `eventi` di Odds API; l'intestazione legge i ruoli da `RUOLO` di `theme.js`; dipendenze aggiornate dentro le versioni e 7 vulnerabilità su 9 chiuse. Restano React 19 e Vite 8 (salti di versione) | `1.73.01` | `6a0ce2a` |
 | **Road to weekend, ✓ CONFERMA GIOCATA** (30/10, `1.74.00`, `sql/50`-`51`): il passo è una proposta finché non lo si conferma; le partite cominciate restano 12 ore (si confermano o si saltano), così non spariscono più; puntata **all'euro per difetto** (113 € al 10% → 11 €) | `1.74.00` | `83c5cb8` |
 | **La matita al posto di «·»** (30/10): ✓ · ✗ · matita · graffetta; schedina confermata bloccata (via +, consigliata, ×, spezza; quota correggibile); in RISULTATO FILTRI barrata = solo tolta, e a giro aperto il pallino legge la schedina salvata | `1.74.01` | `4ceb93f` |
+| **⤓ Scarica risultati** (30/10): in fondo a Road to weekend, solo superadmin; il telefono scarica da ESPN (che rifiuta i server di Supabase) e la funzione `aggiorna-risultati` abbina e scrive; risultati «finita 2-1 ✓/✗» nel passo e nell'elenco; le partite di ieri restano anche dopo mezzanotte (`usaRecenti`). ESPN in `app/src/lib/espn.js`, abbinamento in `btscout/lib/risultati-espn.js` per tutti | `1.75.00` | risultati |
 | **In archivio solo i passi giocati** (29/10): STOP toglie il piano non giocato dopo la chiusura (finisce nel registro con `stato_scalata='chiusa'`), il resoconto filtra gli `aperto`. Ognuno il suo storico (`sql/41`) | `1.66.01` | `bd292d6` |
 | **Il Filtro A e il bankroll al 10%, verificati** (29/10, briefing di Mattia da ChatGPT): riprodotto (229 schedine, +18% ±13,5), walk-forward +24% ±22 su 84, ma sulle singole solo **~+2%** sopra VPM 7,5; **il 10% è troppo** — massimo al **3%** (108 € contro 78 €). `btscout/scripts/prova-filtro-a.js`, dettaglio in `note/criterio.md`. Proposta aperta: la prova sul futuro vero | motore | `bfed9ce` |
 | **Il routing** (29/10, lotto 2): ogni pagina ha un indirizzo (`/partite`, `/scalata`…, Dashboard `/`), la scheda è `/partite/:id` e `/votate/:id` (`components/SchedaPartita.jsx`), un link scaduto si apre con «GIÀ GIOCATA» e il risultato (`usaPartitaAperta`), indirizzo sconosciuto o solo-admin → Dashboard. Senza libreria: `lib/indirizzi.jsx` + `hooks/usaPercorso.js`; `app/vercel.json` per Vercel; `guarda.mjs` cerca `link`; `prova-permessi.js` prova che un user **non scrive** la griglia (verificato con sessione simulata). A margine: «Gli orari sono quelli del Regno Unito» in Partite → «italiani» | `1.66.00` | `dce4621` |
