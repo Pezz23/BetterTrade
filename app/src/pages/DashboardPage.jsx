@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../supabase'
 import { C, F, alpha, S } from '../theme'
 import { stileCard } from '../components/ui'
+import ScaricaRisultati from '../components/ScaricaRisultati'
 
 const COMBOS = [
   { tipo:'tris',    pos:[1,5,2] },
@@ -198,6 +199,9 @@ export default function DashboardPage() {
           </div>
         </>
       )}
+      {/* ⚠️ Lo stesso tasto di Road to weekend (Mattia, 30/10/2026): si preme
+          dove si è. Solo il superadmin, e il controllo vero sta nella funzione. */}
+      {isSuperAdmin && <ScaricaRisultati />}
     </div>
   )
 }

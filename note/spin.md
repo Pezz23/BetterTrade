@@ -99,3 +99,24 @@ fatto crescere solo alcune card della lista.
   della pagina non cambia;
 - in **Road to weekend** e **Bet Builder** (personali) **tutte** (`votiDi`):
   una stellina di chiunque fa entrare la partita in scaletta sotto soglia.
+
+### L'esito PROPOSTO delle caselle (30/10/2026, `1.76.00`)
+
+Mattia: *"vorrei che calcolassero l'esito da sole"* — *"per ora proposto, se
+funziona lo passiamo ad automatico"*. Una casella collegata al calendario
+(`prossima_id`), **senza esito**, con la partita finita, mostra *«finita 2-1 ·
+proposto ✓ Win»* e il tasto **conferma**; con più proposte c'è anche
+«conferma i N esiti proposti». La regola è `giocataArrivata` (la stessa di
+Road to weekend e dell'archivio), dal pronostico tradotto con `giocataDa`
+(`lib/spin.js`): ⚠️ senza traduzione «1+O1,5» verrebbe letto come «1», e un
+1-0 risulterebbe vinto.
+- **Non tocca mai un esito già scelto**: la proposta esiste solo sulle caselle
+  vuote.
+- Vale **anche sulle spin non spuntate** GIOCATA; la Dashboard conta comunque
+  solo le spuntate.
+- Una giocata che la regola non legge (X, 1X, GG) e la spin Fun dicono
+  «esito a mano».
+- I risultati si leggono all'apertura della pagina (`risultatiDi` in
+  `hooks/usaRecenti.js`, una lettura): arrivano col tasto «Scarica risultati»
+  (anche in fondo alla Dashboard) o con la routine del Mac.
+- ⏭ **Da passare ad automatico** quando Mattia avrà visto che funziona.

@@ -94,6 +94,13 @@ export function componi(ordinate, n) {
 // valore della tendina della griglia ("1+O1,5", vedi PRONOSTICI in SlotPage).
 export const pronosticoDa = giocata => giocata.replace(/ \+ over /, '+O')
 
+/**
+ * Il contrario: dal pronostico della griglia (`'1+O1,5'`) alla giocata che
+ * legge `giocataArrivata` (`'1 + over 1,5'`). ⚠️ Senza, la regola vedrebbe
+ * solo il segno: un 1-0 su «1+O1,5» risulterebbe vinto (30/10/2026).
+ */
+export const giocataDa = pronostico => String(pronostico ?? '').replace(/\+O/i, ' + over ')
+
 /** Una cella della griglia (il formato di griglia.spins) da una partita valutata. */
 export function cellaDa(pos, p) {
   if (!p) return { id: pos, casa: '', ospite: '', pronostico: '', quota: '', data: '', result: '' }

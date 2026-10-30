@@ -4,7 +4,9 @@ import { supabase } from '../supabase'
 import { C, F, alpha, TIPO, S, R } from '../theme'
 import Icona from '../components/Icona'
 import { stileCard } from '../components/ui'
-import { DISPOSIZIONE, cellaDa } from '../lib/spin'
+import { DISPOSIZIONE, cellaDa, giocataDa } from '../lib/spin'
+import { giocataArrivata } from '../lib/esito'
+import { risultatiDi } from '../hooks/usaRecenti'
 import { usaProssime } from '../hooks/usaProssime'
 import SceltaPartita from '../components/SceltaPartita'
 
@@ -95,7 +97,24 @@ const cell=(extra={})=>({
 })
 
 // ── TabellaGriglia ────────────────────────────────────────────────────────────
-function TabellaGriglia({tiles,isAdmin,onUpdate,onCambia,onReset,syncing,libera,partite}) {
+// ⚠️⚠️ **L'ESITO PROPOSTO** (30/10/2026, Mattia: *"vorrei che calcolassero
+// l'esito da sole"* — e *"per ora proposto, se funziona lo passiamo ad
+// automatico"*). Una casella collegata al calendario, senza esito e con la
+// partita finita, propone ✓ o ✗ con la stessa regola di Road to weekend
+// (`giocataArrivata`, dal pronostico tradotto con `giocataDa`). Un tocco lo
+// conferma. ⚠️ Non tocca **mai** un esito già scelto: la proposta compare
+// solo sulle caselle vuote. ⚠️ Vale anche sulle spin non spuntate GIOCATA (la
+// Dashboard conta comunque solo le spuntate). Una giocata che la regola non
+// legge (o la spin Fun, senza partite collegate) dice «esito a mano».
+const propostaDi=(t,ris)=>{
+  if (!ris||t.result) return null
+  const ok=giocataArrivata(giocataDa(t.pronostico),ris.casa,ris.trasferta)
+  return ok==null?'mano':ok?'win':'loss'
+}
+
+function TabellaGriglia({tiles,isAdmin,onUpdate,onCambia,onReset,syncing,libera,partite,risultatoDi=()=>null,onConfermaTutti}) {
+  const proposte=tiles.map(t=>({t,ris:risultatoDi(t.prossima_id),p:propostaDi(t,risultatoDi(t.prossima_id))}))
+  const daConfermare=proposte.filter(x=>x.p==='win'||x.p==='loss')
   const [confirmReset,setConfirmReset]=useState(false)
   // Sulle spin agganciate la partita è una casella sola (il menu con ricerca);
   // sulla spin libera restano i due campi di testo come sempre.
@@ -170,10 +189,33 @@ function TabellaGriglia({tiles,isAdmin,onUpdate,onCambia,onReset,syncing,libera,
                 value={t.result} disabled={!isAdmin} onChange={e=>onUpdate(t.id,'result',e.target.value)}>
                 <option value="">—</option><option value="win">✓ Win</option><option value="loss">✗ Loss</option>
               </select>
+              {(()=>{const x=proposte.find(y=>y.t.id===t.id);if(!x?.p)return null
+                const col=x.p==='win'?C.verde:x.p==='loss'?C.rosso:C.spento
+                return (
+                  <div style={{gridColumn:'1 / -1',display:'flex',alignItems:'center',gap:8,padding:'0 4px 2px',
+                    fontSize:S.micro,fontFamily:F.sans,color:C.spento}}>
+                    <span>finita <b style={{fontFamily:F.mono,color:C.testo}}>{x.ris.casa}-{x.ris.trasferta}</b></span>
+                    {x.p==='mano'
+                      ?<span style={{color:C.fioco}}>· esito a mano</span>
+                      :<>
+                        <span style={{color:col}}>· proposto {x.p==='win'?'✓ Win':'✗ Loss'}</span>
+                        {isAdmin&&<button onClick={()=>onUpdate(t.id,'result',x.p)} style={{marginLeft:'auto',padding:'2px 10px',cursor:'pointer',
+                          borderRadius:6,background:alpha(col,0.12),border:`1px solid ${alpha(col,0.45)}`,color:col,fontFamily:F.sans,fontSize:S.micro,fontWeight:700}}>
+                          conferma</button>}
+                      </>}
+                  </div>
+                )})()}
             </div>
           )
         })}
       </div>
+      {isAdmin&&daConfermare.length>1&&(
+        <div style={{display:'flex',justifyContent:'flex-end',marginTop:6}}>
+          <button onClick={()=>onConfermaTutti(daConfermare.map(x=>[x.t.id,x.p]))} style={{padding:'5px 12px',cursor:'pointer',borderRadius:7,
+            background:alpha(C.verde,0.10),border:`1px solid ${alpha(C.verde,0.4)}`,color:C.verde,fontFamily:F.sans,fontSize:S.base,fontWeight:600}}>
+            conferma i {daConfermare.length} esiti proposti</button>
+        </div>
+      )}
       <SlotVisiva tiles={tiles}/>
       {isAdmin&&(
         <div style={{marginTop:16,display:'flex',justifyContent:'center'}}>
@@ -460,6 +502,23 @@ export default function SlotPage() {
     })
   }
 
+  // I risultati delle partite collegate alle caselle, di tutte le spin: si
+  // leggono all'apertura (una lettura sola) e dopo «Scarica risultati» basta
+  // riaprire la pagina.
+  const [risultati,setRisultati]=useState(new Map())
+  const idsCaselle=spins.flat().map(t=>t?.prossima_id).filter(Boolean).join(',')
+  useEffect(()=>{
+    let vivo=true
+    risultatiDi(idsCaselle?idsCaselle.split(',').map(Number):[]).then(m=>{ if(vivo) setRisultati(m) })
+    return ()=>{ vivo=false }
+  },[idsCaselle])
+
+  // Conferma più esiti proposti in una scrittura sola.
+  function confermaTutti(coppie) {
+    const per=new Map(coppie)
+    setSpins(prev=>prev.map((spin,si)=>si===activeSpin?spin.map(t=>per.has(t.id)&&!t.result?{...t,result:per.get(t.id)}:t):spin))
+  }
+
   function updateTile(id,field,val) {
     setSpins(prev=>prev.map((spin,si)=>si===activeSpin?spin.map(t=>t.id===id?{...t,[field]:val}:t):spin))
   }
@@ -508,7 +567,8 @@ export default function SlotPage() {
       {activeTab==='griglia'
         ?<>
           <TabellaGriglia tiles={tiles} isAdmin={isAdmin} onUpdate={updateTile} onCambia={cambiaTile}
-            onReset={resetSpin} syncing={syncing} libera={activeSpin===SPIN_LIBERA} partite={partite}/>
+            onReset={resetSpin} syncing={syncing} libera={activeSpin===SPIN_LIBERA} partite={partite}
+            risultatoDi={id=>(id?risultati.get(id)??null:null)} onConfermaTutti={confermaTutti}/>
           <BottoneGiocata attiva={giocate[activeSpin]} isAdmin={isAdmin}
             onCambia={cambiaGiocata} piena={tiles.some(t=>t.casa)}/>
         </>
