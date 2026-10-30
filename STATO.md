@@ -8,12 +8,41 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 30 ottobre 2026 · app alla versione **1.74.00**
-(✓ Conferma giocata, `sql/50`-`51` applicate) · passaggio di consegne: 29/10 · ⚠️ **da pushare**
-i commit dopo `b01f082` — su Vercel si guarda
+**Ultimo aggiornamento:** 30 ottobre 2026 · app alla versione **1.74.01**
+(`4ceb93f`) · passaggio di consegne: 30/10 · ⚠️ **da pushare**: `83c5cb8`,
+`4ceb93f` e il commit di questo passaggio (`sql/50`-`51` sono **già applicate**
+al database, che è uno solo: migrazione e push vanno vicini) — su Vercel si guarda
 un ricaricamento su `/partite` (è `app/vercel.json` a evitare il 404)
 
-## ▶️ DOVE SIAMO — 29 ottobre 2026, leggi questo per primo
+## ▶️ DOVE SIAMO — 30 ottobre 2026, leggi questo per primo
+
+**Il 30/10, Road to weekend con la CONFERMA della giocata** (`1.74.00`-`01`,
+dettaglio in `note/scalata.md`). Mattia: *"mi pare decisamente meglio, lo
+testo questo weekend"*.
+- **Il perché**: *"gioco la partita delle 14, entro alle 15 e non la vedo
+  più"*. Il piano non salvato si ricomponeva dalle partite non ancora
+  cominciate, e l'istante ripartiva da *adesso* a ogni apertura e a ogni Reset.
+- **✓ CONFERMA GIOCATA**: il passo è una *proposta* finché non lo si conferma;
+  sul passo 1 la conferma apre il giro (`confermaPrimo`, `sql/50`
+  `confermato_il`), l'esito si segna dopo. Poi i tasti sono **✓ · ✗ · matita
+  · graffetta**: la matita toglie l'esito, poi la conferma. A schedina
+  confermata spariscono + aggiungi, la consigliata, la × e lo spezza; la quota
+  resta correggibile.
+- **Le partite cominciate restano 12 ore** (`ORE_VISIBILI`): nel passo con
+  *«iniziata alle…, l'hai giocata?»* e «non giocata, salta il passo»; in
+  RISULTATO FILTRI spente, ora in ambra. Barrata = **solo tolta**.
+- **Puntata all'euro PER DIFETTO** (`sql/51`, uguale in `puntataDi`): 113 € al
+  10% → 11 €.
+- **Tagliando del codice** (`1.73.01`): via i resti di simulazione, STOP,
+  RIPARTI e casse; dipendenze aggiornate, 7 vulnerabilità su 9 chiuse (restano
+  Vite 8 e React 19, salti di versione).
+- **NickV** aveva un giro aperto col metodo vecchio: azzerato da Mattia, conto
+  50 € invariato. **Serie C**: verificata, nessuna fonte, lasciata perdere.
+⚠️ **Non ancora giocata dal vero**: Mattia la prova nel weekend 31/10-1/11.
+
+---
+
+Il 29/10:
 
 **Il 29/10 si sono chiusi i lotti 0, 1, 2 e 3** (il dettaglio nella tabella
 qui sotto e in «Cos'è cambiato»):
@@ -81,7 +110,10 @@ Il 24/10, in ordine:
 | **Le stelline a tutti** (29/10): oro admin, blu user in un tasto solo; nelle Spin contano solo quelle degli admin, in Road to weekend e Builder tutte (`sql/46`) | `1.64.00` | `4ce1619` |
 | **Le partite rinviate non si raddoppiano più** (29/10, lotto 0): gli import **spostano** la riga vecchia alla data nuova (`btscout/lib/rinvii.js`), la riconciliazione non collega il doppione | motore | `1569c0e` |
 | **L'ora delle partite nel CSV di Andamento** (29/10): `partite.ora` (`sql/48`), ora italiana da football-data dalla 2019/20 — 38.376 partite con `recupera-da-csv.js`, che ora riempie falli **e** ora. ⚠️ A margine: **455 vecchie righe di `prossime_partite`** (già giocate, prima del 23/10) hanno ancora l'ora **inglese** — la correzione del fuso non le aveva toccate. Non si vedono da nessuna parte; l'archivio ha quella giusta | `1.64.01` | `02ad162` |
-| **Road to weekend a PERCENTUALE del conto e ridisegnata** (29/10, sera): `sql/49` (`percentuale`, `chiudi_giro_perso`), puntata 3·5·10·14% del conto all'euro per eccesso, giro chiuso da solo a ogni perso; criterio A in viola; pagina rifatta in tre giri (SELEZIONE · GESTIONE BANKROLL · LA SCALETTA · RISULTATO FILTRI con Tutte/Consigliate). Dettaglio in `note/scalata.md`. E **via APRI/STOP** (`1.73.00`): il primo esito apre il giro, niente simulazione, percentuale cambiabile solo dopo un giro perso, Reset partite ricompone il piano | `1.72.00` → `1.73.00` | `be8975a` |
+| **Road to weekend a PERCENTUALE del conto e ridisegnata** (29/10, sera): `sql/49` (`percentuale`, `chiudi_giro_perso`), puntata 3·5·10·14% del conto all'euro per eccesso (per difetto dal 30/10), giro chiuso da solo a ogni perso; criterio A in viola; pagina rifatta in tre giri (SELEZIONE · GESTIONE BANKROLL · LA SCALETTA · RISULTATO FILTRI con Tutte/Consigliate). Dettaglio in `note/scalata.md`. E **via APRI/STOP** (`1.73.00`): il primo esito apre il giro, niente simulazione, percentuale cambiabile solo dopo un giro perso, Reset partite ricompone il piano | `1.72.00` → `1.73.00` | `be8975a` |
+| **Tagliando del codice** (29/10, `1.73.01`): via i resti della simulazione del piano (`esiti`, `perc`, «GIRO NUOVO · simulato»), `chiudi` e `riparti` dal registro, `casseDi`, `arrotonda`, `eventi` di Odds API; l'intestazione legge i ruoli da `RUOLO` di `theme.js`; dipendenze aggiornate dentro le versioni e 7 vulnerabilità su 9 chiuse. Restano React 19 e Vite 8 (salti di versione) | `1.73.01` | `6a0ce2a` |
+| **Road to weekend, ✓ CONFERMA GIOCATA** (30/10, `1.74.00`, `sql/50`-`51`): il passo è una proposta finché non lo si conferma; le partite cominciate restano 12 ore (si confermano o si saltano), così non spariscono più; puntata **all'euro per difetto** (113 € al 10% → 11 €) | `1.74.00` | `83c5cb8` |
+| **La matita al posto di «·»** (30/10): ✓ · ✗ · matita · graffetta; schedina confermata bloccata (via +, consigliata, ×, spezza; quota correggibile); in RISULTATO FILTRI barrata = solo tolta, e a giro aperto il pallino legge la schedina salvata | `1.74.01` | `4ceb93f` |
 | **In archivio solo i passi giocati** (29/10): STOP toglie il piano non giocato dopo la chiusura (finisce nel registro con `stato_scalata='chiusa'`), il resoconto filtra gli `aperto`. Ognuno il suo storico (`sql/41`) | `1.66.01` | `bd292d6` |
 | **Il Filtro A e il bankroll al 10%, verificati** (29/10, briefing di Mattia da ChatGPT): riprodotto (229 schedine, +18% ±13,5), walk-forward +24% ±22 su 84, ma sulle singole solo **~+2%** sopra VPM 7,5; **il 10% è troppo** — massimo al **3%** (108 € contro 78 €). `btscout/scripts/prova-filtro-a.js`, dettaglio in `note/criterio.md`. Proposta aperta: la prova sul futuro vero | motore | `bfed9ce` |
 | **Il routing** (29/10, lotto 2): ogni pagina ha un indirizzo (`/partite`, `/scalata`…, Dashboard `/`), la scheda è `/partite/:id` e `/votate/:id` (`components/SchedaPartita.jsx`), un link scaduto si apre con «GIÀ GIOCATA» e il risultato (`usaPartitaAperta`), indirizzo sconosciuto o solo-admin → Dashboard. Senza libreria: `lib/indirizzi.jsx` + `hooks/usaPercorso.js`; `app/vercel.json` per Vercel; `guarda.mjs` cerca `link`; `prova-permessi.js` prova che un user **non scrive** la griglia (verificato con sessione simulata). A margine: «Gli orari sono quelli del Regno Unito» in Partite → «italiani» | `1.66.00` | `dce4621` |
@@ -103,14 +135,13 @@ Il 24/10, in ordine:
   `note/conteggi.md`; la proposta è in «Da dove ripartire».
 
 **Road to weekend in tre righe** (il dettaglio in `note/scalata.md`):
-- ogni account — admin e user — ha **il suo conto e la sua scalata**, e
-  nessuno vede quelli degli altri. Il conto parte da **0** e si riempie con
-  **＋ ricarica**; è **calcolato** (`contoDi`), e la card dice **versato ·
-  conto · risultato** (`conto − versato`, in rosso se si è sotto);
-- dopo un passo perso i passi dopo restano **visibili e spenti**, e **⟳
-  RIPARTI** apre un giro nuovo con quelli, sulla puntata del 10% del conto;
-- **Mattia ha azzerato il suo archivio** il 24/10 mattina: tutti i registri
-  partono vuoti, e non c'è niente da recuperare.
+- ogni account ha **il suo conto e i suoi giri**; il conto parte da 0, si
+  riempie con **＋ ricarica** ed è **calcolato** (`contoDi`, `contiPercentuale`);
+- ogni passo punta una **percentuale del conto** (3·5·10·14%) **per
+  difetto**; il passo si **conferma** quando è giocato, poi l'esito; **a ogni
+  perso il giro va in archivio** e riparte coi passi rimasti;
+- la percentuale si cambia **solo dopo un giro perso**; le partite cominciate
+  restano 12 ore.
 
 **Spin in tre righe** (il dettaglio in `note/spin.md`): l'automatica
 ordina e colora per **scelta** (verde 75 · giallo 72 · blu 68), **solo lì**;
@@ -162,17 +193,18 @@ sul telefono non si distingueva il lavoro di oggi dalla cache di ieri.
 Nessuna di queste è stata promessa a Mattia: **si propone e decide lui.**
 Chiusi il 29/10: lotto 0 (rinvii), lotto 1 (falli, angoli e cartellini v2,
 derby), lotto 2 (routing), lotto 3 (arbitro: no), e Road to weekend a
-percentuale. L'ordine consigliato: **00 → 6 → 4**.
+percentuale. Il 30/10: la conferma della giocata in Road to weekend.
+L'ordine consigliato: **00 → 6 → 4**.
 
 | | cosa | costo |
 |---|---|---|
-| 00 | **Il primo giro vero di Road to weekend 1.73** dopo il push, sul telefono: una ricarica, la percentuale, ✓ sul passo 1 (il giro si apre e la percentuale si blocca), ✗ con due tocchi (il giro va in ARCHIVIO e la percentuale torna libera), Reset partite a giro aperto. Più un giro dell'app (Spin, una scheda con angoli/gialli e un derby, un link `/partite/:id`). E `prova-permessi.js`, che ora prova anche che un user **non scrive** la griglia — vuole le password, lo lancia Mattia | quindici minuti |
+| 00 | **Il weekend vero di Road to weekend 1.74** (Mattia lo prova il 31/10-1/11): ricarica, ✓ Conferma giocata sul passo 1, esito, ✗ con due tocchi (archivio e giro nuovo), matita, «salta» su una partita cominciata, Reset partite con un passo confermato (non deve sparire). Si raccoglie quello che non torna | il weekend |
 | 1F | **Il Filtro A sul futuro vero** (proposto il 29/10, **non deciso**): l'app registra da sola ogni schedina che il filtro proporrebbe, con regole fisse; dopo 100 schedine, ROI > 0 **e** gambe sopra 100% → candidato, altrimenti si archivia. Oggi lo storico non può dire di più | da stimare, mezza giornata |
 | 6 | **L'automazione** — i due `.plist` (`aggiornamento.plist` martedì/venerdì, `aggiornamento-orario.plist` solo risultati, zero crediti) **non sono installati**: oggi i dati si aggiornano solo quando Mattia lo chiede. Due comandi ciascuno, in testa ai file. ⚠️ Con **55 crediti** rimasti il giro del martedì/venerdì ne può fare **uno** fino al rinnovo | dieci minuti |
 | ~~2~~ | ~~**Il routing**~~ — ✅ **fatto il 29/10** (`1.66.00`) | — |
 | 4 | **La misura `eu` contro `eu,uk`** sull'1X2: se la sola `eu` basta, libera **148 crediti al mese** — ⚠️ più urgente da quando ne restano 55 | 2 crediti, un'ora |
 | 5 | **U3** — matrice dei risultati esatti e fair odds | 1 giorno |
-| 8 | **Fonti nuove**: xG da FBref (U4), il live (U5) | da stimare |
+| 8 | **Fonti nuove**: xG da FBref (U4), il live (U5). Serie C: nessuna fonte (30/10), lasciata | da stimare |
 
 Piccoli aperti (mezz'ora l'uno, vedi «Quello che resta aperto»): l'esito
 automatico del Bet Builder con `giocataArrivata`; il × in «RISULTATO FILTRI»
@@ -254,8 +286,6 @@ leggi "884 partite" o "440 crediti" e siamo a marzo, sono vecchi di mesi.
 | **Il tasto Bilancio solo per gli admin** (24/10) | `7deafd9` |
 | **Spin**: selezione per **scelta** 75/72/68, griglia «A mano» vuota, «ordina per» i quattro indicatori, «S1» su tre fonti (24/10) | `a115a23` |
 | **Road to weekend, conto personale** (`sql/41`): ricariche, conto calcolato, ⟳ RIPARTI, «fissato» salvato, ognuno la sua, flag a tutti; la partita aggiunta che non si toglieva; backup con le tabelle delle persone (24/10) | `39d7021` |
-| **Tagliando del codice** (29/10, `1.73.01`): via i resti della simulazione del piano (`esiti`, `perc`, «GIRO NUOVO · simulato»), `chiudi` e `riparti` dal registro, `casseDi`, `arrotonda`, `eventi` di Odds API; l'intestazione legge i ruoli da `RUOLO` di `theme.js`; dipendenze aggiornate dentro le versioni e 7 vulnerabilità su 9 chiuse. Restano React 19 e Vite 8 (salti di versione) | tagliando |
-| **Road to weekend, ✓ CONFERMA GIOCATA** (30/10, `1.74.00`, `sql/50`-`51`): il passo è una proposta finché non lo si conferma; le partite cominciate restano 12 ore (si confermano o si saltano), così non spariscono più; puntata **all'euro per difetto** (113 € al 10% → 11 €) | conferma |
 
 Le migrazioni applicate in questi due giorni: **`sql/31`** (numero del passo
 decimale, per inserirne uno in mezzo), **`sql/32`** (il metodo `madre`),
@@ -270,7 +300,7 @@ state provate simulando uno user e un admin in una transazione annullata.
 | | |
 |---|---|
 | ~~**NickV aveva un giro aperto col metodo VECCHIO**~~ | ✅ **29/10**: Mattia, entrato come NickV, ha usato «Azzera tutto» e poi una ricarica di 50 €. Le scalate 48 e 57 non avevano nessun passo giocato, quindi il conto resta 50 € come prima. I 71 passi di piano sono nel registro delle cancellazioni. Era: `regola = 'meta'`, e al primo ✗ `chiudi_giro_perso` l'avrebbe rifiutato |
-| **Road to weekend 1.73 non giocata dal vero** (29/10) | `giocaPrimo`, `perdi` a percentuale, `cambiaPercentuale`, Reset partite in coda (`aggiungiPiano`) e `eliminaGiroVuoto`: provati nel database da user in transazioni annullate e a schermo con Fotografo a conto zero. **Nessun passo vero giocato**: il primo di Mattia è la prova |
+| **Road to weekend 1.74 non giocata dal vero** (30/10) | la conferma l'ha vista Mattia in `npm run dev` su una schedina vera (Waregem · Casa Pia · Villarreal, 11 €); matita, «salta» e il resto il giro completo (esito, ✗ con archivio, giro nuovo) lo prova **nel weekend 31/10-1/11**. Nel database: `sql/50` provata da NickV, `sql/51` da Admin, in transazioni annullate |
 | **«sce —» nelle foto di `guarda.mjs`** (29/10) | con l'utente di prova la Scelta esce quasi sempre vuota, probabilmente perché lo scatto arriva prima dei dati di VPM (1,2 s). Se Mattia lo vede anche sul suo schermo è un difetto vero |
 | **`guarda.mjs` ricompone male le pagine lunghe** (29/10) | la foto «intera» di Road to weekend ha la barra in basso **in mezzo** e copre la card del passo: per guardare quella zona serve uno scatto a finestra, non `fullPage` |
 | **il Filtro A sul futuro** (29/10) | proposta in «Da dove ripartire» (1F), non decisa |

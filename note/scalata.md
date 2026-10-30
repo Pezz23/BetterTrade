@@ -922,3 +922,18 @@ Admin in una transazione annullata: conto 113 al 10% → giro nuovo a 11 €.
 ⚠️ Effetto da sapere: per difetto la puntata va a **0** prima. Al 5% serve
 un conto di almeno 20 € per puntare 1 €; al 3%, 34 €. Sotto, la pagina chiede
 una ricarica.
+
+### La matita e la schedina confermata (30/10/2026, `1.74.01`)
+
+Mattia: *"farei ✓ ✗, un tasto per togliere la conferma e procedere con le
+modifiche, e la graffetta"* — e la matita, scelta contro l'ingranaggio (che
+dice «impostazioni»). **✓ · ✗ · matita · graffetta**: la matita fa un passo
+indietro alla volta — toglie l'esito, poi la conferma. Un ✗ perso non torna
+indietro, perché ha già chiuso il giro.
+A schedina confermata spariscono «+ aggiungi partita», la consigliata, la × e
+lo spezza: una schedina giocata non cambia senza la matita. **La quota resta
+correggibile**: al banco può essere diversa da quella scaricata.
+In RISULTATO FILTRI **barrata vuol dire tolta, e basta**: le partite spostate
+a mano in un passo erano barrate come le tolte, e sembravano fuori dalla
+schedina (Mattia, con una foto). A giro aperto il pallino del passo legge la
+schedina salvata, non il piano.
