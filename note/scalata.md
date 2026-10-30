@@ -883,3 +883,42 @@ motore.
 `chiudi_giro_perso` accetta solo `percentuale`. L'unico che c'era (NickV) è
 stato azzerato il 29/10; un altro non può nascere, perché ogni giro nuovo
 nasce `percentuale`.
+
+### La CONFERMA della giocata e le 12 ore (30/10/2026, `1.74.00`, `sql/50`)
+
+Mattia: *"gioco la partita delle 14, entro alle 15 e non vedo più la partita e
+non posso recuperarla"*. **Il perché**: finché il giro non è aperto il piano
+non è salvato, e si ricompone dalle partite che cominciano dopo `calendarioDa`.
+Quell'istante partiva da *adesso* a ogni apertura della pagina senza piano
+salvato, e a ogni Reset partite: la partita delle 14, alle 15, non esisteva più.
+
+- **✓ CONFERMA GIOCATA** (`ConfermaGiocata`): il passo arriva come
+  *proposta* della scaletta, si tolgono o aggiungono partite, e quando è
+  giocato al banco lo si conferma. Sul passo 1 del piano apre il giro
+  (`confermaPrimo`, che sostituisce `giocaPrimo`); a giro aperto scrive
+  `confermato_il` e la puntata (`conferma`). **L'esito si segna dopo**, coi
+  soliti tasti; «·» senza esito annulla la conferma.
+- **`giocato(p)`** = confermato **o** con un esito (i passi di prima del 30/10
+  non hanno la conferma). È la domanda di cambio percentuale, Reset partite,
+  `azzeraPiano`, `eliminaGiroVuoto` e archivio: **un passo confermato non si
+  butta**.
+- **12 ore** (`ORE_VISIBILI`): il piano prende le partite da
+  `max(calendarioDa, adesso − 12 h)`, e anche Reset partite riparte da 12 ore
+  fa. Una partita cominciata resta nel passo con *«⏱ iniziata alle 14:00 ·
+  l'hai giocata?»* e il tasto **«non giocata, salta il passo»**, che sposta
+  `calendarioDa` dopo l'ultima partita di quel passo. In RISULTATO FILTRI le
+  cominciate restano spente, con l'ora in ambra.
+- ⚠️ Effetto da sapere: aprendo la sera, il passo 1 proposto può essere una
+  fascia del pomeriggio. Se non giocata, si salta: un tocco per passo.
+- ⚠️ «+ aggiungi partita» continua a **non** offrire partite cominciate: lì si
+  pianifica, non si registra.
+
+### La puntata all'euro PER DIFETTO (30/10/2026, `sql/51`)
+
+Mattia: *"113 € deve consigliare 11 €"*. `puntataDi` passa da `ceil` a
+`floor` (sempre dopo l'arrotondamento ai centesimi: `100 × 0,29` in virgola
+mobile è 28,999…), e `chiudi_giro_perso` fa lo stesso in SQL — provata da
+Admin in una transazione annullata: conto 113 al 10% → giro nuovo a 11 €.
+⚠️ Effetto da sapere: per difetto la puntata va a **0** prima. Al 5% serve
+un conto di almeno 20 € per puntare 1 €; al 3%, 34 €. Sotto, la pagina chiede
+una ricarica.

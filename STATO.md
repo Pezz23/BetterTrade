@@ -8,9 +8,9 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 29 ottobre 2026, notte · app alla versione **1.73.01**
-(`6a0ce2a`, tagliando del codice) · passaggio di consegne: 29/10, fine sessione · pushato fino a
-`b01f082`, ⚠️ **da pushare** solo l'ultimo commit dei documenti — su Vercel si guarda
+**Ultimo aggiornamento:** 30 ottobre 2026 · app alla versione **1.74.00**
+(✓ Conferma giocata, `sql/50`-`51` applicate) · passaggio di consegne: 29/10 · ⚠️ **da pushare**
+i commit dopo `b01f082` — su Vercel si guarda
 un ricaricamento su `/partite` (è `app/vercel.json` a evitare il 404)
 
 ## ▶️ DOVE SIAMO — 29 ottobre 2026, leggi questo per primo
@@ -255,6 +255,7 @@ leggi "884 partite" o "440 crediti" e siamo a marzo, sono vecchi di mesi.
 | **Spin**: selezione per **scelta** 75/72/68, griglia «A mano» vuota, «ordina per» i quattro indicatori, «S1» su tre fonti (24/10) | `a115a23` |
 | **Road to weekend, conto personale** (`sql/41`): ricariche, conto calcolato, ⟳ RIPARTI, «fissato» salvato, ognuno la sua, flag a tutti; la partita aggiunta che non si toglieva; backup con le tabelle delle persone (24/10) | `39d7021` |
 | **Tagliando del codice** (29/10, `1.73.01`): via i resti della simulazione del piano (`esiti`, `perc`, «GIRO NUOVO · simulato»), `chiudi` e `riparti` dal registro, `casseDi`, `arrotonda`, `eventi` di Odds API; l'intestazione legge i ruoli da `RUOLO` di `theme.js`; dipendenze aggiornate dentro le versioni e 7 vulnerabilità su 9 chiuse. Restano React 19 e Vite 8 (salti di versione) | tagliando |
+| **Road to weekend, ✓ CONFERMA GIOCATA** (30/10, `1.74.00`, `sql/50`-`51`): il passo è una proposta finché non lo si conferma; le partite cominciate restano 12 ore (si confermano o si saltano), così non spariscono più; puntata **all'euro per difetto** (113 € al 10% → 11 €) | conferma |
 
 Le migrazioni applicate in questi due giorni: **`sql/31`** (numero del passo
 decimale, per inserirne uno in mezzo), **`sql/32`** (il metodo `madre`),

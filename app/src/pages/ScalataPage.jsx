@@ -19,7 +19,7 @@ import { pct, eur, gg } from '../lib/formato'
 import {
   METODO, NOMI_REGOLA, QUOTA_MINIMA_GAMBA, QUOTA_MINIMA_SCHEDINA, CONSIGLIATO,
   fasce, FINESTRA_ELENCO_ORE, spezzaFasce, spezzaAlMinimo, giorno, puoSpezzare, contoDi, eCriterioA,
-  PERCENTUALI, PERCENTUALE_DEFAULT, puntataDi, contiPercentuale,
+  PERCENTUALI, PERCENTUALE_DEFAULT, puntataDi, contiPercentuale, ORE_VISIBILI, giocato,
 } from '../lib/scalata'
 
 // ROAD TO WEEKEND — la road map delle giocate del weekend.
@@ -139,7 +139,9 @@ function QuotaModificabile({ valore, segnaposto, onChange, onCommit, sola = fals
  * ⚠️ Il criterio A: filo viola a sinistra, fondo appena tinto, «A». I nomi
  * restano chiari anche lì.
  */
-function SchedaRisultato({ g, fuori, soloSegno, spostata, iPasso, colorePasso, segni, onApri, onTogli }) {
+// ⚠️ `iniziata` (30/10/2026): la partita è cominciata ma resta in elenco per
+// 12 ore (`ORE_VISIBILI`), spenta e con l'ora in ambra.
+function SchedaRisultato({ g, fuori, soloSegno, spostata, iPasso, colorePasso, segni, onApri, onTogli, iniziata = false }) {
   const a = !fuori && eCriterioA(g)
   const num = { fontFamily: F.mono, fontVariantNumeric: 'tabular-nums' }
   const virgola = (x) => (x == null ? '—' : Number(x).toFixed(2).replace('.', ','))
@@ -151,8 +153,8 @@ function SchedaRisultato({ g, fuori, soloSegno, spostata, iPasso, colorePasso, s
       // bordo è quello di tutte le altre.
       background: a ? `linear-gradient(${alpha(C.viola, 0.04)},${alpha(C.viola, 0.04)}), ${C.card}` : C.card,
       border: `1px solid ${C.bordoTenue}`,
-      boxShadow: a ? `inset 3px 0 0 ${C.viola}` : 'none', opacity: fuori ? 0.5 : 1 }}>
-      <span style={{ ...num, fontSize: S.base, color: C.spento }}>{g.ora?.slice(0, 5)}</span>
+      boxShadow: a ? `inset 3px 0 0 ${C.viola}` : 'none', opacity: fuori ? 0.5 : iniziata ? 0.6 : 1 }}>
+      <span title={iniziata ? 'già cominciata' : undefined} style={{ ...num, fontSize: S.base, color: iniziata ? C.ambra : C.spento }}>{g.ora?.slice(0, 5)}</span>
       <span onClick={onApri} role="button" style={{ minWidth: 0, cursor: 'pointer', fontFamily: F.sans, fontSize: S.corpo,
         fontWeight: 600, lineHeight: 1.25, color: C.testo, overflowWrap: 'anywhere',
         textDecoration: fuori || spostata ? 'line-through' : 'none' }}>
@@ -466,7 +468,7 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, colore, classifiche,
  * nel colore, la parola nel `title`.
  * ⚠️ 34×30 e non meno: è il bersaglio di un dito, non di un mouse.
  */
-function TastiEsito({ esito, setEsito, fissato = false, onFissa = null }) {
+function TastiEsito({ esito, setEsito, fissato = false, onFissa = null, confermato = false, onAnnullaConferma = null }) {
   // ⚠️⚠️ **Il ✗ vuole due tocchi** (29/10/2026): a percentuale del conto un
   // passo perso **chiude il giro** e lo manda in archivio, e un tocco sbagliato
   // non si disfa con «·». Il primo tocco arma, il secondo segna; dopo cinque
@@ -495,19 +497,72 @@ function TastiEsito({ esito, setEsito, fissato = false, onFissa = null }) {
         {/* ⚠️ La scritta dice quando si va in archivio (Mattia, 29/10/2026:
             *"la domanda è: quando va in archivio?"*). */}
         {armato ? <b style={{ color: C.rosso }}>Tocca di nuovo ✗ per confermare: il giro va in archivio</b>
-          : esito === 'vinto' ? 'vinto' : esito === 'perso' ? 'perso' : fissato ? 'fissato' : 'da giocare'}
+          : esito === 'vinto' ? 'vinto' : esito === 'perso' ? 'perso'
+            : confermato ? 'giocata · segna l’esito' : fissato ? 'fissato' : 'da giocare'}
       </span>
       {tasto(esito === 'vinto', C.verde, () => { setArmato(false); setEsito('vinto') }, '✓', 'vinto')}
       {tasto(esito === 'perso' || armato, C.rosso, () => {
         if (esito === 'perso') return
         if (armato) { setArmato(false); setEsito('perso') } else setArmato(true)
       }, '✗', 'perso')}
-      {tasto(!esito, C.spento, () => setEsito(null), '·', 'da giocare')}
+      {/* ⚠️ Senza esito, su un passo confermato, «·» annulla la conferma
+          (30/10/2026): è il modo di disfare un ✓ Conferma toccato per sbaglio. */}
+      {tasto(!esito && !confermato, C.spento,
+        () => (esito || !onAnnullaConferma ? setEsito(null) : onAnnullaConferma()),
+        '·', esito ? 'da giocare' : onAnnullaConferma ? 'annulla la conferma' : 'da giocare')}
       {onFissa && !esito && tasto(fissato, C.viola, onFissa, <Icona nome="puntina" misura={15} />, fissato ? 'togli il fissato' : 'fissa il passo')}
     </div>
   )
 }
 
+
+/**
+ * ⚠️⚠️ **✓ CONFERMA GIOCATA** (Mattia, 30/10/2026). Il passo arriva come
+ * **proposta**: le partite le mette la scaletta, si tolgono o si aggiungono, e
+ * quando la schedina è giocata al banco si conferma. Da lì è salvata con la
+ * puntata, e restano i tasti dell'esito.
+ * ⚠️ `iniziata` è l'ora della prima partita già cominciata: il passo non è
+ * sparito (resta 12 ore, `ORE_VISIBILI`) e chiede se è stato giocato. «Non
+ * giocata» lo salta (`onSalta`), e il piano passa al successivo.
+ */
+function ConfermaGiocata({ posta, quota, iniziata = null, onConferma, onSalta = null, fissato = false, onFissa = null }) {
+  const virgola = (x) => x.toFixed(2).replace('.', ',')
+  return (
+    <div>
+      {iniziata && (
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: SP.m, flexWrap: 'wrap', marginBottom: SP.m,
+          fontFamily: F.sans, fontSize: S.minuta, color: C.ambra }}>
+          <span>⏱ iniziata alle {iniziata} · l’hai giocata?</span>
+          {onSalta && (
+            <button onClick={onSalta} style={{ marginLeft: 'auto', padding: '4px 0', background: 'transparent', border: 'none',
+              cursor: 'pointer', fontFamily: F.sans, fontSize: S.minuta, color: C.spento, textDecoration: 'underline' }}>
+              non giocata, salta il passo
+            </button>
+          )}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: SP.s, alignItems: 'stretch' }}>
+        <button onClick={onConferma} style={{ flex: 1, minWidth: 0, padding: '10px 12px', cursor: 'pointer', borderRadius: R.m,
+          background: alpha(C.verde, 0.16), border: `1px solid ${alpha(C.verde, 0.6)}`, color: C.verde,
+          fontFamily: F.sans, fontSize: S.base, fontWeight: 700 }}>
+          ✓ CONFERMA GIOCATA
+          <span style={{ fontWeight: 400, color: C.spento }}> · {eur(posta)} a {virgola(quota)}</span>
+        </button>
+        {onFissa && (
+          <button onClick={onFissa} title={fissato ? 'togli il fissato' : 'fissa il passo'} aria-pressed={fissato}
+            style={{ width: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', borderRadius: R.m,
+              color: fissato ? C.fondo : C.spento, background: fissato ? C.viola : C.card,
+              border: `1px solid ${fissato ? C.viola : alpha(C.viola, 0.3)}` }}>
+            <Icona nome="puntina" misura={15} />
+          </button>
+        )}
+      </div>
+      <div style={{ marginTop: SP.s, fontFamily: F.sans, fontSize: S.micro, color: C.fioco }}>
+        proposta della scaletta: togli o aggiungi partite, poi conferma quando l’hai giocata
+      </div>
+    </div>
+  )
+}
 
 /** Una tendina: un titolo con un riassunto, che si apre toccandolo. */
 function Tendina({ titolo, riassunto, children, colore = C.spento }) {
@@ -539,7 +594,8 @@ function Tendina({ titolo, riassunto, children, colore = C.spento }) {
  */
 function PassoHero(props) {
   const { numero, gambe, giorno: gio, ora, posta, quote, esito, setEsito,
-    tocca = true, onFissa, fissato, conto = null, colore = C.oro } = props
+    tocca = true, onFissa, fissato, conto = null, colore = C.oro,
+    confermato = false, onConferma = null, onAnnullaConferma = null, iniziata = null, onSalta = null } = props
   const col = colore
   const quota = gambe.map(g => Number(quote[g.id] ?? g.quota) || 1).reduce((a, q) => a * q, 1)
   const montante = posta * quota
@@ -588,7 +644,11 @@ function PassoHero(props) {
 
       {tocca && (
         <div style={{ marginTop: SP.l }}>
-          <TastiEsito esito={esito} setEsito={setEsito} fissato={fissato} onFissa={onFissa} />
+          {onConferma && !confermato && !esito
+            ? <ConfermaGiocata posta={posta} quota={quota} iniziata={iniziata} onConferma={onConferma}
+                onSalta={onSalta} fissato={fissato} onFissa={onFissa} />
+            : <TastiEsito esito={esito} setEsito={setEsito} fissato={fissato} onFissa={onFissa}
+                confermato={confermato} onAnnullaConferma={onAnnullaConferma} />}
         </div>
       )}
 
@@ -735,7 +795,7 @@ function GiroArchivio({ s, onResoconto }) {
     return () => { vivo = false }
   }, [aperta, dati, onResoconto, s.id])
   const d = Number(s.bankroll_finale) - Number(s.bankroll_iniziale)
-  const giocati = (dati?.passi || []).filter(p => p.esito !== 'aperto')
+  const giocati = (dati?.passi || []).filter(giocato)
   const vinti = giocati.filter(p => p.esito === 'vinto').length
   const virgola = (x) => Number(x).toFixed(2).replace('.', ',')
   return (
@@ -947,7 +1007,19 @@ export default function ScalataPage() {
   // piano: il piano resta com'era finché non lo si aggiorna, anche riaprendo
   // l'app il giorno dopo. `daOra` resta l'orologio vivo del `+` e della
   // finestra manuale, dove una partita già cominciata non si pianifica.
-  const [calendarioDa, setCalendarioDa] = useState(() => Date.now())
+  // ⚠️ Parte 12 ore indietro (30/10/2026): una partita cominciata resta nel
+  // piano finché non la si conferma o la si salta (`ORE_VISIBILI`).
+  const [calendarioDa, setCalendarioDa] = useState(() => Date.now() - ORE_VISIBILI * 3600000)
+  // Da quando il piano prende le partite: il calendario fermo, ma **mai più
+  // di 12 ore fa** — oltre, una partita è finita da un pezzo.
+  const daQuando = Math.max(calendarioDa, daOra - ORE_VISIBILI * 3600000)
+  // L'istante d'inizio di una partita o di una gamba, come lo legge `iniziaDopo`.
+  const inizioDi = (g) => new Date(`${giorno(g.data)}T${String(g.ora || '23:59').slice(0, 5)}:00`).getTime()
+  // L'ora della prima partita già cominciata di un passo, o null.
+  const iniziataDi = (gambe) => {
+    const g = gambe.filter(x => !iniziaDopo(x, daOra)).sort((a, b) => inizioDi(a) - inizioDi(b))[0]
+    return g ? (g.ora ? String(g.ora).slice(0, 5) : 'oggi') : null
+  }
   const [armaNuovo, setArmaNuovo] = useState(false)
   useEffect(() => {
     if (!armaNuovo) return
@@ -1115,13 +1187,13 @@ export default function ScalataPage() {
     return valutate.filter(r =>
       !tolte.includes(r.id) &&
       !r.quoteIncoerenti &&
-      iniziaDopo(r, calendarioDa) &&
+      iniziaDopo(r, daQuando) &&
       (stellata(r) || (
         r.att != null && r.att * 100 >= attMin &&
         r.scelta != null && r.scelta * 100 >= sceMin &&
         (vpmMin <= 0 || (r.vpm != null && r.vpm >= vpmMin)) &&
         (r.quota ?? 0) >= quotaGamba)))
-  }, [righe, valutate, attMin, sceMin, vpmMin, quotaGamba, tolte, calendarioDa, votiDi])
+  }, [righe, valutate, attMin, sceMin, vpmMin, quotaGamba, tolte, daQuando, votiDi])
 
   // ⚠️ Le fasce sono una **proposta**: stesso giorno, orari entro tre ore. Poi
   // si toglie a mano quello che non piace — è il motivo per cui la pagina esiste.
@@ -1182,8 +1254,8 @@ export default function ScalataPage() {
     if (!righe) return []
     const dentro = new Set(candidate.map(c => c.id))
     return valutate.filter(r => !dentro.has(r.id) && !tolte.includes(r.id)
-      && iniziaDopo(r, calendarioDa) && (flagDi(r.id) > 0 || votiDi(r.id) > 0))
-  }, [righe, valutate, candidate, tolte, calendarioDa, flagDi, votiDi])
+      && iniziaDopo(r, daQuando) && (flagDi(r.id) > 0 || votiDi(r.id) > 0))
+  }, [righe, valutate, candidate, tolte, daQuando, flagDi, votiDi])
 
   // ⚠️ Si fondono **in ordine di data**, non in coda: una partita flaggata
   // appartiene al suo weekend, e messa in fondo finirebbe sotto il divisore
@@ -1244,7 +1316,7 @@ export default function ScalataPage() {
   // l'1 no, la catena è ferma all'1 e il `+` dell'1 guarderebbe dentro il 2.
   const prossimaSalvata = useMemo(() => (i) =>
     reg.passi.slice(i + 1)
-      .filter(r => r.esito === 'aperto')
+      .filter(r => !giocato(r))
       .flatMap(r => reg.gambe.filter(g => g.passo_id === r.id))
       .filter(g => iniziaDopo(g, daOra))[0] ?? null, [reg.passi, reg.gambe, daOra])
 
@@ -1565,7 +1637,7 @@ export default function ScalataPage() {
               {/* ⚠️⚠️ **Si cambia solo dopo un giro perso** (Mattia,
                   29/10/2026): cioè senza giro, o in un giro appena
                   ripartito dove nessun passo è ancora stato giocato. */}
-              {aperta && reg.passi.some(x => x.esito !== 'aperto')
+              {aperta && reg.passi.some(giocato)
                 ? <span style={{ fontFamily: F.sans, fontSize: S.base, color: C.spento }}>
                     <b style={{ fontFamily: F.mono, color: C.celeste }}>{Math.round(percentuale * 100)}%</b> · si cambia dopo un giro perso
                   </span>
@@ -1627,13 +1699,13 @@ export default function ScalataPage() {
           </span>}>LA SCALETTA</TitoloCard>
         {/* ⚠️⚠️ **Niente più ▶ APRI e ⏹ STOP** (Mattia, 29/10/2026: *"con il
             bankroll dinamico aprire e chiudere la scalata è inutile"*). Il
-            primo ✓ o ✗ sul passo 1 salva il piano e apre il giro
-            (`reg.giocaPrimo`); un perso lo chiude e ne riparte un altro coi
+            ✓ Conferma giocata sul passo 1 salva il piano e apre il giro
+            (`reg.confermaPrimo`, 30/10/2026); un perso lo chiude e ne riparte un altro coi
             passi rimasti. Qui resta solo la riga che lo spiega, e gli errori. */}
         <div style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco, marginTop: SP.s }}>
           {aperta
             ? `giro in corso dal ${new Date(aperta.aperta_il).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} · un passo perso lo chiude e lo manda in archivio`
-            : 'segna l’esito del passo 1 per cominciare: il giro si apre da solo'}
+            : 'conferma il passo 1 quando l’hai giocato: il giro si apre da solo'}
         </div>
         {erroreApri && (
           <div style={{ marginTop: 6, fontSize: S.minuta, fontFamily: F.sans, color: C.rosso, textAlign: 'center' }}>
@@ -1711,6 +1783,14 @@ export default function ScalataPage() {
                  stato della pagina: da `gambe[iG]` in giù scendono in un passo
                  inserito subito dopo, col numero di mezzo (3 e 4 → 3,5). */
               onSpezza={(iG) => reg.spezzaPasso(riga, reg.passi[i + 1]?.numero ?? null, gambe.slice(iG))}
+              /* ⚠️⚠️ **Prima si conferma, poi l'esito** (30/10/2026): un passo
+                 salvato è ancora una proposta finché non lo si gioca al banco.
+                 I passi di prima, con un esito e senza conferma, contano come
+                 giocati (`giocato`). */
+              confermato={giocato(riga)}
+              onConferma={async () => { const x = await reg.conferma(riga, p); setAvviso(x?.errore ?? null) }}
+              onAnnullaConferma={riga.confermato_il ? async () => { const x = await reg.conferma(riga, null); setAvviso(x?.errore ?? null) } : null}
+              iniziata={giocato(riga) ? null : iniziataDi(gambe)}
               esito={riga.esito === 'aperto' ? null : riga.esito}
               setEsito={async (e) => {
                 const q = gambe.reduce((a, g) => a * Number(g.quota), 1)
@@ -1779,20 +1859,27 @@ export default function ScalataPage() {
               onSpezza={(iG) => { const id = f.partite[iG]?.id; if (id) setTagli(t => [...t, id]) }}
               quote={quote} setQuote={setQuote}
               esito={null}
-              /* ⚠️⚠️ **Niente simulazione** (Mattia, 29/10/2026): l'esito del
-                 passo 1 del piano è vero — salva il piano, apre il giro e
-                 registra il passo con la puntata vera. Solo sul passo 1: gli
-                 altri si scoprono uno per volta, come sempre. */
-              setEsito={async (e) => {
-                if (!e || i !== 0) return
+              /* ⚠️⚠️ **Il passo 1 del piano si CONFERMA** (Mattia, 30/10/2026):
+                 ✓ Conferma giocata salva il piano, apre il giro e segna il
+                 passo come giocato con la puntata vera; l'esito si dà dopo, a
+                 giro aperto. Solo sul passo 1: gli altri si scoprono uno per
+                 volta. ⚠️ Una partita già cominciata resta qui 12 ore
+                 (`ORE_VISIBILI`): se il passo non è stato giocato, «salta»
+                 sposta il calendario dopo la sua ultima partita. */
+              confermato={false}
+              onConferma={i !== 0 ? null : async () => {
                 if (posta < 1) { setAvviso('Il conto è sotto 1 €: fai una ricarica prima di giocare.'); return }
                 const piano = componiPiano()
-                const finale = cent(bankrollIniziale - posta)
-                const x = await reg.giocaPrimo(
+                const x = await reg.confermaPrimo(
                   { bankroll: bankrollIniziale, posta, quotaMinima: QUOTA_MINIMA_SCHEDINA, regola: METODO.id, percentuale, piano },
-                  e, { posta, quota: piano[0]?.quota ?? 1, finale, conto: cent(contoFermo + finale - bankrollIniziale) })
-                if (x?.errore) setErroreApri(x.errore)
-                else setErroreApri(null)
+                  { posta })
+                setErroreApri(x?.errore ?? null)
+                setDaOra(Date.now())
+              }}
+              iniziata={i === 0 ? iniziataDi(f.partite) : null}
+              onSalta={i !== 0 ? null : () => {
+                const ultima = Math.max(...f.partite.map(inizioDi))
+                setCalendarioDa(ultima + 60000)
                 setDaOra(Date.now())
               }}
               /* ⚠️ Toglie **anche dalle aggiunte**: rimessa dall'elenco, la
@@ -1879,11 +1966,11 @@ export default function ScalataPage() {
         background: armaNuovo ? alpha(C.rosso, 0.18) : 'transparent',
         border: `1px solid ${alpha(C.rosso, armaNuovo ? 0.7 : 0.35)}`, color: C.rosso, fontFamily: F.sans, fontSize: S.minuta }}
         onClick={async () => {
-          const daButtare = aperta ? reg.passi.filter(x => x.esito === 'aperto').length : 0
+          const daButtare = aperta ? reg.passi.filter(x => !giocato(x)).length : 0
           if (daButtare && !armaNuovo) { setArmaNuovo(true); return }
           setArmaNuovo(false)
           const ora = Date.now()
-          setTolte([]); setAggiunte({}); setDaOra(ora); setCalendarioDa(ora)
+          setTolte([]); setAggiunte({}); setDaOra(ora); setCalendarioDa(ora - ORE_VISIBILI * 3600000)
           // ⚠️ **E rilegge davvero le partite.** Finché `usaProssime` non
           // aveva memoria questo tasto non ricaricava niente — spostava
           // solo l'orologio — e il nome mentiva: le partite erano quelle
@@ -1895,8 +1982,8 @@ export default function ScalataPage() {
           // giocato, si tolgono i passi non giocati e in coda entra il piano
           // ricomposto, senza le partite già giocate.
           if (aperta) {
-            if (!reg.passi.some(x => x.esito !== 'aperto')) { await reg.eliminaGiroVuoto(); return }
-            const giocati = new Set(reg.passi.filter(x => x.esito !== 'aperto').map(x => x.id))
+            if (!reg.passi.some(giocato)) { await reg.eliminaGiroVuoto(); return }
+            const giocati = new Set(reg.passi.filter(giocato).map(x => x.id))
             const usate = new Set(reg.gambe.filter(g => giocati.has(g.passo_id)).map(g => g.prossima_id))
             await reg.azzeraPiano()
             const x = await reg.aggiungiPiano(componiPiano(usate))
@@ -1904,7 +1991,7 @@ export default function ScalataPage() {
           }
         }}>
         {armaNuovo
-          ? `⚠️ tocca ancora: cancella ${reg.passi.filter(x => x.esito === 'aperto').length} passi non giocati`
+          ? `⚠️ tocca ancora: cancella ${reg.passi.filter(x => !giocato(x)).length} passi non giocati`
           : '↻ Reset partite'}
       </button>
       </div>
@@ -1964,7 +2051,7 @@ export default function ScalataPage() {
                   const t = flagTipiDi(g.id), mio = mioFlag(g.id)
                   const tinta = mio ? (isAdmin ? C.verde : C.blu) : t.admin ? C.verde : C.blu
                   return (
-                    <SchedaRisultato key={g.id} g={g} fuori={fuori}
+                    <SchedaRisultato key={g.id} g={g} fuori={fuori} iniziata={!iniziaDopo(g, daOra)}
                       soloSegno={!fuori && fuoriFiltri.some(x => x.id === g.id)}
                       spostata={Object.values(aggiunte).flat().includes(g.id)}
                       iPasso={fuori ? -1 : iPasso} colorePasso={iPasso >= 0 ? coloreDi(iPasso) : C.grigio}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../supabase'
 import { giocataArrivata } from '../lib/esito'
+import { giocato } from '../lib/scalata'
 
 // ROAD TO WEEKEND — il registro: apre, segna, chiude, rilegge.
 //
@@ -174,35 +175,37 @@ export function usaScalate(userId) {
   }, [userId, stato.aperta, ricarica])
 
   /**
-   * ⚠️⚠️ **Il PRIMO esito apre il giro** (Mattia, 29/10/2026: *"il concetto
-   * di apri e chiudi scalata con bankroll dinamico è inutile"*). Niente più
-   * ▶ APRI e ⏹ STOP: segnando ✓ o ✗ sul passo 1 del piano, il piano si salva
-   * (come faceva APRI) e il passo 1 prende l'esito, con la puntata vera.
-   * Se è un perso, il giro si chiude subito e ne riparte uno coi passi
-   * rimasti (`chiudi_giro_perso`), come per ogni altro perso.
+   * ⚠️⚠️ **La CONFERMA del passo 1 apre il giro** (Mattia, 30/10/2026). Prima
+   * lo apriva il primo esito, cioè a partita finita: fra la giocata al banco e
+   * il risultato l'app non sapeva niente, e la partita poteva sparire dal
+   * piano appena cominciata. Ora ✓ Conferma giocata salva il piano (come
+   * faceva APRI) e segna il passo 1 come giocato, con la puntata vera.
+   * L'esito si segna dopo, come per ogni altro passo.
    */
-  const giocaPrimo = useCallback(async (apertura, esito, { posta, quota, finale, conto }) => {
+  const confermaPrimo = useCallback(async (apertura, { posta }) => {
     const r = await apri({ ...apertura, senzaRilettura: true })
     if (r.errore) return r
     const primo = r.passi?.[0]
     if (!primo) { await ricarica(); return { errore: 'il piano si è salvato senza passi' } }
-    const errore = primoErrore(await Promise.all([
-      supabase.from('scalata_passi').update({
-        esito, posta, montante: esito === 'vinto' ? Math.round(posta * quota * 100) / 100 : null,
-        deciso_il: new Date().toISOString(),
-      }).eq('id', primo.id),
-      supabase.from('scalata_gambe').update({ esito }).eq('passo_id', primo.id),
-    ]))
-    if (errore) { await ricarica(); return { errore } }
-    if (esito === 'perso') {
-      const { error } = await supabase.rpc('chiudi_giro_perso', {
-        p_scalata: r.id, p_dopo: Number(primo.numero), p_finale: finale, p_conto: conto,
-      })
-      if (error) { await ricarica(); return { errore: `il passo è perso, ma il giro non si è chiuso: ${error.message}` } }
-    }
+    const { error } = await supabase.from('scalata_passi')
+      .update({ confermato_il: new Date().toISOString(), posta }).eq('id', primo.id)
     await ricarica()
-    return {}
+    return error ? { errore: `il giro è aperto, ma la conferma non si è salvata: ${error.message}` } : {}
   }, [apri, ricarica])
+
+  /**
+   * Conferma (o annulla la conferma di) un passo di un giro aperto: *"l'ho
+   * giocato al banco"*. Con la conferma si scrive la puntata di quel momento.
+   * ⚠️ Annullare si può solo finché non c'è un esito: la pagina lo offre solo
+   * lì, e un passo con un esito resta giocato comunque (`giocato`).
+   */
+  const conferma = useCallback(async (passo, posta = null) => {
+    const { error } = await supabase.from('scalata_passi').update(posta == null
+      ? { confermato_il: null }
+      : { confermato_il: new Date().toISOString(), posta }).eq('id', passo.id)
+    await ricarica()
+    return error ? { errore: error.message } : {}
+  }, [ricarica])
 
   /**
    * ⚠️ **La percentuale si cambia solo dopo un giro perso** (Mattia,
@@ -212,7 +215,7 @@ export function usaScalate(userId) {
    */
   const cambiaPercentuale = useCallback(async (percentuale, posta) => {
     if (!stato.aperta) return { errore: 'nessun giro aperto' }
-    if (stato.passi.some(p => p.esito !== 'aperto')) return { errore: 'in questo giro si è già giocato: la percentuale si cambia dopo un perso' }
+    if (stato.passi.some(giocato)) return { errore: 'in questo giro si è già giocato: la percentuale si cambia dopo un perso' }
     const { error } = await supabase.from('scalate').update({ percentuale, posta, cassa: posta })
       .eq('id', stato.aperta.id)
     if (error) return { errore: error.message }
@@ -227,7 +230,7 @@ export function usaScalate(userId) {
    */
   const aggiungiPiano = useCallback(async (piano) => {
     if (!stato.aperta || !piano?.length) return {}
-    const ultimo = stato.passi.filter(p => p.esito !== 'aperto').reduce((m, p) => Math.max(m, Number(p.numero)), 0)
+    const ultimo = stato.passi.filter(giocato).reduce((m, p) => Math.max(m, Number(p.numero)), 0)
     const ins = await inseriscipiano(stato.aperta.id, piano, Math.floor(ultimo) + 1)
     await ricarica()
     return ins.errore ? { errore: ins.errore } : {}
@@ -240,7 +243,7 @@ export function usaScalate(userId) {
    */
   const eliminaGiroVuoto = useCallback(async () => {
     if (!stato.aperta) return {}
-    if (stato.passi.some(p => p.esito !== 'aperto')) return { errore: 'il giro ha passi giocati: non si butta' }
+    if (stato.passi.some(giocato)) return { errore: 'il giro ha passi giocati: non si butta' }
     const { error } = await supabase.from('scalate').delete().eq('id', stato.aperta.id)
     await ricarica()
     return error ? { errore: error.message } : {}
@@ -282,7 +285,8 @@ export function usaScalate(userId) {
    */
   const azzeraPiano = useCallback(async () => {
     if (!stato.aperta) return
-    const aperti = stato.passi.filter(p => p.esito === 'aperto').map(p => p.id)
+    // ⚠️ Un passo confermato non si butta: è giocato, anche senza esito.
+    const aperti = stato.passi.filter(p => !giocato(p)).map(p => p.id)
     if (aperti.length) await supabase.from('scalata_passi').delete().in('id', aperti)
     await ricarica()
   }, [stato.aperta, stato.passi, ricarica])
@@ -532,10 +536,10 @@ export function usaScalate(userId) {
         golDi = new Map((pr || []).map(x => [x.id, perPartita.get(x.partita_id)]).filter(([, v]) => v))
       }
     }
-    // ⚠️ Solo i passi con un esito: le scalate chiuse prima del 29/10/2026
+    // ⚠️ Solo i passi giocati: le scalate chiuse prima del 29/10/2026
     // hanno ancora dentro il piano non giocato, e il resoconto è delle giocate.
     return {
-      passi: (p || []).filter(r => r.esito !== 'aperto').map(r => ({
+      passi: (p || []).filter(giocato).map(r => ({
         ...senzaGambe(r),
         gambe: (r.scalata_gambe || []).sort((a, b) => a.id - b.id).map(g => {
           const ris = golDi.get(g.prossima_id)
@@ -592,7 +596,8 @@ export function usaScalate(userId) {
     apri: attendendo(apri),
     segna: attendendo(segna),
     perdi: attendendo(perdi),
-    giocaPrimo: attendendo(giocaPrimo),
+    confermaPrimo: attendendo(confermaPrimo),
+    conferma: attendendo(conferma),
     cambiaPercentuale: attendendo(cambiaPercentuale),
     aggiungiPiano: attendendo(aggiungiPiano),
     eliminaGiroVuoto: attendendo(eliminaGiroVuoto),

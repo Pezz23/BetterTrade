@@ -145,7 +145,7 @@ export const METODO_META = {
  * `btscout/scripts/prova-filtro-a.js`: sulle schedine mai viste la crescita
  * massima sta al **3%**, il 10% rende meno e il 20% brucia il conto.
  *   · ogni passo punta `percentuale × conto` di quel momento, **all'euro per
- *     eccesso** e mai oltre il conto (`puntataDi`); vinto → il conto sale
+ *     difetto** (dal 30/10/2026; `puntataDi`); vinto → il conto sale
  *     dell'utile, perso → scende della puntata;
  *   · niente cassa, accumulo né prelievi: il conto è tutto in gioco;
  *   · **a ogni passo perso il giro si chiude da solo** e va in archivio, e ne
@@ -162,13 +162,18 @@ export const METODO = {
 export const PERCENTUALI = [0.03, 0.05, 0.10, 0.14]
 export const PERCENTUALE_DEFAULT = 0.05
 
-/** La puntata di un passo: `percentuale × conto`, all'euro per eccesso, mai oltre il conto. 0 sotto 1 €. */
+/**
+ * La puntata di un passo: `percentuale × conto`, **all'euro per difetto**
+ * (Mattia, 30/10/2026: *"113 € deve consigliare 11 €"*; fino al 29/10 era per
+ * eccesso). 0 quando non arriva a 1 €: serve una ricarica.
+ * ⚠️ La stessa regola sta in SQL, in `chiudi_giro_perso` (`sql/51`).
+ */
 export function puntataDi(conto, percentuale) {
   const c = Number(conto), p = Number(percentuale)
   if (!(c >= 1) || !(p > 0)) return 0
-  // ⚠️ Prima ai centesimi, poi per eccesso: `100 × 0,03` in virgola mobile è
-  // 3,0000000000000004, e un `ceil` diretto farebbe 4.
-  return Math.min(Math.ceil(Math.round(c * p * 100) / 100), Math.floor(c))
+  // ⚠️ Prima ai centesimi, poi per difetto: in virgola mobile `100 × 0,29` è
+  // 28,999999999999996, e un `floor` diretto farebbe 28 invece di 29.
+  return Math.floor(Math.round(c * p * 100) / 100)
 }
 
 /**
@@ -220,6 +225,23 @@ export const FINESTRA_ORE = 3
  * ancora con `FINESTRA_ORE`, e cambiarla cambierebbe i piani.
  */
 export const FINESTRA_ELENCO_ORE = 2
+
+/**
+ * ⚠️⚠️ **Le partite cominciate restano visibili 12 ore** (Mattia, 30/10/2026:
+ * *"gioco la partita delle 14, entro alle 15 e non vedo più la partita e non
+ * posso recuperarla"*). Nel piano e in RISULTATO FILTRI una partita esce solo
+ * dopo 12 ore dall'inizio, o quando si salta il suo passo: prima si vede
+ * spenta, e il passo si può ancora confermare.
+ */
+export const ORE_VISIBILI = 12
+
+/**
+ * Un passo **giocato**: confermato al banco (`confermato_il`, sql/50) o con
+ * un esito. ⚠️ Il secondo caso tiene dentro i passi di prima del 30/10/2026,
+ * che la conferma non l'avevano. È la domanda che fanno il cambio di
+ * percentuale, il Reset partite e l'archivio: un passo giocato non si butta.
+ */
+export const giocato = (p) => !!p && (p.esito !== 'aperto' || !!p.confermato_il)
 
 /**
  * Il giorno in `AAAA-MM-GG`, da una stringa **o da un oggetto `Date`**.
