@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../supabase'
 import { partiteDelGiorno } from '../lib/espn'
 import { nome } from '../lib/campionati'
+import { aggiornaEsitiGriglia } from '../hooks/usaRecenti'
 import { C, F, S, SP, R, alpha } from '../theme'
 import { Card } from './ui'
 
@@ -62,6 +63,10 @@ export default function ScaricaRisultati({ onFinito }) {
         } catch { s.problemi++ }
         s.fatti++; setStato({ ...s })
       }
+      // ⚠️ E gli esiti automatici delle spin (30/10/2026): la Dashboard conta
+      // dalle caselle, e così è aggiornata senza aprire la Slot.
+      s.ora = 'esiti delle spin…'; setStato({ ...s })
+      s.esitiSpin = await aggiornaEsitiGriglia()
     } catch (e) { s.errore = e.message }
     s.finito = true; s.ora = null
     setStato({ ...s })
@@ -105,6 +110,7 @@ export default function ScaricaRisultati({ onFinito }) {
               {' · '}{stato.giaAPosto} già in archivio
               {stato.dubbie ? <span style={{ color: C.ambra }}>{' · '}{stato.dubbie} da verificare in Importazioni</span> : null}
               {stato.problemi ? <span style={{ color: C.ambra }}>{' · '}{stato.problemi} non letti, riprova</span> : null}
+              {stato.esitiSpin ? <>{' · '}<b style={{ color: C.verde }}>{stato.esitiSpin} esiti scritti nelle spin</b></> : null}
               {stato.nuove.slice(0, 12).map(x => (
                 <div key={x} style={{ fontFamily: F.mono, fontSize: S.micro, color: C.spento }}>
                   {x.replace(/\s+tiri in porta.*$/, '')}

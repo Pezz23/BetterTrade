@@ -149,8 +149,18 @@ export function AuthProvider({ children }) {
     setNumSlot(val)
   }
 
+  // ⚠️ I soldi del gruppo, **tutti**: è il totale che Bilancio confronta col
+  // saldo del conto per il trasferimento a Laboratorio. Il flag delle spin
+  // non lo tocca — un utente fuori dalle spin ha comunque soldi veri.
   function getTotalBankroll() {
     return users.reduce((s, u) => s + (u.bankroll || 0), 0)
+  }
+
+  // ⚠️ Il bankroll su cui si calcola la percentuale delle SPIN (30/10/2026,
+  // Mattia: *"tutti gli utenti con flag vanno dentro al calcolo"*): solo chi
+  // ha il flag `in_spin` (sql/52).
+  function getSpinBankroll() {
+    return users.filter(u => u.in_spin !== false).reduce((s, u) => s + (u.bankroll || 0), 0)
   }
 
   // Base di calcolo per utente corrente
@@ -161,7 +171,7 @@ export function AuthProvider({ children }) {
 
   // Base di calcolo aggregata (SuperAdmin)
   function getTotalBase() {
-    return (getTotalBankroll() * (pct / 100)) / numSlot
+    return (getSpinBankroll() * (pct / 100)) / numSlot
   }
 
   // Le puntate che toccano a ciascuna schedina, da una base.
@@ -189,7 +199,7 @@ export function AuthProvider({ children }) {
       pct, numSlot, savePct, saveNumSlot,
       login, logout, fetchUsers, cambiaMiaPassword,
       aggiornaSaldo, deleteUser, creaUtente, assegnaPassword,
-      getTotalBankroll, getMyBase, getTotalBase, calcSchedule,
+      getTotalBankroll, getSpinBankroll, getMyBase, getTotalBase, calcSchedule,
       isSuperAdmin, isAdmin,
     }}>
       {children}

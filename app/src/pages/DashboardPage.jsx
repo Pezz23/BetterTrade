@@ -3,18 +3,11 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../supabase'
 import { C, F, alpha, S } from '../theme'
 import { stileCard } from '../components/ui'
+import { COMBOS } from '../lib/spin'
 import ScaricaRisultati from '../components/ScaricaRisultati'
+import { Collegamento } from '../lib/indirizzi'
 
-const COMBOS = [
-  { tipo:'tris',    pos:[1,5,2] },
-  { tipo:'tris',    pos:[1,9,4] },
-  { tipo:'tris',    pos:[6,9,7] },
-  { tipo:'tris',    pos:[3,8,4] },
-  { tipo:'tris',    pos:[3,9,2] },
-  { tipo:'quaterna',pos:[1,2,3,4] },
-  { tipo:'quaterna',pos:[5,6,7,8] },
-  { tipo:'full',    pos:[1,2,3,4,5,6,7,8,9] },
-]
+// Le otto schedine stanno in `lib/spin.js` dal 30/10/2026 (erano tre copie).
 
 function calcInvestito(sched) {
   return sched.tris*5 + sched.quaterna*2 + sched.full
@@ -33,7 +26,7 @@ function calcIncasso(tiles, sched) {
 
 // ── DashboardPage ─────────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const { currentUser, isSuperAdmin, getMyBase, getTotalBase, calcSchedule } = useAuth()
+  const { currentUser, isSuperAdmin, isAdmin, getMyBase, getTotalBase, calcSchedule } = useAuth()
   const [spins, setSpins]     = useState([[], [], [], []])
   // ⚠️ La spunta "giocata" di ogni spin, dalla pagina Slot: è l'unica cosa che
   // fa partire i conti. Prima bastava che una casella avesse una squadra,
@@ -168,11 +161,16 @@ export default function DashboardPage() {
             Dettaglio spin
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-            {spinResults.map((r, i) => (
+            {spinResults.map((r, i) => {
+              // ⚠️ Toccando una spin si apre la Slot su quella spin (Mattia,
+              // 30/10/2026): `/slot/2`. Solo per gli admin, perché la Slot è
+              // loro — a un utente il link porterebbe di nuovo qui.
+              const Scatola = isAdmin ? Collegamento : 'div'
+              return (
               /* ⚠️ Il bordo è scritto perché dice **com'è andata la spin** —
                  verde, rosso o niente — e una spin non giocata ha il bordo più
                  tenue di tutti. È informazione, non stile. */
-              <div key={i} style={stileCard({
+              <Scatola key={i} {...(isAdmin ? { a: `/slot/${i + 1}`, 'aria-label': `apri la spin ${i + 1}` } : {})} style={stileCard({
                 border:`1px solid ${r ? (r.saldo>0?alpha(C.verde,0.2):r.saldo<0?alpha(C.rosso,0.2):C.bordo) : C.bordoRiga}`,
                 padding:'12px 16px',
                 display:'flex', justifyContent:'space-between', alignItems:'center',
@@ -194,8 +192,9 @@ export default function DashboardPage() {
                     <div style={{ fontSize:S.base, color:pctColor(r.pct), fontFamily:F.mono }}>{r.pct>0?'+':''}{r.pct.toFixed(1)}%</div>
                   </div>
                 )}
-              </div>
-            ))}
+              </Scatola>
+              )
+            })}
           </div>
         </>
       )}

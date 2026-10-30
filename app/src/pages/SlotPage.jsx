@@ -4,22 +4,17 @@ import { supabase } from '../supabase'
 import { C, F, alpha, TIPO, S, R } from '../theme'
 import Icona from '../components/Icona'
 import { stileCard } from '../components/ui'
-import { DISPOSIZIONE, cellaDa, giocataDa } from '../lib/spin'
+import { DISPOSIZIONE, cellaDa, giocataDa, COMBOS } from '../lib/spin'
 import { giocataArrivata } from '../lib/esito'
+import { completaEsiti } from '../lib/esitiSpin'
 import { risultatiDi } from '../hooks/usaRecenti'
 import { usaProssime } from '../hooks/usaProssime'
 import SceltaPartita from '../components/SceltaPartita'
+import { vai } from '../lib/indirizzi'
+import { usaArchivioSpin } from '../hooks/usaArchivioSpin'
+import ArchivioSpin from '../components/ArchivioSpin'
 
-const COMBOS = [
-  { id:1, nome:'Tris 1-5-2',       tipo:'tris',    pos:[1,5,2]              },
-  { id:2, nome:'Tris 1-9-4',       tipo:'tris',    pos:[1,9,4]              },
-  { id:3, nome:'Tris 6-9-7',       tipo:'tris',    pos:[6,9,7]              },
-  { id:4, nome:'Tris 3-8-4',       tipo:'tris',    pos:[3,8,4]              },
-  { id:5, nome:'Tris 3-9-2',       tipo:'tris',    pos:[3,9,2]              },
-  { id:6, nome:'Quaterna 1-2-3-4', tipo:'quaterna',pos:[1,2,3,4]            },
-  { id:7, nome:'Quaterna 5-6-7-8', tipo:'quaterna',pos:[5,6,7,8]            },
-  { id:8, nome:'Full 1→9',         tipo:'full',    pos:[1,2,3,4,5,6,7,8,9] },
-]
+// Le otto schedine stanno in `lib/spin.js` dal 30/10/2026 (erano tre copie).
 // Le giocate ammesse in una cella: quelle che le regole producono davvero
 // (vedi lib/attendibilita.js). Niente X e niente doppie: la X non è mai
 // l'esito più probabile (0,36% delle partite in archivio) e la doppia chance
@@ -97,24 +92,17 @@ const cell=(extra={})=>({
 })
 
 // ── TabellaGriglia ────────────────────────────────────────────────────────────
-// ⚠️⚠️ **L'ESITO PROPOSTO** (30/10/2026, Mattia: *"vorrei che calcolassero
-// l'esito da sole"* — e *"per ora proposto, se funziona lo passiamo ad
-// automatico"*). Una casella collegata al calendario, senza esito e con la
-// partita finita, propone ✓ o ✗ con la stessa regola di Road to weekend
-// (`giocataArrivata`, dal pronostico tradotto con `giocataDa`). Un tocco lo
-// conferma. ⚠️ Non tocca **mai** un esito già scelto: la proposta compare
-// solo sulle caselle vuote. ⚠️ Vale anche sulle spin non spuntate GIOCATA (la
-// Dashboard conta comunque solo le spuntate). Una giocata che la regola non
-// legge (o la spin Fun, senza partite collegate) dice «esito a mano».
-const propostaDi=(t,ris)=>{
-  if (!ris||t.result) return null
-  const ok=giocataArrivata(giocataDa(t.pronostico),ris.casa,ris.trasferta)
-  return ok==null?'mano':ok?'win':'loss'
+// ⚠️⚠️ **GLI ESITI AUTOMATICI** (30/10/2026, Mattia: *"confermare è noioso"*;
+// la mattina erano proposti). Li scrive `completaEsiti` (`lib/esitiSpin.js`)
+// quando un admin apre la pagina e alla fine di «Scarica risultati». Qui sotto
+// ogni casella si dice solo com'è finita, e se l'esito resta a mano perché la
+// giocata non si legge (X, 1X, GG).
+const infoDi=(t,ris)=>{
+  if (!ris) return null
+  return { ris, aMano: !t.result && giocataArrivata(giocataDa(t.pronostico),ris.casa,ris.trasferta)==null }
 }
 
-function TabellaGriglia({tiles,isAdmin,onUpdate,onCambia,onReset,syncing,libera,partite,risultatoDi=()=>null,onConfermaTutti}) {
-  const proposte=tiles.map(t=>({t,ris:risultatoDi(t.prossima_id),p:propostaDi(t,risultatoDi(t.prossima_id))}))
-  const daConfermare=proposte.filter(x=>x.p==='win'||x.p==='loss')
+function TabellaGriglia({tiles,isAdmin,onUpdate,onCambia,onReset,syncing,libera,partite,risultatoDi=()=>null}) {
   const [confirmReset,setConfirmReset]=useState(false)
   // Sulle spin agganciate la partita è una casella sola (il menu con ricerca);
   // sulla spin libera restano i due campi di testo come sempre.
@@ -189,33 +177,17 @@ function TabellaGriglia({tiles,isAdmin,onUpdate,onCambia,onReset,syncing,libera,
                 value={t.result} disabled={!isAdmin} onChange={e=>onUpdate(t.id,'result',e.target.value)}>
                 <option value="">—</option><option value="win">✓ Win</option><option value="loss">✗ Loss</option>
               </select>
-              {(()=>{const x=proposte.find(y=>y.t.id===t.id);if(!x?.p)return null
-                const col=x.p==='win'?C.verde:x.p==='loss'?C.rosso:C.spento
+              {(()=>{const x=infoDi(t,risultatoDi(t.prossima_id));if(!x)return null
                 return (
-                  <div style={{gridColumn:'1 / -1',display:'flex',alignItems:'center',gap:8,padding:'0 4px 2px',
-                    fontSize:S.micro,fontFamily:F.sans,color:C.spento}}>
-                    <span>finita <b style={{fontFamily:F.mono,color:C.testo}}>{x.ris.casa}-{x.ris.trasferta}</b></span>
-                    {x.p==='mano'
-                      ?<span style={{color:C.fioco}}>· esito a mano</span>
-                      :<>
-                        <span style={{color:col}}>· proposto {x.p==='win'?'✓ Win':'✗ Loss'}</span>
-                        {isAdmin&&<button onClick={()=>onUpdate(t.id,'result',x.p)} style={{marginLeft:'auto',padding:'2px 10px',cursor:'pointer',
-                          borderRadius:6,background:alpha(col,0.12),border:`1px solid ${alpha(col,0.45)}`,color:col,fontFamily:F.sans,fontSize:S.micro,fontWeight:700}}>
-                          conferma</button>}
-                      </>}
+                  <div style={{gridColumn:'1 / -1',padding:'0 4px 2px',fontSize:S.micro,fontFamily:F.sans,color:C.spento}}>
+                    finita <b style={{fontFamily:F.mono,color:C.testo}}>{x.ris.casa}-{x.ris.trasferta}</b>
+                    {x.aMano&&<span style={{color:C.ambra}}> · esito a mano: la giocata non si legge</span>}
                   </div>
                 )})()}
             </div>
           )
         })}
       </div>
-      {isAdmin&&daConfermare.length>1&&(
-        <div style={{display:'flex',justifyContent:'flex-end',marginTop:6}}>
-          <button onClick={()=>onConfermaTutti(daConfermare.map(x=>[x.t.id,x.p]))} style={{padding:'5px 12px',cursor:'pointer',borderRadius:7,
-            background:alpha(C.verde,0.10),border:`1px solid ${alpha(C.verde,0.4)}`,color:C.verde,fontFamily:F.sans,fontSize:S.base,fontWeight:600}}>
-            conferma i {daConfermare.length} esiti proposti</button>
-        </div>
-      )}
       <SlotVisiva tiles={tiles}/>
       {isAdmin&&(
         <div style={{marginTop:16,display:'flex',justifyContent:'center'}}>
@@ -288,7 +260,7 @@ function SlotVisiva({tiles}) {
 }
 
 // ── Schedine ──────────────────────────────────────────────────────────────────
-function Schedine({tiles,isAdmin,sched,isWip,spinIdx}) {
+function Schedine({tiles,isAdmin,sched,isWip,spinIdx,risultatoDi=()=>null}) {
   const {currentUser} = useAuth()
   const [inserite,setInserite] = useState({})
 
@@ -370,6 +342,10 @@ function Schedine({tiles,isAdmin,sched,isWip,spinIdx}) {
                     <div style={{display:'flex',gap:6,alignItems:'center',flexShrink:0}}>
                       {t.quota&&<span style={{fontSize:S.minuta,color:C.oro,fontFamily:F.mono}}>@{t.quota}</span>}
                       {t.data&&<span style={{fontSize:S.minuta,color:oggi?C.ambra:C.fioco,fontFamily:F.mono}}>{t.data}{oggi?' 🔴':''}</span>}
+                      {/* ⚠️ Il risultato della partita accanto all'esito (Mattia,
+                          30/10/2026): «2-1 ✓» dice anche com'è andata. */}
+                      {(()=>{const r=risultatoDi(t.prossima_id);return r&&<span style={{fontSize:S.minuta,fontFamily:F.mono,fontWeight:700,
+                        color:t.result==='win'?C.verde:t.result==='loss'?C.rosso:C.testo}}>{r.casa}-{r.trasferta}</span>})()}
                       {t.result==='win'&&<span style={{fontSize:S.minuta,color:C.verde}}>✓</span>}
                       {t.result==='loss'&&<span style={{fontSize:S.minuta,color:C.rosso}}>✗</span>}
                     </div>
@@ -439,11 +415,21 @@ function BottoneGiocata({attiva, isAdmin, onCambia, piena}) {
 }
 
 export default function SlotPage() {
-  const {isAdmin,isSuperAdmin,getMyBase,getTotalBase,calcSchedule} = useAuth()
+  const {currentUser,isAdmin,isSuperAdmin,getMyBase,getTotalBase,calcSchedule} = useAuth()
+  // L'archivio delle spin, senza soldi (30/10/2026, sql/53): si scrive a
+  // «↺ Nuova spin» o col tasto «salva in archivio».
+  const archivio = usaArchivioSpin()
+  const [avvisoArchivio,setAvvisoArchivio] = useState(null)
   // Le partite future valutate: le stesse della pagina Partite e delle spin
   // provvisorie, dallo stesso hook.
   const {righe:partite} = usaProssime()
-  const [activeSpin,setActiveSpin] = useState(0)
+  // ⚠️ La spin si apre dall'indirizzo (`/slot/2`, 30/10/2026): la Dashboard
+  // porta qui toccando una spin. Cambiando spin l'indirizzo la segue.
+  const [activeSpin,setActiveSpinStato] = useState(()=>{
+    const n=Number(window.location.pathname.split('/')[2])
+    return n>=1&&n<=4?n-1:0
+  })
+  const setActiveSpin=(i)=>{ setActiveSpinStato(i); vai(`/slot/${i+1}`,{sostituisci:true}) }
   const [activeTab,setActiveTab]   = useState('griglia')
   const [spins,setSpinsState]      = useState(emptySpins)
   // ⚠️ La spunta "giocata", una per spin. Non si deduce dalla griglia:
@@ -513,11 +499,18 @@ export default function SlotPage() {
     return ()=>{ vivo=false }
   },[idsCaselle])
 
-  // Conferma più esiti proposti in una scrittura sola.
-  function confermaTutti(coppie) {
-    const per=new Map(coppie)
-    setSpins(prev=>prev.map((spin,si)=>si===activeSpin?spin.map(t=>per.has(t.id)&&!t.result?{...t,result:per.get(t.id)}:t):spin))
-  }
+  // ⚠️ Gli esiti automatici, quando arrivano i risultati e chi guarda è admin
+  // (la griglia la scrivono solo loro). Solo se c'è qualcosa da scrivere:
+  // `setSpins` salva a ogni chiamata.
+  useEffect(()=>{
+    if (!isAdmin||!risultati.size) return
+    setSpinsState(prev=>{
+      const r=completaEsiti(prev,id=>risultati.get(id)??null)
+      if (!r.scritti) return prev
+      saveToSupabase(r.spins); return r.spins
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[risultati,isAdmin])
 
   function updateTile(id,field,val) {
     setSpins(prev=>prev.map((spin,si)=>si===activeSpin?spin.map(t=>t.id===id?{...t,[field]:val}:t):spin))
@@ -530,6 +523,16 @@ export default function SlotPage() {
   }
 
   async function resetSpin() {
+    // ⚠️⚠️ **Prima si archivia, poi si svuota** (Mattia, 30/10/2026): fino a
+    // oggi «↺ Nuova spin» buttava il weekend, e non ne restava traccia. Se
+    // l'archivio non risponde la griglia NON si svuota: perderla due volte
+    // sarebbe peggio di un tocco da ripetere.
+    const tilesOra=spins[activeSpin]||[]
+    if (tilesOra.some(t=>t.casa||t.ospite)) {
+      const r=await archivio.archivia(activeSpin,tilesOra,giocate[activeSpin],currentUser?.id)
+      if (r.errore) { setAvvisoArchivio(`Archivio non salvato, la spin resta com'è: ${r.errore}`); return }
+      setAvvisoArchivio('Spin salvata in archivio e svuotata.')
+    }
     setSpins(prev=>prev.map((spin,si)=>si===activeSpin?emptyTiles():spin))
     // Reset spunte su Supabase
     const {data:ud} = await supabase.from('users').select('id')
@@ -556,7 +559,7 @@ export default function SlotPage() {
         ))}
       </div>
       <div style={{display:'flex',gap:6,marginBottom:16}}>
-        {[{id:'griglia',label:'Griglia',icona:'slot'},{id:'schedine',label:'Schedine',icona:'elenco'}].map(t=>(
+        {[{id:'griglia',label:'Griglia',icona:'slot'},{id:'schedine',label:'Schedine',icona:'elenco'},{id:'archivio',label:'Archivio',icona:'storico'}].map(t=>(
           <button key={t.id} onClick={()=>setActiveTab(t.id)} style={{flex:1,padding:'8px',borderRadius:8,cursor:'pointer',fontFamily:F.sans,fontSize:S.media,fontWeight:600,
             background:activeTab===t.id?alpha(C.oro,0.08):'transparent',
             border:`1px solid ${activeTab===t.id?alpha(C.oro,0.25):C.bordo}`,
@@ -568,11 +571,28 @@ export default function SlotPage() {
         ?<>
           <TabellaGriglia tiles={tiles} isAdmin={isAdmin} onUpdate={updateTile} onCambia={cambiaTile}
             onReset={resetSpin} syncing={syncing} libera={activeSpin===SPIN_LIBERA} partite={partite}
-            risultatoDi={id=>(id?risultati.get(id)??null:null)} onConfermaTutti={confermaTutti}/>
+            risultatoDi={id=>(id?risultati.get(id)??null:null)}/>
           <BottoneGiocata attiva={giocate[activeSpin]} isAdmin={isAdmin}
             onCambia={cambiaGiocata} piena={tiles.some(t=>t.casa)}/>
+          {/* ⚠️ Salvare senza svuotare: la stessa spin aggiorna la sua riga in
+              archivio, quindi si può premere a metà weekend e di nuovo dopo. */}
+          {isAdmin&&tiles.some(t=>t.casa||t.ospite)&&(
+            <div style={{display:'flex',justifyContent:'center',marginTop:10}}>
+              <button onClick={async()=>{const r=await archivio.archivia(activeSpin,tiles,giocate[activeSpin],currentUser?.id)
+                setAvvisoArchivio(r.errore?`Archivio non salvato: ${r.errore}`:'Spin salvata in archivio.')}}
+                style={{padding:'7px 18px',borderRadius:8,cursor:'pointer',fontFamily:F.sans,fontSize:S.base,fontWeight:600,
+                  border:`1px solid ${alpha(C.oro,0.35)}`,background:'transparent',color:C.oro}}>
+                <Icona nome="storico" misura={14} /> salva in archivio
+              </button>
+            </div>
+          )}
+          {avvisoArchivio&&<div onClick={()=>setAvvisoArchivio(null)} style={{marginTop:8,textAlign:'center',fontSize:S.minuta,fontFamily:F.sans,cursor:'pointer',
+            color:avvisoArchivio.startsWith('Archivio non')?C.rosso:C.verde}}>{avvisoArchivio}</div>}
         </>
-        :<Schedine tiles={tiles} isAdmin={isAdmin} sched={sched} isWip={isWip} spinIdx={activeSpin}/>
+        :activeTab==='schedine'
+        ?<Schedine tiles={tiles} isAdmin={isAdmin} sched={sched} isWip={isWip} spinIdx={activeSpin}
+          risultatoDi={id=>(id?risultati.get(id)??null:null)}/>
+        :<ArchivioSpin righe={archivio.righe} errore={archivio.errore}/>
       }
     </div>
   )

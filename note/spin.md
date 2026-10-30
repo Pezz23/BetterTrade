@@ -120,3 +120,33 @@ Road to weekend e dell'archivio), dal pronostico tradotto con `giocataDa`
   `hooks/usaRecenti.js`, una lettura): arrivano col tasto «Scarica risultati»
   (anche in fondo alla Dashboard) o con la routine del Mac.
 - ⏭ **Da passare ad automatico** quando Mattia avrà visto che funziona.
+
+### Esiti AUTOMATICI, flag, archivio (30/10/2026, `1.77.00`)
+
+Il giorno stesso dell'esito proposto, Mattia: *"metti esiti automatici,
+confermare è noioso"*.
+- **Esiti automatici** (`lib/esitiSpin.js`, `completaEsiti`): scritti solo
+  nelle caselle **vuote** — mai sopra un esito scelto a mano — alla fine di
+  «Scarica risultati» (`aggiornaEsitiGriglia`, così la Dashboard è subito
+  aggiornata) e quando un admin apre la Slot. Sotto la casella resta «finita
+  2-1», e «esito a mano» se la giocata non si legge. L'appunto «da proposto ad
+  automatico» è chiuso.
+- **Il risultato nelle schedine**: «2-1 ✓» accanto a ogni partita.
+- **Dashboard → Slot**: toccando una spin si apre `/slot/N` (solo admin).
+- **Il flag delle spin in Bilancio** (`users.in_spin`, `sql/52`): solo chi ce
+  l'ha entra in `getSpinBankroll`, cioè nella percentuale delle spin; in
+  «Salva per tutti» partono selezionati solo loro. ⚠️ **Non** tocca
+  `getTotalBankroll`, il totale dei soldi veri che decide il trasferimento a
+  Laboratorio: un utente fuori dalle spin ha comunque soldi veri.
+- ⚠️ Un **conto demo** è stato fatto e tolto nella stessa ora (Mattia ha
+  cambiato idea): la colonna `demo` non esiste più. Al suo posto l'archivio.
+- **L'ARCHIVIO DELLE SPIN** (`spin_archivio`, `sql/53`; scheda «Archivio»
+  nella Slot): la fotografia di ogni spin — caselle con risultato ed esito,
+  schedine uscite, giocata o no, **resa in unità** (`resaInUnita`: una spin
+  vale 1, 77/20/3 senza i `Math.floor`). Si scrive a «↺ Nuova spin» **prima**
+  di svuotare (se l'archivio non risponde la griglia non si svuota) o col tasto
+  «salva in archivio»; la stessa spin (`firma`) aggiorna la sua riga. Anche le
+  non giocate e la Fun (scelte di Mattia). **Non tocca soldi né giornate.**
+  Risolve il limite n. 2 di questa nota: lo storico delle spin ora c'è.
+- `COMBOS` erano **tre copie** (Slot, Dashboard, Reporting): ora stanno in
+  `lib/spin.js`, con `statoSchedina` e `resaInUnita`.

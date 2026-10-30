@@ -4,6 +4,7 @@ import { supabase } from '../supabase'
 
 import { C, F, alpha, S } from '../theme'
 import { StatCard, stileCard } from '../components/ui'
+import Icona from '../components/Icona'
 
 const PERCENTUALI      = [5, 10, 15, 20, 25, 30]
 const NUM_SLOT_OPTIONS = [1, 2, 3, 4]
@@ -25,8 +26,20 @@ export default function BilancioPage() {
     currentUser, users, fetchUsers, aggiornaSaldo,
     isSuperAdmin, isAdmin,
     pct, numSlot, savePct, saveNumSlot,
-    getMyBase, getTotalBase, getTotalBankroll, calcSchedule,
+    getMyBase, getTotalBase, getTotalBankroll, getSpinBankroll, calcSchedule,
   } = useAuth()
+
+  // ⚠️⚠️ **Il flag delle spin** (Mattia, 30/10/2026: *"un flag di fianco agli
+  // utenti: tutti gli utenti con flag vanno dentro al calcolo della % delle
+  // spin"*, `users.in_spin`, sql/52). Lo cambia solo il superadmin; tutti lo
+  // vedono. Tocca solo la percentuale delle spin, non il totale dei soldi.
+  const [flagInCorso,setFlagInCorso] = useState(null)
+  async function cambiaInSpin(u) {
+    setFlagInCorso(u.id)
+    const { error } = await supabase.from('users').update({ in_spin: u.in_spin === false }).eq('id', u.id)
+    if (!error) await fetchUsers()
+    setFlagInCorso(null)
+  }
 
   const [storico,setStorico]         = useState([])
   const [movimenti,setMovimenti]     = useState([])
@@ -206,8 +219,15 @@ export default function BilancioPage() {
               const uBase=((u.bankroll||0)*(pct/100))/numSlot
               const uSched=calcSchedule(uBase)
               return (
-                <div key={u.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 16px',borderBottom:i<arr.length-1?`1px solid ${C.bordoRiga}`:'none'}}>
-                  <div>
+                <div key={u.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:10,padding:'12px 16px',borderBottom:i<arr.length-1?`1px solid ${C.bordoRiga}`:'none',
+                  opacity:u.in_spin===false?0.6:1}}>
+                  {<button onClick={()=>isSuperAdmin&&cambiaInSpin(u)} disabled={!isSuperAdmin||flagInCorso===u.id}
+                        title={u.in_spin!==false?'nel calcolo delle spin':'fuori dal calcolo delle spin'} aria-pressed={u.in_spin!==false}
+                        style={{display:'flex',alignItems:'center',background:'transparent',border:'none',padding:4,flexShrink:0,
+                          cursor:isSuperAdmin?'pointer':'default',color:u.in_spin!==false?C.verde:C.fantasma}}>
+                        <Icona nome="bandiera" misura={16} pieno={u.in_spin!==false} />
+                      </button>}
+                  <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:S.media,fontWeight:600,color:C.testo,fontFamily:F.sans}}>{u.display_name||u.username}</div>
                     <div style={{fontSize:S.minuta,color:C.fioco,fontFamily:F.mono}}>T:€{uSched.tris} · Q:€{uSched.quaterna} · F:€{uSched.full}</div>
                   </div>
@@ -218,6 +238,10 @@ export default function BilancioPage() {
                 </div>
               )
             })}
+          </div>
+
+          <div style={{fontSize:S.minuta,color:C.fioco,fontFamily:F.sans,margin:'-8px 2px 16px'}}>
+            <Icona nome="bandiera" misura={11} pieno /> nelle spin: <b style={{color:C.testo,fontFamily:F.mono}}>{fmt(getSpinBankroll())}</b> su {fmt(totalBk)}
           </div>
 
           {/* Sezione Laboratorio */}

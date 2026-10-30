@@ -8,7 +8,7 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 30 ottobre 2026 · app alla versione **1.76.00**
+**Ultimo aggiornamento:** 30 ottobre 2026 · app alla versione **1.77.00**
 (`4ceb93f`) · passaggio di consegne: 30/10 · ⚠️ **da pushare**: `83c5cb8`,
 `4ceb93f` e il commit di questo passaggio (`sql/50`-`51` sono **già applicate**
 al database, che è uno solo: migrazione e push vanno vicini) — su Vercel si guarda
@@ -116,6 +116,7 @@ Il 24/10, in ordine:
 | **La matita al posto di «·»** (30/10): ✓ · ✗ · matita · graffetta; schedina confermata bloccata (via +, consigliata, ×, spezza; quota correggibile); in RISULTATO FILTRI barrata = solo tolta, e a giro aperto il pallino legge la schedina salvata | `1.74.01` | `4ceb93f` |
 | **⤓ Scarica risultati** (30/10): in fondo a Road to weekend, solo superadmin; il telefono scarica da ESPN (che rifiuta i server di Supabase) e la funzione `aggiorna-risultati` abbina e scrive; risultati «finita 2-1 ✓/✗» nel passo e nell'elenco; le partite di ieri restano anche dopo mezzanotte (`usaRecenti`). ESPN in `app/src/lib/espn.js`, abbinamento in `btscout/lib/risultati-espn.js` per tutti | `1.75.00` | risultati |
 | **Spin: l'esito PROPOSTO** (30/10): le caselle collegate a una partita finita propongono ✓/✗ con `giocataArrivata` (pronostico tradotto con `giocataDa`), un tocco o «conferma i N» per confermare, mai sopra un esito scelto; anche sulle spin non spuntate. «Scarica risultati» anche in fondo alla Dashboard | `1.76.00` | spin |
+| **Spin: esiti automatici, archivio, flag** (30/10): esiti scritti da soli nelle caselle vuote (dopo Scarica risultati e all'apertura della Slot); «2-1 ✓» nelle schedine; Dashboard → `/slot/N`; flag `in_spin` in Bilancio (`sql/52`) per la percentuale delle spin; **archivio delle spin** senza soldi, resa in unità (`sql/53`, scheda «Archivio»); `COMBOS` in un posto solo | `1.77.00` | archivio |
 | **In archivio solo i passi giocati** (29/10): STOP toglie il piano non giocato dopo la chiusura (finisce nel registro con `stato_scalata='chiusa'`), il resoconto filtra gli `aperto`. Ognuno il suo storico (`sql/41`) | `1.66.01` | `bd292d6` |
 | **Il Filtro A e il bankroll al 10%, verificati** (29/10, briefing di Mattia da ChatGPT): riprodotto (229 schedine, +18% ±13,5), walk-forward +24% ±22 su 84, ma sulle singole solo **~+2%** sopra VPM 7,5; **il 10% è troppo** — massimo al **3%** (108 € contro 78 €). `btscout/scripts/prova-filtro-a.js`, dettaglio in `note/criterio.md`. Proposta aperta: la prova sul futuro vero | motore | `bfed9ce` |
 | **Il routing** (29/10, lotto 2): ogni pagina ha un indirizzo (`/partite`, `/scalata`…, Dashboard `/`), la scheda è `/partite/:id` e `/votate/:id` (`components/SchedaPartita.jsx`), un link scaduto si apre con «GIÀ GIOCATA» e il risultato (`usaPartitaAperta`), indirizzo sconosciuto o solo-admin → Dashboard. Senza libreria: `lib/indirizzi.jsx` + `hooks/usaPercorso.js`; `app/vercel.json` per Vercel; `guarda.mjs` cerca `link`; `prova-permessi.js` prova che un user **non scrive** la griglia (verificato con sessione simulata). A margine: «Gli orari sono quelli del Regno Unito» in Partite → «italiani» | `1.66.00` | `dce4621` |
@@ -302,7 +303,7 @@ state provate simulando uno user e un admin in una transazione annullata.
 | | |
 |---|---|
 | ~~**NickV aveva un giro aperto col metodo VECCHIO**~~ | ✅ **29/10**: Mattia, entrato come NickV, ha usato «Azzera tutto» e poi una ricarica di 50 €. Le scalate 48 e 57 non avevano nessun passo giocato, quindi il conto resta 50 € come prima. I 71 passi di piano sono nel registro delle cancellazioni. Era: `regola = 'meta'`, e al primo ✗ `chiudi_giro_perso` l'avrebbe rifiutato |
-| **L'esito delle spin da PROPOSTO ad AUTOMATICO** (30/10, appunto di Mattia) | oggi le caselle propongono ✓/✗ e si conferma a mano (`1.76.00`); se funziona, si passa ad automatico: scritto da solo nelle caselle vuote. Vedi `note/spin.md` |
+| ~~**L'esito delle spin da PROPOSTO ad AUTOMATICO**~~ | ✅ **30/10**, lo stesso giorno (`1.77.00`): automatico, solo nelle caselle vuote |
 | **Road to weekend 1.74 non giocata dal vero** (30/10) | la conferma l'ha vista Mattia in `npm run dev` su una schedina vera (Waregem · Casa Pia · Villarreal, 11 €); matita, «salta» e il resto il giro completo (esito, ✗ con archivio, giro nuovo) lo prova **nel weekend 31/10-1/11**. Nel database: `sql/50` provata da NickV, `sql/51` da Admin, in transazioni annullate |
 | **«sce —» nelle foto di `guarda.mjs`** (29/10) | con l'utente di prova la Scelta esce quasi sempre vuota, probabilmente perché lo scatto arriva prima dei dati di VPM (1,2 s). Se Mattia lo vede anche sul suo schermo è un difetto vero |
 | **`guarda.mjs` ricompone male le pagine lunghe** (29/10) | la foto «intera» di Road to weekend ha la barra in basso **in mezzo** e copre la card del passo: per guardare quella zona serve uno scatto a finestra, non `fullPage` |

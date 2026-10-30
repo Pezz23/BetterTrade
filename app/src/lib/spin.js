@@ -117,3 +117,53 @@ export function cellaDa(pos, p) {
 
 /** Una spin della griglia ha qualcosa dentro? Serve a chiedere conferma prima di sovrascriverla. */
 export const spinPiena = celle => Array.isArray(celle) && celle.some(t => t.casa || t.ospite || t.pronostico)
+
+/**
+ * Le otto schedine di una spin: cinque tris, due quaterne e la full.
+ * ⚠️ Erano scritte **tre volte**, uguali, in Slot, Dashboard e Reporting
+ * (trovato il 30/10/2026 costruendo l'archivio): ora stanno qui, e la quarta
+ * strada — l'archivio — conta le schedine come le altre tre.
+ */
+export const COMBOS = [
+  { id: 1, nome: 'Tris 1-5-2', tipo: 'tris', pos: [1, 5, 2] },
+  { id: 2, nome: 'Tris 1-9-4', tipo: 'tris', pos: [1, 9, 4] },
+  { id: 3, nome: 'Tris 6-9-7', tipo: 'tris', pos: [6, 9, 7] },
+  { id: 4, nome: 'Tris 3-8-4', tipo: 'tris', pos: [3, 8, 4] },
+  { id: 5, nome: 'Tris 3-9-2', tipo: 'tris', pos: [3, 9, 2] },
+  { id: 6, nome: 'Quaterna 1-2-3-4', tipo: 'quaterna', pos: [1, 2, 3, 4] },
+  { id: 7, nome: 'Quaterna 5-6-7-8', tipo: 'quaterna', pos: [5, 6, 7, 8] },
+  { id: 8, nome: 'Full 1→9', tipo: 'full', pos: [1, 2, 3, 4, 5, 6, 7, 8, 9] },
+]
+
+/** Una schedina: `'win'` se tutte le sue caselle sono vinte, `'loss'` se una è persa, `'aperta'` se no. */
+export function statoSchedina(tiles, c) {
+  const rel = c.pos.map(p => (tiles || []).find(t => t?.id === p))
+  if (rel.some(t => t?.result === 'loss')) return 'loss'
+  if (rel.every(t => t?.result === 'win')) return 'win'
+  return 'aperta'
+}
+
+/**
+ * ⚠️⚠️ **La resa di una spin IN UNITÀ, senza soldi** (archivio, 30/10/2026,
+ * Mattia: *"tracciare le spin senza toccare il conto reale"*). Una spin vale 1:
+ * le stesse proporzioni di `calcSchedule` — 77% sui cinque tris, 20% sulle due
+ * quaterne, 3% sulla full — ma **senza i `Math.floor`**, che nel gioco vero
+ * lasciano fuori il 3-4% della base. Così la resa misura il metodo, non gli
+ * arrotondamenti.
+ * Torna `{ incasso, resa }` (resa = incasso − 1, cioè −1 = tutto perso), o
+ * `null` se una schedina è ancora aperta, o se ne è uscita una con una quota
+ * mancante (la combinata con l'over la quota la scrive chi compila).
+ */
+const PESO = { tris: 0.77 / 5, quaterna: 0.20 / 2, full: 0.03 }
+export function resaInUnita(tiles) {
+  let incasso = 0
+  for (const c of COMBOS) {
+    const s = statoSchedina(tiles, c)
+    if (s === 'aperta') return null
+    if (s === 'loss') continue
+    const quote = c.pos.map(p => parseFloat(tiles.find(t => t?.id === p)?.quota))
+    if (quote.some(q => !(q > 1))) return null
+    incasso += PESO[c.tipo] * quote.reduce((a, q) => a * q, 1)
+  }
+  return { incasso, resa: incasso - 1 }
+}

@@ -37,7 +37,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSessi
 // fuori: si ricostruiscono dalle fonti, e sono 100.000 righe.
 const TABELLE = ['users', 'movimenti', 'giornate', 'griglia', 'impostazioni', 'inserite',
   'scalate', 'scalata_passi', 'scalata_gambe', 'scalata_ricariche', 'scalata_cancellazioni',
-  'schedine', 'schedina_gambe', 'voti_partite', 'flag_partite', 'preferenze'];
+  'schedine', 'schedina_gambe', 'voti_partite', 'flag_partite', 'preferenze', 'spin_archivio'];
 // Le tabelle senza `id`: si pagina sulla loro chiave, che deve essere univoca.
 const ORDINE = {
   voti_partite: ['prossima_id', 'user_id'], flag_partite: ['prossima_id', 'user_id'],

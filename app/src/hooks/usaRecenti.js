@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../supabase'
 import { valuta, oggiLocale } from '../lib/attendibilita'
 import { COLONNE } from './usaProssime'
+import { completaEsiti } from '../lib/esitiSpin'
 
 // LE PARTITE DI IERI E I RISULTATI, per Road to weekend (30/10/2026).
 //
@@ -37,6 +38,24 @@ export async function risultatiDi(ids) {
     if (r?.gol_casa != null) risultati.set(x.id, { casa: r.gol_casa, trasferta: r.gol_trasferta })
   }
   return risultati
+}
+
+/**
+ * Scrive nella griglia gli esiti automatici delle spin (`completaEsiti`) e
+ * torna quanti ne ha scritti. La chiama «Scarica risultati» alla fine del
+ * giro: la Dashboard è aggiornata senza aprire la Slot.
+ * ⚠️ La griglia la scrivono solo gli admin (la policy): per gli altri torna 0.
+ */
+export async function aggiornaEsitiGriglia() {
+  const { data, error } = await supabase.from('griglia').select('spins').eq('id', 1).single()
+  if (error || !data) return 0
+  const spins = typeof data.spins === 'string' ? JSON.parse(data.spins) : data.spins
+  const risultati = await risultatiDi((spins || []).flat().map(t => t?.prossima_id))
+  const r = completaEsiti(spins, (id) => risultati.get(id) ?? null)
+  if (!r.scritti) return 0
+  const { error: e2 } = await supabase.from('griglia')
+    .update({ spins: r.spins, updated_at: new Date().toISOString() }).eq('id', 1)
+  return e2 ? 0 : r.scritti
 }
 
 const ieriLocale = () => {

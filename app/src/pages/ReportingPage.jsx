@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../supabase'
 import { aggiornaBankroll } from '../lib/bankroll'
 import { C, F, alpha, S, R } from '../theme'
+import { COMBOS } from '../lib/spin'
 import { stileCard } from '../components/ui'
 
 const SPIN_LABELS = ['Spin 1','Spin 2','Spin 3','Spin 4']
@@ -16,16 +17,7 @@ const STAGIONI = [
 const STAGIONE_CORRENTE = '25/26'
 
 
-const COMBOS = [
-  {tipo:'tris',    pos:[1,5,2]},
-  {tipo:'tris',    pos:[1,9,4]},
-  {tipo:'tris',    pos:[6,9,7]},
-  {tipo:'tris',    pos:[3,8,4]},
-  {tipo:'tris',    pos:[3,9,2]},
-  {tipo:'quaterna',pos:[1,2,3,4]},
-  {tipo:'quaterna',pos:[5,6,7,8]},
-  {tipo:'full',    pos:[1,2,3,4,5,6,7,8,9]},
-]
+// Le otto schedine stanno in `lib/spin.js` dal 30/10/2026 (erano tre copie).
 
 function fmt(n,showSign=false) {
   if (n===null||n===undefined||isNaN(n)) return '—'
@@ -281,9 +273,10 @@ export default function ReportingPage() {
           )}
           {isSuperAdmin&&stagione===stagioneCorrente&&(
             <button onClick={()=>{
-              // Inizializza tutti selezionati
+              // ⚠️ Preselezionati solo quelli col flag delle spin (30/10/2026,
+              // sql/52): chi è fuori dalle spin non ha una giornata da salvare.
               const sel={}
-              users.filter(u=>u.role!=='superadmin').forEach(u=>{sel[u.id]=true})
+              users.filter(u=>u.role!=='superadmin').forEach(u=>{sel[u.id]=u.in_spin!==false})
               setUtentiSelezionati(sel)
               setShowSalvaPerTutti(true)
             }} disabled={saving||savingAll} style={{padding:'9px 14px',borderRadius:8,cursor:'pointer',fontFamily:F.sans,fontSize:S.corpo,fontWeight:600,background:alpha(C.verde,0.10),border:`1px solid ${alpha(C.verde,0.3)}`,color:C.verde}}>
