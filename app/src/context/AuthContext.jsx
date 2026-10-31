@@ -24,11 +24,26 @@ export function AuthProvider({ children }) {
   // La sessione la tiene supabase-js (con refresh automatico del token): non
   // salviamo più noi il record utente in sessionStorage — conteneva la password.
   useEffect(() => {
-    async function caricaProfilo(session) {
+    let attesa = null
+    async function caricaProfilo(session, tentativo = 0) {
+      clearTimeout(attesa)
       if (!session) { setCurrentUser(null); setBooting(false); return }
-      const { data } = await supabase
-        .from('users').select('*').eq('auth_id', session.user.id).single()
-      // Account Auth senza riga in users: non è un utente dell'app.
+      const { data, error } = await supabase
+        .from('users').select('*').eq('auth_id', session.user.id).maybeSingle()
+      // ⚠️⚠️ **Una lettura FALLITA non è un utente che non esiste** (31/10/2026,
+      // Mattia: *"ogni tanto mi sbatte fuori"*). Il profilo si rilegge a ogni
+      // rinnovo della sessione — al rientro nell'app, ogni ora — e prima
+      // qualunque intoppo di rete dava `data` nullo e quindi **logout**. Ora,
+      // se la lettura non risponde, si tiene il profilo che c'è e si riprova
+      // (2, 4, 8 secondi); all'avvio l'attesa resta sulla schermata di
+      // caricamento finché i tentativi non finiscono.
+      if (error) {
+        if (tentativo < 3) attesa = setTimeout(() => caricaProfilo(session, tentativo + 1), 2000 * 2 ** tentativo)
+        else setBooting(false)
+        return
+      }
+      // Account Auth senza riga in users: non è un utente dell'app. Solo qui,
+      // con il database che ha risposto «nessuno», si esce.
       if (!data) await supabase.auth.signOut()
       setCurrentUser(data || null)
       setBooting(false)
@@ -41,7 +56,7 @@ export function AuthProvider({ children }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
       setTimeout(() => caricaProfilo(session), 0)
     })
-    return () => sub.subscription.unsubscribe()
+    return () => { clearTimeout(attesa); sub.subscription.unsubscribe() }
   }, [])
 
   // Carica impostazioni globali da Supabase all'avvio

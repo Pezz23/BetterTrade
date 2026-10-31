@@ -4,6 +4,8 @@ import { Card, Etichetta, Attesa } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { usaProssime } from '../hooks/usaProssime'
 import { usaRecenti } from '../hooks/usaRecenti'
+import { usaPercorso } from '../hooks/usaPercorso'
+import { vai, chiudiVerso } from '../lib/indirizzi'
 import { usaVpm } from '../hooks/usaVpm'
 import { usaClassifiche, postoDi } from '../hooks/usaClassifiche'
 import { usaScalate } from '../hooks/usaScalate'
@@ -1010,8 +1012,16 @@ export default function ScalataPage() {
   // aveva senso finché la scalata era una sola per tutti.
   const pref = usaPreferenze('scalata', { personale: true })
   const [modo, setModo] = useState('piano')
-  // la partita aperta a tutto schermo, come nella pagina Partite
-  const [apertaId, setApertaId] = useState(null)
+  // ⚠️⚠️ **La partita aperta ha il suo INDIRIZZO** (`/scalata/123`, 31/10/2026,
+  // Mattia: *"quando entro e esco dalle partite salta sulla schermata
+  // Partite"*). Prima la scheda era solo uno stato della pagina: il gesto
+  // «indietro» del telefono — lo scorrimento dal bordo su iPhone, che è lo
+  // stesso bordo del gesto della scheda, o il tasto su Android — non la
+  // chiudeva, ma tornava alla PAGINA visitata prima. Come in Partite, ora
+  // l'indietro chiude la scheda e si resta qui (`chiudiVerso`).
+  const percorso = usaPercorso()
+  const apertaId = Number(percorso.split('/')[2]) || null
+  const setApertaId = (id) => (id ? vai(`/scalata/${id}`) : chiudiVerso('/scalata'))
   // il passo a cui si sta aggiungendo una partita a mano: { titolo, nelPasso, metti }
   const [manuale, setManuale] = useState(null)
   // ⚠️ L'errore di un'aggiunta a mano va **in cima**, con quelli del registro,

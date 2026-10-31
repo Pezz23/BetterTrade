@@ -350,3 +350,14 @@
   che guardano la coerenza. Si trova solo confrontando con **l'esterno**: qui è
   bastato chiedere a The Odds API l'istante grezzo e convertirlo a mano.
 
+
+### Una lettura FALLITA non è un utente che non esiste (31/10/2026)
+
+`AuthContext` rilegge il profilo a ogni evento di Supabase Auth — anche al
+**rinnovo del token**, al rientro nell'app o ogni ora — e faceva `signOut()`
+se `data` era nullo. Ma `data` è nullo **anche quando la lettura fallisce**
+(rete lenta al rientro dal telefono): Mattia veniva buttato fuori «ogni tanto».
+Si guarda `error` prima di `data`, e si usa `maybeSingle()`: con `single()`
+«nessuna riga» è anch'esso un errore, e le due cose non si distinguono più.
+**Regola: un'azione irreversibile (logout, cancellazione) parte solo da una
+risposta, mai da un silenzio.**
