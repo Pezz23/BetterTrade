@@ -137,14 +137,53 @@ function QuotaModificabile({ valore, segnaposto, onChange, onCommit, sola = fals
  * arrivata, rosso se no (30/10/2026, Mattia: *"voglio vedere i risultati in
  * Road to weekend"*). Niente se il risultato non c'è ancora.
  */
-function Risultato({ ris, giocata }) {
+const esitoDi = (ris, giocata) => {
   if (!ris) return null
   const ok = giocataArrivata(giocata, ris.casa, ris.trasferta)
-  const col = ok == null ? C.testo : ok ? C.verde : C.rosso
+  return { ris, ok, col: ok == null ? C.spento : ok ? C.verde : C.rosso }
+}
+
+/**
+ * ⚠️⚠️ **Il BOLLINO dell'esito, pieno** (31/10/2026, Mattia: *"la partita si
+ * deve illuminare, ora appare un timido e piccolo"*). Prima era «· finita 2-1
+ * ✓» in piccolo sulla seconda riga; ora sta sulla prima, accanto ai nomi, a
+ * fondo pieno: verde arrivata, rosso no. Una giocata che la regola non legge
+ * ha solo il contorno.
+ */
+function BollinoEsito({ es }) {
+  if (!es) return null
+  const pieno = es.ok != null
   return (
-    <b style={{ fontFamily: F.mono, fontVariantNumeric: 'tabular-nums', color: col }}>
-      {' · '}finita {ris.casa}-{ris.trasferta}{ok == null ? '' : ok ? ' ✓' : ' ✗'}
-    </b>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '1px 7px', borderRadius: R.pastiglia,
+      fontFamily: F.mono, fontVariantNumeric: 'tabular-nums', fontSize: S.base, fontWeight: 700, whiteSpace: 'nowrap',
+      background: pieno ? es.col : 'transparent', color: pieno ? C.fondo : C.spento, border: `1px solid ${es.col}` }}>
+      {es.ris.casa}-{es.ris.trasferta}{es.ok == null ? '' : es.ok ? ' ✓' : ' ✗'}
+    </span>
+  )
+}
+
+/**
+ * Il riassunto di un passo con risultati (31/10/2026): quante partite sono
+ * arrivate, quante no, quante mancano — e quindi com'è la schedina. ⚠️ Dice
+ * cosa segnare, non lo segna: l'esito resta un tocco di chi gioca.
+ */
+function RiassuntoPasso({ gambe, risultatoDi }) {
+  const esiti = gambe.map(g => esitoDi(risultatoDi(g.prossima_id ?? g.id), g.giocata))
+  if (!esiti.some(Boolean)) return null
+  const si = esiti.filter(e => e?.ok === true).length
+  const no = esiti.filter(e => e?.ok === false).length
+  const mancano = esiti.filter(e => !e || e.ok == null).length
+  const [frase, col] = no ? ['schedina persa: segna ✗', C.rosso]
+    : !mancano ? ['schedina vinta: segna ✓', C.verde]
+    : ['in corso', C.spento]
+  return (
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: SP.m, flexWrap: 'wrap', marginTop: SP.s, padding: `${SP.s}px ${SP.m}px`,
+      borderRadius: R.m, background: alpha(col, no || !mancano ? 0.12 : 0.05), fontFamily: F.sans, fontSize: S.base }}>
+      <span style={{ color: C.verde }}>✓ {si} {si === 1 ? 'arrivata' : 'arrivate'}</span>
+      {no > 0 && <span style={{ color: C.rosso }}>✗ {no} {no === 1 ? 'persa' : 'perse'}</span>}
+      {mancano > 0 && <span style={{ color: C.spento }}>· {mancano} da giocare</span>}
+      <b style={{ marginLeft: 'auto', color: col }}>{frase}</b>
+    </div>
   )
 }
 
@@ -164,6 +203,7 @@ function Risultato({ ris, giocata }) {
 // 12 ore (`ORE_VISIBILI`), spenta e con l'ora in ambra.
 function SchedaRisultato({ g, fuori, soloSegno, iPasso, colorePasso, segni, onApri, onTogli, iniziata = false, risultato = null }) {
   const a = !fuori && eCriterioA(g)
+  const es = esitoDi(risultato, g.giocata)
   const num = { fontFamily: F.mono, fontVariantNumeric: 'tabular-nums' }
   const virgola = (x) => (x == null ? '—' : Number(x).toFixed(2).replace('.', ','))
   return (
@@ -172,9 +212,13 @@ function SchedaRisultato({ g, fuori, soloSegno, iPasso, colorePasso, segni, onAp
       // ⚠️ Più spenta dal 29/10/2026 (Mattia: *"illumina di meno, tieni il
       // bordo sinistro"*): resta il filo viola, il fondo è appena tinto e il
       // bordo è quello di tutte le altre.
-      background: a ? `linear-gradient(${alpha(C.viola, 0.04)},${alpha(C.viola, 0.04)}), ${C.card}` : C.card,
-      border: `1px solid ${C.bordoTenue}`,
-      boxShadow: a ? `inset 3px 0 0 ${C.viola}` : 'none', opacity: fuori ? 0.5 : iniziata ? 0.6 : 1 }}>
+      // ⚠️ Una partita finita prende il fondo del suo esito (31/10/2026), sopra
+      // il fondo pieno della card: la tinta da sola si illuminerebbe. Il filo
+      // viola del criterio A resta: uno è il fondo, l'altro il filo.
+      background: es?.ok != null ? `linear-gradient(${alpha(es.col, 0.12)},${alpha(es.col, 0.12)}), ${C.card}`
+        : a ? `linear-gradient(${alpha(C.viola, 0.04)},${alpha(C.viola, 0.04)}), ${C.card}` : C.card,
+      border: `1px solid ${es?.ok != null ? alpha(es.col, 0.4) : C.bordoTenue}`,
+      boxShadow: a ? `inset 3px 0 0 ${C.viola}` : 'none', opacity: fuori ? 0.5 : iniziata && !es ? 0.6 : 1 }}>
       <span title={iniziata ? 'già cominciata' : undefined} style={{ ...num, fontSize: S.base, color: iniziata ? C.ambra : C.spento }}>{g.ora?.slice(0, 5)}</span>
       <span onClick={onApri} role="button" style={{ minWidth: 0, cursor: 'pointer', fontFamily: F.sans, fontSize: S.corpo,
         fontWeight: 600, lineHeight: 1.25, color: C.testo, overflowWrap: 'anywhere',
@@ -184,6 +228,7 @@ function SchedaRisultato({ g, fuori, soloSegno, iPasso, colorePasso, segni, onAp
         textDecoration: fuori ? 'line-through' : 'none' }}>
         {/* ⚠️ Niente «A» qui (Mattia, 29/10/2026): la scheda viola basta. */}
         {g.casa} <span style={{ color: C.fioco, fontWeight: 400 }}>–</span> {g.trasferta}
+        {es && <>{' '}<BollinoEsito es={es} /></>}
       </span>
       <span style={{ ...num, fontSize: S.base, color: C.testo, textAlign: 'center', whiteSpace: 'nowrap' }}>{g.giocata}</span>
       <span style={{ ...num, fontSize: S.media, fontWeight: 700, color: C.oro, textAlign: 'right' }}>{virgola(g.quota)}</span>
@@ -201,7 +246,6 @@ function SchedaRisultato({ g, fuori, soloSegno, iPasso, colorePasso, segni, onAp
         {' · '}sce <b style={{ ...num, color: C.spento }}>{pct(g.scelta)}</b>
         {g.vpm != null && <>{' · '}VPM <b style={{ ...num, color: C.spento }}>{virgola(g.vpm)}</b></>}
         {soloSegno && <span style={{ color: C.ambra }}> · fuori filtri</span>}
-        <Risultato ris={risultato} giocata={g.giocata} />
       </span>
       <span style={{ gridColumn: '3 / span 3', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: SP.s }}>{segni}</span>
     </div>
@@ -327,6 +371,7 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, colore, classifiche,
         {(() => {
           const a = eCriterioA(g)
           const num = { fontFamily: F.mono, fontVariantNumeric: 'tabular-nums' }
+          const es = esitoDi(risultatoDi(g.prossima_id ?? g.id), g.giocata)
           return (
         /* ⚠️ **Righe piatte, come una schedina stampata** (29/10/2026,
            Mattia sceglie «schedina sempre aperta»): niente bordo né fondo
@@ -335,6 +380,9 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, colore, classifiche,
         <div style={{ display: 'grid', gridTemplateColumns: '38px minmax(0,1fr) auto 48px 20px', columnGap: SP.m, rowGap: 2,
           alignItems: 'center', padding: `${SP.m}px ${SP.s}px ${SP.m}px ${a ? SP.m : 0}px`,
           borderTop: `1px solid ${alpha(C.testo, 0.07)}`,
+          // ⚠️ La riga di una partita finita prende il colore del suo esito
+          // (31/10/2026): sta sul fondo pieno della card del passo.
+          background: es?.ok != null ? alpha(es.col, 0.12) : 'transparent',
           boxShadow: a ? `inset 3px 0 0 ${C.viola}` : 'none' }}>
           <span style={{ ...num, fontSize: S.base, color: C.spento }}>{g.ora?.slice(0, 5)}</span>
           <div onClick={() => onApri?.(g.prossima_id ?? g.id)} role={onApri ? 'button' : undefined}
@@ -349,6 +397,7 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, colore, classifiche,
                   style={{ fontSize: S.micro, padding: '0 3px', borderRadius: 3, lineHeight: 1.3, fontWeight: 600 }} />
               </span>
             ))}
+            <BollinoEsito es={es} />
           </div>
           <span style={{ ...num, fontSize: S.base, color: C.testo, textAlign: 'center', whiteSpace: 'nowrap' }}>{g.giocata}</span>
           {/* La quota scaricata finché non la correggi; corretta, è
@@ -368,7 +417,6 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, colore, classifiche,
             att <b style={{ ...num, color: C.spento }}>{pct(g.att)}</b>
             {' · '}sce <b style={{ ...num, color: C.spento }}>{pct(g.scelta)}</b>
             {g.vpm != null && <>{' · '}VPM <b style={{ ...num, color: C.spento }}>{Number(g.vpm).toFixed(2).replace('.', ',')}</b></>}
-            <Risultato ris={risultatoDi(g.prossima_id ?? g.id)} giocata={g.giocata} />
             {/* ⚠️ La stella dentro il passo (23/10): una gamba stellata può
                 stare lì anche sotto i filtri, e senza il segno sembrerebbe un
                 errore invece di una scelta. */}
@@ -673,6 +721,7 @@ function PassoHero(props) {
           solo «Conti», che è il dettaglio. */}
       <div style={{ marginTop: SP.m }}>
         <Passo {...props} parte="gambe" nudo />
+        <RiassuntoPasso gambe={gambe} risultatoDi={props.risultatoDi ?? (() => null)} />
       </div>
 
 

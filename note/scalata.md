@@ -952,3 +952,19 @@ schedina salvata, non il piano.
   sta in `note/dati.md`.
 - ⏭ Proposto e **non deciso**: l'esito del passo **proposto** quando tutte le
   partite hanno il risultato (voce RE di STATO).
+
+### L'esito che si vede (31/10/2026, `1.78.00`)
+
+Mattia: *"la partita si deve illuminare, ora appare un timido e piccolo"*.
+- **Bollino pieno** (`BollinoEsito`) sulla prima riga, accanto ai nomi: «2-1 ✓»
+  a fondo verde se la giocata è arrivata, «1-1 ✗» rosso se no; solo contorno
+  se la giocata non si legge.
+- **La riga prende il colore dell'esito** (tinta 12%, nel passo e in RISULTATO
+  FILTRI), sempre **sopra un fondo pieno** (la trappola della tinta che si
+  illumina). Il filo viola del criterio A resta: fondo ed esito, filo e
+  criterio sono due canali diversi. Una partita finita non è più spenta come
+  una «iniziata».
+- **Il riassunto del passo** (`RiassuntoPasso`) sotto le partite della card:
+  «✓ 2 arrivate · ✗ 1 persa · 1 da giocare» e a destra *schedina vinta: segna
+  ✓* / *schedina persa: segna ✗* / *in corso*. ⚠️ **Dice cosa segnare, non lo
+  segna**: è il primo pezzo dell'esito proposto (voce RE di STATO).
