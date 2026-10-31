@@ -8,13 +8,31 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 31 ottobre 2026 · app alla versione **1.78.00**
-(`633c347`, **pushato**) · passaggio di consegne: 30/10 sera · da pushare solo il
-commit di questo passaggio (documenti). Migrazioni del giorno `sql/50`-`53`
-**tutte applicate**, e la funzione `aggiorna-risultati` è **pubblicata** su
-Supabase.
+**Ultimo aggiornamento:** 31 ottobre 2026, sera · app alla versione **1.78.00**
+(`cbe2e0c`, **pushato**) · passaggio di consegne: 31/10 sera · da pushare solo il
+commit di questo passaggio (documenti). Migrazioni `sql/50`-`53` applicate; la
+funzione `aggiorna-risultati` è **pubblicata** con il Giappone.
 
-## ▶️ DOVE SIAMO — 30 ottobre 2026, leggi questo per primo
+## ▶️ DOVE SIAMO — 31 ottobre 2026, leggi questo per primo
+
+**Il 31/10, primo giorno del weekend di prova** (`1.77.01`-`1.78.00`):
+- **Due difetti del telefono corretti e confermati da Mattia**: il logout
+  «ogni tanto» (una lettura del profilo fallita faceva `signOut`) e il salto a
+  Partite (la scheda di Road to weekend ora ha `/scalata/:id`).
+- **⤓ Scarica risultati prende anche il Giappone**, con le statistiche dal
+  telefono, e collega al calendario anche le partite già in archivio.
+- ⚠️⚠️ **Il Giappone dal 2026 gioca col calendario EUROPEO**: la regola «anno
+  solare» sommava il mezzo campionato feb-giu 2026 e la 2026/27 (Hiroshima
+  64-32 invece di 32-10). `annoSolareFino` e **126 partite spostate in
+  «2627»**; classifiche giuste.
+- Verificato: telefono e Mac **non creano doppioni** (0 da agosto).
+- **L'esito si vede** in Road to weekend: bollino pieno «2-1 ✓/✗», riga
+  colorata, e il riassunto del passo *«schedina persa: segna ✗»*. Mattia:
+  *"funziona"*.
+
+---
+
+Il 30/10:
 
 **Il 30/10, Road to weekend con la CONFERMA della giocata** (`1.74.00`-`01`,
 dettaglio in `note/scalata.md`). Mattia: *"mi pare decisamente meglio, lo
@@ -134,10 +152,10 @@ Il 24/10, in ordine:
 | **⤓ Scarica risultati** (30/10): in fondo a Road to weekend, solo superadmin; il telefono scarica da ESPN (che rifiuta i server di Supabase) e la funzione `aggiorna-risultati` abbina e scrive; risultati «finita 2-1 ✓/✗» nel passo e nell'elenco; le partite di ieri restano anche dopo mezzanotte (`usaRecenti`). ESPN in `app/src/lib/espn.js`, abbinamento in `btscout/lib/risultati-espn.js` per tutti | `1.75.00` | `7029d66` |
 | **Spin: l'esito PROPOSTO** (30/10): le caselle collegate a una partita finita propongono ✓/✗ con `giocataArrivata` (pronostico tradotto con `giocataDa`), un tocco o «conferma i N» per confermare, mai sopra un esito scelto; anche sulle spin non spuntate. «Scarica risultati» anche in fondo alla Dashboard | `1.76.00` | `f647f83` |
 | **Spin: esiti automatici, archivio, flag** (30/10): esiti scritti da soli nelle caselle vuote (dopo Scarica risultati e all'apertura della Slot); «2-1 ✓» nelle schedine; Dashboard → `/slot/N`; flag `in_spin` in Bilancio (`sql/52`) per la percentuale delle spin; **archivio delle spin** senza soldi, resa in unità (`sql/53`, scheda «Archivio»); `COMBOS` in un posto solo | `1.77.00` | `633c347` |
-| **Due difetti del telefono** (31/10, Mattia: *"ogni tanto mi sbatte fuori, o salta su Partite"*): il profilo riletto a ogni rinnovo della sessione faceva **logout** a qualunque intoppo di rete (ora riprova e tiene la sessione); la scheda di Road to weekend non aveva indirizzo, e l'«indietro» del telefono tornava alla pagina prima (ora `/scalata/:id`) | `1.77.01` | telefono |
-| **Scarica risultati prende anche il Giappone** (31/10): era escluso per errore con le coppe; per lui il telefono manda anche le statistiche, stagione ad anno solare; e l'abbinamento collega al calendario anche le partite già in archivio | `1.77.02` | giappone |
-| **Il Giappone col calendario europeo** (31/10): dal 2026 la J1 gioca agosto-maggio; la regola «anno solare» sommava il mezzo campionato feb-giu 2026 e la 2026/27 (Hiroshima 64-32 invece di 32-10). `annoSolareFino` in `lib/espn.js`, e 126 partite spostate in «2627» (backup prima). Verificato anche che telefono e Mac non creano doppioni: 0 da agosto | `1.77.03` | giappone-stagione |
-| **Road to weekend: l'esito che si vede** (31/10): bollino pieno «2-1 ✓/✗» sulla prima riga, riga colorata dall'esito (nel passo e nell'elenco), e il riassunto del passo «✓ 2 · ✗ 1 · 1 da giocare → schedina persa: segna ✗» | `1.78.00` | esito-visibile |
+| **Due difetti del telefono** (31/10, Mattia: *"ogni tanto mi sbatte fuori, o salta su Partite"*): il profilo riletto a ogni rinnovo della sessione faceva **logout** a qualunque intoppo di rete (ora riprova e tiene la sessione); la scheda di Road to weekend non aveva indirizzo, e l'«indietro» del telefono tornava alla pagina prima (ora `/scalata/:id`) | `1.77.01` | `dacc2a7` |
+| **Scarica risultati prende anche il Giappone** (31/10): era escluso per errore con le coppe; per lui il telefono manda anche le statistiche, stagione ad anno solare; e l'abbinamento collega al calendario anche le partite già in archivio | `1.77.02` | `4672d81` |
+| **Il Giappone col calendario europeo** (31/10): dal 2026 la J1 gioca agosto-maggio; la regola «anno solare» sommava il mezzo campionato feb-giu 2026 e la 2026/27 (Hiroshima 64-32 invece di 32-10). `annoSolareFino` in `lib/espn.js`, e 126 partite spostate in «2627» (backup prima). Verificato anche che telefono e Mac non creano doppioni: 0 da agosto | `1.77.03` | `31cccf9` |
+| **Road to weekend: l'esito che si vede** (31/10): bollino pieno «2-1 ✓/✗» sulla prima riga, riga colorata dall'esito (nel passo e nell'elenco), e il riassunto del passo «✓ 2 · ✗ 1 · 1 da giocare → schedina persa: segna ✗» | `1.78.00` | `cbe2e0c` |
 | **In archivio solo i passi giocati** (29/10): STOP toglie il piano non giocato dopo la chiusura (finisce nel registro con `stato_scalata='chiusa'`), il resoconto filtra gli `aperto`. Ognuno il suo storico (`sql/41`) | `1.66.01` | `bd292d6` |
 | **Il Filtro A e il bankroll al 10%, verificati** (29/10, briefing di Mattia da ChatGPT): riprodotto (229 schedine, +18% ±13,5), walk-forward +24% ±22 su 84, ma sulle singole solo **~+2%** sopra VPM 7,5; **il 10% è troppo** — massimo al **3%** (108 € contro 78 €). `btscout/scripts/prova-filtro-a.js`, dettaglio in `note/criterio.md`. Proposta aperta: la prova sul futuro vero | motore | `bfed9ce` |
 | **Il routing** (29/10, lotto 2): ogni pagina ha un indirizzo (`/partite`, `/scalata`…, Dashboard `/`), la scheda è `/partite/:id` e `/votate/:id` (`components/SchedaPartita.jsx`), un link scaduto si apre con «GIÀ GIOCATA» e il risultato (`usaPartitaAperta`), indirizzo sconosciuto o solo-admin → Dashboard. Senza libreria: `lib/indirizzi.jsx` + `hooks/usaPercorso.js`; `app/vercel.json` per Vercel; `guarda.mjs` cerca `link`; `prova-permessi.js` prova che un user **non scrive** la griglia (verificato con sessione simulata). A margine: «Gli orari sono quelli del Regno Unito» in Partite → «italiani» | `1.66.00` | `dce4621` |
@@ -224,7 +242,7 @@ L'ordine consigliato: **00 → RE → 6 → 4**.
 | | cosa | costo |
 |---|---|---|
 | 00 | **Il weekend vero, versione 1.77** (Mattia lo prova il 31/10-1/11). Road to weekend: ricarica, ✓ Conferma giocata, esito, ✗ con due tocchi (archivio e giro nuovo), matita, «salta» su una partita cominciata, Reset partite con un passo confermato. Poi **⤓ Scarica risultati** dal telefono, i «finita 2-1 ✓» nel passo, gli **esiti automatici delle spin** e la prima spin in **archivio** con «↺ Nuova spin». Si raccoglie quello che non torna | il weekend |
-| RE | **L'esito PROPOSTO dei passi di Road to weekend** (proposto il 30/10, **non deciso**): quando tutte le partite di un passo confermato hanno il risultato, la card propone ✓ o ✗ e si conferma con un tocco — proposto e non automatico, perché un ✗ chiude il giro. La regola c'è già (`giocataArrivata`) | un paio d'ore |
+| RE | **L'esito PROPOSTO dei passi di Road to weekend**: il riassunto del passo dice già *«schedina persa: segna ✗»* (`RiassuntoPasso`, 31/10); manca il tasto che lo segna con un tocco. Proposto e non automatico, perché un ✗ chiude il giro. **Non deciso** | un'ora |
 | 1F | **Il Filtro A sul futuro vero** (proposto il 29/10, **non deciso**): l'app registra da sola ogni schedina che il filtro proporrebbe, con regole fisse; dopo 100 schedine, ROI > 0 **e** gambe sopra 100% → candidato, altrimenti si archivia. Oggi lo storico non può dire di più | da stimare, mezza giornata |
 | 6 | **L'automazione** — i due `.plist` (`aggiornamento.plist` martedì/venerdì, `aggiornamento-orario.plist` solo risultati, zero crediti) **non sono installati**. Dal 30/10 pesa meno: i risultati si scaricano dal telefono col tasto. Resta utile per la routine del martedì e venerdì (quote, football-data, `andamento`). ⚠️ Col Mac in stop non parte: recupera **un** giro al risveglio | 10 minuti |
 | ~~2~~ | ~~**Il routing**~~ — ✅ **fatto il 29/10** (`1.66.00`) | — |
@@ -327,7 +345,8 @@ state provate simulando uno user e un admin in una transazione annullata.
 |---|---|
 | ~~**NickV aveva un giro aperto col metodo VECCHIO**~~ | ✅ **29/10**: Mattia, entrato come NickV, ha usato «Azzera tutto» e poi una ricarica di 50 €. Le scalate 48 e 57 non avevano nessun passo giocato, quindi il conto resta 50 € come prima. I 71 passi di piano sono nel registro delle cancellazioni. Era: `regola = 'meta'`, e al primo ✗ `chiudi_giro_perso` l'avrebbe rifiutato |
 | ~~**L'esito delle spin da PROPOSTO ad AUTOMATICO**~~ | ✅ **30/10**, lo stesso giorno (`1.77.00`): automatico, solo nelle caselle vuote |
-| **Logout e salto a Partite, da verificare sul telefono** (31/10) | corretti in `1.77.01` senza poterli riprodurre: Mattia li prova nel weekend. Se il logout torna, la causa è un'altra (le prossime da guardare: il rinnovo del token stesso, o più schede aperte) |
+| ~~**Logout e salto a Partite**~~ | ✅ **31/10**: corretti in `1.77.01` e confermati da Mattia sul telefono (*"sembra funzionare"*). Se il logout tornasse, le prossime cause da guardare: il rinnovo del token stesso, o più schede aperte |
+| **9 risultati ESPN in attesa in Importazioni** (31/10) | ottobre: ESPN usa nomi che l'app non riconosce (Manchester United, Athletic Club, Rayo Vallecano…). Si risolvono dalla pagina Importazioni, o aggiungendo gli alias in `btscout/lib/nomi-espn.js` (dieci minuti, poi spariscono per sempre) |
 | **La chiave personale di Supabase scade** (30/10) | `SUPABASE_ACCESS_TOKEN` in `app/.env`, solo Edge Functions, con scadenza: serve **solo per ripubblicare** la funzione `aggiorna-risultati` (che online continua a girare). Quando la pubblicazione la rifiuta, se ne genera una nuova (istruzioni in `note/dati.md`) |
 | **Il tasto dei risultati non ricalcola `andamento`** (30/10) | scelta: è un lavoro di minuti, lo fa la routine del Mac. Fino ad allora la pagina Andamento resta indietro sui risultati scaricati dal telefono |
 | **Coppe senza il tasto** (30/10) | Champions & co. le scrive solo il Mac (`importa-competizione.js`): ESPN è l'unica fonte, e dal telefono arriverebbero senza statistiche che nessuno completerebbe |
