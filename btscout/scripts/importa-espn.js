@@ -36,7 +36,7 @@ console.log(`ESPN → ${DIVS.join(', ')} · dal ${DA} al ${A}${ESEGUI ? '' : '  
 // ⚠️ Il lavoro sta in `lib/risultati-espn.js` dal 30/10/2026: lo stesso che fa
 // la funzione di Supabase lanciata dal tasto «Aggiorna risultati» dell'app.
 // Qui resta solo il giro sui campionati e la stampa.
-const conto = { viste: 0, completate: 0, create: 0, invariate: 0, dubbie: 0, saltate: 0 };
+const conto = { viste: 0, completate: 0, create: 0, invariate: 0, collegate: 0, dubbie: 0, saltate: 0 };
 const saltate = [], dubbie = [], create = [];
 for (const div of DIVS) {
   const r = await aggiornaCampionato(sql, div, { da: DA, a: A, esegui: ESEGUI });
@@ -49,6 +49,7 @@ console.log(`\n${conto.viste} partite finite viste su ESPN`);
 console.log(`  completate (possesso/tiri aggiunti)  ${conto.completate}`);
 console.log(`  create (football-data non le ha)     ${conto.create}`);
 console.log(`  già a posto, niente da aggiungere    ${conto.invariate}`);
+console.log(`  collegate al calendario             ${conto.collegate}`);
 console.log(`  da verificare a mano                 ${conto.dubbie}`);
 if (conto.saltate) {
   console.log(`  ⚠️ saltate per errore della fonte     ${conto.saltate}  (rilancia per riprenderle)`);

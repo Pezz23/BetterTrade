@@ -61,10 +61,14 @@ export async function giorniDaGuardare(sql, div, da, a) {
  * ⚠️ `fonte` (30/10/2026) è da dove arrivano le partite e le statistiche: di
  * default ESPN, chiesta da qui. La funzione di Supabase la sostituisce con le
  * partite che il **telefono** ha scaricato — ESPN rifiuta i server di
- * Supabase — e con statistiche sempre nulle: dal telefono solo i risultati.
+ * Supabase — e con le statistiche che il telefono ha scaricato: nessuna per
+ * i 15 campionati (le porta football-data), quelle vere per il Giappone.
  */
 export async function aggiornaCampionato(sql, div, { da, a, esegui = false, fonte = { partiteDelGiorno, statistiche } }) {
-  const conto = { viste: 0, completate: 0, create: 0, invariate: 0, dubbie: 0, saltate: 0, giorni: 0, nomi: 0 };
+  const conto = { viste: 0, completate: 0, create: 0, invariate: 0, collegate: 0, dubbie: 0, saltate: 0, giorni: 0, nomi: 0 };
+  // ⚠️ Il Giappone gioca ad anno solare (31/10/2026: entra nel tasto del
+  // telefono, e prima la sua stagione sarebbe finita in «26/27» invece di «2026»).
+  const annoSolare = !!COMPETIZIONI[div]?.annoSolare;
   const saltate = [], dubbie = [], create = [];
 
   // ⚠️⚠️ **Un intoppo della fonte non deve uccidere il lavoro.** ESPN è
@@ -105,6 +109,20 @@ export async function aggiornaCampionato(sql, div, { da, a, esegui = false, font
 
     if (cand.length === 1) {
       const p = cand[0];
+      // ⚠️⚠️ **E si collega al calendario, se non lo è** (31/10/2026). Una
+      // partita già in archivio — portata da football-data o, per il
+      // Giappone, dallo script del Mac — restava senza `partita_id` finché la
+      // riconciliazione della routine non girava: in Road to weekend e nelle
+      // spin il risultato non compariva. Stessa regola di tutto il resto:
+      // **una e una sola** riga di calendario combacia, ed è ancora libera.
+      const cal = await sql`
+        select id, partita_id from prossime_partite
+        where div = ${div} and casa = ${casa} and trasferta = ${trasferta}
+          and data between ${e.data}::date - 1 and ${e.data}::date + 1`;
+      if (cal.length === 1 && cal[0].partita_id == null) {
+        if (esegui) await sql`update prossime_partite set partita_id = ${p.id} where id = ${cal[0].id} and partita_id is null`;
+        conto.collegate++;
+      }
       // ⚠️ Non si tocca mai il risultato di football-data: ESPN completa i
       // buchi (possesso, e i tiri se mancano), non riscrive quello che c'è.
       // ⚠️ E le statistiche si chiedono **solo se servono** (30/10/2026):
@@ -141,6 +159,7 @@ export async function aggiornaCampionato(sql, div, { da, a, esegui = false, font
           insert into partite (div, campionato, data, casa, trasferta, gol_casa, gol_trasferta, esito,
                                tirip_casa, tirip_trasf, tiri_casa, tiri_trasf,
                                angoli_casa, angoli_trasf, falli_casa, falli_trasf,
+                               gialli_casa, gialli_trasf, rossi_casa, rossi_trasf,
                                possesso_casa, possesso_trasf,
                                stagione, fonte)
           values (${div}, ${campionato}, ${fut[0].data}, ${casa}, ${trasferta}, ${e.golCasa}, ${e.golTrasferta},
@@ -149,8 +168,10 @@ export async function aggiornaCampionato(sql, div, { da, a, esegui = false, font
                   ${st?.casa.tiri ?? null}, ${st?.trasferta.tiri ?? null},
                   ${st?.casa.angoli ?? null}, ${st?.trasferta.angoli ?? null},
                   ${st?.casa.falli ?? null}, ${st?.trasferta.falli ?? null},
+                  ${st?.casa.gialli ?? null}, ${st?.trasferta.gialli ?? null},
+                  ${st?.casa.rossi ?? null}, ${st?.trasferta.rossi ?? null},
                   ${st?.casa.possesso ?? null}, ${st?.trasferta.possesso ?? null},
-                  ${stagioneDi(fut[0].data)}, 'espn')
+                  ${stagioneDi(fut[0].data, annoSolare)}, 'espn')
           returning id`;
         await sql`update prossime_partite set partita_id = ${nuova.id} where id = ${fut[0].id}`;
       }

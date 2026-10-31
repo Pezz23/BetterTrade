@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../supabase'
-import { partiteDelGiorno } from '../lib/espn'
+import { partiteDelGiorno, statistiche } from '../lib/espn'
 import { nome } from '../lib/campionati'
 import { aggiornaEsitiGriglia } from '../hooks/usaRecenti'
 import { C, F, S, SP, R, alpha } from '../theme'
@@ -55,7 +55,17 @@ export default function ScaricaRisultati({ onFinito }) {
             // un giorno che ESPN non dà non ferma il campionato
             try { eventi[g] = await partiteDelGiorno(voce, g) } catch { s.problemi++ }
           }
-          const r = await chiama({ voce, eventi })
+          // ⚠️ Il Giappone (31/10/2026): lì ESPN è l'unica fonte, quindi il
+          // telefono scarica anche tiri, angoli e cartellini delle partite
+          // finite — una chiamata a partita, una decina a giro.
+          let stat
+          if (voce === 'JPN1') {
+            stat = {}
+            for (const e of Object.values(eventi).flat().filter(x => x.finita)) {
+              try { const st = await statistiche(voce, e.id, 1); if (st) stat[e.id] = st } catch { /* senza statistiche */ }
+            }
+          }
+          const r = await chiama({ voce, eventi, ...(stat ? { statistiche: stat } : {}) })
           s.nuove.push(...(r.nuove || []))
           s.giaAPosto += r.invariate || 0
           s.dubbie += r.dubbie || 0
@@ -80,7 +90,7 @@ export default function ScaricaRisultati({ onFinito }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: F.sans, fontSize: S.base, fontWeight: 700, color: C.testo }}>Risultati da ESPN</div>
           <div style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco }}>
-            i 15 campionati, ultimi 2 giorni · solo i risultati · dal telefono
+            15 campionati e il Giappone, ultimi 2 giorni · dal telefono
           </div>
         </div>
         <button onClick={avvia} disabled={lavora} style={{ padding: '8px 14px', cursor: lavora ? 'default' : 'pointer',
@@ -102,7 +112,7 @@ export default function ScaricaRisultati({ onFinito }) {
               {stato.errore ? <b style={{ color: C.rosso }}>{stato.errore}</b>
                 : stato.finito ? 'finito' : stato.ora}
             </span>
-            <span style={{ fontFamily: F.mono, fontVariantNumeric: 'tabular-nums' }}>{stato.fatti}/{stato.totale || 15}</span>
+            <span style={{ fontFamily: F.mono, fontVariantNumeric: 'tabular-nums' }}>{stato.fatti}/{stato.totale || 16}</span>
           </div>
           {stato.finito && !stato.errore && (
             <div style={{ marginTop: SP.s, fontFamily: F.sans, fontSize: S.minuta, color: C.testo, lineHeight: 1.5 }}>

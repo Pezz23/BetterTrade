@@ -13,8 +13,10 @@
 // statistiche sempre nulle: dal telefono solo i risultati. Tiri, angoli e
 // cartellini li porta football-data il martedì e il venerdì, che con la
 // stessa chiave completa la riga invece di raddoppiarla.
-// ⚠️ **Solo i quindici campionati**: nelle coppe ESPN è l'unica fonte, e una
-// riga scritta senza statistiche non la completerebbe più nessuno.
+// ⚠️ **I quindici campionati più il Giappone**, niente coppe. Il Giappone
+// (31/10/2026) è un campionato vero, con le quote in calendario, ma lì ESPN è
+// l'unica fonte: per lui il telefono manda **anche le statistiche**, perché
+// nessun altro le porterebbe dopo. Per i quindici restano nulle (football-data).
 // ⚠️⚠️ **Solo il superadmin**, e il controllo è QUI, non nel JSX: si chiede ad
 // Auth chi è il portatore del token, e a `users` che ruolo ha (regola 4).
 // ⚠️ Scrive col ruolo del database (`SUPABASE_DB_URL`), come gli script.
@@ -26,7 +28,9 @@ import { aggiornaCampionato, giorniDaGuardare } from '../../../btscout/lib/risul
 import { giornoLocale } from '../../../btscout/lib/date.js'
 
 const GIORNI = 2
-const LEGHE = ['E0', 'E1', 'I1', 'I2', 'SP1', 'SP2', 'D1', 'D2', 'F1', 'F2', 'P1', 'N1', 'T1', 'B1', 'SC0']
+const LEGHE = ['E0', 'E1', 'I1', 'I2', 'SP1', 'SP2', 'D1', 'D2', 'F1', 'F2', 'P1', 'N1', 'T1', 'B1', 'SC0', 'JPN1']
+// dove le statistiche le manda il telefono: ESPN è l'unica fonte
+const CON_STATISTICHE = ['JPN1']
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -60,6 +64,17 @@ function pulisci(e: Record<string, unknown>) {
     nomiCasa: nomi(e.nomiCasa), nomiTrasferta: nomi(e.nomiTrasferta), golCasa: gc, golTrasferta: gt }
 }
 
+// Le statistiche di una partita, come le legge `statistiche()` di lib/espn.js:
+// solo numeri plausibili, il resto nullo.
+const CAMPI = ['tiri', 'tirip', 'possesso', 'angoli', 'gialli', 'rossi', 'falli']
+function pulisciStat(x: Record<string, Record<string, unknown>>) {
+  const lato = (l: Record<string, unknown> | undefined) => Object.fromEntries(CAMPI.map(k => {
+    const n = Number(l?.[k])
+    return [k, Number.isFinite(n) && n >= 0 && n <= 100 ? n : null]
+  }))
+  return x?.casa && x?.trasferta ? { casa: lato(x.casa), trasferta: lato(x.trasferta) } : null
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   const sql = postgres(Deno.env.get('SUPABASE_DB_URL')!, { prepare: false, max: 1 })
@@ -69,7 +84,7 @@ Deno.serve(async (req) => {
     const [u] = await sql`select role from users where auth_id = ${authId}`
     if (u?.role !== 'superadmin') return risposta({ errore: 'solo il superadmin' }, 403)
 
-    const { voce, eventi } = await req.json().catch(() => ({}))
+    const { voce, eventi, statistiche } = await req.json().catch(() => ({}))
     if (!voce) return risposta({ voci: LEGHE })
     if (!LEGHE.includes(voce) || !CAMPIONATI[voce]) return risposta({ errore: `campionato sconosciuto: ${voce}` }, 400)
 
@@ -81,12 +96,17 @@ Deno.serve(async (req) => {
     const perGiorno = new Map<string, unknown[]>()
     for (const [g, lista] of Object.entries(eventi as Record<string, unknown[]>))
       if (/^\d{8}$/.test(g) && Array.isArray(lista)) perGiorno.set(g, lista.slice(0, 60).map(x => pulisci(x as Record<string, unknown>)).filter(Boolean))
+    const stat = new Map<string, unknown>()
+    if (CON_STATISTICHE.includes(voce) && statistiche && typeof statistiche === 'object')
+      for (const [id, x] of Object.entries(statistiche as Record<string, Record<string, Record<string, unknown>>>).slice(0, 80))
+        stat.set(String(id), pulisciStat(x))
     const fonte = {
       partiteDelGiorno: async (_div: string, g: string) => perGiorno.get(g) ?? [],
-      statistiche: async () => null,
+      statistiche: async (_div: string, id: string) => stat.get(String(id)) ?? null,
     }
     const r = await aggiornaCampionato(sql, voce, { da, a, esegui: true, fonte })
-    return risposta({ voce, ...r.conto, nuove: r.create, dubbie: r.dubbie.length, problemi: r.saltate.slice(0, 5) })
+    return risposta({ voce, ...r.conto, nuove: r.create, dubbie: r.dubbie.length, problemi: r.saltate.slice(0, 5),
+      statistiche: CON_STATISTICHE.includes(voce) })
   } catch (e) {
     return risposta({ errore: String((e as Error).message ?? e) }, 500)
   } finally {

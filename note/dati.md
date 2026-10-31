@@ -452,3 +452,11 @@ scrive. Solo risultati, ultimi 2 giorni, niente coppe.
   Functions, con una scadenza: rinnovarla quando la pubblicazione la rifiuta).
 - ⚠️ `andamento` non si ricalcola col tasto: la pagina Andamento resta
   indietro fino alla routine.
+- ⚠️ **Dal 31/10/2026 il tasto prende anche il GIAPPONE** (`JPN1`): era
+  finito per errore fra le coppe escluse. Lì ESPN è l'unica fonte, quindi il
+  telefono manda **anche le statistiche** (solo per lui: `CON_STATISTICHE`
+  nella funzione), e la stagione è ad **anno solare** («2026», come
+  l'archivio: così `importa-competizione.js` riconosce le stesse partite e non
+  le raddoppia). E l'abbinamento ora **collega al calendario** anche una
+  partita che era già in archivio (una e una sola riga libera): il risultato
+  compare in Road to weekend e nelle spin senza aspettare la riconciliazione.

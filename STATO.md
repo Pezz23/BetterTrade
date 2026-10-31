@@ -8,7 +8,7 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 31 ottobre 2026 · app alla versione **1.77.01**
+**Ultimo aggiornamento:** 31 ottobre 2026 · app alla versione **1.77.02**
 (`633c347`, **pushato**) · passaggio di consegne: 30/10 sera · da pushare solo il
 commit di questo passaggio (documenti). Migrazioni del giorno `sql/50`-`53`
 **tutte applicate**, e la funzione `aggiorna-risultati` è **pubblicata** su
@@ -135,6 +135,7 @@ Il 24/10, in ordine:
 | **Spin: l'esito PROPOSTO** (30/10): le caselle collegate a una partita finita propongono ✓/✗ con `giocataArrivata` (pronostico tradotto con `giocataDa`), un tocco o «conferma i N» per confermare, mai sopra un esito scelto; anche sulle spin non spuntate. «Scarica risultati» anche in fondo alla Dashboard | `1.76.00` | `f647f83` |
 | **Spin: esiti automatici, archivio, flag** (30/10): esiti scritti da soli nelle caselle vuote (dopo Scarica risultati e all'apertura della Slot); «2-1 ✓» nelle schedine; Dashboard → `/slot/N`; flag `in_spin` in Bilancio (`sql/52`) per la percentuale delle spin; **archivio delle spin** senza soldi, resa in unità (`sql/53`, scheda «Archivio»); `COMBOS` in un posto solo | `1.77.00` | `633c347` |
 | **Due difetti del telefono** (31/10, Mattia: *"ogni tanto mi sbatte fuori, o salta su Partite"*): il profilo riletto a ogni rinnovo della sessione faceva **logout** a qualunque intoppo di rete (ora riprova e tiene la sessione); la scheda di Road to weekend non aveva indirizzo, e l'«indietro» del telefono tornava alla pagina prima (ora `/scalata/:id`) | `1.77.01` | telefono |
+| **Scarica risultati prende anche il Giappone** (31/10): era escluso per errore con le coppe; per lui il telefono manda anche le statistiche, stagione ad anno solare; e l'abbinamento collega al calendario anche le partite già in archivio | `1.77.02` | giappone |
 | **In archivio solo i passi giocati** (29/10): STOP toglie il piano non giocato dopo la chiusura (finisce nel registro con `stato_scalata='chiusa'`), il resoconto filtra gli `aperto`. Ognuno il suo storico (`sql/41`) | `1.66.01` | `bd292d6` |
 | **Il Filtro A e il bankroll al 10%, verificati** (29/10, briefing di Mattia da ChatGPT): riprodotto (229 schedine, +18% ±13,5), walk-forward +24% ±22 su 84, ma sulle singole solo **~+2%** sopra VPM 7,5; **il 10% è troppo** — massimo al **3%** (108 € contro 78 €). `btscout/scripts/prova-filtro-a.js`, dettaglio in `note/criterio.md`. Proposta aperta: la prova sul futuro vero | motore | `bfed9ce` |
 | **Il routing** (29/10, lotto 2): ogni pagina ha un indirizzo (`/partite`, `/scalata`…, Dashboard `/`), la scheda è `/partite/:id` e `/votate/:id` (`components/SchedaPartita.jsx`), un link scaduto si apre con «GIÀ GIOCATA» e il risultato (`usaPartitaAperta`), indirizzo sconosciuto o solo-admin → Dashboard. Senza libreria: `lib/indirizzi.jsx` + `hooks/usaPercorso.js`; `app/vercel.json` per Vercel; `guarda.mjs` cerca `link`; `prova-permessi.js` prova che un user **non scrive** la griglia (verificato con sessione simulata). A margine: «Gli orari sono quelli del Regno Unito» in Partite → «italiani» | `1.66.00` | `dce4621` |
