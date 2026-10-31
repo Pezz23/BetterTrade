@@ -460,3 +460,13 @@ scrive. Solo risultati, ultimi 2 giorni, niente coppe.
   le raddoppia). E l'abbinamento ora **collega al calendario** anche una
   partita che era già in archivio (una e una sola riga libera): il risultato
   compare in Road to weekend e nelle spin senza aspettare la riconciliazione.
+- ⚠️⚠️ **Il Giappone dal 2026 gioca col calendario EUROPEO** (31/10/2026,
+  Mattia: *"Hiroshima gol reali 32-10, l'app 64-32"*). Fino al 2025 la J1 era
+  ad anno solare; febbraio-giugno 2026 è stato un mezzo campionato di passaggio
+  (stagione «2026», 200 partite), e da agosto 2026 si gioca la 2026/27
+  («2627»). La regola è `annoSolareFino: '2026-06-30'` in `app/src/lib/espn.js`,
+  letta da `stagioneDi`. Con la regola vecchia tutto finiva in «2026» e le
+  classifiche (`classifiche()`, sql/18: l'**ultima** stagione per campionato)
+  sommavano i due campionati. Spostate in «2627» le **126 partite** dal 7/8 al
+  31/10 (backup prima, nessun conflitto); dopo, Hiroshima 32-10 e 29 punti in
+  13 partite, come la classifica vera.

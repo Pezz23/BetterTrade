@@ -40,17 +40,21 @@ export const CAMPIONATI = {
  * ⚠️ `partite.campionato` è **obbligatoria**, e per i quindici campionati
  * vecchi si legge da una riga già in archivio (`importa-espn.js` fa così).
  * Qui la riga in archivio non c'è ancora: il nome va scritto, una volta.
- * ⚠️⚠️ `annoSolare` per il Giappone: la J1 va da febbraio a dicembre, quindi
- * la stagione **è l'anno**. Infilarla nello schema agosto-luglio
- * significherebbe spezzare ogni campionato giapponese in due stagioni nostre,
- * e `calcola-andamento` conterebbe mezze stagioni.
+ * ⚠️⚠️ `annoSolareFino` per il Giappone: fino al 2025 la J1 andava da
+ * febbraio a dicembre, e la stagione **era l'anno**. ⚠️⚠️ **Dal 2026 la J1 è
+ * passata al calendario europeo** (scoperto il 31/10/2026, Mattia: *"Hiroshima
+ * gol reali 32-10, l'app 64-32"*): febbraio-giugno 2026 è un mezzo campionato
+ * speciale di passaggio (stagione «2026»), e da agosto 2026 si gioca la
+ * 2026/27 («2627», come in Europa). Con la regola vecchia le due finivano
+ * nella stessa «2026», e le classifiche — che prendono l'ultima stagione —
+ * sommavano due campionati. La data è l'ultimo giorno in cui vale l'anno.
  */
 export const COMPETIZIONI = {
   UCL:  { nome: 'UEFA Champions League', da: 2016 },
   UEL:  { nome: 'UEFA Europa League', da: 2016 },
   UECL: { nome: 'UEFA Conference League', da: 2021 },
   N2:   { nome: 'Eerste Divisie', da: 2016 },
-  JPN1: { nome: 'J1 League', da: 2016, annoSolare: true },
+  JPN1: { nome: 'J1 League', da: 2016, annoSolareFino: '2026-06-30' },
 };
 
 // ⚠️ Una pausa fra le chiamate, di proposito. Non c'è un limite dichiarato, e

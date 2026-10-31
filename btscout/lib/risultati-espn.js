@@ -22,10 +22,11 @@ import { giornoLocale } from './date.js';
 
 // ⚠️ `prossime_partite` **non ha** la colonna `stagione`: si ricava dalla
 // data, come fa football-data — da luglio in poi è l'anno nuovo. Il Giappone
-// gioca ad anno solare, e la sua stagione **è l'anno**.
-export const stagioneDi = (data, annoSolare = false) => {
+// ha giocato ad anno solare **fino a giugno 2026** (`annoSolareFino` in
+// lib/espn.js): fino a quella data la stagione è l'anno, poi come in Europa.
+export const stagioneDi = (data, annoSolareFino = null) => {
   const d = new Date(data), a = d.getUTCFullYear(), m = d.getUTCMonth() + 1;
-  if (annoSolare) return String(a);
+  if (annoSolareFino && d.toISOString().slice(0, 10) <= annoSolareFino) return String(a);
   const inizio = m >= 7 ? a : a - 1;
   return `${String(inizio).slice(2)}${String(inizio + 1).slice(2)}`;
 };
@@ -66,9 +67,8 @@ export async function giorniDaGuardare(sql, div, da, a) {
  */
 export async function aggiornaCampionato(sql, div, { da, a, esegui = false, fonte = { partiteDelGiorno, statistiche } }) {
   const conto = { viste: 0, completate: 0, create: 0, invariate: 0, collegate: 0, dubbie: 0, saltate: 0, giorni: 0, nomi: 0 };
-  // ⚠️ Il Giappone gioca ad anno solare (31/10/2026: entra nel tasto del
-  // telefono, e prima la sua stagione sarebbe finita in «26/27» invece di «2026»).
-  const annoSolare = !!COMPETIZIONI[div]?.annoSolare;
+  // ⚠️ Il Giappone: anno solare fino a giugno 2026, poi come in Europa.
+  const annoSolareFino = COMPETIZIONI[div]?.annoSolareFino ?? null;
   const saltate = [], dubbie = [], create = [];
 
   // ⚠️⚠️ **Un intoppo della fonte non deve uccidere il lavoro.** ESPN è
@@ -171,7 +171,7 @@ export async function aggiornaCampionato(sql, div, { da, a, esegui = false, font
                   ${st?.casa.gialli ?? null}, ${st?.trasferta.gialli ?? null},
                   ${st?.casa.rossi ?? null}, ${st?.trasferta.rossi ?? null},
                   ${st?.casa.possesso ?? null}, ${st?.trasferta.possesso ?? null},
-                  ${stagioneDi(fut[0].data, annoSolare)}, 'espn')
+                  ${stagioneDi(fut[0].data, annoSolareFino)}, 'espn')
           returning id`;
         await sql`update prossime_partite set partita_id = ${nuova.id} where id = ${fut[0].id}`;
       }
@@ -264,7 +264,7 @@ export async function aggiornaCompetizione(sql, comp, { mesi, esegui = false, ri
                                angoli_casa, angoli_trasf, gialli_casa, gialli_trasf,
                                rossi_casa, rossi_trasf, falli_casa, falli_trasf,
                                possesso_casa, possesso_trasf, fonte)
-          values (${comp}, ${info.nome}, ${stagioneDi(p.data, info.annoSolare)}, ${p.data},
+          values (${comp}, ${info.nome}, ${stagioneDi(p.data, info.annoSolareFino)}, ${p.data},
                   ${p.casa}, ${p.trasferta}, ${p.golCasa}, ${p.golTrasferta},
                   ${esitoDi(p.golCasa, p.golTrasferta)},
                   ${st?.casa.tiri ?? null}, ${st?.trasferta.tiri ?? null},
