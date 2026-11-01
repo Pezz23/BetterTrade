@@ -4,13 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BetterTrade</title>
-    <!-- ⚠️ Il marchio sta QUI dentro, non in un file: senza, il browser
-         chiede `/favicon.ico` a ogni caricamento e si prende un **404** — era
-         l'errore che compariva su tutte le pagine (21/10/2026). Non esiste una
-         cartella `public/`, quindi la via più corta è disegnarlo nell'HTML:
-         zero richieste, zero file, e la scheda porta le quattro caselle d'oro
-         del logo invece del quadrato vuoto. -->
-    <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28"><rect width="28" height="28" rx="6" fill="%230B0D10"/><rect x="4" y="4" width="9" height="9" rx="2" fill="%23D8B44A"/><rect x="15" y="4" width="9" height="9" rx="2" fill="%23D8B44A" opacity=".5"/><rect x="4" y="15" width="9" height="9" rx="2" fill="%23D8B44A" opacity=".5"/><rect x="15" y="15" width="9" height="9" rx="2" fill="%23D8B44A"/></svg>' />
+    <!-- ⚠️ L'ICONA dal 1/11/2026 (Mattia: *"voglio vederla sui browser e sul
+         telefono quando aggiungo alla Home"*), nei file di `public/`:
+         · la scheda del browser porta **solo la B** (`favicon-*`, `favicon.ico`):
+           a 16-32 px la scritta «BetterTrade» sarebbe una riga illeggibile;
+         · la Home di iPhone (`apple-touch-icon.png`, 180 px) e di Android
+           (`manifest.webmanifest`, 192 e 512) portano il **logo intero**.
+         ⚠️ Esiste anche `favicon.ico`: il browser lo chiede da solo, e senza
+         si prendeva un 404 su ogni pagina (21/10/2026, quando il marchio era un
+         SVG scritto qui dentro proprio per evitarlo).
+         ⚠️ Si rifanno da `grafica/logo.png` con `python3 scripts/icone.py`. -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-title" content="BetterTrade" />
     <meta name="theme-color" content="#0B0D10" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <!-- ⚠️ Tre pesi di Sora, non cinque (21/10/2026). Il **300 non lo usava

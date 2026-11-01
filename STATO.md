@@ -8,7 +8,7 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 31 ottobre 2026, sera · app alla versione **1.78.00**
+**Ultimo aggiornamento:** 1 novembre 2026 · app alla versione **1.78.01**
 (`cbe2e0c`, **pushato**) · passaggio di consegne: 31/10 sera · da pushare solo il
 commit di questo passaggio (documenti). Migrazioni `sql/50`-`53` applicate; la
 funzione `aggiorna-risultati` è **pubblicata** con il Giappone.
@@ -156,6 +156,7 @@ Il 24/10, in ordine:
 | **Scarica risultati prende anche il Giappone** (31/10): era escluso per errore con le coppe; per lui il telefono manda anche le statistiche, stagione ad anno solare; e l'abbinamento collega al calendario anche le partite già in archivio | `1.77.02` | `4672d81` |
 | **Il Giappone col calendario europeo** (31/10): dal 2026 la J1 gioca agosto-maggio; la regola «anno solare» sommava il mezzo campionato feb-giu 2026 e la 2026/27 (Hiroshima 64-32 invece di 32-10). `annoSolareFino` in `lib/espn.js`, e 126 partite spostate in «2627» (backup prima). Verificato anche che telefono e Mac non creano doppioni: 0 da agosto | `1.77.03` | `31cccf9` |
 | **Road to weekend: l'esito che si vede** (31/10): bollino pieno «2-1 ✓/✗» sulla prima riga, riga colorata dall'esito (nel passo e nell'elenco), e il riassunto del passo «✓ 2 · ✗ 1 · 1 da giocare → schedina persa: segna ✗» | `1.78.00` | `cbe2e0c` |
+| **L'icona dell'app** (1/11): il logo di Mattia sulla Home di iPhone e Android (intero) e nel browser (la B); `manifest.webmanifest`, `app/public/`, `scripts/icone.py` | `1.78.01` | icona |
 | **In archivio solo i passi giocati** (29/10): STOP toglie il piano non giocato dopo la chiusura (finisce nel registro con `stato_scalata='chiusa'`), il resoconto filtra gli `aperto`. Ognuno il suo storico (`sql/41`) | `1.66.01` | `bd292d6` |
 | **Il Filtro A e il bankroll al 10%, verificati** (29/10, briefing di Mattia da ChatGPT): riprodotto (229 schedine, +18% ±13,5), walk-forward +24% ±22 su 84, ma sulle singole solo **~+2%** sopra VPM 7,5; **il 10% è troppo** — massimo al **3%** (108 € contro 78 €). `btscout/scripts/prova-filtro-a.js`, dettaglio in `note/criterio.md`. Proposta aperta: la prova sul futuro vero | motore | `bfed9ce` |
 | **Il routing** (29/10, lotto 2): ogni pagina ha un indirizzo (`/partite`, `/scalata`…, Dashboard `/`), la scheda è `/partite/:id` e `/votate/:id` (`components/SchedaPartita.jsx`), un link scaduto si apre con «GIÀ GIOCATA» e il risultato (`usaPartitaAperta`), indirizzo sconosciuto o solo-admin → Dashboard. Senza libreria: `lib/indirizzi.jsx` + `hooks/usaPercorso.js`; `app/vercel.json` per Vercel; `guarda.mjs` cerca `link`; `prova-permessi.js` prova che un user **non scrive** la griglia (verificato con sessione simulata). A margine: «Gli orari sono quelli del Regno Unito» in Partite → «italiani» | `1.66.00` | `dce4621` |

@@ -413,3 +413,15 @@ La Slot legge la spin dall'indirizzo (`/slot/2`), e cambiando spin l'indirizzo
 la segue (`vai(..., { sostituisci: true })`, niente voce nuova nella
 cronologia). La Dashboard ci porta toccando una spin, **solo per gli admin**:
 la Slot è loro, e a un utente il link riporterebbe alla Dashboard.
+
+### L'icona dell'app (1/11/2026, `1.78.01`)
+
+Il logo di Mattia (`app/grafica/logo.png`) diventa l'icona: **logo intero**
+sulla Home di iPhone (`apple-touch-icon.png`) e Android (`manifest.webmanifest`,
+192 e 512), **solo la B** nella scheda del browser (a 16-32 px la scritta
+sarebbe illeggibile). Si rifanno con `python3 scripts/icone.py` da `app/`.
+⚠️ Il manifest dice `display: standalone`: aggiunta alla Home, l'app si apre
+**a tutto schermo**, senza la barra di Safari. Su iPhone l'app della Home ha la
+sua memoria, separata da Safari: **la prima volta si rifà il login**.
+⚠️ Su iPhone l'icona si prende **al momento di «Aggiungi alla Home»**: chi
+l'aveva già aggiunta deve toglierla e rimetterla per vedere quella nuova.
