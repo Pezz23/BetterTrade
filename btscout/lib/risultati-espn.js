@@ -66,7 +66,8 @@ export async function giorniDaGuardare(sql, div, da, a) {
  * i 15 campionati (le porta football-data), quelle vere per il Giappone.
  */
 export async function aggiornaCampionato(sql, div, { da, a, esegui = false, fonte = { partiteDelGiorno, statistiche } }) {
-  const conto = { viste: 0, completate: 0, create: 0, invariate: 0, collegate: 0, dubbie: 0, saltate: 0, giorni: 0, nomi: 0 };
+  const conto = { viste: 0, completate: 0, create: 0, invariate: 0, collegate: 0, dedotte: 0, chiuse: 0, dubbie: 0, saltate: 0, giorni: 0, nomi: 0 };
+  const dedotti = [];
   // ⚠️ Il Giappone: anno solare fino a giugno 2026, poi come in Europa.
   const annoSolareFino = COMPETIZIONI[div]?.annoSolareFino ?? null;
   const saltate = [], dubbie = [], create = [];
@@ -93,19 +94,66 @@ export async function aggiornaCampionato(sql, div, { da, a, esegui = false, font
   const giorni = await giorniDaGuardare(sql, div, da, a);
   conto.giorni = giorni.length;
 
+  // ⚠️ Fra più righe che combaciano, quella con la data ESATTA, se è una sola
+  // (1/11/2026): i doppioni dei rinvii lasciano in calendario la stessa partita
+  // alla data vecchia e a quella nuova, e prima entrambe tenevano la partita
+  // in attesa («2 partite in calendario combaciano»).
+  const esatta = (righe, data) => {
+    if (righe.length < 2) return righe;
+    const giuste = righe.filter(r => r.data === data);
+    return giuste.length === 1 ? giuste : righe;
+  };
+  // Una partita in attesa in Importazioni che ora si è abbinata: si chiude
+  // da sola, come se l'avesse accettata una persona.
+  const chiudiAttesa = async (e, partitaId) => {
+    if (!esegui) return;
+    const r = await sql`
+      update importazioni set stato = 'accettata', partita_id = ${partitaId}, deciso_il = now()
+      where fonte = 'espn' and div = ${div} and data = ${e.data}
+        and casa_fonte = ${e.casa} and trasferta_fonte = ${e.trasferta} and stato = 'da_verificare'`;
+    conto.chiuse += r.count;
+  };
+
   const unaPartita = async (e) => {
-    const casa = nostroNome({ nomi: e.nomiCasa }, nostri);
-    const trasferta = nostroNome({ nomi: e.nomiTrasferta }, nostri);
+    let casa = nostroNome({ nomi: e.nomiCasa }, nostri);
+    let trasferta = nostroNome({ nomi: e.nomiTrasferta }, nostri);
+    // ⚠️⚠️ **La DEDUZIONE DALL'AVVERSARIO** (1/11/2026, Mattia: *"risolvi
+    // alla base"*). ESPN cambia i nomi quando vuole — Manchester United,
+    // Athletic Club, Royal Charleroi SC — e ogni nome nuovo teneva le partite
+    // in attesa finché qualcuno non scriveva l'alias. Ma se l'ALTRA squadra la
+    // conosciamo, e in quel campionato, fra il giorno prima e il dopo, ha **una
+    // sola** partita **nello stesso ruolo** (in casa o fuori), l'avversario è
+    // per forza quello: non è indovinare, è leggere il calendario. Se le
+    // partite sono due, o non si conosce nessuna delle due squadre, si aspetta
+    // ancora una persona. Il nome dedotto si stampa, per scriverlo in
+    // `nomi-espn.js`.
+    if (!casa !== !trasferta) {
+      const noto = casa || trasferta, inCasa = !!casa;
+      const righe = await sql`
+        select casa, trasferta from partite
+        where div = ${div} and ${inCasa ? sql`casa` : sql`trasferta`} = ${noto}
+          and data between ${e.data}::date - 1 and ${e.data}::date + 1
+        union
+        select casa, trasferta from prossime_partite
+        where div = ${div} and ${inCasa ? sql`casa` : sql`trasferta`} = ${noto}
+          and data between ${e.data}::date - 1 and ${e.data}::date + 1`;
+      const altri = [...new Set(righe.map(r => (inCasa ? r.trasferta : r.casa)))].filter(x => x !== noto);
+      if (altri.length === 1) {
+        dedotti.push(`${div}: «${inCasa ? e.trasferta : e.casa}» → ${altri[0]}`);
+        conto.dedotte++;
+        if (inCasa) trasferta = altri[0]; else casa = altri[0];
+      }
+    }
     const motivoNome = !casa ? `nome sconosciuto: ${e.casa}` : !trasferta ? `nome sconosciuto: ${e.trasferta}` : null;
     const quale = `${div} ${e.data} ${e.casa}-${e.trasferta}`;
 
     // ⚠️ La finestra di ±1 giorno: la data di ESPN è UTC e una partita può
     // slittare di poche ore. Il filtro vero sono le due squadre.
-    const cand = motivoNome ? [] : await sql`
+    const cand = motivoNome ? [] : esatta(await sql`
       select id, data::text, casa, trasferta, gol_casa, possesso_casa, tirip_casa
       from partite
       where div = ${div} and casa = ${casa} and trasferta = ${trasferta}
-        and data between ${e.data}::date - 1 and ${e.data}::date + 1`;
+        and data between ${e.data}::date - 1 and ${e.data}::date + 1`, e.data);
 
     if (cand.length === 1) {
       const p = cand[0];
@@ -115,14 +163,15 @@ export async function aggiornaCampionato(sql, div, { da, a, esegui = false, font
       // riconciliazione della routine non girava: in Road to weekend e nelle
       // spin il risultato non compariva. Stessa regola di tutto il resto:
       // **una e una sola** riga di calendario combacia, ed è ancora libera.
-      const cal = await sql`
-        select id, partita_id from prossime_partite
+      const cal = esatta(await sql`
+        select id, data::text, partita_id from prossime_partite
         where div = ${div} and casa = ${casa} and trasferta = ${trasferta}
-          and data between ${e.data}::date - 1 and ${e.data}::date + 1`;
+          and data between ${e.data}::date - 1 and ${e.data}::date + 1`, e.data);
       if (cal.length === 1 && cal[0].partita_id == null) {
         if (esegui) await sql`update prossime_partite set partita_id = ${p.id} where id = ${cal[0].id} and partita_id is null`;
         conto.collegate++;
       }
+      await chiudiAttesa(e, p.id);
       // ⚠️ Non si tocca mai il risultato di football-data: ESPN completa i
       // buchi (possesso, e i tiri se mancano), non riscrive quello che c'è.
       // ⚠️ E le statistiche si chiedono **solo se servono** (30/10/2026):
@@ -147,10 +196,10 @@ export async function aggiornaCampionato(sql, div, { da, a, esegui = false, font
     // nessun candidato in `partite`: forse è una partita che football-data
     // non ha ancora pubblicato. Si guarda nel calendario, che è la stessa
     // certezza (campionato + data + le due squadre).
-    const fut = (motivoNome || cand.length) ? [] : await sql`
+    const fut = (motivoNome || cand.length) ? [] : esatta(await sql`
       select id, data::text, casa, trasferta from prossime_partite
       where div = ${div} and casa = ${casa} and trasferta = ${trasferta}
-        and data between ${e.data}::date - 1 and ${e.data}::date + 1`;
+        and data between ${e.data}::date - 1 and ${e.data}::date + 1`, e.data);
 
     if (cand.length === 0 && fut.length === 1) {
       const st = await tollera(() => fonte.statistiche(div, e.id), quale);
@@ -174,6 +223,7 @@ export async function aggiornaCampionato(sql, div, { da, a, esegui = false, font
                   ${stagioneDi(fut[0].data, annoSolareFino)}, 'espn')
           returning id`;
         await sql`update prossime_partite set partita_id = ${nuova.id} where id = ${fut[0].id}`;
+        await chiudiAttesa(e, nuova.id);
       }
       conto.create++;
       // ⚠️ In prova a vuoto si dice **cosa** verrebbe scritto: un conteggio
@@ -214,7 +264,7 @@ export async function aggiornaCampionato(sql, div, { da, a, esegui = false, font
       await tollera(() => unaPartita(e), `${div} ${e.data} ${e.casa}-${e.trasferta}`);
     }
   }
-  return { conto, create, dubbie, saltate };
+  return { conto, create, dubbie, saltate, dedotti };
 }
 
 /** I mesi (`aaaamm`) di un anno. */

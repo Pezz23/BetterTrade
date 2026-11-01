@@ -123,6 +123,15 @@ export const ALIAS = {
   'Nottingham Forest': "Nott'm Forest",
   'Norwich City': 'Norwich',
   'Lincoln City': 'Lincoln',
+  // ⚠️ 1/11/2026: i nomi che tenevano in attesa le partite di fine ottobre.
+  // Da allora non serve più aggiungerli a mano perché qualcosa funzioni: la
+  // deduzione dall'avversario (`risultati-espn.js`) li trova da sé e li
+  // stampa — qui si mettono per non doverli dedurre ogni volta.
+  'Manchester United': 'Man United',
+  'Athletic Club': 'Ath Bilbao',
+  'Rayo Vallecano': 'Vallecano',
+  'FC Famalicao': 'Famalicao',
+  'Royal Charleroi SC': 'Charleroi',
 };
 
 /**

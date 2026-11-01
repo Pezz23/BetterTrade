@@ -470,3 +470,24 @@ scrive. Solo risultati, ultimi 2 giorni, niente coppe.
   sommavano i due campionati. Spostate in «2627» le **126 partite** dal 7/8 al
   31/10 (backup prima, nessun conflitto); dopo, Hiroshima 32-10 e 29 punti in
   13 partite, come la classifica vera.
+
+### I nomi nuovi di ESPN non fermano più niente (1/11/2026)
+
+Mattia: *"risolvi questo problema alla base"*. Le partite restavano in
+Importazioni per tre motivi, e ognuno ora ha la sua correzione in
+`btscout/lib/risultati-espn.js` (quindi vale per Mac, telefono e Supabase):
+- ⚠️⚠️ **Nome sconosciuto → DEDUZIONE DALL'AVVERSARIO.** ESPN cambia i nomi
+  quando vuole (Manchester United, Athletic Club, Royal Charleroi SC…). Se
+  l'**altra** squadra la conosciamo e in quel campionato, fra il giorno prima e
+  il dopo, ha **una sola** partita **nello stesso ruolo**, l'avversario è
+  quello: non si indovina, si legge il calendario. Se le partite sono due, o
+  non si conosce nessuna delle due squadre, si aspetta ancora una persona. I
+  nomi dedotti si **stampano** («nomi dedotti (da aggiungere agli alias)») per
+  scriverli in `nomi-espn.js`. Provata togliendo per finta gli alias di Man
+  United e Athletic Club: abbinate lo stesso, zero attese.
+- **«2 partite in calendario combaciano» (i doppioni dei rinvii) → la data
+  ESATTA**: fra più righe si prende quella con la data della partita, se è una.
+- **Le attese si chiudono da sole**: una riga di Importazioni che poi si
+  abbina passa ad `accettata` con la sua `partita_id`.
+- Aggiunti gli alias di fine ottobre (Man United, Ath Bilbao, Vallecano,
+  Famalicao, Charleroi).

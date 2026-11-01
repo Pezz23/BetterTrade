@@ -36,13 +36,13 @@ console.log(`ESPN → ${DIVS.join(', ')} · dal ${DA} al ${A}${ESEGUI ? '' : '  
 // ⚠️ Il lavoro sta in `lib/risultati-espn.js` dal 30/10/2026: lo stesso che fa
 // la funzione di Supabase lanciata dal tasto «Aggiorna risultati» dell'app.
 // Qui resta solo il giro sui campionati e la stampa.
-const conto = { viste: 0, completate: 0, create: 0, invariate: 0, collegate: 0, dubbie: 0, saltate: 0 };
-const saltate = [], dubbie = [], create = [];
+const conto = { viste: 0, completate: 0, create: 0, invariate: 0, collegate: 0, dedotte: 0, chiuse: 0, dubbie: 0, saltate: 0 };
+const saltate = [], dubbie = [], create = [], dedotti = [];
 for (const div of DIVS) {
   const r = await aggiornaCampionato(sql, div, { da: DA, a: A, esegui: ESEGUI });
   console.log(`${div}: ${r.conto.nomi} nomi nostri in archivio · ${r.conto.giorni} giorni da guardare`);
   for (const k of Object.keys(conto)) conto[k] += r.conto[k];
-  saltate.push(...r.saltate); dubbie.push(...r.dubbie); create.push(...r.create);
+  saltate.push(...r.saltate); dubbie.push(...r.dubbie); create.push(...r.create); dedotti.push(...r.dedotti);
 }
 
 console.log(`\n${conto.viste} partite finite viste su ESPN`);
@@ -50,10 +50,18 @@ console.log(`  completate (possesso/tiri aggiunti)  ${conto.completate}`);
 console.log(`  create (football-data non le ha)     ${conto.create}`);
 console.log(`  già a posto, niente da aggiungere    ${conto.invariate}`);
 console.log(`  collegate al calendario             ${conto.collegate}`);
+console.log(`  nomi dedotti dall'avversario        ${conto.dedotte}`);
+console.log(`  attese chiuse in Importazioni       ${conto.chiuse}`);
 console.log(`  da verificare a mano                 ${conto.dubbie}`);
 if (conto.saltate) {
   console.log(`  ⚠️ saltate per errore della fonte     ${conto.saltate}  (rilancia per riprenderle)`);
   saltate.slice(0, 8).forEach(x => console.log(`     ${x}`));
+}
+if (dedotti.length) {
+  // ⚠️ Da scrivere in `lib/nomi-espn.js`: funzionano già, ma così non si
+  // devono dedurre ogni volta (e non dipendono dal calendario).
+  console.log('\n── nomi dedotti (da aggiungere agli alias) ──');
+  [...new Set(dedotti)].forEach(x => console.log('  ' + x));
 }
 if (create.length) {
   console.log('\n── create ──');
