@@ -8,32 +8,43 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 4 novembre 2026 · app alla versione **1.81.00**
-(`65562ce`, **pushato**) · da pushare `84b90b7` (backup) e il commit di questi
-documenti. Migrazioni `sql/54`-`57` applicate; la funzione `aggiorna-risultati`
-è **pubblicata** con il Giappone.
+**Ultimo aggiornamento:** 4 novembre 2026, sera · app alla versione **1.83.00**
+(`671b6ee`) · da pushare `671b6ee` e il commit di questi documenti. Migrazioni
+`sql/54`-`60` applicate; la funzione `aggiorna-risultati` è **pubblicata** con il
+Giappone.
 
 ## ▶️ DOVE SIAMO — 4 novembre 2026, leggi questo per primo
 
-**Il 4/11: il BANCO di Road to weekend** (`1.79.00`-`1.81.00`, regole in
+**Il 4/11: il BANCO di Road to weekend** (`1.79.00`-`1.83.00`, regole in
 `note/scalata.md`). Il superadmin guida un giro solo e chi ha «copia il banco»
-lo segue coi propri soldi, in sola lettura.
+lo segue coi propri soldi, in sola lettura. Mattia a fine giornata: *"ottima
+sessione"*, e sulle schermate provate *"mi pare tutto funzionante"*.
 - **Fatto:** «Chiudi giro» senza sconfitta; **Gestione Bilanci** (voce di menu,
   solo superadmin) con trasferimenti, spunta e andamento dei singoli;
   trasferimenti cassa ↔ RTW per ogni utente dalla sua pagina RTW; spunta **«conta
   nel totale aggregato»** in Utenti; il totale di Bilancio conta anche RTW.
-- **Provato solo sul database**, con utenti simulati e transazione annullata:
-  14 + 4 = 18 € di giocata, vincita, perso, permessi. ⚠️ **Le schermate del banco
-  non le ha ancora viste nessuno**: Mattia ha pushato e vede le spunte.
-- **Dove siamo fermi:** Mattia ha un po' di paura di fare pasticci. Passo
-  concordato: spunta a **NickV** (46 €), aprire RTW da Admin **senza confermare
-  niente** e controllare «IL BANCO». L'utente ad hoc c'è già: **MattiaP**, 160 € in RTW.
+- **Sul passo:** giocata **segno + over 1,5 / 2,5** con la quota scritta a mano.
+  Chi segue vede il passo attivo con **la stessa card** di chi gioca da solo.
+- **Bilancio:** saldo e saldo RTW per superadmin e utenti, totale allineato.
+- **Archivio:** «Scarica risultati» in cima e la dashboard guadagno · passi presi
+  · partite prese, **dal 4/11** e dopo l'azzeramento (`sql/60`). Anche chi segue
+  ha PIANO | ARCHIVIO.
+- **Come stanno i conti:** Laboratorio ha la spunta, 160 € e la sua puntata da
+  16 € in gioco nel banco. **MattiaP** gioca da solo: 160 €, un passo da 16 €
+  confermato, nessuna spunta. NickV: 46 €, senza spunta.
+- **Provato sul database** con utenti simulati e transazione annullata: giocata
+  sommata, vincita, perso, permessi, statistiche, esito con la somma dei gol.
+  ⚠️ Non ancora guardati a schermo con certezza: **le 4 card piccole di Bilancio**
+  su un telefono stretto (la Base può uscire) e la lista lunga dei passi per chi
+  segue (19 sul giro in corso).
 - **Backup verificato** contro il database in
   `app/backup/prima-del-banco-2026-11-04/`: solo su questo Mac, e **non c'è uno
   script di ripristino**. Nessuna puntata e nessuna spunta in quel momento.
 - ⚠️ **Da chiarire con Mattia:** MattiaP e NickV risultano fuori dal totale. Se
   i loro 206 € stanno sul conto reale, al prossimo trasferimento finiscono come
   differenza a Laboratorio.
+- ⚠️ **Da chiarire con Mattia:** l'utente ad hoc è MattiaP (dedotto dai 160 €): se
+  doveva seguire il banco, prima esito e «Chiudi giro», poi la spunta.
 - Azzerati a mano Admin (163,00 €) e Laboratorio (160,15 €): i giri restano in
   archivio, le due giocate da 16 € del 4/11 hanno perso la conferma e non ci sono.
 - **Europa e Conference League accese** (`b600221`): 36 partite con quote e nomi.
@@ -180,6 +191,10 @@ Il 24/10, in ordine:
 | **Spunta «conta nel totale»** in Utenti e trasferimenti per ogni utente (4/11, `1.80.01`, `sql/56`) | `7ab0998` |
 | **Il banco**: un giro solo, puntata sommata per utente, passi in sola lettura (4/11, `1.81.00`, `sql/57`) | `65562ce` |
 | Il backup salva anche `banco_puntate` (4/11) | `84b90b7` |
+| **Segno + over** sulla riga del passo, quota a mano (4/11, `1.82.00`) | `9c4601d` |
+| **Chi segue vede la stessa card** sul passo attivo (4/11, `1.82.01`, `sql/58`) | `489cf33` |
+| **Bilancio**: saldo e saldo RTW, totale allineato (4/11, `1.82.02`, `sql/59`) | `f5f9395` |
+| **Archivio**: Scarica risultati, dashboard dal 4/11, anche per chi segue (4/11, `1.83.00`, `sql/60`) | `671b6ee` |
 | **Due difetti del telefono** (31/10, Mattia: *"ogni tanto mi sbatte fuori, o salta su Partite"*): il profilo riletto a ogni rinnovo della sessione faceva **logout** a qualunque intoppo di rete (ora riprova e tiene la sessione); la scheda di Road to weekend non aveva indirizzo, e l'«indietro» del telefono tornava alla pagina prima (ora `/scalata/:id`) | `1.77.01` | `dacc2a7` |
 | **Scarica risultati prende anche il Giappone** (31/10): era escluso per errore con le coppe; per lui il telefono manda anche le statistiche, stagione ad anno solare; e l'abbinamento collega al calendario anche le partite già in archivio | `1.77.02` | `4672d81` |
 | **Il Giappone col calendario europeo** (31/10): dal 2026 la J1 gioca agosto-maggio; la regola «anno solare» sommava il mezzo campionato feb-giu 2026 e la 2026/27 (Hiroshima 64-32 invece di 32-10). `annoSolareFino` in `lib/espn.js`, e 126 partite spostate in «2627» (backup prima). Verificato anche che telefono e Mac non creano doppioni: 0 da agosto | `1.77.03` | `31cccf9` |
@@ -268,12 +283,12 @@ Chiusi il 29/10: lotto 0 (rinvii), lotto 1 (falli, angoli e cartellini v2,
 derby), lotto 2 (routing), lotto 3 (arbitro: no), e Road to weekend a
 percentuale. Il 30/10: la conferma della giocata in Road to weekend, il tasto
 dei risultati, gli esiti automatici e l'archivio delle spin.
-Il 4/11: il banco di Road to weekend, da provare a schermo.
+Il 4/11: il banco di Road to weekend, con trasferimenti, over e dashboard.
 L'ordine consigliato: **B → 00 → RE → 6 → 4**.
 
 | | cosa | costo |
 |---|---|---|
-| B | **Provare il banco a schermo** (`1.81.00`): spunta a NickV, RTW da Admin e da NickV, poi una giocata vera con conferma ed esito. Le schermate non le ha viste nessuno | Mattia, mezz'ora |
+| B | **Il banco alla prima giocata vera**: esito del passo in corso con «Scarica risultati», conti di Laboratorio e dashboard che si muovono. Guardare le 4 card di Bilancio a 375px | Mattia, mezz'ora |
 | 00 | **Il weekend vero, versione 1.77** (Mattia lo prova il 31/10-1/11). Road to weekend: ricarica, ✓ Conferma giocata, esito, ✗ con due tocchi (archivio e giro nuovo), matita, «salta» su una partita cominciata, Reset partite con un passo confermato. Poi **⤓ Scarica risultati** dal telefono, i «finita 2-1 ✓» nel passo, gli **esiti automatici delle spin** e la prima spin in **archivio** con «↺ Nuova spin». Si raccoglie quello che non torna | il weekend |
 | RE | **L'esito PROPOSTO dei passi di Road to weekend**: il riassunto del passo dice già *«schedina persa: segna ✗»* (`RiassuntoPasso`, 31/10); manca il tasto che lo segna con un tocco. Proposto e non automatico, perché un ✗ chiude il giro. **Non deciso** | un'ora |
 | 1F | **Il Filtro A sul futuro vero** (proposto il 29/10, **non deciso**): l'app registra da sola ogni schedina che il filtro proporrebbe, con regole fisse; dopo 100 schedine, ROI > 0 **e** gambe sopra 100% → candidato, altrimenti si archivia. Oggi lo storico non può dire di più | da stimare, mezza giornata |
@@ -376,7 +391,9 @@ state provate simulando uno user e un admin in una transazione annullata.
 
 | | |
 |---|---|
-| **Il banco non è stato provato a schermo** | Vedi la voce B. Solo il database è stato provato |
+| **Il banco non ha ancora chiuso una giocata vera** | Vedi la voce B. Sul database il giro completo è stato provato |
+| **Lista lunga dei passi per chi segue** | 19 passi sotto la card: da accorciare a 2-3 con «mostra tutti» se a Mattia pesa |
+| **MattiaP doveva seguire il banco?** | Oggi gioca da solo, senza spunta. Decide Mattia |
 | **MattiaP e NickV fuori dal totale** (206 € in RTW) | Se sono soldi del conto reale, va rimessa la spunta in Utenti: decide Mattia |
 | **Nessuno script di ripristino dal backup** | Un ripristino si fa a mano, tabella per tabella. Da scrivere solo se Mattia lo vuole |
 | ~~**NickV aveva un giro aperto col metodo VECCHIO**~~ | ✅ **29/10**: Mattia, entrato come NickV, ha usato «Azzera tutto» e poi una ricarica di 50 €. Le scalate 48 e 57 non avevano nessun passo giocato, quindi il conto resta 50 € come prima. I 71 passi di piano sono nel registro delle cancellazioni. Era: `regola = 'meta'`, e al primo ✗ `chiudi_giro_perso` l'avrebbe rifiutato |
