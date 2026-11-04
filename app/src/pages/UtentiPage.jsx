@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { supabase } from '../supabase'
 import { C, F, alpha, S } from '../theme'
 import Icona from '../components/Icona'
 // ⚠️ `Input` e `Badge` vengono da qui e non più riscritti in questa pagina
@@ -44,7 +45,7 @@ const ROLE_STYLE = {
 const VUOTO = { username:'', password:'', ruolo:'user', nome:'', bankroll:'' }
 
 export default function UtentiPage() {
-  const { currentUser, users, fetchUsers, cambiaMiaPassword, creaUtente, assegnaPassword, deleteUser, isSuperAdmin, isAdmin } = useAuth()
+  const { currentUser, users, fetchUsers, cambiaMiaPassword, creaUtente, assegnaPassword, deleteUser, isSuperAdmin, isAdmin, getTotalBankroll } = useAuth()
   const [showPw, setShowPw] = useState(false)
   const [miaPw, setMiaPw]   = useState('')
   const [err, setErr] = useState('')
@@ -205,6 +206,18 @@ export default function UtentiPage() {
                 )}
               </div>
             </div>
+            {/* ⚠️ Solo il confronto col saldo reale: la percentuale delle spin
+                la decide la bandiera in Bilancio (Mattia, 04/11/2026; sql/56). */}
+            {isSuperAdmin && (
+              <label style={{ padding:'0 18px 12px', display:'flex', alignItems:'center', gap:8, cursor:'pointer',
+                fontSize:S.base, color:u.in_totale!==false?C.testo:C.spento, fontFamily:F.sans }}>
+                <input type="checkbox" checked={u.in_totale!==false} onChange={async () => {
+                  const { error } = await supabase.from('users').update({ in_totale: u.in_totale === false }).eq('id', u.id)
+                  if (error) setErr(error.message); else await fetchUsers()
+                }} />
+                conta nel totale aggregato
+              </label>
+            )}
             {cambio?.username === u.username && (
               <div style={{ padding:'0 18px 14px', display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
                 <Input style={{ width:200 }} autoFocus value={cambio.password}
@@ -227,7 +240,7 @@ export default function UtentiPage() {
           <div style={{display:'flex',alignItems:'center',gap:4}}>
             <span style={{fontSize:S.base,color:C.spento,fontFamily:F.mono}}>€</span>
             <span style={{fontSize:S.titolo,fontWeight:700,color:C.oro,fontFamily:F.mono}}>
-              {users.reduce((s,u)=>s+(u.bankroll||0),0).toFixed(2)}
+              {getTotalBankroll().toFixed(2)}
             </span>
           </div>
         </div>

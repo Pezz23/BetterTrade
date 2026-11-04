@@ -164,11 +164,12 @@ export function AuthProvider({ children }) {
     setNumSlot(val)
   }
 
-  // ⚠️ I soldi del gruppo, **tutti**: è il totale che Bilancio confronta col
-  // saldo del conto per il trasferimento a Laboratorio. Il flag delle spin
-  // non lo tocca — un utente fuori dalle spin ha comunque soldi veri.
+  // ⚠️ I soldi del gruppo: è il totale che Bilancio confronta col saldo del
+  // conto per il trasferimento a Laboratorio. Il flag delle spin non lo tocca —
+  // un utente fuori dalle spin ha comunque soldi veri. Lo decide `in_totale`,
+  // la spunta in Utenti (sql/56).
   function getTotalBankroll() {
-    return users.reduce((s, u) => s + (u.bankroll || 0), 0)
+    return users.filter(u => u.in_totale !== false).reduce((s, u) => s + (u.bankroll || 0), 0)
   }
 
   // ⚠️ Il bankroll su cui si calcola la percentuale delle SPIN (30/10/2026,

@@ -479,6 +479,16 @@ export function usaScalate(userId) {
   }, [stato.aperta, ricarica])
 
   /**
+   * Sposta soldi fra la cassa e il conto RTW (`sql/55`-`56`): due righe nella
+   * stessa transazione. Lo fa ogni utente sul proprio conto (Mattia, 04/11/2026).
+   */
+  const trasferisci = useCallback(async (importo, verso) => {
+    const { error } = await supabase.rpc('trasferisci_rtw', { p_user: userId, p_importo: Number(importo), p_verso: verso })
+    await ricarica()
+    return error ? { errore: error.message } : {}
+  }, [userId, ricarica])
+
+  /**
    * «fissa passo» a scalata aperta. ⚠️ Era stato della pagina e **spariva
    * chiudendo l'app**: i passi fissati tornavano nascosti, e sembrava che la
    * scalata li avesse persi (Mattia, 24/10/2026). Ora è una colonna del passo.
@@ -554,6 +564,7 @@ export function usaScalate(userId) {
     segna: attendendo(segna),
     perdi: attendendo(perdi),
     chiudiGiro: attendendo(chiudiGiro),
+    trasferisci: attendendo(trasferisci),
     confermaPrimo: attendendo(confermaPrimo),
     conferma: attendendo(conferma),
     cambiaPercentuale: attendendo(cambiaPercentuale),

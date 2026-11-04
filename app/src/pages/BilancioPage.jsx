@@ -52,7 +52,10 @@ export default function BilancioPage() {
   const [savingMov,setSavingMov]     = useState(false)
   const [showAllMov,setShowAllMov]   = useState(false)
   const [saldoReale,setSaldoReale]     = useState('')
-  const [totaleRtw,setTotaleRtw]       = useState(0)
+  const [righeRtw,setRigheRtw]         = useState([])
+  // Solo chi ha la spunta in Utenti (`in_totale`, sql/56).
+  const dentroTotale = new Set(users.filter(u=>u.in_totale!==false).map(u=>u.id))
+  const totaleRtw = righeRtw.filter(r=>dentroTotale.has(r.user_id)).reduce((a,r)=>a+Number(r.conto||0),0)
   const [trasferendo,setTrasferendo]   = useState(false)
   const [esitoDiff,setEsitoDiff]       = useState(null)
 
@@ -89,8 +92,7 @@ export default function BilancioPage() {
   // Il totale dei conti RTW: solo il superadmin lo può leggere (`sql/55`).
   useEffect(() => {
     if (!isSuperAdmin) return
-    supabase.rpc('riepilogo_rtw').then(({ data }) =>
-      setTotaleRtw((data || []).reduce((a, r) => a + Number(r.conto || 0), 0)))
+    supabase.rpc('riepilogo_rtw').then(({ data }) => setRigheRtw(data || []))
   }, [isSuperAdmin])
 
   async function trasferisciALaboratorio() {
@@ -210,7 +212,7 @@ export default function BilancioPage() {
           <div style={stileCard({padding:'16px',marginBottom:12}, C.oro)}>
             <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:6}}>Bankroll totale aggregato</div>
             <div style={{fontSize:S.cifra,fontWeight:700,color:C.oro,fontFamily:F.mono}}>{fmt(totalBk)}</div>
-            <div style={{fontSize:S.minuta,color:C.fioco,fontFamily:F.sans,marginTop:4}}>Somma automatica di tutti gli utenti · sola lettura</div>
+            <div style={{fontSize:S.minuta,color:C.fioco,fontFamily:F.sans,marginTop:4}}>Somma degli utenti con la spunta in Utenti · sola lettura</div>
           </div>
 
           {/* Puntate aggregate */}
