@@ -479,33 +479,6 @@ export function usaScalate(userId) {
   }, [stato.aperta, ricarica])
 
   /**
-   * Una ricarica del conto. ⚠️ È l'**unico** modo in cui entrano soldi: i
-   * tasti −/+ sul bankroll non ci sono più, perché cambiavano il conto senza
-   * lasciare traccia.
-   */
-  const ricaricaConto = useCallback(async (importo) => {
-    const n = Number(importo)
-    if (!(n > 0)) return { errore: 'importo non valido' }
-    const { error } = await supabase.from('scalata_ricariche').insert({ user_id: userId, importo: n })
-    if (error) return { errore: error.message }
-    await ricarica()
-    return {}
-  }, [userId, ricarica])
-
-  /**
-   * Annulla una ricarica sbagliata. ⚠️ La pagina la offre **solo per
-   * l'ultima, e solo se dopo non si è aperta nessuna scalata**: quella scalata
-   * è nata su quel conto, e toglierle la ricarica da sotto riscriverebbe il
-   * passato.
-   */
-  const annullaRicarica = useCallback(async (id) => {
-    const { error } = await supabase.from('scalata_ricariche').delete().eq('id', id)
-    if (error) return { errore: error.message }
-    await ricarica()
-    return {}
-  }, [ricarica])
-
-  /**
    * «fissa passo» a scalata aperta. ⚠️ Era stato della pagina e **spariva
    * chiudendo l'app**: i passi fissati tornavano nascosti, e sembrava che la
    * scalata li avesse persi (Mattia, 24/10/2026). Ora è una colonna del passo.
@@ -565,32 +538,6 @@ export function usaScalate(userId) {
     }
   }, [])
 
-  /**
-   * ⚠️⚠️ **Riparti da 0: cancella tutto il registro di questo utente**, come
-   * se fosse il primo giorno (Mattia, 18/10). È l'unica operazione
-   * irreversibile della pagina, e non ha una via di ritorno: non esiste un
-   * annulla, perché non esiste una copia.
-   * ⚠️ Basta cancellare le righe di `scalate`: passi e gambe hanno
-   * `on delete cascade` (`sql/30`), quindi se ne vanno con loro. Cancellarle a
-   * mano in tre giri lascerebbe orfani al primo errore in mezzo.
-   * ⚠️ **Le scalate aperte vanno via anche loro**: *"come se partissi quel
-   * giorno per la prima volta"*.
-   * ⚠️⚠️ **E vanno via anche le ricariche** (24/10/2026): il conto è
-   * `ricariche + risultati`, e cancellare solo le scalate restituirebbe le
-   * perdite — un conto che dopo un azzeramento vale più di prima. Dopo, il
-   * conto è 0 e si ricomincia da una ricarica.
-   */
-  const azzeraTutto = useCallback(async () => {
-    if (!userId) return { errore: 'nessun utente' }
-    const errore = primoErrore(await Promise.all([
-      supabase.from('scalate').delete().eq('user_id', userId),
-      supabase.from('scalata_ricariche').delete().eq('user_id', userId),
-    ]))
-    if (errore) return { errore }
-    await ricarica()
-    return {}
-  }, [userId, ricarica])
-
   // ⚠️ Le scritture escono avvolte in `occupato`: il conto dell'attesa sta in
   // un posto solo, invece che ripetuto dentro ognuna. Si avvolge **qui** e non
   // dentro i `useCallback` per non far dipendere ogni funzione dallo stato che
@@ -602,8 +549,6 @@ export function usaScalate(userId) {
 
   return {
     ...stato, occupato, ricarica, resoconto,
-    ricaricaConto: attendendo(ricaricaConto),
-    annullaRicarica: attendendo(annullaRicarica),
     fissa: attendendo(fissa),
     apri: attendendo(apri),
     segna: attendendo(segna),
@@ -615,7 +560,6 @@ export function usaScalate(userId) {
     aggiungiPiano: attendendo(aggiungiPiano),
     eliminaGiroVuoto: attendendo(eliminaGiroVuoto),
     azzeraPiano: attendendo(azzeraPiano),
-    azzeraTutto: attendendo(azzeraTutto),
     togliGamba: attendendo(togliGamba),
     aggiungiGamba: attendendo(aggiungiGamba),
     spostaGamba: attendendo(spostaGamba),

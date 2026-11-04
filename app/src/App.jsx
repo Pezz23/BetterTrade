@@ -26,6 +26,7 @@ const UtentiPage = lazy(() => import('./pages/UtentiPage'))
 const SlotPage = lazy(() => import('./pages/SlotPage'))
 const ReportingPage = lazy(() => import('./pages/ReportingPage'))
 const BilancioPage = lazy(() => import('./pages/BilancioPage'))
+const GestioneBilanciPage = lazy(() => import('./pages/GestioneBilanciPage'))
 const PartitePage = lazy(() => import('./pages/PartitePage'))
 const AndamentoPage = lazy(() => import('./pages/AndamentoPage'))
 const ImportazioniPage = lazy(() => import('./pages/ImportazioniPage'))
@@ -87,6 +88,9 @@ const VOCI_MENU = [
   // li vede chi è `user`. Qui si nasconde il tasto e basta: la lettura dei
   // dati resta quella decisa dalle policy.
   { id:'bilancio',    label:'Bilancio',         icona:'bilancio', desc:'Saldi, movimenti e bankroll del gruppo', soloAdmin:true },
+  // Solo superadmin: i soldi di RTW dei singoli (`sql/55`). La protezione sta
+  // nelle funzioni del database, qui si nasconde la voce.
+  { id:'gestione-bilanci', label:'Gestione Bilanci', icona:'bilancio', desc:'Trasferimenti cassa ↔ RTW, utente per utente', soloAdmin:true, soloSuper:true },
   { id:'utenti',      label:'Utenti',           icona:'utenti', desc:'Gestione utenti e password', soloAdmin:true },
   { id:'importazioni',label:'Importazioni',     icona:'importazioni', desc:'Partite da ESPN che non si agganciano da sole' },
 ]
@@ -98,6 +102,7 @@ const VOCI_MENU = [
 const percorsoDi = id => (id === 'dashboard' ? '/' : `/${id}`)
 const PAGINE = new Set([...TABS_BASE, ...VOCI_MENU].map(v => v.id))
 const SOLO_ADMIN = new Set([...TABS_BASE, ...VOCI_MENU].filter(v => v.soloAdmin).map(v => v.id))
+const SOLO_SUPER = new Set(VOCI_MENU.filter(v => v.soloSuper).map(v => v.id))
 
 /**
  * ⚠️⚠️ **Quanto spazio resta sotto l'etichetta della tab bar.** Non è una
@@ -164,8 +169,8 @@ function TabBar({ active, isAdmin }) {
 }
 
 // ── Header ────────────────────────────────────────────────────────────────────
-function Menu({ aperto, onChiudi, attivo, isAdmin }) {
-  const voci = VOCI_MENU.filter(v => !v.soloAdmin || isAdmin)
+function Menu({ aperto, onChiudi, attivo, isAdmin, isSuperAdmin }) {
+  const voci = VOCI_MENU.filter(v => (!v.soloAdmin || isAdmin) && (!v.soloSuper || isSuperAdmin))
   return (
     <>
       {/* lo sfondo chiude il menu al tocco */}
@@ -289,13 +294,13 @@ function Header({ currentUser, onLogout, onMenu, menuAperto }) {
 
 // ── App Shell ─────────────────────────────────────────────────────────────────
 function AppShell() {
-  const { currentUser, logout, isAdmin, booting } = useAuth()
+  const { currentUser, logout, isAdmin, isSuperAdmin, booting } = useAuth()
   const [menu, setMenu] = useState(false)
   // La pagina È l'indirizzo: `/partite/123` è la pagina Partite con una
   // scheda aperta, e la scheda la legge la pagina stessa.
   const percorso = usaPercorso()
   const richiesta = percorso.split('/')[1] || 'dashboard'
-  const ammessa = PAGINE.has(richiesta) && (!SOLO_ADMIN.has(richiesta) || isAdmin)
+  const ammessa = PAGINE.has(richiesta) && (!SOLO_ADMIN.has(richiesta) || isAdmin) && (!SOLO_SUPER.has(richiesta) || isSuperAdmin)
   const tab = ammessa ? richiesta : 'dashboard'
 
   // ⚠️ Un indirizzo che non esiste, o una pagina solo-admin aperta da un
@@ -330,6 +335,7 @@ function AppShell() {
       case 'builder':   return <BetBuilderPage />
       case 'reporting': return <ReportingPage />
       case 'bilancio':  return <BilancioPage />
+      case 'gestione-bilanci': return <GestioneBilanciPage />
       case 'partite':   return <PartitePage />
       case 'provvisorie': return <SpinProvvisoriePage />
       case 'votate':    return <VotatePage />
@@ -345,7 +351,7 @@ function AppShell() {
   return (
     <div style={{ minHeight:'100vh', background:C.fondo, color:C.testo, display:'flex', flexDirection:'column' }}>
       <Header currentUser={currentUser} onLogout={logout} onMenu={() => setMenu(m => !m)} menuAperto={menu} />
-      <Menu aperto={menu} onChiudi={() => setMenu(false)} attivo={tab} isAdmin={isAdmin} />
+      <Menu aperto={menu} onChiudi={() => setMenu(false)} attivo={tab} isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} />
       {/* `flex:1` fa arrivare la pagina fino in fondo qualunque sia l'altezza
           della testata; il padding lascia lo spazio della tab bar, che è fissa
           e senza di esso coprirebbe le ultime righe. */}

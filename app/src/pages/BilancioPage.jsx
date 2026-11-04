@@ -52,6 +52,7 @@ export default function BilancioPage() {
   const [savingMov,setSavingMov]     = useState(false)
   const [showAllMov,setShowAllMov]   = useState(false)
   const [saldoReale,setSaldoReale]     = useState('')
+  const [totaleRtw,setTotaleRtw]       = useState(0)
   const [trasferendo,setTrasferendo]   = useState(false)
   const [esitoDiff,setEsitoDiff]       = useState(null)
 
@@ -85,13 +86,22 @@ export default function BilancioPage() {
     setLoading(false)
   }
 
+  // Il totale dei conti RTW: solo il superadmin lo può leggere (`sql/55`).
+  useEffect(() => {
+    if (!isSuperAdmin) return
+    supabase.rpc('riepilogo_rtw').then(({ data }) =>
+      setTotaleRtw((data || []).reduce((a, r) => a + Number(r.conto || 0), 0)))
+  }, [isSuperAdmin])
+
   async function trasferisciALaboratorio() {
     if (!saldoReale || isNaN(parseFloat(saldoReale))) return
     setTrasferendo(true)
     const {data:lab} = await supabase.from('users').select('*').ilike('username','laboratorio').single()
     if (!lab) { setEsitoDiff('❌ Utente Laboratorio non trovato'); setTrasferendo(false); return }
     const reale     = parseFloat(saldoReale)
-    const aggregato = getTotalBankroll()
+    // ⚠️ I soldi di RTW stanno sullo stesso conto reale (Mattia, 04/11/2026):
+    // il confronto col saldo reale li deve contare, o la differenza è sbagliata.
+    const aggregato = getTotalBankroll() + totaleRtw
     const diff      = parseFloat((reale - aggregato).toFixed(2))
     if (diff === 0) { setEsitoDiff('✓ Nessuna differenza'); setTrasferendo(false); return }
     const tipo    = diff > 0 ? 'deposito' : 'prelievo'
@@ -249,7 +259,7 @@ export default function BilancioPage() {
             <div style={{fontSize:S.micro,color:C.oro,fontFamily:F.sans,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:12}}>Trasferimento a Laboratorio</div>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,padding:'10px 12px',background:C.barra,borderRadius:8,border:`1px solid ${C.bordoRiga}`}}>
               <span style={{fontSize:S.corpo,color:C.spento,fontFamily:F.sans}}>Totale aggregato app</span>
-              <span style={{fontSize:S.titolo,fontWeight:700,color:C.oro,fontFamily:F.mono}}>{fmt(totalBk)}</span>
+              <span style={{fontSize:S.titolo,fontWeight:700,color:C.oro,fontFamily:F.mono}}>{fmt(totalBk+totaleRtw)}</span>
             </div>
             <div style={{marginBottom:10}}>
               <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,marginBottom:4}}>SALDO REALE CONTO €</div>
@@ -258,7 +268,7 @@ export default function BilancioPage() {
                 style={{width:'100%',background:C.pozzo,border:`1px solid ${C.bordo}`,borderRadius:7,padding:'9px 12px',color:C.testo,fontSize:S.titolo,fontFamily:F.mono,outline:'none'}}/>
             </div>
             {saldoReale&&!isNaN(parseFloat(saldoReale))&&(()=>{
-              const diff=parseFloat((parseFloat(saldoReale)-totalBk).toFixed(2))
+              const diff=parseFloat((parseFloat(saldoReale)-totalBk-totaleRtw).toFixed(2))
               return (
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 12px',borderRadius:8,marginBottom:12,
                   background:diff>0?alpha(C.verde,0.08):diff<0?alpha(C.rosso,0.08):alpha(C.grigioMedio,0.08),

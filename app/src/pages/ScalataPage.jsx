@@ -812,53 +812,6 @@ function QualePasso({ attivo, ...props }) {
 }
 
 /**
- * L'archivio delle scalate chiuse.
- *
- * ⚠️⚠️ **È il motivo per cui la pagina salva.** Il backtest dice che la
- * selezione meccanica rende il 98% e Mattia pensa di fare meglio scegliendo a
- * mano: queste righe sono l'unico posto dove quella domanda ha una risposta.
- * ⚠️ Il riepilogo con le tre domande (quanto in accumulo · quante rientrate ·
- * le gambe a mano hanno reso più del 98%) arriva **quando ci saranno dieci o
- * venti scalate**: prima di allora direbbe rumore, e questo progetto ha già
- * imparato a non leggere un percorso solo.
- */
-/**
- * ⚠️⚠️ **Riparti da 0 — l'unica cosa irreversibile della pagina.** Cancella
- * tutto il registro: *"come se partissi quel giorno per la prima volta"*
- * (Mattia, 18/10).
- * ⚠️ **La conferma è il tasto stesso**, non una finestra: il primo tocco lo
- * trasforma e scrive quante scalate sta per cancellare, il secondo esegue.
- * Un `confirm()` del browser si legge e si accetta senza vederlo, e qui il
- * numero di scalate è l'unica cosa che fa capire **cosa** si sta buttando.
- * ⚠️ E si disarma da sé dopo cinque secondi: un tasto rosso che resta armato
- * in fondo alla pagina è una trappola per il tocco successivo.
- */
-function Riparti({ quante, onAzzera }) {
-  const [armato, setArmato] = useState(false)
-  useEffect(() => {
-    if (!armato) return
-    const t = setTimeout(() => setArmato(false), 5000)
-    return () => clearTimeout(t)
-  }, [armato])
-  const colore = armato ? C.rosso : C.spento
-  return (
-    <button
-      onClick={() => { if (armato) { setArmato(false); onAzzera() } else setArmato(true) }}
-      style={{ width: '100%', marginTop: 14, padding: '9px 0', cursor: 'pointer',
-        background: armato ? `linear-gradient(${alpha(C.rosso, .12)},${alpha(C.rosso, .12)}), ${C.card}` : 'transparent',
-        border: `1px solid ${alpha(colore, armato ? 0.5 : 0.25)}`, color: colore,
-        fontFamily: F.sans, fontSize: S.base }}>
-      {armato
-        ? `⚠️ TOCCA ANCORA PER CANCELLARE ${quante === 1 ? 'LA SCALATA' : `LE ${quante} SCALATE`}`
-        : '↺ riparti da 0'}
-      <span style={{ display: 'block', fontSize: S.micro, color: C.fioco, marginTop: 2 }}>
-        {armato ? 'non si torna indietro' : 'cancella scalate e ricariche: il conto torna a 0'}
-      </span>
-    </button>
-  )
-}
-
-/**
  * Un giro chiuso dell'archivio: **una card che si apre** e mostra il
  * resoconto delle giocate (Mattia, 26/10/2026: *"non deve dirmi solo gli
  * importi"*). Chiusa dice i soldi, come prima; aperta, in testa **passi
@@ -969,15 +922,20 @@ function GiroArchivio({ s, onResoconto }) {
   )
 }
 
-function Archivio({ storico, ricariche = [], conto, onAzzera, onAnnulla, onResoconto, tocca = true }) {
+/**
+ * L'archivio delle scalate chiuse.
+ *
+ * ⚠️⚠️ **È il motivo per cui la pagina salva.** Il backtest dice che la
+ * selezione meccanica rende il 98% e Mattia pensa di fare meglio scegliendo a
+ * mano: queste righe sono l'unico posto dove quella domanda ha una risposta.
+ * ⚠️ Il riepilogo con le tre domande (quanto in accumulo · quante rientrate ·
+ * le gambe a mano hanno reso più del 98%) arriva **quando ci saranno dieci o
+ * venti scalate**: prima di allora direbbe rumore, e questo progetto ha già
+ * imparato a non leggere un percorso solo.
+ */
+function Archivio({ storico, ricariche = [], conto, onResoconto }) {
   const chiuse = (storico || []).filter(s => s.stato === 'chiusa')
   if (!storico) return <Card><Attesa style={{ padding: 0 }} /></Card>
-  // ⚠️ Si annulla **solo l'ultima ricarica, e solo se dopo non si è aperta
-  // nessuna scalata**: quella scalata è nata su quel conto, e toglierle la
-  // ricarica da sotto riscriverebbe il passato. Serve al dito che scrive
-  // 1000 invece di 100.
-  const ultima = ricariche[0]
-  const annullabile = ultima && !(storico || []).some(s => s.aperta_il > ultima.fatta_il)
   // ⚠️⚠️ **Ricariche e giri nella stessa colonna, in ordine di tempo**: il
   // conto è la somma delle due cose, e leggerle separate nasconderebbe
   // proprio quello che Mattia ha chiesto di vedere — quante volte si è
@@ -994,7 +952,6 @@ function Archivio({ storico, ricariche = [], conto, onAzzera, onAnnulla, onResoc
       </div></Card>
       {/* ⚠️ Il tasto c'è anche senza scalate chiuse: quella **aperta** è il
           caso in cui serve più spesso — si è provato, non torna, si ricomincia. */}
-      {!!storico.length && tocca && <Riparti quante={storico.length} onAzzera={onAzzera} />}
     </div>
   )
   // ⚠️⚠️ **Il risultato è conto meno versato**, non la somma dei giri: è la
@@ -1022,21 +979,16 @@ function Archivio({ storico, ricariche = [], conto, onAzzera, onAnnulla, onResoc
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
               <span style={{ fontFamily: F.sans, fontSize: S.base, color: C.testo }}>
                 {String(r.fatta_il).slice(8, 10)}/{String(r.fatta_il).slice(5, 7)}
-                <span style={{ color: C.spento }}> · ricarica</span>
+                <span style={{ color: C.spento }}> · {r.nota || (Number(r.importo) >= 0 ? 'ricarica' : 'uscita')}</span>
               </span>
               <span style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-                {tocca && annullabile && r.id === ultima.id && (
-                  <button onClick={() => onAnnulla(r.id)} style={{ background: 'transparent', border: 'none', padding: 0,
-                    cursor: 'pointer', color: C.spento, fontFamily: F.sans, fontSize: S.minuta, textDecoration: 'underline' }}>annulla</button>
-                )}
-                <span style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700, color: C.oro }}>+{eur(r.importo)}</span>
+                <span style={{ fontFamily: F.mono, fontSize: S.media, fontWeight: 700, color: Number(r.importo) >= 0 ? C.oro : C.spento }}>{Number(r.importo) >= 0 ? '+' : ''}{eur(r.importo)}</span>
               </span>
             </div>
           </Card>
         )
         return <GiroArchivio key={s.id} s={s} onResoconto={onResoconto} />
       })}
-      {tocca && <Riparti quante={storico.length} onAzzera={onAzzera} />}
     </div>
   )
 }
@@ -1135,8 +1087,6 @@ export default function ScalataPage() {
   // I tasti −/+ cambiavano il capitale senza lasciare traccia, ed è il motivo
   // per cui non si poteva sapere quanto ci si era messo dentro. Il conto della
   // scalata **non è** il bankroll del gruppo: `users.bankroll` non si muove.
-  // L'importo della ricarica che si sta scrivendo.
-  const [importo, setImporto] = useState('')
   // le partite aggiunte a mano a un passo, per indice di passo
   const [aggiunte, setAggiunte] = useState({})
   const [quote, setQuote] = useState({})
@@ -1608,12 +1558,7 @@ export default function ScalataPage() {
       {/* ⚠️ Azzerare il registro azzera anche lo stato della pagina: il piano
           è indicizzato per passo, e passi non ce ne sono più. */}
       {vista === 'archivio' && (
-        <Archivio storico={reg.storico} ricariche={reg.ricariche} conto={conto} onResoconto={reg.resoconto}
-          onAnnulla={async (id) => { const x = await reg.annullaRicarica(id); setAvviso(x?.errore ?? null) }}
-          onAzzera={async () => {
-            await reg.azzeraTutto()
-            setTolte([]); setAggiunte({}); setQuote({}); setFissati([])
-          }} />
+        <Archivio storico={reg.storico} ricariche={reg.ricariche} conto={conto} onResoconto={reg.resoconto} />
       )}
       {vista === 'piano' && <>
 
@@ -1760,25 +1705,17 @@ export default function ScalataPage() {
           </div>
         </div>
 
-        {/* La ricarica: l'unico modo in cui entrano soldi. ⚠️ Campo a **16px**:
-            sotto, iOS ingrandisce la pagina da solo (trappola già pagata). */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: SP.m, marginTop: SP.l }}>
-          <input value={importo} onChange={e => setImporto(e.target.value.replace(',', '.'))}
-            inputMode="decimal" placeholder="importo €" aria-label="importo della ricarica"
-            style={{ flex: 1, minWidth: 0, maxWidth: 160, background: C.pozzo, border: `1px solid ${C.bordo}`, borderRadius: R.m,
-              padding: '6px 9px', color: C.testo, fontFamily: F.mono, fontSize: 16, outline: 'none' }} />
-          <Tasto colore={C.oro} attivo={Number(importo) > 0} style={{ borderRadius: R.m }} onClick={async () => {
-            if (!(Number(importo) > 0)) return
-            const x = await reg.ricaricaConto(cent(Number(importo)))
-            setAvviso(x?.errore ?? null)
-            if (!x?.errore) setImporto('')
-          }}>＋ Ricarica</Tasto>
+        {/* ⚠️ Dal 04/11/2026 i soldi entrano solo dalla cassa, con Gestione
+            Bilanci del superadmin (`sql/55`): la ricarica libera creava soldi
+            dal nulla, «Riparti da 0» li faceva sparire. */}
+        <div style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco, marginTop: SP.m }}>
+          il conto si muove con i trasferimenti dalla cassa, in Gestione Bilanci
         </div>
         {!aperta && posta < 1 && (
           <div style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.ambra, marginTop: SP.m }}>
             {conto.versato > 0
-              ? 'Il conto è sotto 1 €: non si può puntare. Fai una ricarica per giocare.'
-              : 'Il conto parte da 0: fai una ricarica per giocare il primo passo.'}
+              ? 'Il conto è sotto 1 €: non si può puntare. Serve un trasferimento dalla cassa.'
+              : 'Il conto è a 0: serve un trasferimento dalla cassa per giocare il primo passo.'}
           </div>
         )}
         {casse.vivi > 0 && (

@@ -56,6 +56,7 @@ const PAGINE = [
   { id: 'andamento', via: 'menu', testo: 'Andamento' },
   { id: 'reporting', via: 'menu', testo: 'Reporting' },
   { id: 'bilancio',  via: 'menu', testo: 'Bilancio' },
+  { id: 'gestione-bilanci', via: 'menu', testo: 'Gestione Bilanci' },
   { id: 'scalata',   via: 'tab',  testo: 'Weekend',           admin: true },
   { id: 'utenti',    via: 'menu', testo: 'Utenti',           admin: true },
   // ⚠️ La scheda di una partita è **la schermata più densa dell'app** — tre
