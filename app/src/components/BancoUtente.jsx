@@ -1,0 +1,132 @@
+import { useState, useEffect, useCallback } from 'react'
+import { supabase } from '../supabase'
+import { useAuth } from '../context/AuthContext'
+import { giocataArrivata } from '../lib/esito'
+import { puntataDi } from '../lib/scalata'
+import { eur } from '../lib/formato'
+import { C, F, S, SP, R, alpha } from '../theme'
+import { Card, Attesa, Etichetta } from './ui'
+import TrasferisciConto from './TrasferisciConto'
+
+// ROAD TO WEEKEND per chi ha la spunta «copia il banco» (Mattia, 04/11/2026):
+// vede i passi del superadmin e cosa succede ai SUOI soldi, senza toccare niente.
+// ⚠️ Non legge le tabelle della scalata: `banco_utente()` (`sql/57`) gli dà le
+// partite e la sua puntata, mai il totale né gli altri. Unica azione: i suoi
+// trasferimenti cassa ↔ RTW.
+
+const COLORE = { vinto: C.verde, perso: C.rosso }
+const conSegno = (x) => `${x >= 0 ? '+' : ''}${eur(x)}`
+
+function Gambe({ gambe }) {
+  return (gambe || []).map(g => {
+    const finita = g.gol_casa != null
+    const arrivata = finita ? giocataArrivata(g.giocata, g.gol_casa, g.gol_trasferta) : null
+    return (
+      <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', gap: SP.s, marginTop: SP.s,
+        fontFamily: F.sans, fontSize: S.base, color: C.testo }}>
+        <span style={{ minWidth: 0 }}>
+          {g.casa} - {g.trasferta}
+          <span style={{ color: C.spento }}> · {g.giocata}{g.ora ? ` · ${String(g.ora).slice(0, 5)}` : ''}</span>
+        </span>
+        {finita && (
+          <b style={{ flexShrink: 0, fontFamily: F.mono, color: arrivata === true ? C.verde : arrivata === false ? C.rosso : C.spento }}>
+            {g.gol_casa}-{g.gol_trasferta}
+          </b>
+        )}
+      </div>
+    )
+  })
+}
+
+function Passo({ p, stima }) {
+  const giocato = p.esito !== 'aperto' || p.confermato
+  const puntata = p.mia_puntata != null ? Number(p.mia_puntata) : null
+  const q = Number(p.quota)
+  const colore = COLORE[p.esito]
+  const stato = p.esito === 'vinto' ? `vinto ${conSegno(Math.round((puntata || 0) * (q - 1) * 100) / 100)}`
+    : p.esito === 'perso' ? `perso ${conSegno(-(puntata || 0))}`
+    : p.confermato ? (puntata != null ? 'in gioco' : 'giocato senza di te')
+    : stima >= 1 ? `prossimo: circa ${eur(stima)}` : 'in programma'
+  return (
+    <Card style={{ marginBottom: SP.s, ...(colore ? { borderColor: alpha(colore, 0.5) } : {}) }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: SP.s, alignItems: 'baseline', fontFamily: F.sans, fontSize: S.base }}>
+        <b style={{ color: C.testo }}>
+          {puntata != null ? `Puntata ${eur(puntata)}` : 'Passo'}
+          <span style={{ color: C.spento, fontWeight: 400 }}> · quota {q.toFixed(2).replace('.', ',')}</span>
+        </b>
+        <b style={{ flexShrink: 0, color: colore || (giocato ? C.ambra : C.spento) }}>{stato}</b>
+      </div>
+      <Gambe gambe={p.gambe} />
+    </Card>
+  )
+}
+
+export default function BancoUtente() {
+  const { currentUser, aggiornaSaldo } = useAuth()
+  const [dati, setDati] = useState(null)
+  const [errore, setErrore] = useState(null)
+  const [occupato, setOccupato] = useState(false)
+
+  const leggi = useCallback(async () => {
+    const { data, error } = await supabase.rpc('banco_utente')
+    if (error) setErrore(error.message); else setDati(data)
+  }, [])
+  useEffect(() => { leggi() }, [leggi])
+
+  if (!dati && !errore) return <Attesa>carico i passi…</Attesa>
+  const conto = Number(dati?.conto || 0)
+  const versato = Number(dati?.versato || 0)
+  const risultato = conto - versato
+  const passi = dati?.passi || []
+  const stima = dati?.percentuale ? puntataDi(conto, dati.percentuale) : 0
+  // la stima solo sul prossimo passo da giocare: quelli dopo dipendono da com'è andata
+  const iProssimo = passi.findIndex(p => p.esito === 'aperto' && !p.confermato)
+
+  return (
+    <div style={{ padding: '12px 12px 90px' }}>
+      <h2 style={{ fontSize: S.titolo, fontFamily: F.sans, letterSpacing: '0.1em', color: C.testo, margin: '4px 0 10px' }}>ROAD TO WEEKEND</h2>
+      {errore && (
+        <Card style={{ marginBottom: SP.m, borderColor: alpha(C.rosso, .4) }}>
+          <div style={{ color: C.rosso, fontSize: S.base, fontFamily: F.sans }}>{errore}</div>
+        </Card>
+      )}
+      <Card style={{ marginBottom: SP.m }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: SP.s }}>
+          {[['CONTO', eur(conto), C.oro], ['VERSATO', eur(versato), C.testo],
+            ['RISULTATO', conSegno(risultato), risultato >= 0 ? C.verde : C.rosso]].map(([l, v, col]) => (
+            <div key={l} style={{ minWidth: 0 }}>
+              <Etichetta>{l}</Etichetta>
+              <div style={{ fontFamily: F.mono, fontSize: S.base, fontWeight: 700, color: col, marginTop: 2 }}>{v}</div>
+            </div>
+          ))}
+        </div>
+        <TrasferisciConto cassa={currentUser?.bankroll} occupato={occupato} onTrasferisci={async (importo, verso) => {
+          setOccupato(true); setErrore(null)
+          const { error } = await supabase.rpc('trasferisci_rtw', { p_user: currentUser.id, p_importo: importo, p_verso: verso })
+          if (error) setErrore(error.message)
+          else { await aggiornaSaldo(currentUser.id); await leggi() }
+          setOccupato(false)
+          return !error
+        }} />
+      </Card>
+
+      {!passi.length && (
+        <Card style={{ marginBottom: SP.m }}>
+          <div style={{ fontFamily: F.sans, fontSize: S.base, color: C.spento }}>
+            Nessun giro in corso: i passi compaiono qui appena il banco gioca.
+          </div>
+        </Card>
+      )}
+      {passi.map((p, i) => <Passo key={p.id} p={p} stima={i === iProssimo ? stima : 0} />)}
+
+      {!!dati?.storico?.length && (
+        <div style={{ marginTop: SP.l }}>
+          <Etichetta>GIRI PRECEDENTI</Etichetta>
+          <div style={{ marginTop: SP.s, borderRadius: R.m }}>
+            {dati.storico.map(p => <Passo key={p.id} p={{ ...p, mia_puntata: p.puntata }} stima={0} />)}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

@@ -195,6 +195,33 @@ export function contiPercentuale(iniziale, passi, percentuale) {
 }
 
 /**
+ * ⚠️⚠️ **Il giro del BANCO** (`sql/57`, Mattia, 04/11/2026): ognuno punta
+ * `puntataDi(suo conto)` e la giocata è la **somma**, non il % del totale. Le
+ * puntate giocate non si ricalcolano: sono quelle confermate, scritte sul passo
+ * (i conti possono cambiare fra un passo e l'altro, coi trasferimenti).
+ * `live` è il bankroll del giro senza i trasferimenti: dice il risultato.
+ * Con una giocata senza esito `prossima` è 0, come in `contiPercentuale`.
+ */
+export const sommaPuntate = (conti, percentuale) => (conti || []).reduce((a, c) => a + puntataDi(c, percentuale), 0)
+
+export function giroBanco(iniziale, conti, passi, percentuale) {
+  let live = Number(iniziale)
+  const poste = []
+  let prossima = sommaPuntate(conti, percentuale)
+  for (const p of passi || []) {
+    if (!p) break
+    if (p.esito === 'aperto') {
+      if (p.confermato_il) { poste.push(Number(p.posta)); prossima = 0 }
+      break
+    }
+    const posta = Number(p.posta)
+    poste.push(posta)
+    live = Math.round((live + (p.esito === 'vinto' ? posta * (Number(p.quota) - 1) : -posta)) * 100) / 100
+  }
+  return { live, poste, prossima }
+}
+
+/**
  * I nomi delle regole **vecchie**, che servono solo all'archivio.
  * ⚠️ Le scalate chiuse prima del 21/10/2026 hanno `regola = 'capitale'` o
  * `'gioco'` nel registro: quella colonna è la fotografia di come si giocava

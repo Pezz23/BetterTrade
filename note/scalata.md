@@ -968,3 +968,15 @@ Mattia: *"la partita si deve illuminare, ora appare un timido e piccolo"*.
   «✓ 2 arrivate · ✗ 1 persa · 1 da giocare» e a destra *schedina vinta: segna
   ✓* / *schedina persa: segna ✗* / *in corso*. ⚠️ **Dice cosa segnare, non lo
   segna**: è il primo pezzo dell'esito proposto (voce RE di STATO).
+
+## Il banco: i soldi di più utenti su un giro solo (04/11/2026)
+
+Mattia: *"giocare un unico importo per tutti"*, *"il profilo utente copia le mosse del superadmin"*.
+
+- **Non si copia nessun passo**: esiste il giro del superadmin (`scalate.banco`, messo da un trigger). Alla conferma `conferma_banco` fotografa quanto mette ciascuno in `banco_puntate`; l'esito sta sul passo e i conti si ricalcolano. Perché: copie da sincronizzare vanno disfatte a ogni correzione.
+- **Arrotondamento per utente** (proposta di Mattia, migliore della quota del totale): ognuno `floor(% × suo conto)`, la giocata è la somma; chi non arriva a 1 € salta il passo. Le vincite hanno i centesimi.
+- **I soldi passano dalla cassa**: `trasferisci_rtw` scrive un movimento `rtw` e una riga in `scalata_ricariche` nella stessa transazione. Ognuno muove i propri, il superadmin anche gli altri. Bloccato con una giocata senza esito, e con un giro personale con passi giocati (la catena di `contiPercentuale` si romperebbe). Tolti ricarica libera e «Riparti da 0».
+- **Il totale di Bilancio conta anche RTW**, perché i soldi reali sono gli stessi; `users.in_totale` (spunta in Utenti) toglie un utente, cassa e RTW insieme. Non tocca `in_spin`.
+- **Riservatezza**: chi segue legge solo `banco_utente()`, mai `scalata_passi` del banco: lì la `posta` è il totale.
+- ⚠️ Il conto vero sta in `conto_rtw` (SQL); `contoDi` resta per chi gioca da solo. Il superadmin vede il banco con `stato_banco()`.
+- `azzera-conto-rtw.js` azzera tenendo l'archivio: una riga negativa senza movimento.

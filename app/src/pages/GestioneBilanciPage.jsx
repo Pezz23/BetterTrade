@@ -14,7 +14,7 @@ import { Card, Attesa, Etichetta } from '../components/ui'
 
 const eur = (x) => `${Number(x || 0).toFixed(2).replace('.', ',')} €`
 
-function RigaUtente({ u, riga, occupato, onTrasferisci }) {
+function RigaUtente({ u, riga, occupato, onTrasferisci, onSpunta }) {
   const [importo, setImporto] = useState('')
   const conto = Number(riga?.conto || 0)
   const risultato = conto - Number(riga?.versato || 0)
@@ -43,6 +43,25 @@ function RigaUtente({ u, riga, occupato, onTrasferisci }) {
           </div>
         ))}
       </div>
+      {/* L'andamento nel banco: i risultati dal più recente. */}
+      {riga?.giocate > 0 && (
+        <div style={{ marginTop: SP.s, fontFamily: F.sans, fontSize: S.micro, color: C.spento }}>
+          {riga.giocate} giocate · {riga.vinte} vinte
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 8px', marginTop: 2, fontFamily: F.mono }}>
+            {(riga.ultimi || []).map((x, i) => (
+              <span key={i} style={{ color: Number(x) >= 0 ? C.verde : C.rosso }}>{Number(x) >= 0 ? '+' : ''}{Number(x).toFixed(2).replace('.', ',')}</span>
+            ))}
+          </div>
+        </div>
+      )}
+      {/* ⚠️ La spunta: chi la ha segue i passi del superadmin coi suoi soldi. */}
+      {u.role !== 'superadmin' && (
+        <label style={{ display: 'flex', alignItems: 'center', gap: SP.s, marginTop: SP.m, cursor: 'pointer',
+          fontFamily: F.sans, fontSize: S.base, color: u.copia_banco ? C.testo : C.spento }}>
+          <input type="checkbox" checked={!!u.copia_banco} disabled={occupato} onChange={() => onSpunta(u.id, !u.copia_banco)} />
+          copia il banco
+        </label>
+      )}
       {/* ⚠️ Campo a 16px: sotto, iOS ingrandisce la pagina da solo. */}
       <div style={{ display: 'flex', alignItems: 'center', gap: SP.s, marginTop: SP.m }}>
         <input value={importo} onChange={e => setImporto(e.target.value.replace(',', '.'))}
@@ -83,6 +102,14 @@ export default function GestioneBilanciPage() {
     return !error
   }
 
+  const onSpunta = async (userId, valore) => {
+    setOccupato(true); setErrore(null)
+    const { error } = await supabase.rpc('imposta_copia_banco', { p_user: userId, p_valore: valore })
+    if (error) setErrore(error.message)
+    await Promise.all([leggi(), fetchUsers()])
+    setOccupato(false)
+  }
+
   if (!righe && !errore) return <Attesa>carico i conti…</Attesa>
   const totale = [...(righe?.values() || [])].reduce((a, r) => a + Number(r.conto || 0), 0)
   return (
@@ -97,7 +124,7 @@ export default function GestioneBilanciPage() {
         </Card>
       )}
       {righe && users.map(u => (
-        <RigaUtente key={u.id} u={u} riga={righe.get(u.id)} occupato={occupato} onTrasferisci={onTrasferisci} />
+        <RigaUtente key={u.id} u={u} riga={righe.get(u.id)} occupato={occupato} onTrasferisci={onTrasferisci} onSpunta={onSpunta} />
       ))}
     </div>
   )

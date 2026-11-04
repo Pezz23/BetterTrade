@@ -26,11 +26,20 @@ if (!Number.isFinite(obiettivo)) {
 const arr = n => Math.round(n * 100) / 100;
 const eur = n => (n < 0 ? '-' : '') + '€' + Math.abs(n).toFixed(2);
 
-const { data: utenti } = await admin.from('users').select('id, username, bankroll, bankroll_iniziale');
-const totale = arr(utenti.reduce((s, u) => s + (u.bankroll || 0), 0));
+// ⚠️ Come in Bilancio (04/11/2026, sql/55-56): solo chi ha la spunta `in_totale`,
+// e con il conto RTW, che sta sullo stesso conto reale.
+const { data: tutti } = await admin.from('users').select('id, username, bankroll, bankroll_iniziale, in_totale');
+const utenti = tutti.filter(u => u.in_totale !== false);
+let inRtw = 0;
+for (const u of utenti) {
+  const { data, error } = await admin.rpc('conto_rtw', { p_user: u.id });
+  if (error) { console.error(`✗ conto RTW di ${u.username}: ${error.message}`); process.exit(1); }
+  inRtw += Number(data || 0);
+}
+const totale = arr(utenti.reduce((s, u) => s + (u.bankroll || 0), 0) + inRtw);
 const differenza = arr(obiettivo - totale);
 
-const lab = utenti.find(u => u.username.toLowerCase() === CONTENITORE.toLowerCase());
+const lab = tutti.find(u => u.username.toLowerCase() === CONTENITORE.toLowerCase());
 if (!lab) { console.error(`✗ utente "${CONTENITORE}" non trovato`); process.exit(1); }
 
 console.log(ESEGUI ? '── ESECUZIONE\n' : '── PROVA A VUOTO — nessuna scrittura. Aggiungi --esegui per procedere.\n');
@@ -63,5 +72,5 @@ const { error: e2 } = await admin.from('users').update({ bankroll: nuovo }).eq('
 if (e2) { console.error('✗ bankroll:', e2.message); process.exit(1); }
 console.log(`✓ ${CONTENITORE}: bankroll ${eur(nuovo)}`);
 
-const { data: dopo } = await admin.from('users').select('bankroll');
-console.log(`✓ totale aggregato: ${eur(arr(dopo.reduce((s, u) => s + (u.bankroll || 0), 0)))}`);
+const { data: dopo } = await admin.from('users').select('bankroll, in_totale');
+console.log(`✓ totale aggregato, RTW compreso: ${eur(arr(dopo.filter(u => u.in_totale !== false).reduce((s, u) => s + (u.bankroll || 0), 0) + inRtw))}`);

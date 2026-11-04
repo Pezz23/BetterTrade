@@ -9,6 +9,8 @@ import { vai, chiudiVerso } from '../lib/indirizzi'
 import { usaVpm } from '../hooks/usaVpm'
 import { usaClassifiche, postoDi } from '../hooks/usaClassifiche'
 import { usaScalate } from '../hooks/usaScalate'
+import TrasferisciConto from '../components/TrasferisciConto'
+import BancoUtente from '../components/BancoUtente'
 import { usaPreferenze } from '../hooks/usaPreferenze'
 import { Posizione } from '../components/TestataPartita'
 import SchedaScorrevole from '../components/SchedaScorrevole'
@@ -24,7 +26,7 @@ import { pct, eur, gg } from '../lib/formato'
 import {
   METODO, NOMI_REGOLA, QUOTA_MINIMA_GAMBA, QUOTA_MINIMA_SCHEDINA, CONSIGLIATO,
   fasce, FINESTRA_ELENCO_ORE, spezzaFasce, spezzaAlMinimo, giorno, puoSpezzare, contoDi, eCriterioA,
-  PERCENTUALI, PERCENTUALE_DEFAULT, puntataDi, contiPercentuale, ORE_VISIBILI, giocato,
+  PERCENTUALI, PERCENTUALE_DEFAULT, puntataDi, contiPercentuale, giroBanco, sommaPuntate, ORE_VISIBILI, giocato,
 } from '../lib/scalata'
 
 // ROAD TO WEEKEND — la road map delle giocate del weekend.
@@ -922,36 +924,6 @@ function GiroArchivio({ s, onResoconto }) {
   )
 }
 
-/** Cassa ↔ RTW sul proprio conto. ⚠️ Campo a 16px: sotto, iOS ingrandisce la pagina. */
-function TrasferisciConto({ cassa, occupato, onTrasferisci }) {
-  const [importo, setImporto] = useState('')
-  const valido = Number(importo) > 0 && !occupato
-  const tasto = (verso, testo) => (
-    <button disabled={!valido} onClick={async () => {
-      if (await onTrasferisci(Math.round(Number(importo) * 100) / 100, verso)) setImporto('')
-    }} style={{ flex: 1, minWidth: 0, padding: '7px 4px', borderRadius: R.m, cursor: valido ? 'pointer' : 'default',
-      background: alpha(C.oro, valido ? 0.14 : 0.04), border: `1px solid ${alpha(C.oro, valido ? 0.5 : 0.18)}`,
-      color: valido ? C.oro : C.fioco, fontFamily: F.sans, fontSize: S.base, fontWeight: 700 }}>
-      {testo}
-    </button>
-  )
-  return (
-    <div style={{ marginTop: SP.l }}>
-      <div style={{ fontFamily: F.sans, fontSize: S.micro, color: C.spento, marginBottom: SP.s }}>
-        in cassa <b style={{ fontFamily: F.mono, color: C.testo }}>{eur(cassa || 0)}</b>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: SP.s }}>
-        <input value={importo} onChange={e => setImporto(e.target.value.replace(',', '.'))}
-          inputMode="decimal" placeholder="€" aria-label="importo da trasferire"
-          style={{ width: 76, flexShrink: 0, boxSizing: 'border-box', background: C.pozzo, border: `1px solid ${C.bordo}`, borderRadius: R.m,
-            padding: '6px 8px', color: C.testo, fontFamily: F.mono, fontSize: 16, outline: 'none' }} />
-        {tasto('a_rtw', 'Cassa → RTW')}
-        {tasto('a_cassa', 'RTW → Cassa')}
-      </div>
-    </div>
-  )
-}
-
 /**
  * L'archivio delle scalate chiuse.
  *
@@ -1023,7 +995,14 @@ function Archivio({ storico, ricariche = [], conto, onResoconto }) {
   )
 }
 
+// ⚠️ Chi copia il banco ha una pagina sua, in sola lettura (`sql/57`).
 export default function ScalataPage() {
+  const { currentUser, isSuperAdmin } = useAuth()
+  if (currentUser?.copia_banco && !isSuperAdmin) return <BancoUtente />
+  return <ScalataGuida />
+}
+
+function ScalataGuida() {
   const { currentUser, isAdmin, isSuperAdmin, aggiornaSaldo } = useAuth()
   const { righe: righeProssime, ricarica: ricaricaPartite, vota, votiDi, votiTipiDi, mioVoto, flagga, flagDi, flagTipiDi, mioFlag } = usaProssime()
   // ⚠️ Più le partite di IERI e i risultati (30/10/2026, `usaRecenti`): una
@@ -1038,7 +1017,7 @@ export default function ScalataPage() {
   // ⚠️⚠️ **Ognuno il suo registro e il suo conto** (Mattia, 24/10/2026:
   // *"ogni utente sia indipendente"*), admin e user: lo garantisce `sql/41`,
   // non questa pagina. Prima un utente leggeva la scalata di Admin.
-  const reg = usaScalate(currentUser?.id)
+  const reg = usaScalate(currentUser?.id, { banco: isSuperAdmin })
   // ⚠️ **Personale, come nel Bet Builder**: la riga condivisa fra gli admin
   // aveva senso finché la scalata era una sola per tutti.
   const pref = usaPreferenze('scalata', { personale: true })
@@ -1215,14 +1194,19 @@ export default function ScalataPage() {
   const aperta = reg.aperta
   // ⚠️ Il conto **fermo**: ricariche più i giri chiusi. È il bankroll con cui
   // si apre il prossimo giro; con un giro aperto vale il suo.
-  const contoFermo = contoDi({ ricariche: reg.ricariche, storico: reg.storico || [] }).fermo
+  // ⚠️⚠️ **Il superadmin guida il BANCO** (`sql/57`): il conto è la somma di chi
+  // c'è, e la puntata è la somma delle puntate arrotondate una per una.
+  const inBanco = isSuperAdmin && (!aperta || !!aperta.banco)
+  const contiBanco = reg.banco.map(r => Number(r.conto))
+  const totaleBanco = contiBanco.reduce((a, c) => a + c, 0)
+  const contoFermo = inBanco ? totaleBanco : contoDi({ ricariche: reg.ricariche, storico: reg.storico || [] }).fermo
   const bankrollIniziale = aperta ? Number(aperta.bankroll_iniziale) : Math.round(contoFermo * 100) / 100
   // ⚠️⚠️ **A percentuale del conto** (29/10/2026, `sql/49`): `posta` è la
   // puntata del PRIMO passo del giro; quelle dopo le calcola `contiPercentuale`
   // dal conto di quel momento. Un giro vecchio («Metà utile») aperto non
   // esiste più: se ce ne fosse uno, varrebbe la percentuale di fabbrica.
   const percentuale = aperta ? (Number(aperta.percentuale) || PERCENTUALE_DEFAULT) : percScelta
-  const posta = puntataDi(bankrollIniziale, percentuale)
+  const posta = inBanco ? sommaPuntate(contiBanco, percentuale) : puntataDi(bankrollIniziale, percentuale)
 
   // ⚠️ Le candidate: **attendibilità E scelta** sopra le soglie, più il
   // pavimento di quota per gamba — che non è prudenza ma misura (sotto 1,30 la
@@ -1492,21 +1476,24 @@ export default function ScalataPage() {
   // momento, vinto → +utile, perso → −puntata. `poste[i]` è la puntata del
   // passo i già giocato, `prossima` quella del passo da giocare adesso.
   // Nel piano nessun passo è giocato: la catena dà solo la puntata del passo 1.
-  const giro = useMemo(() => contiPercentuale(bankrollIniziale, aperta
+  const giro = useMemo(() => inBanco ? giroBanco(bankrollIniziale, reg.banco.map(r => Number(r.conto)), aperta ? reg.passi : [], percentuale) : contiPercentuale(bankrollIniziale, aperta
     ? reg.passi
     : passi.map(f => ({
       quota: f.partite.reduce((a, g) => a * (Number(quote[g.id] ?? g.quota) || 1), 1),
       esito: 'aperto',
     })), percentuale),
-    [aperta, reg.passi, passi, quote, percentuale, bankrollIniziale])
+    [inBanco, reg.banco, aperta, reg.passi, passi, quote, percentuale, bankrollIniziale])
   const puntataDel = (i) => (i < giro.poste.length ? giro.poste[i] : i === giro.poste.length ? giro.prossima : 0)
   // `casse` resta come nome per le righe che lo leggono: ora è il giro.
   const casse = { inGioco: giro.prossima, vivi: giro.poste.length, live: giro.live, risultato: giro.live - bankrollIniziale }
 
   // Il conto di adesso: ricariche, giri chiusi e quanto il giro in corso ha
   // fatto finora.
-  const conto = contoDi({ ricariche: reg.ricariche, storico: reg.storico || [],
-    aperta: { bankroll_iniziale: bankrollIniziale }, live: casse.live })
+  const versatoBanco = reg.banco.reduce((a, r) => a + Number(r.versato), 0)
+  const conto = inBanco
+    ? { versato: versatoBanco, fermo: totaleBanco, conto: totaleBanco, risultato: totaleBanco - versatoBanco }
+    : contoDi({ ricariche: reg.ricariche, storico: reg.storico || [],
+      aperta: { bankroll_iniziale: bankrollIniziale }, live: casse.live })
   // Arrotondato al centesimo: è un importo, e i decimali della quota non
   // devono finire nel registro.
   const cent = (x) => Math.round(x * 100) / 100
@@ -1689,7 +1676,7 @@ export default function ScalataPage() {
           ⚠️ Il conto si legge **sempre**: è quello che dice *"se perdo 300 € e
           ne incasso 200, sono in perdita"* (Mattia, 24/10/2026). */}
       <Card style={{ marginBottom: 12 }}>
-        <TitoloCard>GESTIONE BANKROLL</TitoloCard>
+        <TitoloCard>{inBanco ? 'IL BANCO' : 'GESTIONE BANKROLL'}</TitoloCard>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: SP.m, marginTop: SP.l }}>
           {[['Conto', conto.conto, C.testo], ['Puntata', casse.inGioco, C.oro]].map(([l, v, col]) => (
             <div key={l}>
@@ -1734,6 +1721,22 @@ export default function ScalataPage() {
             ogni passo punta questa percentuale del conto di quel momento · si cambia solo dopo un giro perso · misurato: cresce di più il 3%
           </div>
         </div>
+
+        {/* ⚠️ Chi c'è nel banco e quanto mette: lo vede solo il superadmin. Con una
+            giocata in corso è la puntata fotografata alla conferma. */}
+        {inBanco && !!reg.banco.length && (
+          <div style={{ marginTop: SP.m, borderTop: `1px solid ${C.bordoRiga}`, paddingTop: SP.s }}>
+            {reg.banco.map(r => (
+              <div key={r.user_id} style={{ display: 'flex', justifyContent: 'space-between', gap: SP.s, padding: '3px 0',
+                fontFamily: F.sans, fontSize: S.base, color: C.testo }}>
+                <span style={{ minWidth: 0 }}>{r.nome} <span style={{ color: C.spento, fontFamily: F.mono }}>{eur(r.conto)}</span></span>
+                <b style={{ flexShrink: 0, fontFamily: F.mono, color: C.oro }}>
+                  {eur(r.in_gioco != null ? r.in_gioco : (casse.inGioco >= 1 ? puntataDi(r.conto, percentuale) : 0))}
+                </b>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* ⚠️ Dal 04/11/2026 i soldi entrano ed escono solo dalla cassa
             (`sql/55`-`56`): la ricarica libera creava soldi dal nulla. */}
@@ -1905,9 +1908,11 @@ export default function ScalataPage() {
                     setAvviso('Prima togli l’esito dei passi dopo questo: un perso chiude il giro qui.')
                     return
                   }
-                  const finale = cent(contiPercentuale(bankrollIniziale,
-                    reg.passi.map((r, k) => (k === i ? { ...r, esito: 'perso' } : r)), percentuale).live)
-                  const x = await reg.perdi(riga, { posta: p, finale, conto: cent(contoFermo + finale - bankrollIniziale) })
+                  const conPerso = reg.passi.map((r, k) => (k === i ? { ...r, esito: 'perso' } : r))
+                  const finale = cent(inBanco ? giroBanco(bankrollIniziale, [], conPerso, percentuale).live
+                    : contiPercentuale(bankrollIniziale, conPerso, percentuale).live)
+                  const x = await reg.perdi(riga, { posta: p, finale,
+                    conto: cent(inBanco ? totaleBanco + finale - giro.live : contoFermo + finale - bankrollIniziale) })
                   setAvviso(x?.errore ?? null)
                 } else {
                   reg.segna(riga.id, e || 'aperto', e === 'vinto'

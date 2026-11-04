@@ -78,8 +78,8 @@ async function inseriscipiano(scalataId, piano, primo = 1) {
 }
 
 /** Le scalate dell'utente: la aperta (se c'è) e lo storico. */
-export function usaScalate(userId) {
-  const [stato, setStato] = useState({ aperta: null, passi: [], gambe: [], storico: null, ricariche: [], errore: null })
+export function usaScalate(userId, { banco = false } = {}) {
+  const [stato, setStato] = useState({ aperta: null, passi: [], gambe: [], storico: null, ricariche: [], banco: [], errore: null })
   // ⚠️ **`occupato` serve a schermo.** Ogni gesto è un giro al database, e un
   // tasto che per mezzo secondo non dice niente sembra rotto: è il motivo per
   // cui la lentezza di prima si notava più di quanto durasse.
@@ -109,11 +109,13 @@ export function usaScalate(userId) {
     // (`sql/41`): dice cosa si vuole, e non dipende dal ricordarsi la policy.
     // Scalate e ricariche non dipendono l'una dall'altra: partono insieme, e
     // il conto costa un'attesa in più solo sulla carta.
-    const [{ data: scalate, error }, { data: ricariche, error: eR }] = await Promise.all([
+    // ⚠️ `banco` (sql/57): solo il superadmin, chi c'è e quanto ha.
+    const [{ data: scalate, error }, { data: ricariche, error: eR }, { data: righeBanco, error: eB }] = await Promise.all([
       supabase.from('scalate').select('*').eq('user_id', userId).order('aperta_il', { ascending: false }),
       supabase.from('scalata_ricariche').select('*').eq('user_id', userId).order('fatta_il', { ascending: false }),
+      banco ? supabase.rpc('stato_banco') : Promise.resolve({ data: [], error: null }),
     ])
-    if (error || eR) return setStato(s => ({ ...s, errore: (error || eR).message }))
+    if (error || eR || eB) return setStato(s => ({ ...s, errore: (error || eR || eB).message }))
 
     const aperta = (scalate || []).find(s => s.stato === 'aperta') || null
     let passi = [], gambe = []
@@ -126,8 +128,8 @@ export function usaScalate(userId) {
       passi = (p || []).map(senzaGambe)
       gambe = (p || []).flatMap(r => r.scalata_gambe || []).sort((a, b) => a.id - b.id)
     }
-    setStato({ aperta, passi, gambe, storico: scalate || [], ricariche: ricariche || [], errore: null })
-  }, [userId])
+    setStato({ aperta, passi, gambe, storico: scalate || [], ricariche: ricariche || [], banco: righeBanco || [], errore: null })
+  }, [userId, banco])
 
   useEffect(() => { ricarica() }, [ricarica])
 
@@ -187,11 +189,14 @@ export function usaScalate(userId) {
     if (r.errore) return r
     const primo = r.passi?.[0]
     if (!primo) { await ricarica(); return { errore: 'il piano si è salvato senza passi' } }
-    const { error } = await supabase.from('scalata_passi')
-      .update({ confermato_il: new Date().toISOString(), posta }).eq('id', primo.id)
+    // ⚠️ Nel banco la conferma fotografa le puntate di tutti (sql/57).
+    const { error } = banco
+      ? await supabase.rpc('conferma_banco', { p_passo: primo.id })
+      : await supabase.from('scalata_passi')
+        .update({ confermato_il: new Date().toISOString(), posta }).eq('id', primo.id)
     await ricarica()
     return error ? { errore: `il giro è aperto, ma la conferma non si è salvata: ${error.message}` } : {}
-  }, [apri, ricarica])
+  }, [apri, ricarica, banco])
 
   /**
    * Conferma (o annulla la conferma di) un passo di un giro aperto: *"l'ho
@@ -200,12 +205,14 @@ export function usaScalate(userId) {
    * lì, e un passo con un esito resta giocato comunque (`giocato`).
    */
   const conferma = useCallback(async (passo, posta = null) => {
-    const { error } = await supabase.from('scalata_passi').update(posta == null
-      ? { confermato_il: null }
-      : { confermato_il: new Date().toISOString(), posta }).eq('id', passo.id)
+    const { error } = banco
+      ? await supabase.rpc(posta == null ? 'annulla_conferma_banco' : 'conferma_banco', { p_passo: passo.id })
+      : await supabase.from('scalata_passi').update(posta == null
+        ? { confermato_il: null }
+        : { confermato_il: new Date().toISOString(), posta }).eq('id', passo.id)
     await ricarica()
     return error ? { errore: error.message } : {}
-  }, [ricarica])
+  }, [ricarica, banco])
 
   /**
    * ⚠️ **La percentuale si cambia solo dopo un giro perso** (Mattia,
