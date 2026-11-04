@@ -8,12 +8,35 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 1 novembre 2026 · app alla versione **1.78.01**
-(`cbe2e0c`, **pushato**) · passaggio di consegne: 31/10 sera · da pushare solo il
-commit di questo passaggio (documenti). Migrazioni `sql/50`-`53` applicate; la
-funzione `aggiorna-risultati` è **pubblicata** con il Giappone.
+**Ultimo aggiornamento:** 4 novembre 2026 · app alla versione **1.81.00**
+(`65562ce`, **pushato**) · da pushare `84b90b7` (backup) e il commit di questi
+documenti. Migrazioni `sql/54`-`57` applicate; la funzione `aggiorna-risultati`
+è **pubblicata** con il Giappone.
 
-## ▶️ DOVE SIAMO — 31 ottobre 2026, leggi questo per primo
+## ▶️ DOVE SIAMO — 4 novembre 2026, leggi questo per primo
+
+**Il 4/11: il BANCO di Road to weekend** (`1.79.00`-`1.81.00`, regole in
+`note/scalata.md`). Il superadmin guida un giro solo e chi ha «copia il banco»
+lo segue coi propri soldi, in sola lettura.
+- **Fatto:** «Chiudi giro» senza sconfitta; **Gestione Bilanci** (voce di menu,
+  solo superadmin) con trasferimenti, spunta e andamento dei singoli;
+  trasferimenti cassa ↔ RTW per ogni utente dalla sua pagina RTW; spunta **«conta
+  nel totale aggregato»** in Utenti; il totale di Bilancio conta anche RTW.
+- **Provato solo sul database**, con utenti simulati e transazione annullata:
+  14 + 4 = 18 € di giocata, vincita, perso, permessi. ⚠️ **Le schermate del banco
+  non le ha ancora viste nessuno**: Mattia ha pushato e vede le spunte.
+- **Dove siamo fermi:** Mattia ha un po' di paura di fare pasticci. Passo
+  concordato: spunta a **NickV** (46 €), aprire RTW da Admin **senza confermare
+  niente** e controllare «IL BANCO». L'utente ad hoc c'è già: **MattiaP**, 160 € in RTW.
+- **Backup verificato** contro il database in
+  `app/backup/prima-del-banco-2026-11-04/`: solo su questo Mac, e **non c'è uno
+  script di ripristino**. Nessuna puntata e nessuna spunta in quel momento.
+- ⚠️ **Da chiarire con Mattia:** MattiaP e NickV risultano fuori dal totale. Se
+  i loro 206 € stanno sul conto reale, al prossimo trasferimento finiscono come
+  differenza a Laboratorio.
+- Azzerati a mano Admin (163,00 €) e Laboratorio (160,15 €): i giri restano in
+  archivio, le due giocate da 16 € del 4/11 hanno perso la conferma e non ci sono.
+- **Europa e Conference League accese** (`b600221`): 36 partite con quote e nomi.
 
 **Il 31/10, primo giorno del weekend di prova** (`1.77.01`-`1.78.00`):
 - **Due difetti del telefono corretti e confermati da Mattia**: il logout
@@ -152,6 +175,11 @@ Il 24/10, in ordine:
 | **⤓ Scarica risultati** (30/10): in fondo a Road to weekend, solo superadmin; il telefono scarica da ESPN (che rifiuta i server di Supabase) e la funzione `aggiorna-risultati` abbina e scrive; risultati «finita 2-1 ✓/✗» nel passo e nell'elenco; le partite di ieri restano anche dopo mezzanotte (`usaRecenti`). ESPN in `app/src/lib/espn.js`, abbinamento in `btscout/lib/risultati-espn.js` per tutti | `1.75.00` | `7029d66` |
 | **Spin: l'esito PROPOSTO** (30/10): le caselle collegate a una partita finita propongono ✓/✗ con `giocataArrivata` (pronostico tradotto con `giocataDa`), un tocco o «conferma i N» per confermare, mai sopra un esito scelto; anche sulle spin non spuntate. «Scarica risultati» anche in fondo alla Dashboard | `1.76.00` | `f647f83` |
 | **Spin: esiti automatici, archivio, flag** (30/10): esiti scritti da soli nelle caselle vuote (dopo Scarica risultati e all'apertura della Slot); «2-1 ✓» nelle schedine; Dashboard → `/slot/N`; flag `in_spin` in Bilancio (`sql/52`) per la percentuale delle spin; **archivio delle spin** senza soldi, resa in unità (`sql/53`, scheda «Archivio»); `COMBOS` in un posto solo | `1.77.00` | `633c347` |
+| **Chiudi giro** a mano, senza sconfitta (4/11, `1.79.00`, `sql/54`) | `2cb8c50` |
+| **Gestione Bilanci e trasferimenti cassa ↔ RTW**, tolti ricarica libera e «Riparti da 0», totale con RTW (4/11, `1.80.00`, `sql/55`) | `84feb82` |
+| **Spunta «conta nel totale»** in Utenti e trasferimenti per ogni utente (4/11, `1.80.01`, `sql/56`) | `7ab0998` |
+| **Il banco**: un giro solo, puntata sommata per utente, passi in sola lettura (4/11, `1.81.00`, `sql/57`) | `65562ce` |
+| Il backup salva anche `banco_puntate` (4/11) | `84b90b7` |
 | **Due difetti del telefono** (31/10, Mattia: *"ogni tanto mi sbatte fuori, o salta su Partite"*): il profilo riletto a ogni rinnovo della sessione faceva **logout** a qualunque intoppo di rete (ora riprova e tiene la sessione); la scheda di Road to weekend non aveva indirizzo, e l'«indietro» del telefono tornava alla pagina prima (ora `/scalata/:id`) | `1.77.01` | `dacc2a7` |
 | **Scarica risultati prende anche il Giappone** (31/10): era escluso per errore con le coppe; per lui il telefono manda anche le statistiche, stagione ad anno solare; e l'abbinamento collega al calendario anche le partite già in archivio | `1.77.02` | `4672d81` |
 | **Il Giappone col calendario europeo** (31/10): dal 2026 la J1 gioca agosto-maggio; la regola «anno solare» sommava il mezzo campionato feb-giu 2026 e la 2026/27 (Hiroshima 64-32 invece di 32-10). `annoSolareFino` in `lib/espn.js`, e 126 partite spostate in «2627» (backup prima). Verificato anche che telefono e Mac non creano doppioni: 0 da agosto | `1.77.03` | `31cccf9` |
@@ -240,10 +268,12 @@ Chiusi il 29/10: lotto 0 (rinvii), lotto 1 (falli, angoli e cartellini v2,
 derby), lotto 2 (routing), lotto 3 (arbitro: no), e Road to weekend a
 percentuale. Il 30/10: la conferma della giocata in Road to weekend, il tasto
 dei risultati, gli esiti automatici e l'archivio delle spin.
-L'ordine consigliato: **00 → RE → 6 → 4**.
+Il 4/11: il banco di Road to weekend, da provare a schermo.
+L'ordine consigliato: **B → 00 → RE → 6 → 4**.
 
 | | cosa | costo |
 |---|---|---|
+| B | **Provare il banco a schermo** (`1.81.00`): spunta a NickV, RTW da Admin e da NickV, poi una giocata vera con conferma ed esito. Le schermate non le ha viste nessuno | Mattia, mezz'ora |
 | 00 | **Il weekend vero, versione 1.77** (Mattia lo prova il 31/10-1/11). Road to weekend: ricarica, ✓ Conferma giocata, esito, ✗ con due tocchi (archivio e giro nuovo), matita, «salta» su una partita cominciata, Reset partite con un passo confermato. Poi **⤓ Scarica risultati** dal telefono, i «finita 2-1 ✓» nel passo, gli **esiti automatici delle spin** e la prima spin in **archivio** con «↺ Nuova spin». Si raccoglie quello che non torna | il weekend |
 | RE | **L'esito PROPOSTO dei passi di Road to weekend**: il riassunto del passo dice già *«schedina persa: segna ✗»* (`RiassuntoPasso`, 31/10); manca il tasto che lo segna con un tocco. Proposto e non automatico, perché un ✗ chiude il giro. **Non deciso** | un'ora |
 | 1F | **Il Filtro A sul futuro vero** (proposto il 29/10, **non deciso**): l'app registra da sola ogni schedina che il filtro proporrebbe, con regole fisse; dopo 100 schedine, ROI > 0 **e** gambe sopra 100% → candidato, altrimenti si archivia. Oggi lo storico non può dire di più | da stimare, mezza giornata |
@@ -346,6 +376,9 @@ state provate simulando uno user e un admin in una transazione annullata.
 
 | | |
 |---|---|
+| **Il banco non è stato provato a schermo** | Vedi la voce B. Solo il database è stato provato |
+| **MattiaP e NickV fuori dal totale** (206 € in RTW) | Se sono soldi del conto reale, va rimessa la spunta in Utenti: decide Mattia |
+| **Nessuno script di ripristino dal backup** | Un ripristino si fa a mano, tabella per tabella. Da scrivere solo se Mattia lo vuole |
 | ~~**NickV aveva un giro aperto col metodo VECCHIO**~~ | ✅ **29/10**: Mattia, entrato come NickV, ha usato «Azzera tutto» e poi una ricarica di 50 €. Le scalate 48 e 57 non avevano nessun passo giocato, quindi il conto resta 50 € come prima. I 71 passi di piano sono nel registro delle cancellazioni. Era: `regola = 'meta'`, e al primo ✗ `chiudi_giro_perso` l'avrebbe rifiutato |
 | ~~**L'esito delle spin da PROPOSTO ad AUTOMATICO**~~ | ✅ **30/10**, lo stesso giorno (`1.77.00`): automatico, solo nelle caselle vuote |
 | ~~**Logout e salto a Partite**~~ | ✅ **31/10**: corretti in `1.77.01` e confermati da Mattia sul telefono (*"sembra funzionare"*). Se il logout tornasse, le prossime cause da guardare: il rinnovo del token stesso, o più schede aperte |

@@ -249,6 +249,8 @@ cioè il passo del bankroll decide il passo della puntata.
 
 #### ⚠️ Riparti da 0 — l'unica cosa irreversibile della pagina
 
+⚠️ **Tolto il 4/11/2026** (`sql/55`): faceva sparire soldi che ora vengono dalla cassa. Resta come storia; per azzerare c'è `azzera-conto-rtw.js`.
+
 In fondo all'**archivio** (Mattia, 18/10: *"deve cancellare lo storico e farmi
 ripartire da capo, come se partissi quel giorno per la prima volta"*). Cancella
 le righe di `scalate` dell'utente, **anche quella aperta**; passi e gambe
@@ -612,6 +614,8 @@ mangia in silenzio.**
 
 
 ### 💰 Il conto personale, la ricarica e ⟳ RIPARTI (24/10/2026)
+
+⚠️ **Superato in parte il 4/11/2026**: la ricarica libera non c'è più e il conto non è più separato dalla cassa (vedi «Il banco», in fondo).
 
 Due difetti trovati da Mattia giocando, e una richiesta che li ha assorbiti:
 *"il bankroll deve essere sempre solo 1, quando finisce devo poterlo

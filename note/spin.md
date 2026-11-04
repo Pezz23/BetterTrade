@@ -138,6 +138,7 @@ confermare è noioso"*.
   «Salva per tutti» partono selezionati solo loro. ⚠️ **Non** tocca
   `getTotalBankroll`, il totale dei soldi veri che decide il trasferimento a
   Laboratorio: un utente fuori dalle spin ha comunque soldi veri.
+  ⚠️ Dal 4/11/2026 quel totale lo decide `in_totale`, la spunta in Utenti (`sql/56`), e conta anche il conto RTW.
 - ⚠️ Un **conto demo** è stato fatto e tolto nella stessa ora (Mattia ha
   cambiato idea): la colonna `demo` non esiste più. Al suo posto l'archivio.
 - **L'ARCHIVIO DELLE SPIN** (`spin_archivio`, `sql/53`; scheda «Archivio»
