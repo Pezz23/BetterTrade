@@ -34,7 +34,7 @@
 
 import { sql, chiudi } from '../lib/db.js';
 import { quote, totali, SPORT } from '../lib/odds-api.js';
-import { traduci } from '../lib/nomi-squadre.js';
+import { traduci, NOMI } from '../lib/nomi-squadre.js';
 import { CAMPIONATI } from './import-storico.js';
 // ⚠️ I nomi delle competizioni che football-data **non copre**: `CAMPIONATI`
 // elenca i file che si scaricano da football-data, e infilarci la Champions
@@ -102,7 +102,10 @@ for (const div of daFare) {
     const ok = validi.get(div);
     let salta = false;
     for (const [orig, trad] of [[ev.home_team, casa], [ev.away_team, trasferta]]) {
-      if (!ok?.has(trad)) { sconosciute.set(`${div}|${orig}`, trad); salta = true; }
+      // ⚠️ Un nome scritto a mano nella tabella è valido anche se non è mai
+      // stato in archivio (4/11/2026): in una coppa una squadra può esserci per
+      // la prima volta, e qualcuno ha già controllato che sia lei.
+      if (!ok?.has(trad) && !NOMI[div]?.[orig]) { sconosciute.set(`${div}|${orig}`, trad); salta = true; }
     }
     if (salta) { saltate++; continue; }
 

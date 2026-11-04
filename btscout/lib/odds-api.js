@@ -40,10 +40,12 @@ export const SPORT = {
   // ⚠️ Costano ~3 crediti a giro ciascuna, su 500 al mese.
   UCL: 'soccer_uefa_champs_league',
   JPN1: 'soccer_japan_j_league',
-  // ⚠️ Europa e Conference **restano spente**: il 22/10 The Odds API non aveva
-  // nemmeno una partita futura per loro, quindi accenderle costerebbe crediti
-  // per zero righe. Si accendono quando il torneo riparte.
-  // UEL: 'soccer_uefa_europa_league',
+  // ⚠️ Europa e Conference **accese il 4/11/2026** (Mattia: *"non vedo
+  // l'Europa League nelle partite di oggi"*). Erano spente dal 22/10, quando The
+  // Odds API non aveva nessuna loro partita futura; ora ne ha 18 a testa, e
+  // nessuno si era ricordato di riaccenderle.
+  UEL: 'soccer_uefa_europa_league',
+  UECL: 'soccer_uefa_europa_conference_league',
 };
 
 const BASE = 'https://api.the-odds-api.com/v4';

@@ -491,3 +491,15 @@ Importazioni per tre motivi, e ognuno ora ha la sua correzione in
   abbina passa ad `accettata` con la sua `partita_id`.
 - Aggiunti gli alias di fine ottobre (Man United, Ath Bilbao, Vallecano,
   Famalicao, Charleroi).
+
+### Europa e Conference League accese (4/11/2026)
+
+Mattia: *"non vedo l'Europa League nelle partite di oggi"*. In `lib/odds-api.js`
+erano commentate dal 22/10, quando The Odds API non aveva loro partite: una
+nota diceva di riaccenderle «quando il torneo riparte», e nessuno lo ricordava.
+Ora ci sono: 18 + 18 partite. I 37 nomi diversi da ESPN stanno in
+`nomi-squadre.js`, abbinati **partita per partita** col tabellone ESPN (stessa
+ora, stesso avversario), non per somiglianza. ⚠️ `importa-prossime-odds.js`
+accetta un nome della tabella **anche se non è mai stato in archivio**: in una
+coppa una squadra può esserci per la prima volta. ⚠️ Senza storico quella
+squadra ha attendibilità (dalle quote) ma non VPM.
