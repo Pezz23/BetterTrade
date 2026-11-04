@@ -1027,7 +1027,7 @@ function Archivio({ storico, ricariche = [], conto, onResoconto }) {
 // ⚠️ Chi copia il banco ha una pagina sua, in sola lettura (`sql/57`).
 export default function ScalataPage() {
   const { currentUser, isSuperAdmin } = useAuth()
-  if (currentUser?.copia_banco && !isSuperAdmin) return <BancoUtente />
+  if (currentUser?.copia_banco && !isSuperAdmin) return <BancoUtente CardPasso={PassoHero} coloreDi={coloreDi} />
   return <ScalataGuida />
 }
 

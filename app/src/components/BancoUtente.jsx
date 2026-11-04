@@ -1,6 +1,14 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { supabase } from '../supabase'
 import { useAuth } from '../context/AuthContext'
+import { usaProssime } from '../hooks/usaProssime'
+import { usaRecenti } from '../hooks/usaRecenti'
+import { usaClassifiche } from '../hooks/usaClassifiche'
+import { usaPercorso } from '../hooks/usaPercorso'
+import { vai, chiudiVerso } from '../lib/indirizzi'
+import { categoria, SOGLIE_DEFAULT } from '../lib/attendibilita'
+import SchedaScorrevole from './SchedaScorrevole'
+import DettaglioPartita from './DettaglioPartita'
 import { giocataArrivata } from '../lib/esito'
 import { puntataDi } from '../lib/scalata'
 import { eur } from '../lib/formato'
@@ -13,6 +21,9 @@ import TrasferisciConto from './TrasferisciConto'
 // ⚠️ Non legge le tabelle della scalata: `banco_utente()` (`sql/57`) gli dà le
 // partite e la sua puntata, mai il totale né gli altri. Unica azione: i suoi
 // trasferimenti cassa ↔ RTW.
+// ⚠️ Il passo attivo è **la stessa card** di chi gioca da solo (`PassoHero`, che
+// la pagina passa come `CardPasso`: importarla da qui chiuderebbe un anello),
+// con `tocca={false}`: niente tasti. Gli altri passi restano nella forma corta.
 
 const COLORE = { vinto: C.verde, perso: C.rosso }
 const conSegno = (x) => `${x >= 0 ? '+' : ''}${eur(x)}`
@@ -61,11 +72,19 @@ function Passo({ p, stima }) {
   )
 }
 
-export default function BancoUtente() {
+export default function BancoUtente({ CardPasso, coloreDi }) {
   const { currentUser, aggiornaSaldo } = useAuth()
   const [dati, setDati] = useState(null)
   const [errore, setErrore] = useState(null)
   const [occupato, setOccupato] = useState(false)
+  const classifiche = usaClassifiche()
+  const { righe: prossime, vota, votiDi, votiTipiDi, mioVoto } = usaProssime()
+  const { ieri } = usaRecenti()
+  const percorso = usaPercorso()
+  const apertaId = Number(percorso.split('/')[2]) || null
+  const partitaAperta = useMemo(() => [...(ieri || []), ...(prossime || [])].find(r => r.id === apertaId),
+    [ieri, prossime, apertaId])
+  const chiudi = () => chiudiVerso('/scalata')
 
   const leggi = useCallback(async () => {
     const { data, error } = await supabase.rpc('banco_utente')
@@ -81,6 +100,9 @@ export default function BancoUtente() {
   const stima = dati?.percentuale ? puntataDi(conto, dati.percentuale) : 0
   // la stima solo sul prossimo passo da giocare: quelli dopo dipendono da com'è andata
   const iProssimo = passi.findIndex(p => p.esito === 'aperto' && !p.confermato)
+  const iAttivo = passi.findIndex(p => p.esito === 'aperto')
+  const risultati = new Map(passi.flatMap(p => p.gambe || []).filter(g => g.gol_casa != null)
+    .map(g => [g.prossima_id, { casa: g.gol_casa, trasferta: g.gol_trasferta }]))
 
   return (
     <div style={{ padding: '12px 12px 90px' }}>
@@ -117,7 +139,13 @@ export default function BancoUtente() {
           </div>
         </Card>
       )}
-      {passi.map((p, i) => <Passo key={p.id} p={p} stima={i === iProssimo ? stima : 0} />)}
+      {passi.map((p, i) => (i === iAttivo
+        ? <CardPasso key={p.id} tocca={false} numero={i + 1} gambe={p.gambe || []} giorno={p.giorno}
+            ora={p.gambe?.[0]?.ora?.slice(0, 5)} posta={p.mia_puntata != null ? Number(p.mia_puntata) : stima}
+            conto={conto} colore={coloreDi(i)} classifiche={classifiche} quote={{}} setQuote={() => {}}
+            esito={null} confermato={p.confermato} risultatoDi={(id) => risultati.get(id) ?? null}
+            stelleDi={votiDi} onApri={(id) => vai(`/scalata/${id}`)} />
+        : <Passo key={p.id} p={p} stima={i === iProssimo ? stima : 0} />))}
 
       {!!dati?.storico?.length && (
         <div style={{ marginTop: SP.l }}>
@@ -126,6 +154,14 @@ export default function BancoUtente() {
             {dati.storico.map(p => <Passo key={p.id} p={{ ...p, mia_puntata: p.puntata }} stima={0} />)}
           </div>
         </div>
+      )}
+
+      {partitaAperta && (
+        <SchedaScorrevole onChiudi={chiudi}>
+          <DettaglioPartita p={partitaAperta} cat={categoria(partitaAperta.probGiocata, SOGLIE_DEFAULT)}
+            voti={votiTipiDi(partitaAperta.id)} mio={mioVoto(partitaAperta.id)} puoVotare
+            onVota={() => vota(partitaAperta.id)} onChiudi={chiudi} />
+        </SchedaScorrevole>
       )}
     </div>
   )
