@@ -467,6 +467,18 @@ export function usaScalate(userId) {
   }, [stato.aperta, ricarica])
 
   /**
+   * ⚠️ **Chiudere un giro a mano, senza sconfitta** (Mattia, 04/11/2026): va in
+   * archivio col conto di adesso e i passi non giocati si tolgono (`sql/54`).
+   * Con una giocata confermata senza esito il database rifiuta.
+   */
+  const chiudiGiro = useCallback(async (finale) => {
+    if (!stato.aperta) return { errore: 'nessun giro aperto' }
+    const { error } = await supabase.rpc('chiudi_giro', { p_scalata: stato.aperta.id, p_finale: finale })
+    await ricarica()
+    return error ? { errore: error.message } : {}
+  }, [stato.aperta, ricarica])
+
+  /**
    * Una ricarica del conto. ⚠️ È l'**unico** modo in cui entrano soldi: i
    * tasti −/+ sul bankroll non ci sono più, perché cambiavano il conto senza
    * lasciare traccia.
@@ -596,6 +608,7 @@ export function usaScalate(userId) {
     apri: attendendo(apri),
     segna: attendendo(segna),
     perdi: attendendo(perdi),
+    chiudiGiro: attendendo(chiudiGiro),
     confermaPrimo: attendendo(confermaPrimo),
     conferma: attendendo(conferma),
     cambiaPercentuale: attendendo(cambiaPercentuale),

@@ -1124,6 +1124,12 @@ export default function ScalataPage() {
     const t = setTimeout(() => setArmaNuovo(false), 5000)
     return () => clearTimeout(t)
   }, [armaNuovo])
+  const [armaChiudi, setArmaChiudi] = useState(false)
+  useEffect(() => {
+    if (!armaChiudi) return
+    const t = setTimeout(() => setArmaChiudi(false), 5000)
+    return () => clearTimeout(t)
+  }, [armaChiudi])
   // ⚠️⚠️ **Niente più bankroll da regolare a mano** (24/10/2026): il bankroll
   // è il **conto** (`contoDi`), che si muove solo con le ricariche e i giri.
   // I tasti −/+ cambiavano il capitale senza lasciare traccia, ed è il motivo
@@ -1805,6 +1811,33 @@ export default function ScalataPage() {
             ? `giro in corso dal ${new Date(aperta.aperta_il).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} · un passo perso lo chiude e lo manda in archivio`
             : 'conferma il passo 1 quando l’hai giocato: il giro si apre da solo'}
         </div>
+        {/* ⚠️ Chiudere senza sconfitta (Mattia, 04/11/2026). Secondo tocco per
+            confermare; con una giocata senza esito il tasto lo dice e non
+            chiude, e lo rifiuta anche il database (`sql/54`). */}
+        {aperta && (() => {
+          const inCorso = reg.passi.some(x => x.esito === 'aperto' && x.confermato_il)
+          const giocatiOra = reg.passi.filter(giocato)
+          return (
+            <button disabled={reg.occupato} onClick={async () => {
+              if (inCorso) { setAvviso('C’è una giocata confermata senza esito: segna prima come è andata, poi chiudi il giro.'); return }
+              if (!armaChiudi) { setArmaChiudi(true); return }
+              setArmaChiudi(false)
+              // Il piano che si riapre non deve riproporre le partite già giocate.
+              const giocati = new Set(giocatiOra.map(x => x.id))
+              const usate = reg.gambe.filter(g => giocati.has(g.passo_id)).map(g => g.prossima_id)
+              const x = giocatiOra.length ? await reg.chiudiGiro(cent(casse.live)) : await reg.eliminaGiroVuoto()
+              if (x?.errore) setAvviso(x.errore)
+              else setTolte(t => [...new Set([...t, ...usate])])
+            }} style={{ marginTop: SP.s, padding: '5px 12px', cursor: 'pointer', borderRadius: R.m,
+              background: armaChiudi ? alpha(C.ambra, 0.18) : 'transparent',
+              border: `1px solid ${alpha(C.ambra, armaChiudi ? 0.7 : 0.35)}`, color: C.ambra,
+              fontFamily: F.sans, fontSize: S.minuta }}>
+              {armaChiudi
+                ? `Tocca ancora: chiudi il giro a ${eur(cent(casse.live))}`
+                : 'Chiudi giro'}
+            </button>
+          )
+        })()}
         {erroreApri && (
           <div style={{ marginTop: 6, fontSize: S.minuta, fontFamily: F.sans, color: C.rosso, textAlign: 'center' }}>
             {erroreApri}
