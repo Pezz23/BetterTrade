@@ -89,11 +89,13 @@ export default function BilancioPage() {
     setLoading(false)
   }
 
-  // Il totale dei conti RTW: solo il superadmin lo può leggere (`sql/55`).
+  // I conti RTW: tutti solo per il superadmin (`sql/55`), il proprio per gli
+  // altri (`sql/59`).
+  const [mioRtw,setMioRtw] = useState(0)
   useEffect(() => {
-    if (!isSuperAdmin) return
-    supabase.rpc('riepilogo_rtw').then(({ data }) => setRigheRtw(data || []))
-  }, [isSuperAdmin])
+    if (isSuperAdmin) supabase.rpc('riepilogo_rtw').then(({ data }) => setRigheRtw(data || []))
+    else if (currentUser) supabase.rpc('mio_conto_rtw').then(({ data }) => setMioRtw(Number(data || 0)))
+  }, [isSuperAdmin, currentUser?.id])
 
   async function trasferisciALaboratorio() {
     if (!saldoReale || isNaN(parseFloat(saldoReale))) return
@@ -211,8 +213,20 @@ export default function BilancioPage() {
           {/* Bankroll aggregato — sola lettura */}
           <div style={stileCard({padding:'16px',marginBottom:12}, C.oro)}>
             <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:6}}>Bankroll totale aggregato</div>
-            <div style={{fontSize:S.cifra,fontWeight:700,color:C.oro,fontFamily:F.mono}}>{fmt(totalBk)}</div>
-            <div style={{fontSize:S.minuta,color:C.fioco,fontFamily:F.sans,marginTop:4}}>Somma degli utenti con la spunta in Utenti · sola lettura</div>
+            {/* ⚠️ Lo stesso numero del trasferimento a Laboratorio: i soldi di RTW
+                stanno sullo stesso conto reale (Mattia, 04/11/2026). */}
+            <div style={{fontSize:S.cifra,fontWeight:700,color:C.oro,fontFamily:F.mono}}>{fmt(totalBk+totaleRtw)}</div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:8,marginTop:10}}>
+              <div>
+                <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans}}>Saldo utenti</div>
+                <div style={{fontSize:S.titolo,fontWeight:700,color:C.testo,fontFamily:F.mono}}>{fmt(totalBk)}</div>
+              </div>
+              <div>
+                <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans}}>Saldo utenti RTW</div>
+                <div style={{fontSize:S.titolo,fontWeight:700,color:C.testo,fontFamily:F.mono}}>{fmt(totaleRtw)}</div>
+              </div>
+            </div>
+            <div style={{fontSize:S.minuta,color:C.fioco,fontFamily:F.sans,marginTop:8}}>Utenti con la spunta in Utenti · sola lettura</div>
           </div>
 
           {/* Puntate aggregate */}
@@ -242,10 +256,11 @@ export default function BilancioPage() {
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:S.media,fontWeight:600,color:C.testo,fontFamily:F.sans}}>{u.display_name||u.username}</div>
                     <div style={{fontSize:S.minuta,color:C.fioco,fontFamily:F.mono}}>T:€{uSched.tris} · Q:€{uSched.quaterna} · F:€{uSched.full}</div>
+                    <div style={{fontSize:S.minuta,color:C.fioco,fontFamily:F.mono}}>base {fmt(uBase)}</div>
                   </div>
                   <div style={{textAlign:'right'}}>
                     <div style={{fontSize:S.titolo,fontWeight:700,color:C.oro,fontFamily:F.mono}}>{fmt(u.bankroll||0)}</div>
-                    <div style={{fontSize:S.minuta,color:C.fioco,fontFamily:F.mono}}>base {fmt(uBase)}</div>
+                    <div style={{fontSize:S.minuta,color:C.spento,fontFamily:F.mono}}>RTW {fmt(Number(righeRtw.find(r=>r.user_id===u.id)?.conto||0))}</div>
                   </div>
                 </div>
               )
@@ -329,13 +344,15 @@ export default function BilancioPage() {
             <StatCard label="Inizio stagione" value={fmt(myInizio)} color={C.testo}/>
             <StatCard label="Saldo live"      value={fmt(myLive)}   color={myLive>=myInizio?C.verde:C.rosso}/>
             <StatCard label="Variazione"      value={myDiff}        color={myDiffCol}/>
-            <StatCard label={`Base (${pct}% ÷ ${numSlot})`} value={fmt(myBase)} color={C.blu}/>
+            <StatCard label="Saldo RTW"       value={fmt(mioRtw)}   color={C.oro}/>
           </div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:16}}>
+          {/* ⚠️ Quattro su una riga a 375px: `minmax(0,1fr)`, un `1fr` non scende sotto il contenuto. */}
+          <div style={{display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:6,marginBottom:16}}>
             {[
               {label:'Tris ×5',    val:`€${mySched.tris}`,     color:C.verde},
               {label:'Quaterna ×2',val:`€${mySched.quaterna}`, color:C.blu},
               {label:'Full ×1',    val:`€${mySched.full}`,     color:C.oro},
+              {label:'Base',       val:fmt(myBase),            color:C.testo},
             ].map(({label,val,color})=><StatCard key={label} label={label} value={val} color={color} small/>)}
           </div>
 
