@@ -989,3 +989,7 @@ Mattia: *"giocare un unico importo per tutti"*, *"il profilo utente copia le mos
 
 Mattia: *"2 + over 2,5, se finisce 0-2 deve darmi perso"*. Si tocca la giocata e si sceglie segno, `+ over 1,5` o `+ over 2,5` (`SceltaGiocata`), finché il passo non è confermato. Niente over da solo, per scelta sua. La quota di una combinata non è in calendario: **si scrive a mano**, e senza non si conferma (`quotaMancante`). L'esito sta già in `giocataArrivata`. ⚠️ `att`, `scelta` e `VPM` della riga restano quelli del segno.
 
+## I numeri in cima all'Archivio (04/11/2026)
+
+`StatisticheRtw` + `statistiche_rtw()` (`sql/60`): guadagno sui soldi versati, passi presi, partite prese, **dal 4/11 per tutti** (Mattia), e per chi è stato azzerato dopo l'azzeramento. ⚠️ Non è `conto − versato`: il conto degli azzerati porta i risultati di prima. Base = conto meno i risultati del periodo. Una partita senza risultato non conta. Il superadmin vede il banco, gli altri la propria parte. Chi segue il banco ora ha **PIANO | ARCHIVIO**.
+

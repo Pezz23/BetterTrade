@@ -12,9 +12,10 @@ import DettaglioPartita from './DettaglioPartita'
 import { giocataArrivata } from '../lib/esito'
 import { puntataDi } from '../lib/scalata'
 import { eur } from '../lib/formato'
-import { C, F, S, SP, R, alpha } from '../theme'
+import { C, F, S, SP, alpha } from '../theme'
 import { Card, Attesa, Etichetta } from './ui'
 import TrasferisciConto from './TrasferisciConto'
+import StatisticheRtw from './StatisticheRtw'
 
 // ROAD TO WEEKEND per chi ha la spunta «copia il banco» (Mattia, 04/11/2026):
 // vede i passi del superadmin e cosa succede ai SUOI soldi, senza toccare niente.
@@ -77,6 +78,7 @@ export default function BancoUtente({ CardPasso, coloreDi }) {
   const [dati, setDati] = useState(null)
   const [errore, setErrore] = useState(null)
   const [occupato, setOccupato] = useState(false)
+  const [vista, setVista] = useState('piano')
   const classifiche = usaClassifiche()
   const { righe: prossime, vota, votiDi, votiTipiDi, mioVoto } = usaProssime()
   const { ieri } = usaRecenti()
@@ -106,12 +108,30 @@ export default function BancoUtente({ CardPasso, coloreDi }) {
 
   return (
     <div style={{ padding: '12px 12px 90px' }}>
-      <h2 style={{ fontSize: S.titolo, fontFamily: F.sans, letterSpacing: '0.1em', color: C.testo, margin: '4px 0 10px' }}>ROAD TO WEEKEND</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '4px 0 10px', gap: SP.s }}>
+        <h2 style={{ fontSize: S.titolo, fontFamily: F.sans, letterSpacing: '0.1em', color: C.testo, margin: 0 }}>ROAD TO WEEKEND</h2>
+        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+          {[['piano', 'PIANO'], ['archivio', 'ARCHIVIO']].map(([k, l]) => (
+            <button key={k} onClick={() => setVista(k)} style={{ padding: '5px 10px', fontSize: S.base, fontFamily: F.sans, cursor: 'pointer',
+              color: vista === k ? C.celestePieno : C.spento, background: vista === k ? `linear-gradient(${alpha(C.celestePieno, .14)},${alpha(C.celestePieno, .14)}), ${C.card}` : C.card,
+              border: `1px solid ${alpha(C.celestePieno, vista === k ? .5 : .18)}` }}>{l}</button>
+          ))}
+        </div>
+      </div>
       {errore && (
         <Card style={{ marginBottom: SP.m, borderColor: alpha(C.rosso, .4) }}>
           <div style={{ color: C.rosso, fontSize: S.base, fontFamily: F.sans }}>{errore}</div>
         </Card>
       )}
+      {vista === 'archivio' && <>
+        <StatisticheRtw />
+        {!dati?.storico?.length && (
+          <Card><div style={{ fontFamily: F.sans, fontSize: S.base, color: C.spento }}>Nessuna giocata con un esito, per ora.</div></Card>
+        )}
+        {(dati?.storico || []).map(p => <Passo key={p.id} p={{ ...p, mia_puntata: p.puntata }} stima={0} />)}
+      </>}
+
+      {vista === 'piano' && <>
       <Card style={{ marginBottom: SP.m }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: SP.s }}>
           {[['CONTO', eur(conto), C.oro], ['VERSATO', eur(versato), C.testo],
@@ -146,15 +166,7 @@ export default function BancoUtente({ CardPasso, coloreDi }) {
             esito={null} confermato={p.confermato} risultatoDi={(id) => risultati.get(id) ?? null}
             stelleDi={votiDi} onApri={(id) => vai(`/scalata/${id}`)} />
         : <Passo key={p.id} p={p} stima={i === iProssimo ? stima : 0} />))}
-
-      {!!dati?.storico?.length && (
-        <div style={{ marginTop: SP.l }}>
-          <Etichetta>GIRI PRECEDENTI</Etichetta>
-          <div style={{ marginTop: SP.s, borderRadius: R.m }}>
-            {dati.storico.map(p => <Passo key={p.id} p={{ ...p, mia_puntata: p.puntata }} stima={0} />)}
-          </div>
-        </div>
-      )}
+      </>}
 
       {partitaAperta && (
         <SchedaScorrevole onChiudi={chiudi}>

@@ -10,6 +10,7 @@ import { usaVpm } from '../hooks/usaVpm'
 import { usaClassifiche, postoDi } from '../hooks/usaClassifiche'
 import { usaScalate } from '../hooks/usaScalate'
 import TrasferisciConto from '../components/TrasferisciConto'
+import StatisticheRtw from '../components/StatisticheRtw'
 import BancoUtente from '../components/BancoUtente'
 import { usaPreferenze } from '../hooks/usaPreferenze'
 import { Posizione } from '../components/TestataPartita'
@@ -1051,6 +1052,7 @@ function ScalataGuida() {
   // aveva senso finché la scalata era una sola per tutti.
   const pref = usaPreferenze('scalata', { personale: true })
   const [modo, setModo] = useState('piano')
+  const [giroStat, setGiroStat] = useState(0)
   // ⚠️⚠️ **La partita aperta ha il suo INDIRIZZO** (`/scalata/123`, 31/10/2026,
   // Mattia: *"quando entro e esco dalle partite salta sulla schermata
   // Partite"*). Prima la scheda era solo uno stato della pagina: il gesto
@@ -1612,9 +1614,12 @@ function ScalataGuida() {
 
       {/* ⚠️ Azzerare il registro azzera anche lo stato della pagina: il piano
           è indicizzato per passo, e passi non ce ne sono più. */}
-      {vista === 'archivio' && (
+      {vista === 'archivio' && (<>
+        {/* ⚠️ Il tasto è nascosto agli altri, il controllo vero sta nella funzione. */}
+        {isSuperAdmin && <ScaricaRisultati onFinito={() => { ricaricaRecenti(); setGiroStat(n => n + 1) }} />}
+        <StatisticheRtw aggiorna={giroStat} />
         <Archivio storico={reg.storico} ricariche={reg.ricariche} conto={conto} onResoconto={reg.resoconto} />
-      )}
+      </>)}
       {vista === 'piano' && <>
 
 
