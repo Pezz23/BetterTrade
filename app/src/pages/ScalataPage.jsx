@@ -26,7 +26,7 @@ import { pct, eur, gg } from '../lib/formato'
 import {
   METODO, NOMI_REGOLA, QUOTA_MINIMA_GAMBA, QUOTA_MINIMA_SCHEDINA, CONSIGLIATO,
   fasce, FINESTRA_ELENCO_ORE, spezzaFasce, spezzaAlMinimo, giorno, puoSpezzare, contoDi, eCriterioA,
-  PERCENTUALI, PERCENTUALE_DEFAULT, puntataDi, contiPercentuale, giroBanco, sommaPuntate, ORE_VISIBILI, giocato,
+  PERCENTUALI, PERCENTUALE_DEFAULT, puntataDi, contiPercentuale, giroBanco, sommaPuntate, LINEE_OVER, lineaOver, conOver, quotaMancante, ORE_VISIBILI, giocato,
 } from '../lib/scalata'
 
 // ROAD TO WEEKEND — la road map delle giocate del weekend.
@@ -112,11 +112,40 @@ function Segmenti({ opzioni, valore, onScegli, colore = C.oro }) {
  * (`onCommit`), come prima: a ogni tasto «1,85» passerebbe per «1».
  * ⚠️ Il campo è a **16px**: sotto, iOS ingrandisce la pagina da solo.
  */
+/**
+ * La giocata della riga: toccandola si sceglie segno o segno + over (04/11/2026).
+ * ⚠️ `select` nativa trasparente sopra il testo: a 16px, o iOS ingrandisce la
+ * pagina, mentre il testo visibile resta piccolo.
+ */
+const siglaGiocata = (g) => { const l = lineaOver(g); return l ? `${String(g).trim()[0]}+O${l}` : g }
+function SceltaGiocata({ giocata, onScegli }) {
+  const segno = String(giocata ?? '').trim()[0]
+  const num = { fontFamily: F.mono, fontVariantNumeric: 'tabular-nums', fontSize: S.base, whiteSpace: 'nowrap' }
+  if (!onScegli || (segno !== '1' && segno !== '2')) return <span style={{ ...num, color: C.testo, textAlign: 'center' }}>{siglaGiocata(giocata)}</span>
+  return (
+    <span style={{ ...num, position: 'relative', display: 'inline-block', textAlign: 'center', color: lineaOver(giocata) ? C.oro : C.testo,
+      borderBottom: `1px dotted ${C.spento}` }}>
+      {siglaGiocata(giocata)}
+      <select value={lineaOver(giocata) ?? ''} aria-label="giocata" onChange={e => onScegli(conOver(segno, e.target.value || null))}
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, fontSize: 16, cursor: 'pointer', border: 'none', padding: 0 }}>
+        <option value="">{segno}</option>
+        {LINEE_OVER.map(l => <option key={l} value={l}>{segno} + over {l}</option>)}
+      </select>
+    </span>
+  )
+}
+
 function QuotaModificabile({ valore, segnaposto, onChange, onCommit, sola = false, etichetta }) {
   const [apri, setApri] = useState(false)
   const num = { fontFamily: F.mono, fontVariantNumeric: 'tabular-nums' }
   const mostrata = valore !== '' && valore != null ? Number(valore) : Number(segnaposto)
   const cambiata = valore !== '' && valore != null && Number(valore) !== Number(segnaposto)
+  // ⚠️ Una combinata non ha quota in calendario: finché non si scrive, si chiede.
+  const daScrivere = !(mostrata > 1)
+  if ((!apri || sola) && daScrivere) return (
+    <button onClick={() => !sola && setApri(true)} aria-label={etichetta} style={{ background: 'transparent', border: 'none', padding: 0,
+      cursor: sola ? 'default' : 'pointer', textAlign: 'right', fontFamily: F.sans, fontSize: S.micro, fontWeight: 700, color: C.ambra }}>quota?</button>
+  )
   if (!apri || sola) return (
     <button onClick={() => !sola && setApri(true)} aria-label={etichetta} title={sola ? undefined : 'tocca per correggere la quota'}
       style={{ ...num, background: 'transparent', border: 'none', padding: 0, cursor: sola ? 'default' : 'pointer', textAlign: 'right',
@@ -125,7 +154,7 @@ function QuotaModificabile({ valore, segnaposto, onChange, onCommit, sola = fals
     </button>
   )
   return (
-    <input autoFocus value={valore ?? ''} placeholder={Number(segnaposto).toFixed(2)} inputMode="decimal" aria-label={etichetta}
+    <input autoFocus value={valore ?? ''} placeholder={Number(segnaposto) > 1 ? Number(segnaposto).toFixed(2) : ''} inputMode="decimal" aria-label={etichetta}
       onChange={e => onChange(e.target.value.replace(',', '.'))}
       onBlur={() => { setApri(false); onCommit?.() }}
       onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
@@ -203,9 +232,9 @@ function RiassuntoPasso({ gambe, risultatoDi }) {
  */
 // ⚠️ `iniziata` (30/10/2026): la partita è cominciata ma resta in elenco per
 // 12 ore (`ORE_VISIBILI`), spenta e con l'ora in ambra.
-function SchedaRisultato({ g, fuori, soloSegno, iPasso, colorePasso, segni, onApri, onTogli, iniziata = false, risultato = null }) {
+function SchedaRisultato({ g, giocata = g.giocata, fuori, soloSegno, iPasso, colorePasso, segni, onApri, onTogli, iniziata = false, risultato = null }) {
   const a = !fuori && eCriterioA(g)
-  const es = esitoDi(risultato, g.giocata)
+  const es = esitoDi(risultato, giocata)
   const num = { fontFamily: F.mono, fontVariantNumeric: 'tabular-nums' }
   const virgola = (x) => (x == null ? '—' : Number(x).toFixed(2).replace('.', ','))
   return (
@@ -232,7 +261,7 @@ function SchedaRisultato({ g, fuori, soloSegno, iPasso, colorePasso, segni, onAp
         {g.casa} <span style={{ color: C.fioco, fontWeight: 400 }}>–</span> {g.trasferta}
         {es && <>{' '}<BollinoEsito es={es} /></>}
       </span>
-      <span style={{ ...num, fontSize: S.base, color: C.testo, textAlign: 'center', whiteSpace: 'nowrap' }}>{g.giocata}</span>
+      <span style={{ ...num, fontSize: S.base, color: C.testo, textAlign: 'center', whiteSpace: 'nowrap' }}>{siglaGiocata(giocata)}</span>
       <span style={{ ...num, fontSize: S.media, fontWeight: 700, color: C.oro, textAlign: 'right' }}>{virgola(g.quota)}</span>
       <button onClick={onTogli} title={fuori ? 'rimetti in scaletta' : 'togli dalla scaletta'}
         style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0,
@@ -256,7 +285,7 @@ function SchedaRisultato({ g, fuori, soloSegno, iPasso, colorePasso, segni, onAp
 
 function Passo({ numero, gambe, giorno: gio, ora, posta, colore, classifiche,
                 quote, setQuote, esito, setEsito, onToglie, prossima, onAggiunge,
-                onQuota = null, onSpezza = null, onApri = null, onManuale = null, tocca = true,
+                onQuota = null, onGiocata = null, onSpezza = null, onApri = null, onManuale = null, tocca = true,
                 stelleDi = () => 0, anteprima = false, fissato = false, onFissa = null, fermo = false,
                 parte = 'tutto', nudo = false, confermato = false, risultatoDi = () => null }) {
   // ⚠️ La quota della schedina è il **prodotto delle quote modificate**, non di
@@ -401,10 +430,10 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, colore, classifiche,
             ))}
             <BollinoEsito es={es} />
           </div>
-          <span style={{ ...num, fontSize: S.base, color: C.testo, textAlign: 'center', whiteSpace: 'nowrap' }}>{g.giocata}</span>
+          <SceltaGiocata giocata={g.giocata} onScegli={tocca && !confermato && onGiocata ? (v) => onGiocata(g, v) : null} />
           {/* La quota scaricata finché non la correggi; corretta, è
               sottolineata a puntini. */}
-          <QuotaModificabile valore={quote[g.id]} segnaposto={g.quota} sola={!tocca} etichetta={`quota di ${g.casa}`}
+          <QuotaModificabile valore={quote[g.id]} segnaposto={quote[g.id] === '' ? null : g.quota} sola={!tocca} etichetta={`quota di ${g.casa}`}
             onChange={(v) => setQuote(q => ({ ...q, [g.id]: v }))}
             onCommit={() => { if (onQuota && quote[g.id]) onQuota(g.id, quote[g.id]) }} />
           {/* ⚠️ Una schedina confermata non perde partite (30/10/2026): per
@@ -1099,6 +1128,8 @@ function ScalataGuida() {
   // le partite aggiunte a mano a un passo, per indice di passo
   const [aggiunte, setAggiunte] = useState({})
   const [quote, setQuote] = useState({})
+  // Segno + over nel piano, per partita: { id: '1,5' | '2,5' }. Si salva col piano.
+  const [over, setOver] = useState({})
   // ⚠️ La percentuale del conto per il PROSSIMO giro (29/10/2026): si sceglie
   // a scalata chiusa e si salva con le preferenze; a scalata aperta vale
   // quella scritta sul giro (`aperta.percentuale`), e si cambia solo dopo un perso.
@@ -1154,6 +1185,7 @@ function ScalataGuida() {
     if (Array.isArray(pi.tagli)) setTagli(pi.tagli)
     if (pi.aggiunte && typeof pi.aggiunte === 'object') setAggiunte(pi.aggiunte)
     if (pi.quote && typeof pi.quote === 'object') setQuote(pi.quote)
+    if (pi.over && typeof pi.over === 'object') setOver(pi.over)
     // ⚠️ Gli esiti simulati (`pi.esiti`) e le percentuali per passo
     // (`pi.perc`) delle versioni di prima non si rileggono: la simulazione e
     // il metodo a cassa sono stati tolti (29/10/2026).
@@ -1175,7 +1207,7 @@ function ScalataGuida() {
     if (!letta) return
     const dati = {
       filtri: { att: attMin, scelta: sceMin, vpm: vpmMin, quotaGamba, percentuale: percScelta },
-      piano: { tolte, aggiunte, tagli, quote, fissati, calendarioDa },
+      piano: { tolte, aggiunte, tagli, quote, over, fissati, calendarioDa },
     }
     const j = JSON.stringify(dati)
     if (ultimaSalvata.current === null) { ultimaSalvata.current = j; return }
@@ -1186,7 +1218,7 @@ function ScalataGuida() {
       else ultimaSalvata.current = j
     }, 800)
     return () => clearTimeout(t)
-  }, [letta, attMin, sceMin, vpmMin, quotaGamba, percScelta, tolte, aggiunte, tagli, quote, fissati, calendarioDa])
+  }, [letta, attMin, sceMin, vpmMin, quotaGamba, percScelta, tolte, aggiunte, tagli, quote, over, fissati, calendarioDa])
 
   // Dal 24/10/2026 l'archivio è di tutti: ognuno ha il suo.
   const vista = modo
@@ -1502,8 +1534,14 @@ function ScalataGuida() {
   // altre si sanno solo quando tocca a loro, e `segna` le corregge all'esito.
   // ⚠️ `escludi`: le partite già giocate nel giro non rientrano in un piano
   // ricomposto (Reset partite a giro aperto).
+  // ⚠️ Una combinata parte senza quota: quella del calendario è del segno.
+  const gambeDelPiano = (partite) => partite.map(g => (over[g.id]
+    ? { ...g, giocata: conOver(g.giocata, over[g.id]), quota: null } : g))
+  const giocataInElenco = (g) => (aperta
+    ? reg.gambe.find(x => x.prossima_id === g.id)?.giocata ?? g.giocata
+    : conOver(g.giocata, over[g.id]))
   const componiPiano = (escludi = new Set()) => passi
-    .map(f => f.partite.filter(g => !escludi.has(g.id)))
+    .map(f => gambeDelPiano(f.partite).filter(g => !escludi.has(g.id)))
     .filter(gs => gs.length)
     .map(gs => {
       const q = gs.reduce((a, g) => a * (Number(quote[g.id] ?? g.quota) || 1), 1)
@@ -1869,6 +1907,11 @@ function ScalataGuida() {
               posta={p} conto={i === giro.poste.length ? giro.live : null} colore={coloreDi(i)} classifiche={classifiche}
               quote={quote} setQuote={setQuote} onApri={setApertaId}
               onQuota={(id, v) => reg.cambiaQuota(id, riga.id, v)}
+              onGiocata={async (g, v) => {
+                setQuote(q => ({ ...q, [g.id]: '' }))
+                const x = await reg.cambiaGiocata(g.id, v)
+                setAvviso(x?.errore ?? null)
+              }}
               onToglie={(id) => reg.togliGamba(id, riga.id)}
               prossima={prossimaSalvata(i)}
               /* ⚠️ Allungare un passo con la gamba di un altro è uno
@@ -1892,7 +1935,10 @@ function ScalataGuida() {
                  I passi di prima, con un esito e senza conferma, contano come
                  giocati (`giocato`). */
               confermato={giocato(riga)}
-              onConferma={async () => { const x = await reg.conferma(riga, p); setAvviso(x?.errore ?? null) }}
+              onConferma={async () => {
+                if (gambe.some(g => quotaMancante(g, quote))) { setAvviso('Scrivi la quota di tutte le partite del passo prima di confermare.'); return }
+                const x = await reg.conferma(riga, p); setAvviso(x?.errore ?? null)
+              }}
               onAnnullaConferma={riga.confermato_il ? async () => { const x = await reg.conferma(riga, null); setAvviso(x?.errore ?? null) } : null}
               iniziata={giocato(riga) ? null : iniziataDi(gambe)}
               esito={riga.esito === 'aperto' ? null : riga.esito}
@@ -1948,7 +1994,7 @@ function ScalataGuida() {
                 — e React con due chiavi uguali ridisegna la cosa sbagliata, in
                 silenzio. ⚠️ Fra graffe: dentro il `Fragment` un commento nudo
                 diventa testo a schermo (trappola nota, 29/10/2026). */}
-            <QualePasso risultatoDi={risultatoDi} attivo={i === frontiera && !inAnteprima} numero={nGiro} gambe={f.partite} giorno={f.giorno} ora={f.ora} stelleDi={votiDi} anteprima={inAnteprima}
+            <QualePasso risultatoDi={risultatoDi} attivo={i === frontiera && !inAnteprima} numero={nGiro} gambe={gambeDelPiano(f.partite)} giorno={f.giorno} ora={f.ora} stelleDi={votiDi} anteprima={inAnteprima}
               fissato={eFissato(i)}
               onFissa={() => fissa(i)}
               posta={p} conto={i === giro.poste.length ? giro.live : null} colore={coloreDi(i)} classifiche={classifiche}
@@ -1964,6 +2010,11 @@ function ScalataGuida() {
               })}
               onSpezza={(iG) => { const id = f.partite[iG]?.id; if (id) setTagli(t => [...t, id]) }}
               quote={quote} setQuote={setQuote}
+              onGiocata={(g, v) => {
+                const linea = lineaOver(v)
+                setOver(o => { const n = { ...o }; if (linea) n[g.id] = linea; else delete n[g.id]; return n })
+                setQuote(q => { const n = { ...q }; delete n[g.id]; return n })
+              }}
               esito={null}
               /* ⚠️⚠️ **Il passo 1 del piano si CONFERMA** (Mattia, 30/10/2026):
                  ✓ Conferma giocata salva il piano, apre il giro e segna il
@@ -1974,8 +2025,9 @@ function ScalataGuida() {
                  sposta il calendario dopo la sua ultima partita. */
               confermato={false}
               onConferma={i !== 0 ? null : async () => {
-                if (posta < 1) { setAvviso('Il conto è sotto 1 €: fai una ricarica prima di giocare.'); return }
+                if (posta < 1) { setAvviso('Il conto è sotto 1 €: serve un trasferimento dalla cassa prima di giocare.'); return }
                 const piano = componiPiano()
+                if (piano.some(x => x.gambe.some(g => !(Number(g.quota) > 1)))) { setAvviso('Scrivi la quota delle partite con l’over prima di confermare.'); return }
                 const x = await reg.confermaPrimo(
                   { bankroll: bankrollIniziale, posta, quotaMinima: QUOTA_MINIMA_SCHEDINA, regola: METODO.id, percentuale, piano },
                   { posta })
@@ -2161,7 +2213,7 @@ function ScalataGuida() {
                   const t = flagTipiDi(g.id), mio = mioFlag(g.id)
                   const tinta = mio ? (isAdmin ? C.verde : C.blu) : t.admin ? C.verde : C.blu
                   return (
-                    <SchedaRisultato key={g.id} g={g} fuori={fuori} iniziata={!iniziaDopo(g, daOra)} risultato={risultatoDi(g.id)}
+                    <SchedaRisultato key={g.id} g={g} giocata={giocataInElenco(g)} fuori={fuori} iniziata={!iniziaDopo(g, daOra)} risultato={risultatoDi(g.id)}
                       soloSegno={!fuori && fuoriFiltri.some(x => x.id === g.id)}
                       iPasso={fuori ? -1 : iPasso} colorePasso={iPasso >= 0 ? coloreDi(iPasso) : C.grigio}
                       onApri={() => setApertaId(g.id)}

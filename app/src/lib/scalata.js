@@ -263,6 +263,22 @@ export const FINESTRA_ELENCO_ORE = 2
 export const ORE_VISIBILI = 12
 
 /**
+ * ⚠️ **Segno + over** su una partita del passo (Mattia, 04/11/2026: *"succede in
+ * pochi casi"*). Si scrive `2 + over 2,5`, che `giocataArrivata` legge già: il
+ * segno e la somma dei gol devono arrivare insieme, 0-2 è perso. Niente over da
+ * solo, e **la quota si scrive sempre a mano**: una combinata non è in calendario.
+ */
+export const LINEE_OVER = ['1,5', '2,5']
+export const lineaOver = (giocata) => String(giocata ?? '').match(/over\s*(\d[,.]\d)/i)?.[1]?.replace('.', ',') ?? null
+export const conOver = (giocata, linea) => {
+  const segno = String(giocata ?? '').trim()[0]
+  return linea && (segno === '1' || segno === '2') ? `${segno} + over ${linea}` : String(giocata ?? '')
+}
+/** Manca la quota di una gamba: campo svuotato, o combinata senza quota scritta. */
+export const quotaMancante = (g, quote) => quote[g.id] === ''
+  || (!!lineaOver(g.giocata) && !(Number(quote[g.id] ?? g.quota) > 1))
+
+/**
  * Un passo **giocato**: confermato al banco (`confermato_il`, sql/50) o con
  * un esito. ⚠️ Il secondo caso tiene dentro i passi di prima del 30/10/2026,
  * che la conferma non l'avevano. È la domanda che fanno il cambio di

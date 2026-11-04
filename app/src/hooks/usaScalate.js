@@ -437,6 +437,13 @@ export function usaScalate(userId, { banco = false } = {}) {
     return {}
   }, [quotaDi, ricarica])
 
+  /** Segno + over su una gamba di un passo non ancora confermato. */
+  const cambiaGiocata = useCallback(async (gambaId, giocata) => {
+    const { error } = await supabase.from('scalata_gambe').update({ giocata }).eq('id', gambaId)
+    await ricarica()
+    return error ? { errore: error.message } : {}
+  }, [ricarica])
+
   const cambiaQuota = useCallback(async (gambaId, passoId, quota) => {
     if (!(Number(quota) > 1)) return { errore: 'quota non valida' }
     const errore = primoErrore(await Promise.all([
@@ -583,5 +590,6 @@ export function usaScalate(userId, { banco = false } = {}) {
     spostaGamba: attendendo(spostaGamba),
     spezzaPasso: attendendo(spezzaPasso),
     cambiaQuota: attendendo(cambiaQuota),
+    cambiaGiocata: attendendo(cambiaGiocata),
   }
 }

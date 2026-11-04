@@ -984,3 +984,8 @@ Mattia: *"giocare un unico importo per tutti"*, *"il profilo utente copia le mos
 - **Riservatezza**: chi segue legge solo `banco_utente()`, mai `scalata_passi` del banco: lì la `posta` è il totale.
 - ⚠️ Il conto vero sta in `conto_rtw` (SQL); `contoDi` resta per chi gioca da solo. Il superadmin vede il banco con `stato_banco()`.
 - `azzera-conto-rtw.js` azzera tenendo l'archivio: una riga negativa senza movimento.
+
+## Segno + over sulla riga del passo (04/11/2026)
+
+Mattia: *"2 + over 2,5, se finisce 0-2 deve darmi perso"*. Si tocca la giocata e si sceglie segno, `+ over 1,5` o `+ over 2,5` (`SceltaGiocata`), finché il passo non è confermato. Niente over da solo, per scelta sua. La quota di una combinata non è in calendario: **si scrive a mano**, e senza non si conferma (`quotaMancante`). L'esito sta già in `giocataArrivata`. ⚠️ `att`, `scelta` e `VPM` della riga restano quelli del segno.
+
