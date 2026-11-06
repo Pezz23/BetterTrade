@@ -503,3 +503,8 @@ ora, stesso avversario), non per somiglianza. ⚠️ `importa-prossime-odds.js`
 accetta un nome della tabella **anche se non è mai stato in archivio**: in una
 coppa una squadra può esserci per la prima volta. ⚠️ Senza storico quella
 squadra ha attendibilità (dalle quote) ma non VPM.
+
+## Le coppe dentro la routine (06/11/2026)
+
+`aggiorna.js` ora ha sei passi: dopo lo storico, `importa-competizione` per UCL, UEL, UECL, N2 e J1, **prima** di `riconcilia-prossime`. Perché: football-data non copre le coppe, e il 6/11 una routine completa ha lasciato 45 risultati fuori. Quell'ordine conta: senza riconciliazione dopo, il risultato sta in `partite` ma l'app non lo mostra. Zero crediti, e se ESPN non risponde la routine continua.
+

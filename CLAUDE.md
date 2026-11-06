@@ -365,7 +365,7 @@ node --env-file=.env scripts/aggiorna-risultati.js --esegui   # OGNI ORA: solo i
 #      a giro (500 al mese) e ricalcola `andamento`. Questa fa solo ESPN.
 node --env-file=.env scripts/azzera-conto-rtw.js Admin [--esegui]   # conto RTW a 0, l'archivio resta
 node --env-file=.env scripts/controlla-dati.js     # cosa è passato in silenzio (gira già dentro aggiorna.js)
-#   = import-storico --stagioni=2627 → riconcilia-prossime → importa-prossime
+#   = import-storico --stagioni=2627 → importa-competizione (coppe, N2, J1) → riconcilia-prossime → importa-prossime
 #     → importa-prossime-odds → calcola-andamento --stagioni=1
 node --env-file=.env scripts/rendiconto.js          # IL RENDICONTO: calibrazione + resa delle proposte
 node --env-file=.env scripts/backtest-scala.js --basepct=10 --scelta=resa   # il metodo di giocata su 8 stagioni
