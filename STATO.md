@@ -8,12 +8,39 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 4 novembre 2026, sera · app alla versione **1.83.00**
-(`671b6ee`) · da pushare `671b6ee` e il commit di questi documenti. Migrazioni
-`sql/54`-`60` applicate; la funzione `aggiorna-risultati` è **pubblicata** con il
-Giappone.
+**Ultimo aggiornamento:** 20 novembre 2026 · app alla versione **1.83.00**
+(`671b6ee`, invariata) · ultimo commit `a0cdb57` (la routine con le coppe),
+pushato. Migrazioni `sql/54`-`60` applicate; la funzione `aggiorna-risultati` è
+**pubblicata** con il Giappone.
 
-## ▶️ DOVE SIAMO — 4 novembre 2026, leggi questo per primo
+## ▶️ DOVE SIAMO — 20 novembre 2026, leggi questo per primo
+
+**Il 20/11, dopo due settimane di pausa: solo dati, nessun codice.**
+- **Routine completa** (`aggiorna.js`, la prima con le coppe dentro): calendario
+  fino al **30/11** (223 partite, Champions 24-25/11, Europa e Conference 26/11),
+  17 risultati di Olanda 2 da ESPN, 1.627 partite dello storico reimportate.
+  Le quote di E0, E1, I1 erano cadute per il DNS (`ENOTFOUND`): riprese al terzo
+  tentativo, 9 crediti. **Restano 275 crediti** questo mese.
+- **11 partite SP2/P1** giocate e non collegate: collegate da ESPN. Restano
+  **3 SP2 e Estoril-Maritimo** senza risultato, quasi certamente rinviate;
+  **2 righe** in Importazioni da decidere; Kortrijk-Mechelen del 23/10 sempre vuota.
+- I risultati si fermano all'**8/11** quasi ovunque: dal 9 al 17 c'era la sosta
+  delle nazionali, non è un buco.
+- ⚠️ **Il backup è uscito vuoto al primo giro e incompleto al secondo** (rete a
+  intermittenza): si è toccato il database solo dopo il terzo, completo.
+  **Un backup va controllato, non dato per fatto.**
+- **Il banco dal 4/11** (numeri di `statistiche_rtw`, 20/11): 5 utenti che
+  seguono (MNM, Bermani, Christian, MarcoM, Botturi), versati **1.060 €**,
+  conto **775,90 €**, risultato **−349,10 € (circa −33%)**, passi presi **2 su
+  11**, ultimo esito segnato il **9/11**. ⚠️ Le schedine giocate stavano a una
+  **quota media di ~3,5** (da 1,98 a 8,59), non attorno a 2: a quella quota ci si
+  aspetta di prenderne circa una su quattro, quindi 2 su 11 non giudica ancora
+  niente — dice solo che il conto oscilla molto. Fuori dal banco: Laboratorio
+  52 € e MattiaP 109,07 € (ognuno con un passo in gioco), NickV 48,19 €.
+- ⚠️ **In Gestione Bilanci Admin mostra «versato −49,46 €»**: è la riga di
+  azzeramento del 4/11 contata come versamento. Solo a schermo, il conto è 0.
+
+## ▶️ Il 4 novembre 2026
 
 **Il 4/11: il BANCO di Road to weekend** (`1.79.00`-`1.83.00`, regole in
 `note/scalata.md`). Il superadmin guida un giro solo e chi ha «copia il banco»
@@ -257,6 +284,9 @@ del **23 ottobre** — una giornata lunga — su **dati** e **scheda partita**:
 cd app && npm run dev          # il server di sviluppo non resta acceso fra le sessioni
 ```
 
+**Dati aggiornati il 20/11** (routine completa con le coppe, calendario fino al
+30/11, 275 crediti rimasti: dettaglio in «Dove siamo»). Quello che segue è del 29/10.
+
 **Dati aggiornati il 29/10 a mezzogiorno** (routine completa, 1.326 partite
 dello storico reimportate, `andamento` a 164.063 righe). Primo giro vero della
 correzione dei rinvii (lotto 0), **funziona**: 3 doppioni lasciati
@@ -267,7 +297,7 @@ risultato — ESPN non la vede fra le finite, quasi certamente rinviata; **7
 importazioni** da decidere nella pagina Importazioni (la nuova: Antwerp 3-0
 Charleroi del 24/10, ESPN la chiama «Royal Charleroi SC»).
 
-⚠️ **Crediti The Odds API: 55 su 500** rimasti questo mese (29/10). Un giro completo
+⚠️ **Crediti The Odds API: 275 su 500** al 20/11 (un giro ne costa ~51-60). Il 29/10 erano 55: Un giro completo
 ne costa **51**: **ne resta uno solo** fino al rinnovo — vedi il blocco «I CREDITI»
 più sotto prima di lanciarlo. Fra un giro e l'altro, i risultati si prendono
 gratis con `aggiorna-risultati.js --esegui`.
@@ -288,7 +318,7 @@ L'ordine consigliato: **B → 00 → RE → 6 → 4**.
 
 | | cosa | costo |
 |---|---|---|
-| B | **Il banco alla prima giocata vera**: esito del passo in corso con «Scarica risultati», conti di Laboratorio e dashboard che si muovono. Guardare le 4 card di Bilancio a 375px | Mattia, mezz'ora |
+| B | **Il banco**: ✅ gioca dal vero dal 4/11 (11 passi, 2 presi). Resta da **guardare le 4 card di Bilancio a 375px**, e decidere se la quota media ~3,5 è voluta: il metodo era pensato sul 2 | Mattia, mezz'ora |
 | 00 | **Il weekend vero, versione 1.77** (Mattia lo prova il 31/10-1/11). Road to weekend: ricarica, ✓ Conferma giocata, esito, ✗ con due tocchi (archivio e giro nuovo), matita, «salta» su una partita cominciata, Reset partite con un passo confermato. Poi **⤓ Scarica risultati** dal telefono, i «finita 2-1 ✓» nel passo, gli **esiti automatici delle spin** e la prima spin in **archivio** con «↺ Nuova spin». Si raccoglie quello che non torna | il weekend |
 | RE | **L'esito PROPOSTO dei passi di Road to weekend**: il riassunto del passo dice già *«schedina persa: segna ✗»* (`RiassuntoPasso`, 31/10); manca il tasto che lo segna con un tocco. Proposto e non automatico, perché un ✗ chiude il giro. **Non deciso** | un'ora |
 | 1F | **Il Filtro A sul futuro vero** (proposto il 29/10, **non deciso**): l'app registra da sola ogni schedina che il filtro proporrebbe, con regole fisse; dopo 100 schedine, ROI > 0 **e** gambe sopra 100% → candidato, altrimenti si archivia. Oggi lo storico non può dire di più | da stimare, mezza giornata |
@@ -354,6 +384,8 @@ leggi "884 partite" o "440 crediti" e siamo a marzo, sono vecchi di mesi.
 
 | | commit |
 |---|---|
+| **La routine aggiorna anche coppe, Olanda 2 e Giappone** da ESPN, prima di collegare il calendario (6/11) | `a0cdb57` |
+| **Passaggio di consegne del 4/11** | `9e33c73` |
 | **Scalata madre**: un metodo solo (pavimenti), quota schedina **2,00**, schedine spezzate da sé appena superano 2,00, spezza a mano fra due gambe | `ea6fd16` |
 | **«quota gamba ≥»** come quarto filtro, e il ricarica rosso | `57a898e` |
 | **La scheda partita si apre dal Weekend**, toccando i nomi | `43af87b` |
@@ -391,7 +423,9 @@ state provate simulando uno user e un admin in una transazione annullata.
 
 | | |
 |---|---|
-| **Il banco non ha ancora chiuso una giocata vera** | Vedi la voce B. Sul database il giro completo è stato provato |
+| ~~**Il banco non ha ancora chiuso una giocata vera**~~ | ✅ **20/11**: 11 passi con esito dal 4/11 al 9/11, 2 presi |
+| **«versato −49,46 €» di Admin in Gestione Bilanci** (20/11) | la riga di azzeramento del 4/11 è contata come versamento. Solo estetico, il conto è 0: da escludere le righe con nota «azzeramento» dal versato, se Mattia vuole |
+| **Partite rinviate senza risultato** (20/11) | 3 SP2, Estoril-Maritimo (P1), Kortrijk-Mechelen (23/10): si ricontrollano al prossimo giro, quando ESPN le darà con la data nuova |
 | **Lista lunga dei passi per chi segue** | 19 passi sotto la card: da accorciare a 2-3 con «mostra tutti» se a Mattia pesa |
 | **MattiaP doveva seguire il banco?** | Oggi gioca da solo, senza spunta. Decide Mattia |
 | **MattiaP e NickV fuori dal totale** (206 € in RTW) | Se sono soldi del conto reale, va rimessa la spunta in Utenti: decide Mattia |

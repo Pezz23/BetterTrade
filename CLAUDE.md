@@ -133,6 +133,9 @@ in `hooks/usaIndietro.js` agganciato a mano con `addEventListener('touchmove')`.
   modalità di default che non scrive e mostra cosa cambierebbe; si scrive solo
   con `--esegui`. È la convenzione del progetto, va mantenuta.
 - **Backup prima di ogni modifica ai dati:** `node --env-file=.env scripts/backup.js`.
+  ⚠️ **E si guarda che sia completo** (20/11/2026): col DNS a intermittenza è
+  uscito vuoto, poi con tre tabelle mancanti, senza fermarsi. Si riprova finché
+  non ci sono tutte.
 - ⚠️⚠️ **Non si apre l'app nel browser di propria iniziativa** (22/10/2026).
   Niente `scripts/guarda.mjs` e niente script Playwright con `E2E_USER`: **lo
   chiede Mattia quando serve**. Ogni giro è un login vero su Supabase (che ha
