@@ -11,14 +11,15 @@ import { Card, Etichetta } from './ui'
 
 const per = (x) => `${x.toFixed(1).replace('.', ',')}%`
 
-export default function StatisticheRtw({ aggiorna = 0 }) {
+// `banco`: le statistiche del banco per un aiutante (`sql/61`).
+export default function StatisticheRtw({ aggiorna = 0, banco = false }) {
   const [d, setD] = useState(null)
   const [errore, setErrore] = useState(null)
   useEffect(() => {
-    supabase.rpc('statistiche_rtw').then(({ data, error }) => {
+    supabase.rpc('statistiche_rtw', banco ? { p_banco: true } : {}).then(({ data, error }) => {
       if (error) setErrore(error.message); else { setD(data); setErrore(null) }
     })
-  }, [aggiorna])
+  }, [aggiorna, banco])
 
   if (errore) return (
     <Card style={{ marginTop: SP.m }}><div style={{ fontFamily: F.sans, fontSize: S.base, color: C.rosso }}>{errore}</div></Card>

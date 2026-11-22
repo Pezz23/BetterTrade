@@ -265,9 +265,9 @@ function SchedaRisultato({ g, giocata = g.giocata, fuori, soloSegno, iPasso, col
       </span>
       <span style={{ ...num, fontSize: S.base, color: C.testo, textAlign: 'center', whiteSpace: 'nowrap' }}>{siglaGiocata(giocata)}</span>
       <span style={{ ...num, fontSize: S.media, fontWeight: 700, color: C.oro, textAlign: 'right' }}>{virgola(g.quota)}</span>
-      <button onClick={onTogli} title={fuori ? 'rimetti in scaletta' : 'togli dalla scaletta'}
+      {onTogli ? <button onClick={onTogli} title={fuori ? 'rimetti in scaletta' : 'togli dalla scaletta'}
         style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0,
-          color: fuori ? C.verde : C.fioco, fontSize: S.media, lineHeight: 1 }}>{fuori ? '+' : '×'}</button>
+          color: fuori ? C.verde : C.fioco, fontSize: S.media, lineHeight: 1 }}>{fuori ? '+' : '×'}</button> : <span />}
 
       <span>{iPasso >= 0 && (
         <span title={`nel passo ${iPasso + 1}`} style={{ ...num, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -1027,14 +1027,42 @@ function Archivio({ storico, ricariche = [], conto, onResoconto }) {
 }
 
 // ⚠️ Chi copia il banco ha una pagina sua, in sola lettura (`sql/57`).
+// ⚠️⚠️ **Gli AIUTANTI** (Mattia, 22/11/2026, `sql/61`): la spunta in Utenti, che
+// dà solo il superadmin, accende in cima il tasto «Visione Admin». Mostra la
+// pagina del superadmin **com'è per lui** — banco, conti dei singoli, filtri,
+// passi, archivio — ma senza un tasto: per ora guardano e basta. A proteggere è
+// il database (le policy di scrittura restano di chi gioca), qui si nasconde.
+// ⚠️ La `key` rimonta la pagina a ogni cambio: dentro ci sono stati che
+// appartengono a un registro solo, e mescolarli vorrebbe dire mostrare i
+// filtri dell'uno sopra i passi dell'altro.
 export default function ScalataPage() {
-  const { currentUser, isSuperAdmin } = useAuth()
-  if (currentUser?.copia_banco && !isSuperAdmin) return <BancoUtente CardPasso={PassoHero} coloreDi={coloreDi} />
-  return <ScalataGuida />
+  const { currentUser, isSuperAdmin, users } = useAuth()
+  const aiutante = !!currentUser?.aiutante && !isSuperAdmin
+  const idSuper = users?.find(u => u.role === 'superadmin')?.id ?? null
+  const [visione, setVisione] = useState(false)
+  const admin = aiutante && visione && idSuper
+  const tasto = aiutante && (
+    <div style={{ padding: '12px 12px 0' }}>
+      <button onClick={() => setVisione(v => !v)} style={{ width: '100%', padding: '8px 12px', cursor: 'pointer',
+        borderRadius: R.m, fontFamily: F.sans, fontSize: S.base, fontWeight: 600, letterSpacing: '0.06em',
+        color: visione ? C.oro : C.spento,
+        background: visione ? `linear-gradient(${alpha(C.oro, .14)},${alpha(C.oro, .14)}), ${C.card}` : C.card,
+        border: `1px solid ${alpha(C.oro, visione ? .5 : .2)}` }}>
+        {visione ? 'VISIONE ADMIN · sola lettura — torna alla mia' : 'VISIONE ADMIN'}
+      </button>
+    </div>
+  )
+  if (admin) return <>{tasto}<ScalataGuida key="admin" guarda={idSuper} /></>
+  if (currentUser?.copia_banco && !isSuperAdmin) return <>{tasto}<BancoUtente CardPasso={PassoHero} coloreDi={coloreDi} /></>
+  return <>{tasto}<ScalataGuida key="mia" /></>
 }
 
-function ScalataGuida() {
-  const { currentUser, isAdmin, isSuperAdmin, aggiornaSaldo } = useAuth()
+// `guarda`: l'id del superadmin, per la visione Admin di un aiutante. Sola lettura.
+function ScalataGuida({ guarda = null }) {
+  const { currentUser, isAdmin, isSuperAdmin: sonoSuper, aggiornaSaldo } = useAuth()
+  const solaLettura = !!guarda
+  // nella visione Admin la pagina è quella del superadmin: banco compreso
+  const isSuperAdmin = sonoSuper || solaLettura
   const { righe: righeProssime, ricarica: ricaricaPartite, vota, votiDi, votiTipiDi, mioVoto, flagga, flagDi, flagTipiDi, mioFlag } = usaProssime()
   // ⚠️ Più le partite di IERI e i risultati (30/10/2026, `usaRecenti`): una
   // partita cominciata resta 12 ore, anche a cavallo della mezzanotte, e
@@ -1048,10 +1076,10 @@ function ScalataGuida() {
   // ⚠️⚠️ **Ognuno il suo registro e il suo conto** (Mattia, 24/10/2026:
   // *"ogni utente sia indipendente"*), admin e user: lo garantisce `sql/41`,
   // non questa pagina. Prima un utente leggeva la scalata di Admin.
-  const reg = usaScalate(currentUser?.id, { banco: isSuperAdmin })
+  const reg = usaScalate(guarda ?? currentUser?.id, { banco: isSuperAdmin })
   // ⚠️ **Personale, come nel Bet Builder**: la riga condivisa fra gli admin
   // aveva senso finché la scalata era una sola per tutti.
-  const pref = usaPreferenze('scalata', { personale: true })
+  const pref = usaPreferenze('scalata', { personale: true, di: guarda })
   const [modo, setModo] = useState('piano')
   const [giroStat, setGiroStat] = useState(0)
   // ⚠️⚠️ **La partita aperta ha il suo INDIRIZZO** (`/scalata/123`, 31/10/2026,
@@ -1207,7 +1235,7 @@ function ScalataGuida() {
   const salvaPref = useRef(pref.salva); salvaPref.current = pref.salva
   const ultimaSalvata = useRef(null)
   useEffect(() => {
-    if (!letta) return
+    if (!letta || solaLettura) return
     const dati = {
       filtri: { att: attMin, scelta: sceMin, vpm: vpmMin, quotaGamba, percentuale: percScelta },
       piano: { tolte, aggiunte, tagli, quote, over, fissati, calendarioDa },
@@ -1221,7 +1249,7 @@ function ScalataGuida() {
       else ultimaSalvata.current = j
     }, 800)
     return () => clearTimeout(t)
-  }, [letta, attMin, sceMin, vpmMin, quotaGamba, percScelta, tolte, aggiunte, tagli, quote, over, fissati, calendarioDa])
+  }, [letta, solaLettura, attMin, sceMin, vpmMin, quotaGamba, percScelta, tolte, aggiunte, tagli, quote, over, fissati, calendarioDa])
 
   // Dal 24/10/2026 l'archivio è di tutti: ognuno ha il suo.
   const vista = modo
@@ -1567,11 +1595,11 @@ function ScalataGuida() {
     return (
       <div style={{ display: 'contents' }}>
         <div style={{ fontSize: S.base, fontFamily: F.sans, color: C.testo }}>{label}</div>
-        <button onClick={() => set(v => Math.max(0, Math.round((v - passo) * 100) / 100))} aria-label={`${label} meno`} style={mini}>−</button>
+        {solaLettura ? <span /> : <button onClick={() => set(v => Math.max(0, Math.round((v - passo) * 100) / 100))} aria-label={`${label} meno`} style={mini}>−</button>}
         <div style={{ fontFamily: F.mono, fontVariantNumeric: 'tabular-nums', fontSize: S.media, fontWeight: 700, color: C.oro, textAlign: 'center' }}>
           {valore}{suffisso}
         </div>
-        <button onClick={() => set(v => Math.round((v + passo) * 100) / 100)} aria-label={`${label} più`} style={mini}>+</button>
+        {solaLettura ? <span /> : <button onClick={() => set(v => Math.round((v + passo) * 100) / 100)} aria-label={`${label} più`} style={mini}>+</button>}
       </div>
     )
   }
@@ -1617,8 +1645,8 @@ function ScalataGuida() {
           è indicizzato per passo, e passi non ce ne sono più. */}
       {vista === 'archivio' && (<>
         {/* ⚠️ Il tasto è nascosto agli altri, il controllo vero sta nella funzione. */}
-        {isSuperAdmin && <ScaricaRisultati onFinito={() => { ricaricaRecenti(); setGiroStat(n => n + 1) }} />}
-        <StatisticheRtw aggiorna={giroStat} />
+        {sonoSuper && <ScaricaRisultati onFinito={() => { ricaricaRecenti(); setGiroStat(n => n + 1) }} />}
+        <StatisticheRtw aggiorna={giroStat} banco={solaLettura} />
         <Archivio storico={reg.storico} ricariche={reg.ricariche} conto={conto} onResoconto={reg.resoconto} />
       </>)}
       {vista === 'piano' && <>
@@ -1648,7 +1676,7 @@ function ScalataGuida() {
             non va scritta. */}
         {/* ⚠️ Compatta dal 29/10/2026: il consigliato è un tasto piccolo
             accanto al titolo, e il perché sta nella riga sotto, in piccolo. */}
-        <TitoloCard destra={
+        <TitoloCard destra={solaLettura ? null :
           <button onClick={() => { setAttMin(CONSIGLIATO.att); setSceMin(CONSIGLIATO.scelta); setVpmMin(0); setQuotaGamba(QUOTA_MINIMA_GAMBA) }}
             title={`${CONSIGLIATO.perche} · un passo in ${CONSIGLIATO.weekend} weekend su 100`}
             style={{ cursor: 'pointer', padding: '4px 9px', borderRadius: R.m, fontFamily: F.sans, fontSize: S.minuta,
@@ -1692,11 +1720,11 @@ function ScalataGuida() {
             cancella niente**: né le tolte, né le aggiunte, né a scalata aperta
             i passi salvati — quello resta al tasto rosso, con la conferma. */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-          <Tasto colore={C.celestePieno} style={{ padding: '4px 10px', fontSize: S.minuta, borderRadius: R.m }} onClick={() => {
+          {!solaLettura && <Tasto colore={C.celestePieno} style={{ padding: '4px 10px', fontSize: S.minuta, borderRadius: R.m }} onClick={() => {
             const ora = Date.now()
             setCalendarioDa(ora); setDaOra(ora)
             ricaricaPartite()
-          }}>⟳ Aggiorna calendario</Tasto>
+          }}>⟳ Aggiorna calendario</Tasto>}
           <span style={{ fontSize: S.micro, fontFamily: F.sans, color: C.fioco }}>
             partite dalle {new Date(calendarioDa).toLocaleString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
           </span>
@@ -1747,9 +1775,9 @@ function ScalataGuida() {
               {/* ⚠️⚠️ **Si cambia solo dopo un giro perso** (Mattia,
                   29/10/2026): cioè senza giro, o in un giro appena
                   ripartito dove nessun passo è ancora stato giocato. */}
-              {aperta && reg.passi.some(giocato)
+              {(aperta && reg.passi.some(giocato)) || solaLettura
                 ? <span style={{ fontFamily: F.sans, fontSize: S.base, color: C.spento }}>
-                    <b style={{ fontFamily: F.mono, color: C.celeste }}>{Math.round(percentuale * 100)}%</b> · si cambia dopo un giro perso
+                    <b style={{ fontFamily: F.mono, color: C.celeste }}>{Math.round(percentuale * 100)}%</b>{solaLettura ? '' : ' · si cambia dopo un giro perso'}
                   </span>
                 : <Segmenti colore={C.celeste} valore={percentuale}
                     onScegli={async (x) => {
@@ -1784,14 +1812,14 @@ function ScalataGuida() {
 
         {/* ⚠️ Dal 04/11/2026 i soldi entrano ed escono solo dalla cassa
             (`sql/55`-`56`): la ricarica libera creava soldi dal nulla. */}
-        <TrasferisciConto cassa={currentUser?.bankroll} occupato={reg.occupato} onTrasferisci={async (importo, verso) => {
+        {!solaLettura && <TrasferisciConto cassa={currentUser?.bankroll} occupato={reg.occupato} onTrasferisci={async (importo, verso) => {
           const x = await reg.trasferisci(importo, verso)
           setAvviso(x?.errore ?? null)
           if (x?.errore) return false
           await aggiornaSaldo(currentUser.id)
           return true
-        }} />
-        {!aperta && posta < 1 && (
+        }} />}
+        {!aperta && posta < 1 && !solaLettura && (
           <div style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.ambra, marginTop: SP.m }}>
             {conto.versato > 0
               ? 'Il conto è sotto 1 €: non si può puntare. Serve un trasferimento dalla cassa.'
@@ -1831,7 +1859,7 @@ function ScalataGuida() {
         {/* ⚠️ Chiudere senza sconfitta (Mattia, 04/11/2026). Secondo tocco per
             confermare; con una giocata senza esito il tasto lo dice e non
             chiude, e lo rifiuta anche il database (`sql/54`). */}
-        {aperta && (() => {
+        {aperta && !solaLettura && (() => {
           const inCorso = reg.passi.some(x => x.esito === 'aperto' && x.confermato_il)
           const giocatiOra = reg.passi.filter(giocato)
           return (
@@ -1908,7 +1936,7 @@ function ScalataGuida() {
                registro vero di Mattia i passi sono 1, 3, 4… Il numero che
                conta è la **posizione nella catena**: è quello che si vede e
                quello su cui `contiPercentuale` cammina. */
-            <QualePasso key={riga.id} risultatoDi={risultatoDi} attivo={i === frontiera && !inAnteprima} numero={i + 1} gambe={gambe} giorno={riga.giorno} ora={gambe[0]?.ora?.slice(0, 5)} stelleDi={votiDi} anteprima={inAnteprima}
+            <QualePasso key={riga.id} tocca={!solaLettura} risultatoDi={risultatoDi} attivo={i === frontiera && !inAnteprima} numero={i + 1} gambe={gambe} giorno={riga.giorno} ora={gambe[0]?.ora?.slice(0, 5)} stelleDi={votiDi} anteprima={inAnteprima}
               fermo={fermo} fissato={eFissato(i)} onFissa={() => fissa(i)}
               posta={p} conto={i === giro.poste.length ? giro.live : null} colore={coloreDi(i)} classifiche={classifiche}
               quote={quote} setQuote={setQuote} onApri={setApertaId}
@@ -2000,7 +2028,7 @@ function ScalataGuida() {
                 — e React con due chiavi uguali ridisegna la cosa sbagliata, in
                 silenzio. ⚠️ Fra graffe: dentro il `Fragment` un commento nudo
                 diventa testo a schermo (trappola nota, 29/10/2026). */}
-            <QualePasso risultatoDi={risultatoDi} attivo={i === frontiera && !inAnteprima} numero={nGiro} gambe={gambeDelPiano(f.partite)} giorno={f.giorno} ora={f.ora} stelleDi={votiDi} anteprima={inAnteprima}
+            <QualePasso tocca={!solaLettura} risultatoDi={risultatoDi} attivo={i === frontiera && !inAnteprima} numero={nGiro} gambe={gambeDelPiano(f.partite)} giorno={f.giorno} ora={f.ora} stelleDi={votiDi} anteprima={inAnteprima}
               fissato={eFissato(i)}
               onFissa={() => fissa(i)}
               posta={p} conto={i === giro.poste.length ? giro.live : null} colore={coloreDi(i)} classifiche={classifiche}
@@ -2125,7 +2153,7 @@ function ScalataGuida() {
           e rara, e stava gridando quanto ▶ APRI. Resta rossa e sopra
           l'elenco, ma piccola e senza fondo — il fondo arriva solo quando è
           armata, cioè quando sta per fare qualcosa. */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: SP.l }}>
+      {!solaLettura && <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: SP.l }}>
       <button style={{ padding: '5px 12px', cursor: 'pointer', borderRadius: R.m,
         background: armaNuovo ? alpha(C.rosso, 0.18) : 'transparent',
         border: `1px solid ${alpha(C.rosso, armaNuovo ? 0.7 : 0.35)}`, color: C.rosso, fontFamily: F.sans, fontSize: S.minuta }}
@@ -2158,7 +2186,7 @@ function ScalataGuida() {
           ? `⚠️ tocca ancora: cancella ${reg.passi.filter(x => !giocato(x)).length} passi non giocati`
           : '↻ Reset partite'}
       </button>
-      </div>
+      </div>}
 
       {/* ── RISULTATO FILTRI ─────────────────────────────────────────────
           ⚠️⚠️ **Ridisegnato il 29/10/2026** (Mattia: *"è inguardabile"*, con
@@ -2223,7 +2251,7 @@ function ScalataGuida() {
                       soloSegno={!fuori && fuoriFiltri.some(x => x.id === g.id)}
                       iPasso={fuori ? -1 : iPasso} colorePasso={iPasso >= 0 ? coloreDi(iPasso) : C.grigio}
                       onApri={() => setApertaId(g.id)}
-                      onTogli={() => setTolte(x => fuori ? x.filter(y => y !== g.id) : [...x, g.id])}
+                      onTogli={solaLettura ? null : () => setTolte(x => fuori ? x.filter(y => y !== g.id) : [...x, g.id])}
                       segni={<>
                         {/* ⚠️ Stessi segni di prima, più piccoli: la bandiera
                             verde se è di un admin, blu se di un utente; la
@@ -2279,7 +2307,7 @@ function ScalataGuida() {
 
       {/* ⚠️ In fondo, sopra la barra (Mattia, 30/10/2026), e solo per il
           superadmin: il controllo vero sta nella funzione `aggiorna-risultati`. */}
-      {isSuperAdmin && <ScaricaRisultati onFinito={ricaricaRecenti} />}
+      {sonoSuper && <ScaricaRisultati onFinito={ricaricaRecenti} />}
 
       {partitaAperta && (
         <SchedaScorrevole onChiudi={() => setApertaId(null)}>

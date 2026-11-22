@@ -218,6 +218,19 @@ export default function UtentiPage() {
                 conta nel totale aggregato
               </label>
             )}
+            {/* ⚠️ Gli aiutanti (22/11/2026, `sql/61`): in RTW vedono la pagina del
+                superadmin col tasto «Visione Admin», in sola lettura. La spunta la
+                cambia solo il superadmin, e lo controlla il database. */}
+            {isSuperAdmin && u.role !== 'superadmin' && (
+              <label style={{ padding:'0 18px 12px', marginTop:-6, display:'flex', alignItems:'center', gap:8, cursor:'pointer',
+                fontSize:S.base, color:u.aiutante?C.oro:C.spento, fontFamily:F.sans }}>
+                <input type="checkbox" checked={!!u.aiutante} onChange={async () => {
+                  const { error } = await supabase.rpc('imposta_aiutante', { p_user: u.id, p_valore: !u.aiutante })
+                  if (error) setErr(error.message); else await fetchUsers()
+                }} />
+                visione Admin in RTW
+              </label>
+            )}
             {cambio?.username === u.username && (
               <div style={{ padding:'0 18px 14px', display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
                 <Input style={{ width:200 }} autoFocus value={cambio.password}

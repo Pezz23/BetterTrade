@@ -22,7 +22,9 @@ import { useAuth } from '../context/AuthContext'
 // caricamento. Il tempo reale è un altro meccanismo, e qui si cambiano quattro
 // soglie, non si gioca in due sulla stessa schedina.
 
-export function usaPreferenze(ambito, { personale = false } = {}) {
+// ⚠️ `di`: la riga personale di un ALTRO, in sola lettura (22/11/2026, gli
+// aiutanti di RTW leggono i filtri del superadmin — `sql/61`). Non si salva.
+export function usaPreferenze(ambito, { personale = false, di = null } = {}) {
   const { currentUser, isAdmin, users } = useAuth()
   const [righe, setRighe] = useState(null)      // null = non ancora lette
   const [errore, setErrore] = useState(null)
@@ -46,7 +48,7 @@ export function usaPreferenze(ambito, { personale = false } = {}) {
   useEffect(() => { leggi() }, [leggi])
 
   const condivisa = (righe || []).find(r => r.user_id === null) || null
-  const mia = (righe || []).find(r => r.user_id === currentUser?.id) || null
+  const mia = (righe || []).find(r => r.user_id === (di ?? currentUser?.id)) || null
   // ⚠️⚠️ `personale` serve al **Bet Builder**, che è privato per richiesta:
   // lì un admin non deve scrivere la riga condivisa, perché quella la leggono
   // tutti. Senza questa opzione, "le mie partite scartate" sarebbero finite
@@ -66,6 +68,7 @@ export function usaPreferenze(ambito, { personale = false } = {}) {
    */
   const salva = useCallback(async (dati) => {
     if (!currentUser) return { errore: 'non sei entrato' }
+    if (di) return { errore: 'sola lettura' }
     setOccupato(true)
     const chi = (isAdmin && !personale) ? null : currentUser.id
     const campi = { dati, aggiornato_il: new Date().toISOString(), aggiornato_da: currentUser.id }
@@ -84,7 +87,7 @@ export function usaPreferenze(ambito, { personale = false } = {}) {
     if (err) { setErrore(`Preferenze non salvate: ${err}`); return { errore: err } }
     await leggi()
     return {}
-  }, [ambito, currentUser, isAdmin, personale, leggi])
+  }, [ambito, currentUser, isAdmin, personale, di, leggi])
 
   return {
     // ⚠️ `pronte` e non `dati !== null`: *"non ho ancora letto"* e *"ho letto e
