@@ -273,9 +273,15 @@ export function oggiLocale(d = new Date()) {
  * ⚠️ `oggiLocale` passa da mezzogiorno, quindi «Domani» non cambia giorno col
  * fuso o con l'ora legale.
  */
+export const nellaFinestra = (f, data) => data <= f.fine() && (!f.inizio || data >= f.inizio())
+
 export const FINESTRE = [
   { id: 'oggi',      label: 'Oggi',              fine: () => oggiLocale() },
-  { id: 'domani',    label: 'Domani',            fine: () => oggiLocale(new Date(Date.now() + 24 * 3600 * 1000)) },
+  // ⚠️ «Domani» è **solo** domani (Mattia, 22/11/2026: il sabato vedeva
+  // anche le partite del sabato). Le altre tre restano «fino a»: oggi è
+  // dentro a tutte, domani no. `inizio` è il giorno da cui la finestra parte.
+  { id: 'domani',    label: 'Domani',            fine: () => oggiLocale(new Date(Date.now() + 24 * 3600 * 1000)),
+    inizio: () => oggiLocale(new Date(Date.now() + 24 * 3600 * 1000)) },
   { id: 'settimana', label: 'Fino a lunedì',     fine: () => lunediProssimo(0) },
   { id: 'due',       label: 'Anche la prossima', fine: () => lunediProssimo(1) },
 ]

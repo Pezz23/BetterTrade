@@ -2261,10 +2261,13 @@ function ScalataGuida() {
       {/* ⚠️ Le partite offerte sono **tutte le future valutate**, non le
           candidate: è il senso del tasto. ⚠️ `iniziaDopo` resta — una partita
           già cominciata non si aggiunge a un piano, e quello non è un filtro
-          di qualità ma di tempo. */}
+          di qualità ma di tempo. ⚠️⚠️ **Ma con le 12 ore di `ORE_VISIBILI`**
+          (Mattia, 22/11/2026: *"sono le 18, sono in ritardo a segnare quello
+          che ho fatto, vorrei mettere ora la Juve"* — giocata alle 12:30): si
+          registra anche quello che è già stato giocato, come nel piano. */}
       {manuale && (
         <ScegliGamba titolo={manuale.titolo} nelPasso={manuale.nelPasso} inPasso={inPassoDi}
-          partite={valutate.filter(r => iniziaDopo(r, daOra) && !r.quoteIncoerenti)}
+          partite={valutate.filter(r => iniziaDopo(r, daOra - ORE_VISIBILI * 3600000) && !r.quoteIncoerenti)}
           flagDi={flagDi} votiDi={votiDi}
           onScegli={async (p) => {
             const r = await manuale.metti(p)

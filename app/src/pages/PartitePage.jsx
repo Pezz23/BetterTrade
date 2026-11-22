@@ -7,7 +7,7 @@ import RigaPartita, { CATEGORIE, giorno } from '../components/RigaPartita'
 import SchedaPartita from '../components/SchedaPartita'
 import { vai } from '../lib/indirizzi'
 import { usaPercorso } from '../hooks/usaPercorso'
-import { categoria, FINESTRE, SOGLIE_DEFAULT } from '../lib/attendibilita'
+import { categoria, FINESTRE, nellaFinestra, SOGLIE_DEFAULT } from '../lib/attendibilita'
 import { etichetta, sigla } from '../lib/campionati'
 import BarraCampionati, { LARGHEZZA_BARRA } from '../components/BarraCampionati'
 import { valutaPartita, VPM_NETTO } from '../lib/vpm'
@@ -129,11 +129,11 @@ export default function PartitePage() {
   const ultimoDownload = useMemo(() => righe.reduce((m, r) => (!m || r.scaricato_il > m ? r.scaricato_il : m), null), [righe])
 
   // Quante partite cadono in ogni finestra: serve a dire quando allargare non aggiunge niente.
-  const perFinestra = useMemo(() => Object.fromEntries(FINESTRE.map(f => [f.id, righe.filter(r => r.data <= f.fine()).length])), [righe])
+  const perFinestra = useMemo(() => Object.fromEntries(FINESTRE.map(f => [f.id, righe.filter(r => nellaFinestra(f, r.data)).length])), [righe])
 
   const inFinestra = useMemo(() => {
-    const fine = FINESTRE.find(f => f.id === finestra).fine()
-    return righe.filter(r => r.data <= fine)
+    const f = FINESTRE.find(f => f.id === finestra)
+    return righe.filter(r => nellaFinestra(f, r.data))
   }, [righe, finestra])
 
   // La quota su cui si filtra è quella MOSTRATA: della doppia chance se c'è,
@@ -299,7 +299,10 @@ export default function PartitePage() {
           posto dove quell'informazione viveva. */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 }}>
         {FINESTRE.map((f, i) => {
-          const n = perFinestra[f.id], prec = i > 0 ? perFinestra[FINESTRE[i - 1].id] : null
+          // «niente in più» si confronta con la finestra «fino a» precedente:
+          // «Domani» è un giorno solo, e non contiene «Oggi».
+          const precF = FINESTRE.slice(0, i).filter(x => !x.inizio).pop()
+          const n = perFinestra[f.id], prec = !f.inizio && precF ? perFinestra[precF.id] : null
           const nienteInPiu = prec !== null && n === prec
           const on = finestra === f.id
           return (
