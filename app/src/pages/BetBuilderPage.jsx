@@ -8,7 +8,7 @@ import { usaVpm } from '../hooks/usaVpm'
 import { usaSchedine } from '../hooks/usaSchedine'
 import { usaPreferenze } from '../hooks/usaPreferenze'
 import { valutaPartita } from '../lib/vpm'
-import { componiPasso, CONSIGLIATO, QUOTA_MINIMA_GAMBA } from '../lib/scalata'
+import { componiPasso, CONSIGLIATO, QUOTA_MINIMA_GAMBA, pctVisto, vpmVisto } from '../lib/scalata'
 import ScegliGamba from '../components/ScegliGamba'
 import SchedaScorrevole from '../components/SchedaScorrevole'
 import DettaglioPartita from '../components/DettaglioPartita'
@@ -189,9 +189,9 @@ export default function BetBuilderPage() {
     // già una stringa `AAAA-MM-GG`, e confrontare due stringhe così è esatto
     // senza passare da un fuso.
     && (!finoLunedi || String(r.data).slice(0, 10) <= limiteLunedi)
-    && r.att != null && r.att * 100 >= attMin
-    && (sceMin <= 0 || (r.scelta != null && r.scelta * 100 >= sceMin))
-    && (vpmMin <= 0 || (r.vpm != null && r.vpm >= vpmMin))
+    && r.att != null && pctVisto(r.att) >= attMin
+    && (sceMin <= 0 || (r.scelta != null && pctVisto(r.scelta) >= sceMin))
+    && (vpmMin <= 0 || (r.vpm != null && vpmVisto(r.vpm) >= vpmMin))
     && (r.quota ?? 0) >= quotaGamba),
     [valutate, reg.usate, scartate, attMin, sceMin, vpmMin, quotaGamba, daOra, finoLunedi, limiteLunedi])
 

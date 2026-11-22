@@ -28,6 +28,7 @@ import {
   METODO, NOMI_REGOLA, QUOTA_MINIMA_GAMBA, QUOTA_MINIMA_SCHEDINA, CONSIGLIATO,
   fasce, FINESTRA_ELENCO_ORE, spezzaFasce, spezzaAlMinimo, giorno, puoSpezzare, contoDi, eCriterioA,
   PERCENTUALI, PERCENTUALE_DEFAULT, puntataDi, contiPercentuale, giroBanco, sommaPuntate, LINEE_OVER, lineaOver, conOver, quotaMancante, ORE_VISIBILI, giocato,
+  pctVisto, vpmVisto,
 } from '../lib/scalata'
 
 // ROAD TO WEEKEND — la road map delle giocate del weekend.
@@ -1291,9 +1292,9 @@ function ScalataGuida() {
       !r.quoteIncoerenti &&
       iniziaDopo(r, daQuando) &&
       (stellata(r) || (
-        r.att != null && r.att * 100 >= attMin &&
-        r.scelta != null && r.scelta * 100 >= sceMin &&
-        (vpmMin <= 0 || (r.vpm != null && r.vpm >= vpmMin)) &&
+        r.att != null && pctVisto(r.att) >= attMin &&
+        r.scelta != null && pctVisto(r.scelta) >= sceMin &&
+        (vpmMin <= 0 || (r.vpm != null && vpmVisto(r.vpm) >= vpmMin)) &&
         (r.quota ?? 0) >= quotaGamba)))
   }, [righe, valutate, attMin, sceMin, vpmMin, quotaGamba, tolte, daQuando, votiDi])
 
@@ -1386,9 +1387,9 @@ function ScalataGuida() {
   // **quale** soglia ha tagliato, o si gira la manopola sbagliata.
   const imbuto = useMemo(() => {
     if (!righe) return null
-    const a = valutate.filter(r => r.att != null && r.att * 100 >= attMin)
-    const b = a.filter(r => r.scelta != null && r.scelta * 100 >= sceMin)
-    const c = b.filter(r => vpmMin <= 0 || (r.vpm != null && r.vpm >= vpmMin))
+    const a = valutate.filter(r => r.att != null && pctVisto(r.att) >= attMin)
+    const b = a.filter(r => r.scelta != null && pctVisto(r.scelta) >= sceMin)
+    const c = b.filter(r => vpmMin <= 0 || (r.vpm != null && vpmVisto(r.vpm) >= vpmMin))
     const d = c.filter(r => (r.quota ?? 0) >= quotaGamba)
     return { future: righe.length, att: a.length, scelta: b.length, vpm: c.length, quota: d.length }
   }, [righe, valutate, attMin, sceMin, vpmMin, quotaGamba])

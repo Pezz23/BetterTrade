@@ -26,6 +26,18 @@ export const FRAZIONE_BANKROLL = 0.10
 export const QUOTA_MINIMA_GAMBA = 1.30
 
 /**
+ * ⚠️⚠️ **Le soglie si confrontano col numero che si VEDE** (Mattia,
+ * 22/11/2026): Cottbus-Hertha aveva attendibilità 57,62%, la scheda scriveva
+ * **58%** e il filtro a 58 la lasciava fuori — una partita che a schermo
+ * rispetta i filtri e non entra nella scaletta. Ora la percentuale si
+ * arrotonda all'intero e VPM a due decimali, **come li scrive la pagina**,
+ * prima di confrontarli: 57,62 vale 58. Era già così in Partite.
+ * ⚠️ Vuol dire che una soglia a 58 lascia entrare da 57,5 in su.
+ */
+export const pctVisto = (x) => Math.round(Number(x) * 100)
+export const vpmVisto = (x) => Math.round(Number(x) * 100) / 100
+
+/**
  * ⚠️⚠️ **La quota minima della SCHEDINA: 1,90 dal 26/10/2026** (Mattia: *"ho
  * raggiunto una quota di minimo 2 o poco sotto, almeno 1,9"*), insieme al
  * metodo «Metà utile». È lo schema misurato con `prova-prelievi.js
@@ -65,7 +77,9 @@ export const QUOTA_MINIMA_SCHEDINA = 1.90
 export const CRITERIO_A = { att: 0.61, scelta: 0.61, vpm: 7.5 }
 export function eCriterioA(g) {
   if (g?.att == null || g?.scelta == null || g?.vpm == null) return false
-  return Number(g.att) >= CRITERIO_A.att && Number(g.scelta) >= CRITERIO_A.scelta && Number(g.vpm) >= CRITERIO_A.vpm
+  // ⚠️ Col numero che si vede, come i filtri (`pctVisto`, 22/11/2026): un 61% a schermo è viola.
+  return pctVisto(g.att) >= CRITERIO_A.att * 100 && pctVisto(g.scelta) >= CRITERIO_A.scelta * 100
+    && vpmVisto(g.vpm) >= CRITERIO_A.vpm
 }
 
 /**
