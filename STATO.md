@@ -14,33 +14,39 @@
 
 ## ▶️ DOVE SIAMO — 24 novembre 2026, leggi questo per primo
 
-**🔜 IN CORSO: il flusso di cassa e la nuova dashboard di Bilancio** (chiesto da
-Mattia il 24/11: *"ho un disallineamento tra i soldi reali e quelli sul conto
-bet"*). ⛔ **Solo piano, nessun codice**, finché non risponde. Trovato leggendo
-codice e dati:
-- L'app conta le **giocate in corso** come soldi ancora sul conto: un passo tocca
-  il conto RTW solo all'esito. Con una giocata aperta la differenza è falsa, e
-  «Trasferisci a Laboratorio» la scrive come vera (24/11: 95 € nel banco).
-- **Nessuna giornata slot nella 26/27**, ma 8 spin archiviate con «giocata» dal
-  24/10 e 3 in griglia: se erano soldi veri, non sono nei conti.
-- **MattiaP 152,66 € e NickV 48,19 €** sono fuori dal totale (`in_totale`).
-- **Laboratorio:** il passo `1502` è stato segnato vinto da Mattia il 24/11
-  (+21,39 €). Restano `1466` e `1484`, la stessa schedina a 26 secondi (16 e 14 €).
-- ⚠️ **Difetto: due conti RTW per Laboratorio**, 138,39 € nella sua pagina e 73,39 €
-  nel database. `contoDi` (JS) non conta le perdite nel banco (65 € del 4-5/11),
-  `conto_rtw` (SQL) sì: le sue puntate nascono dal numero sbagliato.
-- **GLeRoy (Christian) e MarcoM**: 90,10 contro 100,89. Non è l'arrotondamento:
-  GLeRoy ha nel banco un passo in più (`1125`, 5/11, 11 € persi). Il resto è +0,21 €.
-  Nello stesso passo Laboratorio ha 22 € invece di 11: il passo prima (`1124`) era
-  quasi certamente segnato vinto, e corretto in perso dopo.
-- In Bilancio Mattia vuole **il totale aggregato** (24/11).
-- 8 passi del banco su 19 confermati e segnati nello stesso minuto: la puntata è
-  quella del momento in cui si registra, non per forza quella giocata.
-- ⚠️ **Difetto:** `eliminaGiornata` (`ReportingPage`) cancella per `week_number`
-  **senza la stagione**: toglierebbe la stessa week anche da 24/25 e 25/26.
-Da fare: giorno 1 dei soldi (24/11), grafici per utente, vista del conto slot + RTW;
-«% bankroll» e «slot da giocare» da Bilancio a Slot, dietro il tasto «Gestione del
-bankroll»; «Settore ospiti» e «Trasferimento a Laboratorio» **invariati**.
+**🔜 IN CORSO: il flusso di cassa** (24/11). Mattia ha risposto a tutte le domande;
+i lotti sono pronti, ⛔ **nessuno è ancora partito: aspettano il suo «vai»**.
+
+**Le decisioni di Mattia (24/11):**
+- Conto reale **3.885,46 €** senza giocate in corso, app **3.830,28 €**: **+55,18**.
+  GLeRoy (Christian) RTW 90,10 → **100,89** come MarcoM (**+10,79**); il resto,
+  **+44,39**, a Laboratorio **in RTW** (73,39 → 117,78). La storia non si tocca.
+- L'allineamento è una **correzione del risultato**, non un versamento.
+- MattiaP (Snai) e NickV: conti separati, veri, **fuori dal totale**. Laboratorio
+  gioca sul conto comune. Nessun deposito o prelievo vero dal conto comune.
+- Le spin erano solo monitorate: via «giocata» anche dalle 8 in archivio.
+- «Trasferimento a Laboratorio» e Gestione Bilanci **non si toccano** per ora.
+
+| lotto | cosa | stima |
+|---|---|---|
+| **S1** | **Allineamento, giorno 1**: due righe in `scalata_ricariche` (nota «allineamento»). Backup del 24/11 13:52 UTC fatto, prova a vuoto riuscita (rollback): 3.885,46. ⚠️ Con zero giocate in corso, si rilegge prima di scrivere | 15 min |
+| **S2** | **Conti giusti**: `contoDi` → `conto_rtw` (la pagina di Laboratorio non conta 65 € persi nel banco); le righe «allineamento» fuori dal «versato» (`stato_banco`, `riepilogo_rtw`, `banco_utente`); `eliminaGiornata` (`ReportingPage`) con la stagione; spunta «giocata» via dalle 8 spin in archivio | mezza giornata |
+| **S3** | **Pop-up dell'esito** su ✓ e ✗ di **ogni** passo (banco, Laboratorio, MattiaP, NickV): importo giocato, incasso **totale** (solo su ✓), «Sistema i conti». Differenza nel banco **in proporzione alle puntate**, centesimi a Laboratorio; nei giri personali tutta al titolare. Una funzione SQL sola (esito + rettifica), e la matita disfa anche la rettifica | una giornata |
+| **S4** | **Registro dei soldi** dal 24/11: ogni evento con data, utente, conto, importo, motivo. Calcolato, non memorizzato; superadmin tutto, utente il suo | mezza giornata |
+| **S5** | **Slot**: «% bankroll» e «slot da giocare» dietro «Gestione del bankroll», via da Bilancio per tutti | 1-2 ore |
+| **S6** | **Bilancio**: la card «Bankroll totale aggregato» resta sopra (+ in gioco e disponibile sul conto bet), grafico del conto; Settore ospiti coi singoli importi (slot, RTW, totale) e il grafico di ciascuno; MattiaP e NickV in fondo, «conto separato». Ogni utente vede solo il suo, gli aiutanti niente | una giornata |
+
+Ordine: S1 → S2 → S3 → S4 → S6, S5 quando si vuole. ⚠️ Fra S1 e S2 la pagina di
+Laboratorio mostra un conto troppo alto: non si gioca da lì.
+
+**Trovato leggendo codice e dati, e vale ancora:**
+- Un passo tocca il conto solo all'esito: con una giocata aperta il conto reale è
+  più basso dell'app, e «Trasferisci a Laboratorio» scrive quella differenza come vera.
+- GLeRoy e MarcoM: GLeRoy ha nel banco un passo in più (`1125`, 5/11, 11 € persi);
+  l'arrotondamento pesa 0,21. Nello stesso passo Laboratorio ha 22 € invece di 11.
+  `1466` e `1484` sono la stessa schedina, errore confermato da Mattia. Ipotesi: se il
+  `1125` non è stato giocato, sono 47-49 € dei 55,18.
+- 8 passi del banco su 19 registrati a cose fatte: il pop-up di S3 nasce da qui.
 
 **Il 22-24/11** (`1.83.01`-`1.84.00`):
 - **Filtri col numero che si vede** (Hertha 57,62% → 58%) in RTW, Bet Builder e
@@ -472,7 +478,7 @@ state provate simulando uno user e un admin in una transazione annullata.
 |---|---|
 | ~~**Il banco non ha ancora chiuso una giocata vera**~~ | ✅ **20/11**: 11 passi con esito dal 4/11 al 9/11, 2 presi |
 | **«versato −49,46 €» di Admin in Gestione Bilanci** (20/11) | la riga di azzeramento del 4/11 è contata come versamento. Solo estetico, il conto è 0: da escludere le righe con nota «azzeramento» dal versato, se Mattia vuole |
-| **Flusso di cassa** (24/11) | piano proposto, aspetta le risposte di Mattia: vedi «Dove siamo» |
+| **Flusso di cassa** (24/11) | lotti S1-S6 pronti, aspettano il «vai» di Mattia: vedi «Dove siamo» |
 | **`eliminaGiornata` senza la stagione** (24/11) | cancella la stessa week di tutte le stagioni. Da correggere prima di usare Reporting |
 | **La visione Admin degli aiutanti** (22/11) | provata sul database, non a schermo |
 | **Partite rinviate senza risultato** (20/11) | 3 SP2 più Castellon-Eibar, Estoril-Maritimo (P1): si ricontrollano al prossimo giro. Kortrijk-Mechelen ✅ 24/11, giocata il 4/11 |
