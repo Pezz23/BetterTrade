@@ -509,8 +509,8 @@ export function componiPasso(candidate, { quotaMinima, maxGambe = MAX_GAMBE,
 
 /**
  * Quanto è entrato nel conto RTW: le ricariche dall'ultimo **azzeramento**, senza
- * le righe di **allineamento** al conto reale, che sono risultato e non versamento
- * (24/11/2026). ⚠️ La stessa regola è `versato_rtw` in `sql/62`.
+ * le righe di **allineamento** al conto reale e le **rettifiche** di un passo, che
+ * sono risultato e non versamento (24/11/2026). ⚠️ La stessa regola è `versato_rtw` in `sql/62`.
  * ⚠️ Il **conto** non si calcola qui: è `conto_rtw` del database, che conta anche
  * le puntate nel banco. `contoDi`, la copia in JavaScript, non le contava ed è
  * stata tolta. Il risultato è `conto − versato`: *"se perdo 3 bankroll interi e
@@ -519,7 +519,7 @@ export function componiPasso(candidate, { quotaMinima, maxGambe = MAX_GAMBE,
 export function versatoDi(ricariche = []) {
   const quando = (r) => Date.parse(r.fatta_il)
   const zero = Math.max(-Infinity, ...ricariche.filter(r => r.nota === 'azzeramento').map(quando))
-  return ricariche.filter(r => r.nota !== 'allineamento' && quando(r) > zero)
+  return ricariche.filter(r => r.nota !== 'allineamento' && r.passo_id == null && quando(r) > zero)
     .reduce((a, r) => a + Number(r.importo || 0), 0)
 }
 

@@ -1,4 +1,4 @@
-import { Fragment, useState, useMemo, useEffect, useRef } from 'react'
+import { Fragment, useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { C, F, alpha, S, SP, R } from '../theme'
 import { Card, Etichetta, Attesa } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
@@ -17,6 +17,7 @@ import { Posizione } from '../components/TestataPartita'
 import SchedaScorrevole from '../components/SchedaScorrevole'
 import DettaglioPartita from '../components/DettaglioPartita'
 import Icona from '../components/Icona'
+import SistemaConti from '../components/SistemaConti'
 import ScegliGamba from '../components/ScegliGamba'
 import ScaricaRisultati from '../components/ScaricaRisultati'
 import { giocataArrivata } from '../lib/esito'
@@ -581,16 +582,8 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, colore, classifiche,
  * ⚠️ 34×30 e non meno: è il bersaglio di un dito, non di un mouse.
  */
 function TastiEsito({ esito, setEsito, fissato = false, onFissa = null, confermato = false, onAnnullaConferma = null }) {
-  // ⚠️⚠️ **Il ✗ vuole due tocchi** (29/10/2026): a percentuale del conto un
-  // passo perso **chiude il giro** e lo manda in archivio, e un tocco sbagliato
-  // non si disfa con «·». Il primo tocco arma, il secondo segna; dopo cinque
-  // secondi si disarma da solo — come il tasto rosso del piano.
-  const [armato, setArmato] = useState(false)
-  useEffect(() => {
-    if (!armato) return
-    const t = setTimeout(() => setArmato(false), 5000)
-    return () => clearTimeout(t)
-  }, [armato])
+  // ⚠️ Il ✗ voleva due tocchi, perché un perso chiude il giro: dal 24/11/2026 la
+  // conferma è il pop-up «Sistema i conti», che si apre su ✓ e su ✗.
   const tasto = (attivo, col, onClick, segno, titolo) => (
     /* ⚠️ Acceso = **pieno** (29/10/2026): il tasto scelto si riconosce
        anche senza distinguere i colori, dal fondo pieno contro il bordo. E
@@ -606,24 +599,19 @@ function TastiEsito({ esito, setEsito, fissato = false, onFissa = null, conferma
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: SP.s, justifyContent: 'flex-end' }}>
       <span style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco, marginRight: 'auto' }}>
-        {/* ⚠️ La scritta dice quando si va in archivio (Mattia, 29/10/2026:
-            *"la domanda è: quando va in archivio?"*). */}
-        {armato ? <b style={{ color: C.rosso }}>Tocca di nuovo ✗ per confermare: il giro va in archivio</b>
-          : esito === 'vinto' ? 'vinto' : esito === 'perso' ? 'perso'
+        {esito === 'vinto' ? 'vinto' : esito === 'perso' ? 'perso'
             : confermato ? 'giocata · segna l’esito' : fissato ? 'fissato' : 'da giocare'}
       </span>
-      {tasto(esito === 'vinto', C.verde, () => { setArmato(false); setEsito('vinto') }, '✓', 'vinto')}
-      {tasto(esito === 'perso' || armato, C.rosso, () => {
-        if (esito === 'perso') return
-        if (armato) { setArmato(false); setEsito('perso') } else setArmato(true)
-      }, '✗', 'perso')}
+      {tasto(esito === 'vinto', C.verde, () => { if (esito !== 'vinto') setEsito('vinto') }, '✓', 'vinto')}
+      {tasto(esito === 'perso', C.rosso, () => { if (esito !== 'perso') setEsito('perso') }, '✗', 'perso')}
       {/* ⚠️⚠️ **La matita al posto di «·»** (Mattia, 30/10/2026): «modifica
           la schedina», un passo indietro alla volta — con un esito lo toglie
           (torna «giocata · segna l'esito»), senza esito toglie la conferma e
           la schedina torna una proposta da cambiare. ⚠️ Un ✗ perso non torna
-          indietro da qui: ha già chiuso il giro (per questo vuole due tocchi). */}
+          indietro da qui: ha già chiuso il giro. La matita toglie anche la
+          correzione dei conti (`sql/63`). */}
       {(esito || onAnnullaConferma) && tasto(false, C.spento,
-        () => { setArmato(false); if (esito) setEsito(null); else onAnnullaConferma() },
+        () => { if (esito) setEsito(null); else onAnnullaConferma() },
         <Icona nome="matita" misura={15} />, esito ? 'modifica: togli l’esito' : 'modifica la schedina: togli la conferma')}
       {onFissa && !esito && tasto(fissato, C.viola, onFissa, <Icona nome="puntina" misura={15} />, fissato ? 'togli il fissato' : 'fissa il passo')}
     </div>
@@ -930,6 +918,12 @@ function GiroArchivio({ s, onResoconto }) {
                       {p.messo_via != null && <> · messo via <b style={{ color: C.verde }}>{eur(p.messo_via)}</b></>}
                     </div>
                   )}
+                  {/* Il vero di «Sistema i conti», se era diverso dall'app (sql/63). */}
+                  {p.giocato_vero != null && Number(p.giocato_vero) !== Number(p.posta) && (
+                    <div style={{ fontFamily: F.mono, fontSize: S.minuta, color: C.ambra, marginTop: 2 }}>
+                      giocati davvero {eur(p.giocato_vero)} · nell’app {eur(p.posta)}
+                    </div>
+                  )}
                   {p.gambe.map(g => {
                     const col = g.arrivata === true ? C.verde : g.arrivata === false ? C.rosso : C.fioco
                     return (
@@ -1145,6 +1139,9 @@ function ScalataGuida({ guarda = null }) {
     const t = setTimeout(() => setArmaNuovo(false), 5000)
     return () => clearTimeout(t)
   }, [armaNuovo])
+  // Il passo di cui si sta segnando l'esito: apre «Sistema i conti».
+  const [daDecidere, setDaDecidere] = useState(null)
+  const chiudiDaDecidere = useCallback(() => setDaDecidere(null), [])
   const [armaChiudi, setArmaChiudi] = useState(false)
   useEffect(() => {
     if (!armaChiudi) return
@@ -1549,12 +1546,9 @@ function ScalataGuida({ guarda = null }) {
 
   const versato = inBanco ? reg.banco.reduce((a, r) => a + Number(r.versato), 0) : versatoDi(reg.ricariche)
   const conto = { versato, conto: contoOra, risultato: contoOra - versato }
-  // Arrotondato al centesimo: è un importo, e i decimali della quota non
-  // devono finire nel registro.
-  const cent = (x) => Math.round(x * 100) / 100
   // Il piano da salvare: i passi della scaletta con le quote (corrette a
   // mano dove serve). ⚠️ La puntata scritta è quella del primo passo: le
-  // altre si sanno solo quando tocca a loro, e `segna` le corregge all'esito.
+  // altre si sanno solo quando tocca a loro, e le scrive la conferma.
   // ⚠️ `escludi`: le partite già giocate nel giro non rientrano in un piano
   // ricomposto (Reset partite a giro aperto).
   // ⚠️ Una combinata parte senza quota: quella del calendario è del segno.
@@ -1969,25 +1963,17 @@ function ScalataGuida({ guarda = null }) {
               iniziata={giocato(riga) ? null : iniziataDi(gambe)}
               esito={riga.esito === 'aperto' ? null : riga.esito}
               setEsito={async (e) => {
-                const q = gambe.reduce((a, g) => a * Number(g.quota), 1)
-                if (e === 'perso') {
-                  // ⚠️⚠️ **Perso = il giro si chiude e va in archivio** (Mattia,
-                  // 29/10/2026), e ne riparte uno con lo stesso conto e i passi
-                  // che restano. ⚠️ Solo sul passo da giocare: se i passi dopo
-                  // hanno già un esito, chiudere qui li sposterebbe giocati nel
-                  // giro nuovo — prima si annullano quelli.
-                  if (reg.passi.slice(i + 1).some(r => r.esito !== 'aperto')) {
-                    setAvviso('Prima togli l’esito dei passi dopo questo: un perso chiude il giro qui.')
-                    return
-                  }
-                  const x = await reg.perdi(riga, { posta: p })
-                  setAvviso(x?.errore ?? null)
-                } else {
-                  reg.segna(riga.id, e || 'aperto', e === 'vinto'
-                    ? { montante: cent(p * q), posta: p }
-                    : { montante: null, messoVia: null, resto: null })
+                if (!e) { const x = await reg.togliEsito(riga.id); setAvviso(x?.errore ?? null); setDaOra(Date.now()); return }
+                // ⚠️⚠️ **Perso = il giro si chiude e va in archivio** (Mattia,
+                // 29/10/2026), e ne riparte uno con lo stesso conto e i passi
+                // che restano. ⚠️ Solo sul passo da giocare: se i passi dopo
+                // hanno già un esito, prima si annullano quelli.
+                if (e === 'perso' && reg.passi.slice(i + 1).some(giocato)) {
+                  setAvviso('Prima togli l’esito e la conferma dei passi dopo questo: un perso chiude il giro qui.')
+                  return
                 }
-                setDaOra(Date.now())
+                // L'esito si scrive dal pop-up, insieme ai soldi veri (`sql/63`).
+                setDaDecidere({ id: riga.id, titolo: `PASSO ${i + 1}`, esito: e, posta: p, quota: Number(riga.quota) })
               }} />
           )
         })
@@ -2291,6 +2277,17 @@ function ScalataGuida({ guarda = null }) {
             setManuale(null)
           }}
           onChiudi={() => setManuale(null)} />
+      )}
+
+      {daDecidere && (
+        <SistemaConti titolo={daDecidere.titolo} esito={daDecidere.esito} posta={daDecidere.posta} quota={daDecidere.quota} banco={inBanco}
+          onSalva={async (importi) => {
+            const x = await reg.decidi(daDecidere.id, daDecidere.esito, importi)
+            if (x?.errore) return x
+            setDaDecidere(null); setAvviso(null); setDaOra(Date.now())
+            return {}
+          }}
+          onChiudi={chiudiDaDecidere} />
       )}
 
       {/* ⚠️ In fondo, sopra la barra (Mattia, 30/10/2026), e solo per il

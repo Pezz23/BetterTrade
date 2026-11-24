@@ -55,8 +55,10 @@ function Passo({ p, stima }) {
   const puntata = p.mia_puntata != null ? Number(p.mia_puntata) : null
   const q = Number(p.quota)
   const colore = COLORE[p.esito]
-  const stato = p.esito === 'vinto' ? `vinto ${conSegno(Math.round((puntata || 0) * (q - 1) * 100) / 100)}`
-    : p.esito === 'perso' ? `perso ${conSegno(-(puntata || 0))}`
+  // La correzione coi soldi veri (`sql/63`): la parte di questo utente.
+  const rettifica = Number(p.rettifica || 0)
+  const stato = p.esito === 'vinto' ? `vinto ${conSegno(Math.round(((puntata || 0) * (q - 1) + rettifica) * 100) / 100)}`
+    : p.esito === 'perso' ? `perso ${conSegno(rettifica - (puntata || 0))}`
     : p.confermato ? (puntata != null ? 'in gioco' : 'giocato senza di te')
     : stima >= 1 ? `prossimo: circa ${eur(stima)}` : 'in programma'
   return (

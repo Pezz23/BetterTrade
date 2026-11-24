@@ -259,31 +259,32 @@ export function usaScalate(userId, { banco = false } = {}) {
   }, [stato.aperta, stato.passi, ricarica])
 
   /**
-   * Segna l'esito di un passo.
-   * ⚠️⚠️ **Non tocca le casse**: quelle si ricalcolano dalla catena
-   * (`contiGiro` in `lib/scalata.js`). Tenerle aggiornate qui voleva dire
-   * doverle *disfare* a ogni annullamento — ed è il motivo per cui la prima
-   * versione proibiva di annullare. Le colonne `cassa`/`accumulo` restano come
-   * fotografia, la verità è il calcolo.
+   * ⚠️⚠️ **L'esito di un passo, coi soldi veri** (`sql/63`, 24/11/2026): una
+   * funzione sola del database scrive esito, gambe e rettifica, e su un perso
+   * chiude il giro e ne fa ripartire uno. Prima erano due o tre scritture dal
+   * browser, e cadendo a metà lasciavano un perso in un giro ancora aperto.
+   * Un perso manda il giro in archivio (Mattia, 29/10/2026: *"a ogni sconfitta
+   * deve salvare i passi in archivio, mi servono per studiare"*).
    */
-  const segna = useCallback(async (passoId, esito, { montante, messoVia, resto, posta }) => {
-    // ⚠️ Le gambe seguono il passo: una schedina è vinta solo se tutte le
-    // gambe lo sono, quindi il loro esito è lo stesso del passo. Le due
-    // scritture non dipendono l'una dall'altra, quindi partono insieme.
+  const decidi = useCallback(async (passoId, esito, { giocato: importo, incasso }) => {
+    const { error } = await supabase.rpc('decidi_passo', { p_passo: passoId, p_esito: esito, p_giocato: importo, p_incasso: incasso })
+    await ricarica()
+    return error ? { errore: error.message } : {}
+  }, [ricarica])
+
+  /**
+   * La matita: il passo torna senza esito. ⚠️ La rettifica la cancella il trigger
+   * `passo_esito_cambiato`, e il conto si ricalcola da sé.
+   */
+  const togliEsito = useCallback(async (passoId) => {
     const errore = primoErrore(await Promise.all([
       supabase.from('scalata_passi').update({
-        esito, montante: montante ?? null, messo_via: messoVia ?? null, resto: resto ?? null,
-        deciso_il: new Date().toISOString(),
-        // ⚠️ A percentuale la puntata di un passo si sa solo quando si gioca
-        // (dipende dall'esito di quello prima): si scrive qui, sull'esito, così
-        // l'archivio dice quanto si è puntato davvero.
-        ...(posta >= 1 ? { posta } : {}),
+        esito: 'aperto', montante: null, messo_via: null, resto: null, deciso_il: new Date().toISOString(),
       }).eq('id', passoId),
-      supabase.from('scalata_gambe').update({ esito }).eq('passo_id', passoId),
+      supabase.from('scalata_gambe').update({ esito: 'aperto' }).eq('passo_id', passoId),
     ]))
-    if (errore) return { errore }
     await ricarica()
-    return {}
+    return errore ? { errore } : {}
   }, [ricarica])
 
   /**
@@ -458,31 +459,6 @@ export function usaScalate(userId, { banco = false } = {}) {
   }, [quotaDi, ricarica])
 
   /**
-   * ⚠️⚠️ **Il passo PERSO a percentuale** (Mattia, 29/10/2026: *"si continua,
-   * ma a ogni sconfitta deve salvare i passi in archivio, mi servono per
-   * studiare"*). Segna il perso e poi `chiudi_giro_perso` (sql/49): il giro
-   * va in archivio coi passi giocati fino a qui, e ne riparte uno con lo
-   * stesso conto, la stessa percentuale e i passi del piano che restavano.
-   * Sotto 1 € di conto non riparte niente: serve una ricarica.
-   */
-  const perdi = useCallback(async (passo, { posta }) => {
-    if (!stato.aperta) return { errore: 'nessuna scalata aperta' }
-    const errore = primoErrore(await Promise.all([
-      supabase.from('scalata_passi').update({
-        esito: 'perso', montante: null, messo_via: null, resto: null,
-        deciso_il: new Date().toISOString(), ...(posta >= 1 ? { posta } : {}),
-      }).eq('id', passo.id),
-      supabase.from('scalata_gambe').update({ esito: 'perso' }).eq('passo_id', passo.id),
-    ]))
-    if (errore) { await ricarica(); return { errore } }
-    const { error } = await supabase.rpc('chiudi_giro_perso', {
-      p_scalata: stato.aperta.id, p_dopo: Number(passo.numero),
-    })
-    await ricarica()
-    return error ? { errore: `il passo è segnato perso, ma il giro non si è chiuso: ${error.message}` } : {}
-  }, [stato.aperta, ricarica])
-
-  /**
    * ⚠️ **Chiudere un giro a mano, senza sconfitta** (Mattia, 04/11/2026): va in
    * archivio col conto di adesso e i passi non giocati si tolgono (`sql/54`).
    * Con una giocata confermata senza esito il database rifiuta.
@@ -521,7 +497,7 @@ export function usaScalate(userId, { banco = false } = {}) {
    * chiudo la scalata non deve dirmi solo gli importi, voglio un resoconto
    * delle giocate"*): passo per passo, ogni partita con il **suo** esito vero.
    * ⚠️ Il registro sa solo se il PASSO è vinto: le gambe copiano l'esito del
-   * passo (`segna`). L'esito di ogni partita si ricava dal risultato in
+   * passo (`decidi_passo`). L'esito di ogni partita si ricava dal risultato in
    * archivio — gamba → `prossime_partite.partita_id` → `partite` — con la
    * regola di `lib/esito.js`, la stessa che usa il motore.
    * ⚠️ Si legge **solo quando si apre** una scalata dell'archivio: sono tre
@@ -577,8 +553,8 @@ export function usaScalate(userId, { banco = false } = {}) {
     ...stato, occupato, ricarica, resoconto,
     fissa: attendendo(fissa),
     apri: attendendo(apri),
-    segna: attendendo(segna),
-    perdi: attendendo(perdi),
+    decidi: attendendo(decidi),
+    togliEsito: attendendo(togliEsito),
     chiudiGiro: attendendo(chiudiGiro),
     trasferisci: attendendo(trasferisci),
     confermaPrimo: attendendo(confermaPrimo),
