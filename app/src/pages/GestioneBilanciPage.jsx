@@ -3,6 +3,7 @@ import { supabase } from '../supabase'
 import { useAuth } from '../context/AuthContext'
 import { C, F, S, SP, R, alpha } from '../theme'
 import { Card, Attesa, Etichetta } from '../components/ui'
+import { importoDi } from '../lib/importo'
 
 // GESTIONE BILANCI — i soldi di Road to weekend, utente per utente (04/11/2026).
 //
@@ -16,16 +17,28 @@ const eur = (x) => `${Number(x || 0).toFixed(2).replace('.', ',')} €`
 
 function RigaUtente({ u, riga, occupato, onTrasferisci, onSpunta }) {
   const [importo, setImporto] = useState('')
+  // ⚠️ La risposta sta **qui**, nella card che si è toccata (24/11/2026): in cima alla
+  // pagina, o con un tasto spento e muto, sembrava che non succedesse niente.
+  const [esito, setEsito] = useState(null)
   const conto = Number(riga?.conto || 0)
   const risultato = conto - Number(riga?.versato || 0)
   const inCorso = !!riga?.in_corso
-  const valido = Number(importo) > 0 && !occupato && !inCorso
+  const sposta = async (verso) => {
+    const imp = importoDi(importo)
+    if (imp == null) { setEsito({ ok: false, testo: 'Scrivi quanto spostare, per esempio 117,78.' }); return }
+    const limite = verso === 'a_rtw' ? Number(u.bankroll || 0) : conto
+    if (imp > limite) { setEsito({ ok: false, testo: `${verso === 'a_rtw' ? 'In cassa' : 'In RTW'} ci sono solo ${eur(limite)}.` }); return }
+    setEsito({ ok: true, testo: 'Sposto…' })
+    const errore = await onTrasferisci(u.id, imp, verso)
+    if (errore) { setEsito({ ok: false, testo: errore }); return }
+    setImporto('')
+    setEsito({ ok: true, testo: `✓ Spostati ${eur(imp)} ${verso === 'a_rtw' ? 'dalla cassa a RTW' : 'da RTW alla cassa'}.` })
+  }
+  const attivo = !occupato && !inCorso
   const tasto = (verso, testo) => (
-    <button disabled={!valido} onClick={async () => {
-      if (await onTrasferisci(u.id, Number(importo), verso)) setImporto('')
-    }} style={{ flex: 1, minWidth: 0, padding: '7px 4px', borderRadius: R.m, cursor: valido ? 'pointer' : 'default',
-      background: alpha(C.oro, valido ? 0.14 : 0.04), border: `1px solid ${alpha(C.oro, valido ? 0.5 : 0.18)}`,
-      color: valido ? C.oro : C.fioco, fontFamily: F.sans, fontSize: S.base, fontWeight: 700 }}>
+    <button disabled={!attivo} onClick={() => sposta(verso)} style={{ flex: 1, minWidth: 0, padding: '7px 4px', borderRadius: R.m, cursor: attivo ? 'pointer' : 'default',
+      background: alpha(C.oro, attivo ? 0.14 : 0.04), border: `1px solid ${alpha(C.oro, attivo ? 0.5 : 0.18)}`,
+      color: attivo ? C.oro : C.fioco, fontFamily: F.sans, fontSize: S.base, fontWeight: 700 }}>
       {testo}
     </button>
   )
@@ -64,13 +77,16 @@ function RigaUtente({ u, riga, occupato, onTrasferisci, onSpunta }) {
       )}
       {/* ⚠️ Campo a 16px: sotto, iOS ingrandisce la pagina da solo. */}
       <div style={{ display: 'flex', alignItems: 'center', gap: SP.s, marginTop: SP.m }}>
-        <input value={importo} onChange={e => setImporto(e.target.value.replace(',', '.'))}
+        <input value={importo} onChange={e => { setImporto(e.target.value); setEsito(null) }}
           inputMode="decimal" placeholder="€" aria-label={`importo per ${u.username}`}
           style={{ width: 76, flexShrink: 0, boxSizing: 'border-box', background: C.pozzo, border: `1px solid ${C.bordo}`, borderRadius: R.m,
             padding: '6px 8px', color: C.testo, fontFamily: F.mono, fontSize: 16, outline: 'none' }} />
         {tasto('a_rtw', 'Cassa → RTW')}
         {tasto('a_cassa', 'RTW → Cassa')}
       </div>
+      {esito && (
+        <div role="status" style={{ fontFamily: F.sans, fontSize: S.base, color: esito.ok ? C.verde : C.rosso, marginTop: SP.s }}>{esito.testo}</div>
+      )}
       {inCorso && (
         <div style={{ fontFamily: F.sans, fontSize: S.micro, color: C.ambra, marginTop: SP.s }}>
           c’è una giocata senza esito: si trasferisce dopo
@@ -93,13 +109,16 @@ export default function GestioneBilanciPage() {
   }, [])
   useEffect(() => { leggi() }, [leggi])
 
+  // Torna il messaggio d'errore, o `null` se è andato: lo mostra la card.
   const onTrasferisci = async (userId, importo, verso) => {
     setOccupato(true); setErrore(null)
-    const { error } = await supabase.rpc('trasferisci_rtw', { p_user: userId, p_importo: importo, p_verso: verso })
-    if (error) setErrore(error.message)
-    await Promise.all([leggi(), fetchUsers()])
-    setOccupato(false)
-    return !error
+    try {
+      const { error } = await supabase.rpc('trasferisci_rtw', { p_user: userId, p_importo: importo, p_verso: verso })
+      await Promise.all([leggi(), fetchUsers()])
+      return error ? error.message : null
+    } catch (e) {
+      return `non è arrivata risposta: ${e.message}`
+    } finally { setOccupato(false) }
   }
 
   const onSpunta = async (userId, valore) => {

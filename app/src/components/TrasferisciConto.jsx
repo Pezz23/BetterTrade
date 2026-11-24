@@ -1,14 +1,19 @@
 import { useState } from 'react'
+import { importoDi } from '../lib/importo'
 import { C, F, S, SP, R, alpha } from '../theme'
 import { eur } from '../lib/formato'
 
 /** Cassa ↔ RTW sul proprio conto. ⚠️ Campo a 16px: sotto, iOS ingrandisce la pagina. */
 export default function TrasferisciConto({ cassa, occupato, onTrasferisci }) {
   const [importo, setImporto] = useState('')
-  const valido = Number(importo) > 0 && !occupato
+  // ⚠️ Niente tasti spenti e muti (24/11/2026): se l'importo non va, lo si dice qui.
+  const [manca, setManca] = useState(false)
+  const valido = !occupato
   const tasto = (verso, testo) => (
     <button disabled={!valido} onClick={async () => {
-      if (await onTrasferisci(Math.round(Number(importo) * 100) / 100, verso)) setImporto('')
+      const imp = importoDi(importo)
+      setManca(imp == null)
+      if (imp != null && await onTrasferisci(imp, verso)) setImporto('')
     }} style={{ flex: 1, minWidth: 0, padding: '7px 4px', borderRadius: R.m, cursor: valido ? 'pointer' : 'default',
       background: alpha(C.oro, valido ? 0.14 : 0.04), border: `1px solid ${alpha(C.oro, valido ? 0.5 : 0.18)}`,
       color: valido ? C.oro : C.fioco, fontFamily: F.sans, fontSize: S.base, fontWeight: 700 }}>
@@ -21,13 +26,14 @@ export default function TrasferisciConto({ cassa, occupato, onTrasferisci }) {
         in cassa <b style={{ fontFamily: F.mono, color: C.testo }}>{eur(cassa || 0)}</b>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: SP.s }}>
-        <input value={importo} onChange={e => setImporto(e.target.value.replace(',', '.'))}
+        <input value={importo} onChange={e => { setImporto(e.target.value); setManca(false) }}
           inputMode="decimal" placeholder="€" aria-label="importo da trasferire"
           style={{ width: 76, flexShrink: 0, boxSizing: 'border-box', background: C.pozzo, border: `1px solid ${C.bordo}`, borderRadius: R.m,
             padding: '6px 8px', color: C.testo, fontFamily: F.mono, fontSize: 16, outline: 'none' }} />
         {tasto('a_rtw', 'Cassa → RTW')}
         {tasto('a_cassa', 'RTW → Cassa')}
       </div>
+      {manca && <div role="status" style={{ fontFamily: F.sans, fontSize: S.base, color: C.rosso, marginTop: SP.s }}>Scrivi quanto spostare, per esempio 117,78.</div>}
     </div>
   )
 }
