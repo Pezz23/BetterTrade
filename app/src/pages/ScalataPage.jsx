@@ -1810,13 +1810,17 @@ function ScalataGuida({ guarda = null }) {
 
         {/* ⚠️ Dal 04/11/2026 i soldi entrano ed escono solo dalla cassa
             (`sql/55`-`56`): la ricarica libera creava soldi dal nulla. */}
-        {!solaLettura && <TrasferisciConto cassa={currentUser?.bankroll} occupato={reg.occupato} onTrasferisci={async (importo, verso) => {
-          const x = await reg.trasferisci(importo, verso)
-          setAvviso(x?.errore ?? null)
-          if (x?.errore) return false
-          await aggiornaSaldo(currentUser.id)
-          return true
-        }} />}
+        {/* Nella card del banco sta chiuso (Mattia, 24/11/2026). */}
+        {!solaLettura && (() => {
+          const sposta = <TrasferisciConto cassa={currentUser?.bankroll} occupato={reg.occupato} onTrasferisci={async (importo, verso) => {
+            const x = await reg.trasferisci(importo, verso)
+            setAvviso(x?.errore ?? null)
+            if (x?.errore) return false
+            await aggiornaSaldo(currentUser.id)
+            return true
+          }} />
+          return inBanco ? <div style={{ marginTop: SP.m }}><Tendina titolo="Gestione cassa">{sposta}</Tendina></div> : sposta
+        })()}
         {!aperta && posta < 1 && !solaLettura && (
           <div style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.ambra, marginTop: SP.m }}>
             {conto.versato > 0

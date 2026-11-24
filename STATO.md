@@ -8,7 +8,7 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 24 novembre 2026 · app alla versione **1.89.01**
+**Ultimo aggiornamento:** 24 novembre 2026 · app alla versione **1.89.02**
 (`e537c9b`, pushato). Migrazioni `sql/54`-`65` applicate; la funzione `aggiorna-risultati` è alla **versione 7**.
 
 ## ▶️ DOVE SIAMO — 24 novembre 2026, leggi questo per primo
@@ -36,7 +36,7 @@
 | ~~S5~~ | ✅ **Slot** (24/11, `0a0d7e2`, 1.88.00): «Gestione del bankroll» in cima, via da Bilancio per tutti. ⚠️ Non ancora guardato a schermo | fatto |
 | ~~S6~~ | ✅ **Dashboard di Bilancio** (24/11, `19d27c4`, 1.89.00): in gioco e disponibile, grafici del conto e di ogni utente, conti separati in fondo, Registro sotto il totale. Guardata a 320, 375 e 768 con dati finti | fatto |
 
-La 1.89.01 è pubblicata. ⚠️ Il trasferimento di Laboratorio da Gestione Bilanci «non faceva nulla» (24/11): il database lo accetta, la pagina taceva su importo non valido o rifiuto. Ora risponde nella card; **da riprovare**.
+La 1.89.01 è pubblicata, la 1.89.02 no («Gestione cassa» a scomparsa nella card IL BANCO). Il trasferimento di Laboratorio da Gestione Bilanci funziona (117,78 in cassa, totale 3.885,46). ⚠️ Il comando nella card del banco sposta solo i soldi dell'account Super Admin (0 €), **non distribuisce**: Mattia lo sa e ha detto di lasciarlo così.
 
 **Trovato leggendo codice e dati, e vale ancora:**
 - Un passo tocca il conto solo all'esito: con una giocata aperta il conto reale è
