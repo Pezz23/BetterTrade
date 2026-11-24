@@ -499,7 +499,6 @@ state provate simulando uno user e un admin in una transazione annullata.
 | ~~**Il banco non ha ancora chiuso una giocata vera**~~ | ✅ **20/11**: 11 passi con esito dal 4/11 al 9/11, 2 presi |
 | ~~«versato −49,46 €» di Admin in Gestione Bilanci** (20/11)~~ | ✅ chiuso il 24/11 (lotto S2) |
 | **Flusso di cassa** (24/11) | S1-S6 fatti, da provare con le prime giocate vere: vedi «Dove siamo» |
-| **La cartella `backup/2026-11-24T14-44-09`** (24/11) | incompleta (manca `foto_conti`): si elimina con l'ok di Mattia. Le altre del 24/11 sono buone |
 | **Un movimento cancellato dopo il 24/11** non lascia scarto nel Registro | limite noto: sparisce da evento e saldo insieme |
 | ~~`eliminaGiornata` senza la stagione** (24/11)~~ | ✅ chiuso il 24/11 (lotto S2) |
 | **La visione Admin degli aiutanti** (22/11) | provata sul database, non a schermo |
