@@ -50,7 +50,8 @@ stato toccato**:
    là **con uno script** e si verifica contro git. Mai ribattuta a mano.
 5. **`app/src/versione.js`** allineata all'ultimo commit che cambia l'app, e
    `npm run lint` a 0 errori.
-6. **Commit** dei documenti. Il **push** solo se Mattia lo chiede.
+6. **Commit** dei documenti e **push**: dal 24/11/2026 si fa sempre, a lavoro
+   verificato (Mattia: *«fai sempre il push»*).
 7. Se il server di sviluppo è ancora acceso, **lo si dice**.
 
 ⚠️ **In cima a STATO ci sono due blocchi fatti per questo**: *«Per ripartire»*
