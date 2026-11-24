@@ -151,3 +151,7 @@ confermare è noioso"*.
   Risolve il limite n. 2 di questa nota: lo storico delle spin ora c'è.
 - `COMBOS` erano **tre copie** (Slot, Dashboard, Reporting): ora stanno in
   `lib/spin.js`, con `statoSchedina` e `resaInUnita`.
+
+### «Gestione del bankroll» in cima alla Slot (24/11/2026, `1.88.00`)
+
+«% bankroll da giocare» e «slot da giocare» stavano in Bilancio, visibili a tutti: ora sono dietro un tasto in cima alla Slot (`GestioneBankroll`, solo admin), che da chiuso dice già `10% · 1 slot`. Mattia: in Bilancio i soldi, qui come si gioca. Le puntate Tris/Quaterna/Full restano in Bilancio.
