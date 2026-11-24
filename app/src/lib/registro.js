@@ -7,6 +7,8 @@
 // correzione è risultato, non versamento).
 
 export const GUADAGNO = new Set(['slot', 'passo', 'correzione'])
+export const NON_GUADAGNO = new Set(['deposito', 'prelievo', 'trasferimento'])
+export const NOMI_TIPO = { slot: 'slot', passo: 'RTW', correzione: 'correzione', deposito: 'deposito', prelievo: 'prelievo', trasferimento: 'trasferimento' }
 const cent = (x) => Math.round(x * 100) / 100
 const somma = (l, f) => cent(l.reduce((a, x) => a + Number(f(x) || 0), 0))
 
@@ -53,4 +55,18 @@ export function vistaRegistro(dati, { chi = 'totale', conto = 'tutto' } = {}) {
     inGioco: somma(utenti, u => u.in_gioco),
     scarti: utenti.filter(u => Math.abs(Number(u.scarto)) >= 0.01).map(u => ({ nome: u.nome, scarto: Number(u.scarto) })),
   }
+}
+
+/**
+ * I punti del grafico: il giorno 1, ogni evento che ha mosso il saldo, adesso.
+ * ⚠️ L'ultimo è il saldo **del database**: se c'è uno scarto, il gradino si vede.
+ */
+export function puntiDi(vista, dal, ora = Date.now()) {
+  return [
+    { t: Date.parse(dal), saldo: vista.apre, motivo: 'giorno 1' },
+    ...vista.righe.filter(r => r.importo !== 0).map(r => ({
+      t: Date.parse(r.quando), saldo: r.saldo, importo: r.importo, tipo: r.tipo, motivo: r.motivo, rif: r.rif })),
+    // ⚠️ Un telefono con l'orologio indietro non mette «adesso» prima degli eventi.
+    { t: Math.max(ora, Date.parse(dal), ...vista.righe.map(r => Date.parse(r.quando))), saldo: vista.adesso, motivo: 'adesso' },
+  ]
 }

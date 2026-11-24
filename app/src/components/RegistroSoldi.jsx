@@ -1,23 +1,21 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import { supabase } from '../supabase'
+import { useState, useMemo } from 'react'
 import { C, F, S, SP, R, alpha } from '../theme'
 import { stileCard, Attesa, Etichetta } from './ui'
-import { vistaRegistro } from '../lib/registro'
+import { vistaRegistro, NON_GUADAGNO, NOMI_TIPO as NOMI } from '../lib/registro'
 
 // IL REGISTRO DEI SOLDI in Bilancio (24/11/2026, lotto S4, `sql/65`): ogni evento dal
 // giorno 1, con il saldo dopo. Il superadmin vede tutti, un utente solo il suo: lo
 // decide il database, qui si nasconde solo la scelta.
-// ⚠️ Nasce chiuso e legge quando si apre: è una lettura in più che serve di rado.
+// I dati li legge la pagina (`usaRegistro`), una volta per tutti.
 
-const eur = (x) => `${Number(x || 0).toFixed(2).replace('.', ',')} €`
-const conSegno = (x) => `${x < 0 ? '−' : '+'}${eur(Math.abs(x))}`
-const NOMI = { slot: 'slot', passo: 'RTW', correzione: 'correzione', deposito: 'deposito', prelievo: 'prelievo', trasferimento: 'trasferimento' }
+const eur = (x) => `€${Number(x || 0).toFixed(2)}`
+const conSegno = (x) => `${x < 0 ? '−' : x > 0 ? '+' : ''}${eur(Math.abs(x))}`
 const giornoOra = (t) => new Date(t).toLocaleString('it-IT', { timeZone: 'Europe/Rome', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
 
 function Riga({ r, conNomi }) {
   // ⚠️ Un trasferimento visto da «tutto» non sposta il saldo: si dice quanto è passato.
   const interno = r.importo === 0 && r.tipo === 'trasferimento'
-  const col = interno ? C.spento : r.tipo === 'deposito' || r.tipo === 'prelievo' || r.tipo === 'trasferimento' ? C.celeste
+  const col = interno ? C.spento : NON_GUADAGNO.has(r.tipo) ? C.celeste
     : r.importo >= 0 ? C.verde : C.rosso
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', gap: SP.m, padding: '9px 14px', borderBottom: `1px solid ${C.bordoTenue}` }}>
@@ -38,18 +36,10 @@ function Riga({ r, conNomi }) {
   )
 }
 
-export default function RegistroSoldi({ superadmin = false, userId }) {
+export default function RegistroSoldi({ dati, errore, superadmin = false, userId }) {
   const [aperto, setAperto] = useState(false)
-  const [dati, setDati] = useState(null)
-  const [errore, setErrore] = useState(null)
   const [chi, setChi] = useState(superadmin ? 'totale' : userId)
   const [conto, setConto] = useState('tutto')
-
-  const leggi = useCallback(async () => {
-    const { data, error } = await supabase.rpc('registro_soldi')
-    if (error) setErrore(error.message); else { setDati(data); setErrore(null) }
-  }, [])
-  useEffect(() => { if (aperto) leggi() }, [aperto, leggi])
 
   const v = useMemo(() => (dati ? vistaRegistro(dati, { chi, conto }) : null), [dati, chi, conto])
   // Chi non ha mai avuto un euro non serve nella scelta.

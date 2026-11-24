@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../supabase'
 
@@ -6,6 +6,8 @@ import { C, F, alpha, S } from '../theme'
 import { StatCard, stileCard } from '../components/ui'
 import Icona from '../components/Icona'
 import RegistroSoldi from '../components/RegistroSoldi'
+import AndamentoConto from '../components/AndamentoConto'
+import { usaRegistro } from '../hooks/usaRegistro'
 
 function fmt(n, showSign=false) {
   if (n===null||n===undefined||isNaN(n)) return '—'
@@ -38,6 +40,13 @@ export default function BilancioPage() {
     if (!error) await fetchUsers()
     setFlagInCorso(null)
   }
+
+  // Il registro dal 24/11 (`sql/65`): grafici, soldi in gioco ed elenco.
+  const registro = usaRegistro(currentUser?.id)
+  const nelRegistro = new Map((registro.dati?.utenti||[]).map(u=>[u.id,u]))
+  const inGioco = (registro.dati?.utenti||[]).filter(u=>u.in_totale!==false).reduce((a,u)=>a+Number(u.in_gioco||0),0)
+  // L'utente aperto nel Settore ospiti: uno per volta.
+  const [apertoId,setApertoId] = useState(null)
 
   const [storico,setStorico]         = useState([])
   const [movimenti,setMovimenti]     = useState([])
@@ -115,6 +124,7 @@ export default function BilancioPage() {
     const nota    = `Trasferimento SuperAdmin · reale €${reale} · aggregato €${aggregato.toFixed(2)}`
     await supabase.from('movimenti').insert([{ user_id:lab.id, tipo, importo, nota }])
     await aggiornaSaldo(lab.id)
+    registro.leggi()
     setEsitoDiff(`✓ Trasferiti ${diff>0?'+':''}€${diff.toFixed(2)} a Laboratorio`)
     setSaldoReale('')
     setTrasferendo(false)
@@ -136,6 +146,7 @@ export default function BilancioPage() {
 
     // Ricalcola dal database: un utente normale non può scrivere users.bankroll
     await aggiornaSaldo(currentUser.id)
+    registro.leggi()
 
     setMovForm({tipo:'deposito',importo:'',nota:''})
     setShowMov(false)
@@ -188,8 +199,28 @@ export default function BilancioPage() {
                 </div>
               </div>
             </div>
+            {/* ⚠️ Il disponibile è il numero da confrontare col bookmaker: le giocate in
+                corso l'app le conta ancora come soldi presenti, il book no. */}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:8,marginTop:10}}>
+              <div>
+                <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans}}>In gioco</div>
+                <div style={{fontSize:S.titolo,fontWeight:700,color:C.ambra,fontFamily:F.mono}}>{registro.dati?fmt(inGioco):'—'}</div>
+              </div>
+              <div>
+                <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans}}>Disponibile sul conto bet</div>
+                <div style={{fontSize:S.titolo,fontWeight:700,color:C.testo,fontFamily:F.mono}}>{registro.dati?fmt(totalBk+totaleRtw-inGioco):'—'}</div>
+              </div>
+            </div>
             <div style={{fontSize:S.minuta,color:C.fioco,fontFamily:F.sans,marginTop:8}}>Utenti con la spunta in Utenti · sola lettura</div>
+            {registro.errore&&<div style={{fontSize:S.base,color:C.rosso,fontFamily:F.sans,marginTop:8}}>{registro.errore}</div>}
+            {registro.dati&&(
+              <div style={{marginTop:14,paddingTop:14,borderTop:`1px solid ${C.bordoRiga}`}}>
+                <AndamentoConto dati={registro.dati} chi="totale" titolo="Andamento del conto comune" />
+              </div>
+            )}
           </div>
+
+          <RegistroSoldi dati={registro.dati} errore={registro.errore} superadmin />
 
           {/* Puntate aggregate */}
           <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:12}}>
@@ -203,28 +234,54 @@ export default function BilancioPage() {
           {/* Tabella utenti */}
           <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:8}}>Settore ospiti</div>
           <div style={stileCard({overflow:'hidden',marginBottom:16})}>
-            {users.filter(u=>u.role!=='superadmin').map((u,i,arr)=>{
+            {/* ⚠️ I conti separati (senza la spunta «nel totale») in fondo: Snai di MattiaP,
+                NickV. Il sort di JS è stabile, gli altri restano nel loro ordine. */}
+            {users.filter(u=>u.role!=='superadmin').sort((a,b)=>(a.in_totale===false)-(b.in_totale===false)).map((u,i,arr)=>{
               const uBase=((u.bankroll||0)*(pct/100))/numSlot
               const uSched=calcSchedule(uBase)
+              const uRtw=Number(righeRtw.find(x=>x.user_id===u.id)?.conto||0)
+              const separato=u.in_totale===false
+              const aperto=apertoId===u.id
               return (
-                <div key={u.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:10,padding:'12px 16px',borderBottom:i<arr.length-1?`1px solid ${C.bordoRiga}`:'none',
-                  opacity:u.in_spin===false?0.6:1}}>
+                <Fragment key={u.id}>
+                {separato&&(i===0||arr[i-1].in_totale!==false)&&(
+                  <div style={{padding:'8px 16px',background:C.barra,borderBottom:`1px solid ${C.bordoRiga}`,fontSize:S.minuta,color:C.spento,fontFamily:F.sans}}>
+                    Conto separato · fuori dal totale
+                  </div>
+                )}
+                <div style={{borderBottom:i<arr.length-1?`1px solid ${C.bordoRiga}`:'none'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:10,padding:'12px 16px',
+                  opacity:u.in_spin===false&&!aperto?0.6:1}}>
                   {<button onClick={()=>isSuperAdmin&&cambiaInSpin(u)} disabled={!isSuperAdmin||flagInCorso===u.id}
                         title={u.in_spin!==false?'nel calcolo delle spin':'fuori dal calcolo delle spin'} aria-pressed={u.in_spin!==false}
                         style={{display:'flex',alignItems:'center',background:'transparent',border:'none',padding:4,flexShrink:0,
                           cursor:isSuperAdmin?'pointer':'default',color:u.in_spin!==false?C.verde:C.fantasma}}>
                         <Icona nome="bandiera" misura={16} pieno={u.in_spin!==false} />
                       </button>}
+                  <button onClick={()=>setApertoId(aperto?null:u.id)} aria-expanded={aperto} title="andamento"
+                    style={{flex:1,minWidth:0,display:'flex',justifyContent:'space-between',alignItems:'center',gap:10,padding:0,background:'transparent',border:'none',cursor:'pointer',textAlign:'left'}}>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:S.media,fontWeight:600,color:C.testo,fontFamily:F.sans}}>{u.display_name||u.username}</div>
+                    <div style={{fontSize:S.media,fontWeight:600,color:C.testo,fontFamily:F.sans}}>{u.display_name||u.username} <span style={{color:C.fioco}}>{aperto?'▾':'▸'}</span></div>
                     <div style={{fontSize:S.minuta,color:C.fioco,fontFamily:F.mono}}>T:€{uSched.tris} · Q:€{uSched.quaterna} · F:€{uSched.full}</div>
                     <div style={{fontSize:S.minuta,color:C.fioco,fontFamily:F.mono}}>base {fmt(uBase)}</div>
                   </div>
                   <div style={{textAlign:'right'}}>
-                    <div style={{fontSize:S.titolo,fontWeight:700,color:C.oro,fontFamily:F.mono}}>{fmt(u.bankroll||0)}</div>
-                    <div style={{fontSize:S.minuta,color:C.spento,fontFamily:F.mono}}>RTW {fmt(Number(righeRtw.find(r=>r.user_id===u.id)?.conto||0))}</div>
+                    <div style={{fontSize:S.titolo,fontWeight:700,color:C.oro,fontFamily:F.mono}}>{fmt((u.bankroll||0)+uRtw)}</div>
+                    <div style={{fontSize:S.minuta,color:C.spento,fontFamily:F.mono}}>Slot {fmt(u.bankroll||0)}</div>
+                    <div style={{fontSize:S.minuta,color:C.spento,fontFamily:F.mono}}>RTW {fmt(uRtw)}</div>
                   </div>
+                  </button>
                 </div>
+                {aperto&&nelRegistro.has(u.id)&&(
+                  <div style={{padding:'0 0 12px'}}>
+                    {Number(nelRegistro.get(u.id).in_gioco)>0&&(
+                      <div style={{fontSize:S.base,color:C.spento,fontFamily:F.sans,marginBottom:8}}>in gioco <b style={{color:C.ambra,fontFamily:F.mono}}>{fmt(Number(nelRegistro.get(u.id).in_gioco))}</b></div>
+                    )}
+                    <AndamentoConto dati={registro.dati} chi={u.id} titolo={`Andamento di ${u.display_name||u.username}`} />
+                  </div>
+                )}
+                </div>
+                </Fragment>
               )
             })}
           </div>
@@ -269,8 +326,6 @@ export default function BilancioPage() {
               opacity:!saldoReale?0.5:1,
             }}>{trasferendo?'Trasferimento…':'⟳ Trasferisci differenza a Laboratorio'}</button>
           </div>
-
-          <RegistroSoldi superadmin />
 
           {/* Movimenti di tutti — SuperAdmin */}
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
@@ -320,6 +375,20 @@ export default function BilancioPage() {
             ].map(({label,val,color})=><StatCard key={label} label={label} value={val} color={color} small/>)}
           </div>
 
+          {/* Il proprio andamento dal 24/11: quello degli altri non lo vede nessuno. */}
+          {registro.dati&&(
+            <div style={stileCard({padding:'16px',marginBottom:16})}>
+              <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:6}}>Il tuo conto</div>
+              <div style={{fontSize:S.cifra,fontWeight:700,color:C.oro,fontFamily:F.mono}}>{fmt(myLive+mioRtw)}</div>
+              <div style={{fontSize:S.base,color:C.spento,fontFamily:F.sans,margin:'6px 0 14px'}}>
+                slot <span style={{fontFamily:F.mono,color:C.testo}}>{fmt(myLive)}</span> · RTW <span style={{fontFamily:F.mono,color:C.testo}}>{fmt(mioRtw)}</span>
+                {Number(nelRegistro.get(currentUser?.id)?.in_gioco)>0&&<> · in gioco <span style={{fontFamily:F.mono,color:C.ambra}}>{fmt(Number(nelRegistro.get(currentUser?.id).in_gioco))}</span></>}
+              </div>
+              <AndamentoConto dati={registro.dati} chi={currentUser?.id} titolo="Il tuo andamento" />
+            </div>
+          )}
+          <RegistroSoldi dati={registro.dati} errore={registro.errore} userId={currentUser?.id} />
+
           {/* Deposita / Preleva */}
           <div style={{display:'flex',gap:8,marginBottom:16}}>
             {['deposito','prelievo'].map(tipo=>(
@@ -361,8 +430,6 @@ export default function BilancioPage() {
               </div>
             </div>
           )}
-
-          <RegistroSoldi userId={currentUser?.id} />
 
           {/* Storico movimenti personali */}
           {movimenti.length>0&&(
