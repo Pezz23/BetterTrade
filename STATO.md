@@ -9,7 +9,7 @@
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
 **Ultimo aggiornamento:** 24 novembre 2026 · app alla versione **1.89.00**
-(`19d27c4`, da pushare). Migrazioni `sql/54`-`65` applicate; la funzione `aggiorna-risultati` è alla **versione 7**.
+(`19d27c4`, pushato). Migrazioni `sql/54`-`65` applicate; la funzione `aggiorna-risultati` è alla **versione 7**.
 
 ## ▶️ DOVE SIAMO — 24 novembre 2026, leggi questo per primo
 
@@ -36,7 +36,7 @@
 | ~~S5~~ | ✅ **Slot** (24/11, `0a0d7e2`, 1.88.00): «Gestione del bankroll» in cima, via da Bilancio per tutti. ⚠️ Non ancora guardato a schermo | fatto |
 | ~~S6~~ | ✅ **Dashboard di Bilancio** (24/11, `19d27c4`, 1.89.00): in gioco e disponibile, grafici del conto e di ogni utente, conti separati in fondo, Registro sotto il totale. Guardata a 320, 375 e 768 con dati finti | fatto |
 
-La 1.88.00 è pubblicata, la 1.89.00 no.
+La 1.89.00 è pubblicata.
 
 **Trovato leggendo codice e dati, e vale ancora:**
 - Un passo tocca il conto solo all'esito: con una giocata aperta il conto reale è
