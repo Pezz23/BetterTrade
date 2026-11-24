@@ -9,13 +9,22 @@
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
 **Ultimo aggiornamento:** 24 novembre 2026 · app alla versione **1.89.02**
-(`e537c9b`, pushato). Migrazioni `sql/54`-`65` applicate; la funzione `aggiorna-risultati` è alla **versione 7**.
+(`9537f3e`, pushato). Migrazioni `sql/54`-`65` applicate; la funzione `aggiorna-risultati` è alla **versione 7**.
 
 ## ▶️ DOVE SIAMO — 24 novembre 2026, leggi questo per primo
 
-**🔜 IN CORSO: il flusso di cassa** (24/11). Mattia ha risposto a tutte le domande;
-**S1 è fatto**: alle 14:56 del 24/11 il conto app è **3.885,46 €**, uguale al reale.
-**S2-S5 fatti** (il pop-up provato da Mattia: *«funziona»*). **Anche S6**: il piano è finito, manca la prova di Mattia sulle prime giocate vere.
+**✅ FATTO il 24/11: il flusso di cassa, lotti S1-S6** (`1.85.00`-`1.89.02`, `sql/62`-`65`),
+tutto pubblicato. **Giorno 1 dei soldi: 24/11/2026**, conto app = conto reale =
+**3.885,46 €**. A fine sessione: cassa 2.913,59 + RTW 971,87 (Laboratorio ha spostato i
+suoi 117,78 da RTW a cassa), nessuna giocata del banco in corso, MattiaP 17 € su Snai.
+
+**Da provare con Mattia, alla ripresa:**
+1. La prima giocata vera: «Disponibile sul conto bet» = bookmaker dopo la conferma **e**
+   dopo l'esito, e nel Registro «✓ i conti tornano».
+2. La **✗** dal pop-up (la ✓ e la matita le ha provate lui: *«funziona»*; la ✗ solo il database).
+3. «Il tuo conto» visto da chi segue il banco, e la Visione Admin degli aiutanti.
+⚠️ «Trasferimento a Laboratorio» **non** sottrae le giocate in corso (scelta di Mattia):
+si usa solo con «In gioco» a 0.
 
 **Le decisioni di Mattia (24/11):**
 - Conto reale **3.885,46 €** senza giocate in corso, app **3.830,28 €**: **+55,18**.
@@ -36,7 +45,9 @@
 | ~~S5~~ | ✅ **Slot** (24/11, `0a0d7e2`, 1.88.00): «Gestione del bankroll» in cima, via da Bilancio per tutti. ⚠️ Non ancora guardato a schermo | fatto |
 | ~~S6~~ | ✅ **Dashboard di Bilancio** (24/11, `19d27c4`, 1.89.00): in gioco e disponibile, grafici del conto e di ogni utente, conti separati in fondo, Registro sotto il totale. Guardata a 320, 375 e 768 con dati finti | fatto |
 
-La 1.89.02 è pubblicata («Gestione cassa» a scomparsa nella card IL BANCO). Il trasferimento di Laboratorio da Gestione Bilanci funziona (117,78 in cassa, totale 3.885,46). ⚠️ Il comando nella card del banco sposta solo i soldi dell'account Super Admin (0 €), **non distribuisce**: Mattia lo sa e ha detto di lasciarlo così.
+**Gestione Bilanci** (1.89.01): il trasferimento «non faceva nulla» perché con un importo non
+capito i tasti erano spenti e muti, e un rifiuto compariva in cima alla pagina; ora risponde nella
+card e Mattia l'ha riprovato. **«Gestione cassa»** a scomparsa nella card IL BANCO (1.89.02). ⚠️ Il comando nella card del banco sposta solo i soldi dell'account Super Admin (0 €), **non distribuisce**: Mattia lo sa e ha detto di lasciarlo così.
 
 **Trovato leggendo codice e dati, e vale ancora:**
 - Un passo tocca il conto solo all'esito: con una giocata aperta il conto reale è
@@ -362,13 +373,15 @@ derby), lotto 2 (routing), lotto 3 (arbitro: no), e Road to weekend a
 percentuale. Il 30/10: la conferma della giocata in Road to weekend, il tasto
 dei risultati, gli esiti automatici e l'archivio delle spin.
 Il 4/11: il banco di Road to weekend, con trasferimenti, over e dashboard.
-L'ordine consigliato: **B → 00 → RE → 6 → 4**.
+Il 24/11: il flusso di cassa (S1-S6).
+L'ordine consigliato: **prove del 24/11 → AI → RE → 4 → 6 → 1F**.
 
 | | cosa | costo |
 |---|---|---|
+| AI | **Gli aiutanti che operano** nel banco con Mattia (*«devono poter operare con me»*, 22/11): oggi guardano. Il permesso si aggancia a `users.aiutante`; ⚠️ `decidi_passo`, `conferma_banco` e `chiudi_giro_perso` accettano solo il titolare | da stimare |
 | B | **Il banco**: ✅ gioca dal vero dal 4/11 (11 passi, 2 presi). Resta da **guardare le 4 card di Bilancio a 375px**, e decidere se la quota media ~3,5 è voluta: il metodo era pensato sul 2 | Mattia, mezz'ora |
 | 00 | **Il weekend vero, versione 1.77** (Mattia lo prova il 31/10-1/11). Road to weekend: ricarica, ✓ Conferma giocata, esito, ✗ con due tocchi (archivio e giro nuovo), matita, «salta» su una partita cominciata, Reset partite con un passo confermato. Poi **⤓ Scarica risultati** dal telefono, i «finita 2-1 ✓» nel passo, gli **esiti automatici delle spin** e la prima spin in **archivio** con «↺ Nuova spin». Si raccoglie quello che non torna | il weekend |
-| RE | **L'esito PROPOSTO dei passi di Road to weekend**: il riassunto del passo dice già *«schedina persa: segna ✗»* (`RiassuntoPasso`, 31/10); manca il tasto che lo segna con un tocco. Proposto e non automatico, perché un ✗ chiude il giro. **Non deciso** | un'ora |
+| RE | **L'esito PROPOSTO dei passi di Road to weekend**: il riassunto del passo dice già *«schedina persa: segna ✗»* (`RiassuntoPasso`, 31/10); manca il tasto che lo segna con un tocco (dal 24/11 aprirebbe «Sistema i conti»). Proposto e non automatico, perché un ✗ chiude il giro. **Non deciso** | un'ora |
 | 1F | **Il Filtro A sul futuro vero** (proposto il 29/10, **non deciso**): l'app registra da sola ogni schedina che il filtro proporrebbe, con regole fisse; dopo 100 schedine, ROI > 0 **e** gambe sopra 100% → candidato, altrimenti si archivia. Oggi lo storico non può dire di più | da stimare, mezza giornata |
 | 6 | **L'automazione** — i due `.plist` (`aggiornamento.plist` martedì/venerdì, `aggiornamento-orario.plist` solo risultati, zero crediti) **non sono installati**. Dal 30/10 pesa meno: i risultati si scaricano dal telefono col tasto. Resta utile per la routine del martedì e venerdì (quote, football-data, `andamento`). ⚠️ Col Mac in stop non parte: recupera **un** giro al risveglio | 10 minuti |
 | ~~2~~ | ~~**Il routing**~~ — ✅ **fatto il 29/10** (`1.66.00`) | — |
@@ -432,6 +445,14 @@ leggi "884 partite" o "440 crediti" e siamo a marzo, sono vecchi di mesi.
 
 | | commit |
 |---|---|
+| **«Gestione cassa»** a scomparsa nella card del banco (24/11) | `9537f3e` |
+| **Gestione Bilanci** risponde nella card, e accetta «117,78 €» (24/11) | `e537c9b` |
+| **S6**: dashboard di Bilancio, grafici del conto e di ogni utente (24/11) | `19d27c4` |
+| **S5**: «Gestione del bankroll» in Slot, via da Bilancio (24/11) | `0a0d7e2` |
+| **S4**: il registro dei soldi e la foto del giorno 1, `sql/65`; backup a 19 tabelle (24/11) | `2f9b833` · `91ef0cd` |
+| **S3**: il pop-up «Sistema i conti» e la quota vera, `sql/63`-`64` (24/11) | `7dfc573` · `5a51246` |
+| **S2**: un conto RTW solo, `eliminaGiornata` con la stagione, `sql/62` (24/11) | `d175081` |
+| **S1**: conto app allineato al conto reale, 3.885,46 € (24/11, solo dati) | — |
 | **Nomi**: «KV Mechelen» e «Sheffield Utd» tradotti, alias prima del nome in ESPN (24/11) | `dba5390` |
 | **RTW, gli aiutanti**: «Visione Admin» in sola lettura, `sql/61` (22/11) | `fa0a009` |
 | **«Domani» è solo domani**; in RTW aggiunta a mano fino a 12 ore dopo (22/11) | `f4d4eb1` |
@@ -478,6 +499,8 @@ state provate simulando uno user e un admin in una transazione annullata.
 | ~~**Il banco non ha ancora chiuso una giocata vera**~~ | ✅ **20/11**: 11 passi con esito dal 4/11 al 9/11, 2 presi |
 | ~~«versato −49,46 €» di Admin in Gestione Bilanci** (20/11)~~ | ✅ chiuso il 24/11 (lotto S2) |
 | **Flusso di cassa** (24/11) | S1-S6 fatti, da provare con le prime giocate vere: vedi «Dove siamo» |
+| **La cartella `backup/2026-11-24T14-44-09`** (24/11) | incompleta (manca `foto_conti`): si elimina con l'ok di Mattia. Le altre del 24/11 sono buone |
+| **Un movimento cancellato dopo il 24/11** non lascia scarto nel Registro | limite noto: sparisce da evento e saldo insieme |
 | ~~`eliminaGiornata` senza la stagione** (24/11)~~ | ✅ chiuso il 24/11 (lotto S2) |
 | **La visione Admin degli aiutanti** (22/11) | provata sul database, non a schermo |
 | **Partite rinviate senza risultato** (20/11) | 3 SP2 più Castellon-Eibar, Estoril-Maritimo (P1): si ricontrollano al prossimo giro. Kortrijk-Mechelen ✅ 24/11, giocata il 4/11 |
