@@ -15,7 +15,8 @@
 ## ▶️ DOVE SIAMO — 24 novembre 2026, leggi questo per primo
 
 **🔜 IN CORSO: il flusso di cassa** (24/11). Mattia ha risposto a tutte le domande;
-i lotti sono pronti, ⛔ **nessuno è ancora partito: aspettano il suo «vai»**.
+**S1 è fatto**: alle 14:56 del 24/11 il conto app è **3.885,46 €**, uguale al reale.
+⛔ S2-S6 aspettano il suo «vai».
 
 **Le decisioni di Mattia (24/11):**
 - Conto reale **3.885,46 €** senza giocate in corso, app **3.830,28 €**: **+55,18**.
@@ -29,14 +30,14 @@ i lotti sono pronti, ⛔ **nessuno è ancora partito: aspettano il suo «vai»**
 
 | lotto | cosa | stima |
 |---|---|---|
-| **S1** | **Allineamento, giorno 1**: due righe in `scalata_ricariche` (nota «allineamento»). Backup del 24/11 13:52 UTC fatto, prova a vuoto riuscita (rollback): 3.885,46. ⚠️ Con zero giocate in corso, si rilegge prima di scrivere | 15 min |
+| ~~S1~~ | ✅ **Allineamento, giorno 1** (24/11): righe `40` (GLeRoy +10,79) e `41` (Laboratorio +44,39) in `scalata_ricariche`, nota «allineamento». Totale 3.885,46, coerenza a posto, backup `2026-11-24T13-56-49` | fatto |
 | **S2** | **Conti giusti**: `contoDi` → `conto_rtw` (la pagina di Laboratorio non conta 65 € persi nel banco); le righe «allineamento» fuori dal «versato» (`stato_banco`, `riepilogo_rtw`, `banco_utente`); `eliminaGiornata` (`ReportingPage`) con la stagione; spunta «giocata» via dalle 8 spin in archivio | mezza giornata |
 | **S3** | **Pop-up dell'esito** su ✓ e ✗ di **ogni** passo (banco, Laboratorio, MattiaP, NickV): importo giocato, incasso **totale** (solo su ✓), «Sistema i conti». Differenza nel banco **in proporzione alle puntate**, centesimi a Laboratorio; nei giri personali tutta al titolare. Una funzione SQL sola (esito + rettifica), e la matita disfa anche la rettifica | una giornata |
 | **S4** | **Registro dei soldi** dal 24/11: ogni evento con data, utente, conto, importo, motivo. Calcolato, non memorizzato; superadmin tutto, utente il suo | mezza giornata |
 | **S5** | **Slot**: «% bankroll» e «slot da giocare» dietro «Gestione del bankroll», via da Bilancio per tutti | 1-2 ore |
 | **S6** | **Bilancio**: la card «Bankroll totale aggregato» resta sopra (+ in gioco e disponibile sul conto bet), grafico del conto; Settore ospiti coi singoli importi (slot, RTW, totale) e il grafico di ciascuno; MattiaP e NickV in fondo, «conto separato». Ogni utente vede solo il suo, gli aiutanti niente | una giornata |
 
-Ordine: S1 → S2 → S3 → S4 → S6, S5 quando si vuole. ⚠️ Fra S1 e S2 la pagina di
+Ordine: S2 → S3 → S4 → S6, S5 quando si vuole. ⚠️ Finché non c'è S2 la pagina di
 Laboratorio mostra un conto troppo alto: non si gioca da lì.
 
 **Trovato leggendo codice e dati, e vale ancora:**
@@ -478,7 +479,7 @@ state provate simulando uno user e un admin in una transazione annullata.
 |---|---|
 | ~~**Il banco non ha ancora chiuso una giocata vera**~~ | ✅ **20/11**: 11 passi con esito dal 4/11 al 9/11, 2 presi |
 | **«versato −49,46 €» di Admin in Gestione Bilanci** (20/11) | la riga di azzeramento del 4/11 è contata come versamento. Solo estetico, il conto è 0: da escludere le righe con nota «azzeramento» dal versato, se Mattia vuole |
-| **Flusso di cassa** (24/11) | lotti S1-S6 pronti, aspettano il «vai» di Mattia: vedi «Dove siamo» |
+| **Flusso di cassa** (24/11) | S1 fatto, S2-S6 aspettano il «vai» di Mattia: vedi «Dove siamo» |
 | **`eliminaGiornata` senza la stagione** (24/11) | cancella la stessa week di tutte le stagioni. Da correggere prima di usare Reporting |
 | **La visione Admin degli aiutanti** (22/11) | provata sul database, non a schermo |
 | **Partite rinviate senza risultato** (20/11) | 3 SP2 più Castellon-Eibar, Estoril-Maritimo (P1): si ricontrollano al prossimo giro. Kortrijk-Mechelen ✅ 24/11, giocata il 4/11 |
