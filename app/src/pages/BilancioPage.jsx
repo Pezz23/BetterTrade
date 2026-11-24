@@ -5,6 +5,7 @@ import { supabase } from '../supabase'
 import { C, F, alpha, S } from '../theme'
 import { StatCard, stileCard } from '../components/ui'
 import Icona from '../components/Icona'
+import RegistroSoldi from '../components/RegistroSoldi'
 
 const PERCENTUALI      = [5, 10, 15, 20, 25, 30]
 const NUM_SLOT_OPTIONS = [1, 2, 3, 4]
@@ -317,6 +318,8 @@ export default function BilancioPage() {
             }}>{trasferendo?'Trasferimento…':'⟳ Trasferisci differenza a Laboratorio'}</button>
           </div>
 
+          <RegistroSoldi superadmin />
+
           {/* Movimenti di tutti — SuperAdmin */}
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
             <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,textTransform:'uppercase',letterSpacing:'0.07em'}}>Movimenti utenti</div>
@@ -406,6 +409,8 @@ export default function BilancioPage() {
               </div>
             </div>
           )}
+
+          <RegistroSoldi userId={currentUser?.id} />
 
           {/* Storico movimenti personali */}
           {movimenti.length>0&&(
