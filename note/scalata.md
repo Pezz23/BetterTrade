@@ -1019,3 +1019,12 @@ Mattia: *"un pop-up quando confermo la vittoria: importo giocato, importo vinto 
 - ⚠️ La rettifica vive col passo: il trigger `passo_esito_cambiato` la cancella a ogni cambio di esito (matita, app vecchia). Il trigger azzera anche i valori veri, quindi `decidi_passo` li scrive **in un secondo update**.
 - È **risultato**, non versamento. L'incasso chiesto è quello **totale** del bookmaker.
 - **La quota vera** (`quota_vera`, `sql/64`, 24/11): incasso ÷ giocato, **bonus compresi**, calcolata dal database e mostrata al posto di `quota` in passi, archivio e pagina di chi segue (Mattia: *"a me serve la quota totale vera"*). ⚠️ `quota` non si sovrascrive, o rettifica e quota conterebbero la stessa differenza due volte. Su un perso resta quella dell'app. L'archivio del giro somma la correzione (`correzione` in `usaScalate`).
+
+## Il registro dei soldi (24/11/2026, `sql/65`, lotto S4)
+
+In Bilancio, dal **giorno 1** (24/11/2026 14:00 UTC, `giorno_uno()`): conto comune o una persona, Tutto/Slot/RTW, saldo dopo ogni evento. Il superadmin vede tutti, un utente il suo, un aiutante solo il proprio.
+- **Gli eventi non si scrivono, si leggono** (`eventi_soldi`): movimenti, giornate, passi decisi (rettifica compresa), ricariche. `lib/registro.js` li raggruppa per `rif` (un passo del banco, i due lati di un trasferimento).
+- **Guadagno** = slot, passi, correzioni. Depositi, prelievi e trasferimenti spostano soldi e non sono guadagno.
+- **La prova del nove**: `foto_conti` è la foto del giorno 1; foto + eventi deve fare il saldo. Lo **scarto** dice che è cambiato un dato vecchio. ⚠️ Un evento nuovo **cancellato** sparisce da tutte e due le parti, e lo scarto non lo vede.
+- Verificato: facendo partire gli eventi dall'inizio, cassa e RTW di tutti tornano al centesimo.
+- ⚠️ `movimenti.created_at` e `giornate.created_at` sono **senza fuso, in UTC**.
