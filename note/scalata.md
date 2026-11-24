@@ -1009,3 +1009,12 @@ Laboratorio aveva **due conti**: 138,39 € nella sua pagina e 73,39 € nel dat
 - **Versato** (`versato_rtw` in SQL, `versatoDi` in JS): dall'ultimo «azzeramento» e **senza «allineamento»**, che è risultato (decisione di Mattia). Prima Admin aveva −49,46 di versato e il risultato del banco era sbagliato di altrettanto.
 - Il trasferimento non chiede più di chiudere il giro: un giro non giocato riparte dal conto nuovo, uno giocato resta com'è.
 - ⚠️ `bankroll_iniziale` di un giro aperto **non è** il conto: dice solo da dove era partito il giro.
+
+## L'esito coi soldi veri: «Sistema i conti» (24/11/2026, `sql/63`, lotto S3)
+
+Mattia: *"un pop-up quando confermo la vittoria: importo giocato, importo vinto e un tasto sistema i conti"*, su ✓ e ✗ di **ogni** passo. Perché: 8 passi del banco su 19 erano registrati a cose fatte, con la puntata del momento e la quota media, e il conto app si staccava da quello reale.
+- `decidi_passo` fa tutto in una transazione: esito, gambe, rettifica e, su un perso, `chiudi_giro_perso`. Solo il titolare del giro, solo un passo confermato. Chiudere il pop-up non salva niente; il doppio tocco sul ✗ non c'è più.
+- La differenza diventa righe di `scalata_ricariche` con `passo_id` (nota «rettifica»): nel banco **in proporzione alle puntate** (troncate al centesimo), **i centesimi a Laboratorio**; nei giri personali tutta al titolare. ⚠️ Anche senza correzioni può uscire 1 centesimo a Laboratorio: il bookmaker arrotonda la giocata intera, l'app le parti.
+- `posta` e `banco_puntate` **non si toccano**: il vero sta in `giocato_vero` e `incasso_vero`. `bankroll_finale` del giro non conta la rettifica, o `conto_rtw` la sommerebbe due volte.
+- ⚠️ La rettifica vive col passo: il trigger `passo_esito_cambiato` la cancella a ogni cambio di esito (matita, app vecchia). Il trigger azzera anche i valori veri, quindi `decidi_passo` li scrive **in un secondo update**.
+- È **risultato**, non versamento. L'incasso chiesto è quello **totale** del bookmaker.

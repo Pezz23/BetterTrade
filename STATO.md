@@ -8,14 +8,14 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 24 novembre 2026 · app alla versione **1.85.00**
-(`d175081`, da pushare). Migrazioni `sql/54`-`62` applicate; la funzione `aggiorna-risultati` è alla **versione 7**.
+**Ultimo aggiornamento:** 24 novembre 2026 · app alla versione **1.86.00**
+(`7dfc573`, da pushare). Migrazioni `sql/54`-`63` applicate; la funzione `aggiorna-risultati` è alla **versione 7**.
 
 ## ▶️ DOVE SIAMO — 24 novembre 2026, leggi questo per primo
 
 **🔜 IN CORSO: il flusso di cassa** (24/11). Mattia ha risposto a tutte le domande;
 **S1 è fatto**: alle 14:56 del 24/11 il conto app è **3.885,46 €**, uguale al reale.
-**S2 fatto** (1.85.00). ⛔ S3-S6 aspettano il suo «vai».
+**S2 e S3 fatti**. ⛔ S4-S6 aspettano il suo «vai».
 
 **Le decisioni di Mattia (24/11):**
 - Conto reale **3.885,46 €** senza giocate in corso, app **3.830,28 €**: **+55,18**.
@@ -31,13 +31,12 @@
 |---|---|---|
 | ~~S1~~ | ✅ **Allineamento, giorno 1** (24/11): righe `40` (GLeRoy +10,79) e `41` (Laboratorio +44,39) in `scalata_ricariche`, nota «allineamento». Totale 3.885,46, coerenza a posto, backup `2026-11-24T13-56-49` | fatto |
 | ~~S2~~ | ✅ **Conti giusti** (24/11, `d175081`, 1.85.00, `sql/62` applicata): conto RTW solo dal database, versato senza allineamenti e senza il −49,46 di Admin, `eliminaGiornata` con la stagione, 8 spin non più «giocate», «Conto banco» in RTW e la divisione banco/Laboratorio in Bilancio. Il trasferimento non chiede più di chiudere il giro. ⚠️ Non ancora guardato a schermo | fatto |
-| **S3** | **Pop-up dell'esito** su ✓ e ✗ di **ogni** passo (banco, Laboratorio, MattiaP, NickV): importo giocato, incasso **totale** (solo su ✓), «Sistema i conti». Differenza nel banco **in proporzione alle puntate**, centesimi a Laboratorio; nei giri personali tutta al titolare. Una funzione SQL sola (esito + rettifica), e la matita disfa anche la rettifica | una giornata |
+| ~~S3~~ | ✅ **Pop-up dell’esito** (24/11, `7dfc573`, 1.86.00, `sql/63` applicata): provato sul database in 6 casi di importi, la matita e 7 accessi da rifiutare. ⚠️ Non ancora guardato a schermo né usato su una giocata vera | fatto |
 | **S4** | **Registro dei soldi** dal 24/11: ogni evento con data, utente, conto, importo, motivo. Calcolato, non memorizzato; superadmin tutto, utente il suo | mezza giornata |
 | **S5** | **Slot**: «% bankroll» e «slot da giocare» dietro «Gestione del bankroll», via da Bilancio per tutti | 1-2 ore |
 | **S6** | **Bilancio**: la card «Bankroll totale aggregato» resta sopra (+ in gioco e disponibile sul conto bet), grafico del conto; Settore ospiti coi singoli importi (slot, RTW, totale) e il grafico di ciascuno; MattiaP e NickV in fondo, «conto separato». Ogni utente vede solo il suo, gli aiutanti niente | una giornata |
 
-Ordine: S3 → S4 → S6, S5 quando si vuole. Finché la 1.85.00 non è pubblicata la
-pagina di Laboratorio mostra ancora il conto vecchio.
+Ordine: S4 → S6, S5 quando si vuole. La 1.85.00 è pubblicata, la 1.86.00 no.
 
 **Trovato leggendo codice e dati, e vale ancora:**
 - Un passo tocca il conto solo all'esito: con una giocata aperta il conto reale è
@@ -478,7 +477,7 @@ state provate simulando uno user e un admin in una transazione annullata.
 |---|---|
 | ~~**Il banco non ha ancora chiuso una giocata vera**~~ | ✅ **20/11**: 11 passi con esito dal 4/11 al 9/11, 2 presi |
 | ~~«versato −49,46 €» di Admin in Gestione Bilanci** (20/11)~~ | ✅ chiuso il 24/11 (lotto S2) |
-| **Flusso di cassa** (24/11) | S1 e S2 fatti, S3-S6 aspettano il «vai» di Mattia: vedi «Dove siamo» |
+| **Flusso di cassa** (24/11) | S1-S3 fatti, S4-S6 aspettano il «vai» di Mattia: vedi «Dove siamo» |
 | ~~`eliminaGiornata` senza la stagione** (24/11)~~ | ✅ chiuso il 24/11 (lotto S2) |
 | **La visione Admin degli aiutanti** (22/11) | provata sul database, non a schermo |
 | **Partite rinviate senza risultato** (20/11) | 3 SP2 più Castellon-Eibar, Estoril-Maritimo (P1): si ricontrollano al prossimo giro. Kortrijk-Mechelen ✅ 24/11, giocata il 4/11 |
