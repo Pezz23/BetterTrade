@@ -204,6 +204,15 @@ export function puntataDi(conto, percentuale) {
  */
 export const sommaPuntate = (conti, percentuale) => (conti || []).reduce((a, c) => a + puntataDi(c, percentuale), 0)
 
+/**
+ * I soldi veri di un passo, da «Sistema i conti» (`sql/63`-`64`): `null` se non è
+ * stato verificato. ⚠️ Su un perso la quota è `null`: senza incasso non si ricava.
+ */
+export const veroDi = (p) => (p?.giocato_vero == null ? null : {
+  giocato: Number(p.giocato_vero), incasso: Number(p.incasso_vero || 0),
+  quota: p.quota_vera == null ? null : Number(p.quota_vera),
+})
+
 export function contiGiro(iniziale, conti, passi, percentuale) {
   let live = Number(iniziale)
   const poste = []
@@ -216,7 +225,9 @@ export function contiGiro(iniziale, conti, passi, percentuale) {
     }
     const posta = Number(p.posta)
     poste.push(posta)
-    live = Math.round((live + (p.esito === 'vinto' ? posta * (Number(p.quota) - 1) : -posta)) * 100) / 100
+    const vero = veroDi(p)
+    const esito = vero ? vero.incasso - vero.giocato : p.esito === 'vinto' ? posta * (Number(p.quota) - 1) : -posta
+    live = Math.round((live + esito) * 100) / 100
   }
   return { live, poste, prossima }
 }

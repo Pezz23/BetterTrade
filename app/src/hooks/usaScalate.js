@@ -111,7 +111,8 @@ export function usaScalate(userId, { banco = false } = {}) {
     // il conto costa un'attesa in più solo sulla carta.
     // ⚠️ `banco` (sql/57): solo il superadmin, chi c'è e quanto ha.
     const [{ data: scalate, error }, { data: ricariche, error: eR }, { data: righeBanco, error: eB }, { data: mioConto, error: eC }] = await Promise.all([
-      supabase.from('scalate').select('*').eq('user_id', userId).order('aperta_il', { ascending: false }),
+      supabase.from('scalate').select('*, scalata_passi(posta, quota, esito, giocato_vero, incasso_vero)')
+        .not('scalata_passi.giocato_vero', 'is', null).eq('user_id', userId).order('aperta_il', { ascending: false }),
       supabase.from('scalata_ricariche').select('*').eq('user_id', userId).order('fatta_il', { ascending: false }),
       banco ? supabase.rpc('stato_banco') : Promise.resolve({ data: [], error: null }),
       // ⚠️ Il conto è quello del database, l'unico (`sql/62`): qui non si somma.
@@ -119,7 +120,12 @@ export function usaScalate(userId, { banco = false } = {}) {
     ])
     if (error || eR || eB || eC) return setStato(s => ({ ...s, errore: (error || eR || eB || eC).message }))
 
-    const aperta = (scalate || []).find(s => s.stato === 'aperta') || null
+    // Quanto i soldi veri hanno spostato ogni giro (`sql/63`): i passi annidati sono
+    // solo quelli verificati col pop-up.
+    const giri = (scalate || []).map(({ scalata_passi: verificati, ...s }) => ({ ...s,
+      correzione: (verificati || []).reduce((a, p) => a + Number(p.incasso_vero || 0) - Number(p.giocato_vero)
+        - (p.esito === 'vinto' ? Number(p.posta) * (Number(p.quota) - 1) : -Number(p.posta)), 0) }))
+    const aperta = giri.find(s => s.stato === 'aperta') || null
     let passi = [], gambe = []
     if (aperta) {
       // ⚠️ I passi in ordine di numero, non di inserimento: la posta di uno è
@@ -130,7 +136,7 @@ export function usaScalate(userId, { banco = false } = {}) {
       passi = (p || []).map(senzaGambe)
       gambe = (p || []).flatMap(r => r.scalata_gambe || []).sort((a, b) => a.id - b.id)
     }
-    setStato({ aperta, passi, gambe, storico: scalate || [], ricariche: ricariche || [], banco: righeBanco || [], conto: Number(mioConto || 0), errore: null })
+    setStato({ aperta, passi, gambe, storico: giri, ricariche: ricariche || [], banco: righeBanco || [], conto: Number(mioConto || 0), errore: null })
   }, [userId, banco])
 
   useEffect(() => { ricarica() }, [ricarica])

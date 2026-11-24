@@ -66,7 +66,7 @@ function Passo({ p, stima }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: SP.s, alignItems: 'baseline', fontFamily: F.sans, fontSize: S.base }}>
         <b style={{ color: C.testo }}>
           {puntata != null ? `Puntata ${eur(puntata)}` : 'Passo'}
-          <span style={{ color: C.spento, fontWeight: 400 }}> · quota {q.toFixed(2).replace('.', ',')}</span>
+          <span style={{ color: C.spento, fontWeight: 400 }}> · quota {Number(p.quota_vera ?? q).toFixed(2).replace('.', ',')}</span>
         </b>
         <b style={{ flexShrink: 0, color: colore || (giocato ? C.ambra : C.spento) }}>{stato}</b>
       </div>

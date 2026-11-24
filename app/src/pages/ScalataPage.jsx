@@ -28,7 +28,7 @@ import { pct, eur, gg } from '../lib/formato'
 import {
   METODO, NOMI_REGOLA, QUOTA_MINIMA_GAMBA, QUOTA_MINIMA_SCHEDINA, CONSIGLIATO,
   fasce, FINESTRA_ELENCO_ORE, spezzaFasce, spezzaAlMinimo, giorno, puoSpezzare, versatoDi, eCriterioA,
-  PERCENTUALI, PERCENTUALE_DEFAULT, puntataDi, contiGiro, sommaPuntate, LINEE_OVER, lineaOver, conOver, quotaMancante, ORE_VISIBILI, giocato,
+  PERCENTUALI, PERCENTUALE_DEFAULT, puntataDi, contiGiro, veroDi, sommaPuntate, LINEE_OVER, lineaOver, conOver, quotaMancante, ORE_VISIBILI, giocato,
   pctVisto, vpmVisto,
 } from '../lib/scalata'
 
@@ -290,16 +290,19 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, colore, classifiche,
                 quote, setQuote, esito, setEsito, onToglie, prossima, onAggiunge,
                 onQuota = null, onGiocata = null, onSpezza = null, onApri = null, onManuale = null, tocca = true,
                 stelleDi = () => 0, anteprima = false, fissato = false, onFissa = null, fermo = false,
-                parte = 'tutto', nudo = false, confermato = false, risultatoDi = () => null }) {
+                parte = 'tutto', nudo = false, confermato = false, risultatoDi = () => null, vero = null }) {
   // ⚠️ La quota della schedina è il **prodotto delle quote modificate**, non di
   // quelle scaricate: Mattia gioca su book diversi e con i bonus, e una pagina
   // che mostra la quota del consenso gli racconterebbe un piano che non è il suo.
   const quoteGambe = gambe.map(g => Number(quote[g.id] ?? g.quota) || 1)
-  const quota = quoteGambe.reduce((a, q) => a * q, 1)
-  const montante = posta * quota
+  // ⚠️ Verificato con «Sistema i conti» (`sql/63`-`64`): comandano i soldi veri, e la
+  // quota è incasso ÷ giocato, bonus compresi.
+  const quota = vero?.quota ?? quoteGambe.reduce((a, q) => a * q, 1)
+  const montante = vero && esito === 'vinto' ? vero.incasso : posta * quota
   // ⚠️ A percentuale del conto (29/10/2026) l'utile resta tutto nel conto:
   // niente da dividere fra «metti via» e «rigioca».
-  const utile = montante - posta
+  const puntata = vero?.giocato ?? posta
+  const utile = montante - puntata
   // ⚠️ L'esito vince sul colore del blocco: a piano finito conta com'è andata,
   // non quale fascia era.
   const tinta = esito === 'vinto' ? C.verde : esito === 'perso' ? C.rosso : colore
@@ -530,7 +533,7 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, colore, classifiche,
           tradurre mentre si decide. */}
       <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${alpha(C.testo, 0.1)}`,
         display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4, textAlign: 'center' }}>
-        {[['PUNTATA', eur(posta), C.testo], ['INCASSATO', eur(montante), C.verde], ['UTILE', eur(utile), C.oroChiaro]].map(([l, v, col]) => (
+        {[['PUNTATA', eur(puntata), C.testo], ['INCASSATO', eur(montante), C.verde], ['UTILE', eur(utile), C.oroChiaro]].map(([l, v, col]) => (
           <div key={l}>
             <Etichetta>{l}</Etichetta>
             <div style={{ fontFamily: F.mono, fontSize: S.grande, fontWeight: 700, color: col, marginTop: 2 }}>{v}</div>
@@ -698,12 +701,13 @@ function Tendina({ titolo, riassunto, children, colore = C.spento }) {
 function PassoHero(props) {
   const { numero, gambe, giorno: gio, ora, posta, quote, esito, setEsito,
     tocca = true, onFissa, fissato, conto = null, colore = C.oro,
-    confermato = false, onConferma = null, onAnnullaConferma = null, iniziata = null, onSalta = null } = props
+    confermato = false, onConferma = null, onAnnullaConferma = null, iniziata = null, onSalta = null, vero = null } = props
   const col = colore
-  const quota = gambe.map(g => Number(quote[g.id] ?? g.quota) || 1).reduce((a, q) => a * q, 1)
-  const montante = posta * quota
-  const utile = montante - posta
-  const sotto = quota < QUOTA_MINIMA_SCHEDINA
+  const quota = vero?.quota ?? gambe.map(g => Number(quote[g.id] ?? g.quota) || 1).reduce((a, q) => a * q, 1)
+  const puntata = vero?.giocato ?? posta
+  const montante = vero && esito === 'vinto' ? vero.incasso : puntata * quota
+  const utile = montante - puntata
+  const sotto = !vero && quota < QUOTA_MINIMA_SCHEDINA
   const virgola = (x) => x.toFixed(2).replace('.', ',')
   return (
     /* ⚠️⚠️ **Ridisegnata il 29/10/2026** (giro B): niente più cornice d'oro e
@@ -723,7 +727,7 @@ function PassoHero(props) {
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', alignItems: 'start', gap: SP.m, marginTop: SP.l }}>
         <div>
           <div style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.spento }}>Puntata</div>
-          <div style={{ fontFamily: F.mono, fontVariantNumeric: 'tabular-nums', fontSize: S.grande, fontWeight: 700, color: C.oro }}>{eur(posta)}</div>
+          <div style={{ fontFamily: F.mono, fontVariantNumeric: 'tabular-nums', fontSize: S.grande, fontWeight: 700, color: C.oro }}>{eur(puntata)}</div>
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.spento }}>Quota</div>
@@ -758,7 +762,7 @@ function PassoHero(props) {
 
       <div style={{ marginTop: SP.m }}>
         <Tendina titolo="Conti" colore={C.verde}
-          riassunto={`puntata ${eur(posta)} · utile ${eur(utile)}`}>
+          riassunto={`puntata ${eur(puntata)} · utile ${eur(utile)}`}>
           {/* ⚠️ Dentro «Conti» dal 29/10/2026 (Mattia): nella card restano
               partite, esito e puntata/quota; il «se vince» è un dettaglio.
               ⚠️ **Senza fondo verde** (Mattia, 26/10/2026: *"ingannevole"*):
@@ -783,9 +787,9 @@ function PassoHero(props) {
  * ⚠️ La riga di un passo giocato porta il colore dell'esito, come la card.
  */
 function PassoRiga(props) {
-  const { numero, gambe, giorno: gio, ora, quote, esito, anteprima, fissato, colore = C.spento } = props
+  const { numero, gambe, giorno: gio, ora, quote, esito, anteprima, fissato, colore = C.spento, vero = null } = props
   const [aperta, setAperta] = useState(false)
-  const quota = gambe.map(g => Number(quote[g.id] ?? g.quota) || 1).reduce((a, q) => a * q, 1)
+  const quota = vero?.quota ?? gambe.map(g => Number(quote[g.id] ?? g.quota) || 1).reduce((a, q) => a * q, 1)
   const tinta = esito === 'vinto' ? C.verde : esito === 'perso' ? C.rosso : C.spento
   // ⚠️⚠️ **Una card sola, chiusa o aperta** (Mattia, 26/10/2026: *"la card
   // che si apre ha i bordi tondi, la testata quadrati, ed è staccata: sembrano
@@ -851,7 +855,10 @@ function GiroArchivio({ s, onResoconto }) {
     onResoconto(s.id).then(r => { if (!vivo) return; if (r.errore) setErrore(r.errore); else setDati(r) })
     return () => { vivo = false }
   }, [aperta, dati, onResoconto, s.id])
-  const d = Number(s.bankroll_finale) - Number(s.bankroll_iniziale)
+  // ⚠️ Il finale scritto è quello dell'app: la correzione coi soldi veri (`sql/63`)
+  // sta sul conto, e qui si somma per mostrare com'è andata davvero.
+  const finale = Number(s.bankroll_finale) + Number(s.correzione || 0)
+  const d = finale - Number(s.bankroll_iniziale)
   const giocati = (dati?.passi || []).filter(giocato)
   const vinti = giocati.filter(p => p.esito === 'vinto').length
   const virgola = (x) => Number(x).toFixed(2).replace('.', ',')
@@ -870,7 +877,7 @@ function GiroArchivio({ s, onResoconto }) {
           </span>
         </div>
         <div style={{ fontFamily: F.mono, fontSize: S.minuta, color: C.spento, marginTop: 3 }}>
-          {eur(s.bankroll_iniziale)} → {eur(s.bankroll_finale)} · puntata {eur(s.posta)}
+          {eur(s.bankroll_iniziale)} → {eur(finale)} · puntata {eur(s.posta)}
           {/* la percentuale del giro (29/10/2026): con quale % è stato giocato */}
           {s.percentuale != null && ` (${Math.round(Number(s.percentuale) * 100)}%)`} · quota min {virgola(s.quota_minima)}
           {/* ⚠️ L'accumulo si scrive solo se c'è stato: le scalate chiuse prima
@@ -908,7 +915,12 @@ function GiroArchivio({ s, onResoconto }) {
                       {p.esito === 'vinto' ? '✓' : p.esito === 'perso' ? '✗' : '·'} PASSO {i + 1}
                       <span style={{ color: C.spento, fontWeight: 400 }}> · {nomeGiorno(p.giorno)} {gg(p.giorno)}</span>
                     </span>
-                    <span style={{ fontFamily: F.mono, color: C.oro }}>{virgola(p.quota)}</span>
+                    <span style={{ fontFamily: F.mono, color: C.oro }}>
+                      {p.quota_vera != null && virgola(p.quota_vera) !== virgola(p.quota) && (
+                        <span style={{ color: C.fioco, fontSize: S.minuta }}>app {virgola(p.quota)} · </span>
+                      )}
+                      {virgola(p.quota_vera ?? p.quota)}
+                    </span>
                   </div>
                   {/* I soldi del passo, solo se è stato giocato: un passo
                       «non giocato» non ha incassato niente. */}
@@ -1962,6 +1974,7 @@ function ScalataGuida({ guarda = null }) {
               onAnnullaConferma={riga.confermato_il ? async () => { const x = await reg.conferma(riga, null); setAvviso(x?.errore ?? null) } : null}
               iniziata={giocato(riga) ? null : iniziataDi(gambe)}
               esito={riga.esito === 'aperto' ? null : riga.esito}
+              vero={veroDi(riga)}
               setEsito={async (e) => {
                 if (!e) { const x = await reg.togliEsito(riga.id); setAvviso(x?.errore ?? null); setDaOra(Date.now()); return }
                 // ⚠️⚠️ **Perso = il giro si chiude e va in archivio** (Mattia,

@@ -39,6 +39,9 @@ export default function SistemaConti({ titolo, esito, posta, quota, banco = fals
   const nellApp = vinto ? cent(posta * quota) - posta : -posta
   const vero = valido ? v - g : null
   const diff = valido ? cent(vero - nellApp) : 0
+  // La quota vera, bonus compresi: è quella che resta scritta sul passo (sql/64).
+  const quotaVera = valido && vinto ? v / g : null
+  const virgola = (x) => x.toFixed(2).replace('.', ',')
   const col = vinto ? C.verde : C.rosso
 
   const salva = async () => {
@@ -74,6 +77,17 @@ export default function SistemaConti({ titolo, esito, posta, quota, banco = fals
         </div>
         {campo('Importo giocato', giocato, setGiocato, g > 0, !tocco)}
         {vinto && campo('Importo vinto', testoIncasso, setIncasso, v > 0)}
+        {vinto && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 120px', alignItems: 'baseline', gap: SP.m,
+            marginBottom: SP.m, paddingTop: SP.m, borderTop: `1px solid ${C.bordoRiga}` }}>
+            <span style={{ fontFamily: F.sans, fontSize: S.media, color: C.testo }}>
+              Quota totale <span style={{ fontSize: S.minuta, color: C.spento }}>· nell’app {virgola(quota)}</span>
+            </span>
+            <b style={{ textAlign: 'right', paddingRight: 11, fontFamily: F.mono, fontSize: S.grande, color: C.oro }}>
+              {quotaVera != null ? virgola(quotaVera) : '—'}
+            </b>
+          </div>
+        )}
         <div style={{ fontFamily: F.sans, fontSize: S.base, color: C.spento, lineHeight: 1.6, minHeight: 38 }}>
           {valido && <>
             Risultato <b style={{ fontFamily: F.mono, color: vero >= 0 ? C.verde : C.rosso }}>{conSegno(vero)}</b>
