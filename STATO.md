@@ -8,14 +8,14 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 24 novembre 2026 · app alla versione **1.88.00**
-(`0a0d7e2`, pushato). Migrazioni `sql/54`-`65` applicate; la funzione `aggiorna-risultati` è alla **versione 7**.
+**Ultimo aggiornamento:** 24 novembre 2026 · app alla versione **1.89.00**
+(`19d27c4`, da pushare). Migrazioni `sql/54`-`65` applicate; la funzione `aggiorna-risultati` è alla **versione 7**.
 
 ## ▶️ DOVE SIAMO — 24 novembre 2026, leggi questo per primo
 
 **🔜 IN CORSO: il flusso di cassa** (24/11). Mattia ha risposto a tutte le domande;
 **S1 è fatto**: alle 14:56 del 24/11 il conto app è **3.885,46 €**, uguale al reale.
-**S2-S5 fatti** (il pop-up provato da Mattia: *«funziona»*). ⛔ S6 aspetta il suo «vai».
+**S2-S5 fatti** (il pop-up provato da Mattia: *«funziona»*). **Anche S6**: il piano è finito, manca la prova di Mattia sulle prime giocate vere.
 
 **Le decisioni di Mattia (24/11):**
 - Conto reale **3.885,46 €** senza giocate in corso, app **3.830,28 €**: **+55,18**.
@@ -34,9 +34,9 @@
 | ~~S3~~ | ✅ **Pop-up dell’esito** (24/11, `7dfc573`, 1.86.01 con la **quota vera** (incasso ÷ giocato, bonus compresi), `sql/63`-`64` applicate): provato sul database in 6 casi di importi, la matita e 7 accessi da rifiutare. Provato da Mattia a schermo il 24/11 | fatto |
 | ~~S4~~ | ✅ **Registro dei soldi** (24/11, `2f9b833`, 1.87.00, `sql/65` applicata): in Bilancio, con la prova del nove. ⚠️ Non ancora guardato a schermo | fatto |
 | ~~S5~~ | ✅ **Slot** (24/11, `0a0d7e2`, 1.88.00): «Gestione del bankroll» in cima, via da Bilancio per tutti. ⚠️ Non ancora guardato a schermo | fatto |
-| **S6** | **Bilancio**: la card «Bankroll totale aggregato» resta sopra (+ in gioco e disponibile sul conto bet), grafico del conto; Settore ospiti coi singoli importi (slot, RTW, totale) e il grafico di ciascuno; MattiaP e NickV in fondo, «conto separato». Ogni utente vede solo il suo, gli aiutanti niente | una giornata |
+| ~~S6~~ | ✅ **Dashboard di Bilancio** (24/11, `19d27c4`, 1.89.00): in gioco e disponibile, grafici del conto e di ogni utente, conti separati in fondo, Registro sotto il totale. Guardata a 320, 375 e 768 con dati finti | fatto |
 
-Resta S6. La 1.88.00 è pubblicata.
+La 1.88.00 è pubblicata, la 1.89.00 no.
 
 **Trovato leggendo codice e dati, e vale ancora:**
 - Un passo tocca il conto solo all'esito: con una giocata aperta il conto reale è
@@ -477,7 +477,7 @@ state provate simulando uno user e un admin in una transazione annullata.
 |---|---|
 | ~~**Il banco non ha ancora chiuso una giocata vera**~~ | ✅ **20/11**: 11 passi con esito dal 4/11 al 9/11, 2 presi |
 | ~~«versato −49,46 €» di Admin in Gestione Bilanci** (20/11)~~ | ✅ chiuso il 24/11 (lotto S2) |
-| **Flusso di cassa** (24/11) | S1-S5 fatti, S6 aspetta il «vai» di Mattia: vedi «Dove siamo» |
+| **Flusso di cassa** (24/11) | S1-S6 fatti, da provare con le prime giocate vere: vedi «Dove siamo» |
 | ~~`eliminaGiornata` senza la stagione** (24/11)~~ | ✅ chiuso il 24/11 (lotto S2) |
 | **La visione Admin degli aiutanti** (22/11) | provata sul database, non a schermo |
 | **Partite rinviate senza risultato** (20/11) | 3 SP2 più Castellon-Eibar, Estoril-Maritimo (P1): si ricontrollano al prossimo giro. Kortrijk-Mechelen ✅ 24/11, giocata il 4/11 |

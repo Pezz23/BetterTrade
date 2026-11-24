@@ -1028,3 +1028,10 @@ In Bilancio, dal **giorno 1** (24/11/2026 14:00 UTC, `giorno_uno()`): conto comu
 - **La prova del nove**: `foto_conti` è la foto del giorno 1; foto + eventi deve fare il saldo. Lo **scarto** dice che è cambiato un dato vecchio. ⚠️ Un evento nuovo **cancellato** sparisce da tutte e due le parti, e lo scarto non lo vede.
 - Verificato: facendo partire gli eventi dall'inizio, cassa e RTW di tutti tornano al centesimo.
 - ⚠️ `movimenti.created_at` e `giornate.created_at` sono **senza fuso, in UTC**.
+
+## La dashboard di Bilancio (24/11/2026, `1.89.00`, lotto S6)
+
+- **Card del totale**: resta sopra (scelta di Mattia) con **in gioco** e **disponibile sul conto bet** = totale − in gioco, che è il numero da confrontare col bookmaker, e il grafico del conto comune. Subito sotto il Registro.
+- **Settore ospiti**: totale in grande, sotto Slot e RTW; toccando un utente il suo grafico. I conti separati (`in_totale = false`) in fondo. Ogni utente ha «Il tuo conto» col solo suo grafico.
+- `usaRegistro` legge una volta per pagina; `vistaRegistro` e `puntiDi` (`lib/registro.js`) fanno i conti; `GraficoSaldo` è SVG a mano, **a gradini** perché fra un evento e l'altro i soldi stanno fermi, **senza riempimento** perché l'asse non parte da zero. Il cerchio celeste è denaro che entra o esce, non guadagno.
+- ⚠️ Si guarda senza entrare nell'app: la pagina montata da sola con `supabase` e `AuthContext` finti (plugin di Vite con `resolveId`), su un server locale. Nessun login, nessun dato vero.
