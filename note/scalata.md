@@ -993,3 +993,10 @@ Mattia: *"2 + over 2,5, se finisce 0-2 deve darmi perso"*. Si tocca la giocata e
 
 `StatisticheRtw` + `statistiche_rtw()` (`sql/60`): guadagno sui soldi versati, passi presi, partite prese, **dal 4/11 per tutti** (Mattia), e per chi è stato azzerato dopo l'azzeramento. ⚠️ Non è `conto − versato`: il conto degli azzerati porta i risultati di prima. Base = conto meno i risultati del periodo. Una partita senza risultato non conta. Il superadmin vede il banco, gli altri la propria parte. Chi segue il banco ora ha **PIANO | ARCHIVIO**.
 
+## Gli aiutanti: la visione Admin (22/11/2026)
+
+Mattia: *"due aiutanti, devono poter operare con me"*; per ora **solo guardare**. `users.aiutante` la cambia solo il superadmin (`imposta_aiutante` e un trigger). Leggono il giro del banco, `banco_puntate`, `stato_banco`, i filtri del superadmin e `statistiche_rtw(true)`; le scritture restano di chi gioca. A schermo è `ScalataGuida` con `guarda` (id del superadmin) e `tocca={false}`, **senza salvare le preferenze** (`usaPreferenze({ di })`), o i filtri dell'uno finirebbero sull'altro. ⚠️ Il trigger **non** è `security definer`: lì `current_user` è il proprietario e il controllo non scattava mai (un admin simulato si era dato la spunta).
+
+## Le soglie si confrontano col numero che si vede (22/11/2026)
+
+`pctVisto` e `vpmVisto` in `lib/scalata.js`, per RTW, Bet Builder e criterio A: Cottbus-Hertha aveva 57,62%, a schermo 58%, e il filtro a 58 la escludeva. ⚠️ Una soglia a 58 ora parte da 57,5. La finestra «aggiungi partita» tiene le partite cominciate da meno di `ORE_VISIBILI`: serve a registrare in ritardo.

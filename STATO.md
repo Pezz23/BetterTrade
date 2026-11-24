@@ -8,12 +8,47 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 20 novembre 2026 · app alla versione **1.83.00**
-(`671b6ee`, invariata) · ultimo commit `a0cdb57` (la routine con le coppe),
-pushato. Migrazioni `sql/54`-`60` applicate; la funzione `aggiorna-risultati` è
-**pubblicata** con il Giappone.
+**Ultimo aggiornamento:** 24 novembre 2026 · app alla versione **1.84.00**
+(`fa0a009`) · ultimo commit di codice `dba5390` (nomi), pushato. Migrazioni
+`sql/54`-`61` applicate; la funzione `aggiorna-risultati` è alla **versione 7**.
 
-## ▶️ DOVE SIAMO — 20 novembre 2026, leggi questo per primo
+## ▶️ DOVE SIAMO — 24 novembre 2026, leggi questo per primo
+
+**🔜 IN CORSO: il flusso di cassa e la nuova dashboard di Bilancio** (chiesto da
+Mattia il 24/11: *"ho un disallineamento tra i soldi reali e quelli sul conto
+bet"*). ⛔ **Solo piano, nessun codice**, finché non risponde. Trovato leggendo
+codice e dati:
+- L'app conta le **giocate in corso** come soldi ancora sul conto: un passo tocca
+  il conto RTW solo all'esito. Con una giocata aperta la differenza è falsa, e
+  «Trasferisci a Laboratorio» la scrive come vera (24/11: 95 € nel banco).
+- **Nessuna giornata slot nella 26/27**, ma 8 spin archiviate con «giocata» dal
+  24/10 e 3 in griglia: se erano soldi veri, non sono nei conti.
+- **MattiaP 152,66 € e NickV 48,19 €** sono fuori dal totale (`in_totale`).
+- **Laboratorio:** il passo da 11 € dell'8/11 (`1502`) è **vinto e mai segnato**
+  (+21,39 €); `1466` e `1484` sono la stessa schedina, a 26 secondi (16 e 14 €).
+- 8 passi del banco su 19 confermati e segnati nello stesso minuto: la puntata è
+  quella del momento in cui si registra, non per forza quella giocata.
+- ⚠️ **Difetto:** `eliminaGiornata` (`ReportingPage`) cancella per `week_number`
+  **senza la stagione**: toglierebbe la stessa week anche da 24/25 e 25/26.
+Da fare: giorno 1 dei soldi (24/11), grafici per utente, vista del conto slot + RTW;
+«% bankroll» e «slot da giocare» da Bilancio a Slot, dietro il tasto «Gestione del
+bankroll»; «Settore ospiti» e «Trasferimento a Laboratorio» **invariati**.
+
+**Il 22-24/11** (`1.83.01`-`1.84.00`):
+- **Filtri col numero che si vede** (Hertha 57,62% → 58%) in RTW, Bet Builder e
+  criterio A; **«Domani» è solo domani** in Partite; in RTW si aggiunge a mano
+  anche una partita cominciata da meno di 12 ore.
+- **Gli aiutanti** (`sql/61`): spunta «visione Admin in RTW» in Utenti e tasto in
+  cima a RTW, sola lettura. ⚠️ Non ancora confermata a schermo da Mattia. Più
+  avanti devono **operare**: il permesso si aggancia alla stessa spunta.
+- **Nomi:** il `fixtures.csv` del 4/11 aveva «KV Mechelen» e «Sheffield Utd».
+  Tradotti all'ingresso, alias prima del nome in ESPN, 3 attese chiuse, 3 righe
+  doppie tolte con l'ok di Mattia (copia in `app/backup/doppioni-2026-11-24/`).
+- **Dati del 24/11:** 277 partite fino al 7/12, **221 crediti**, Importazioni a 0.
+  Kortrijk-Mechelen del 23/10 si è giocata il 4/11 (1-3).
+- **Il banco al 24/11:** 19 passi, 6 presi, risultato **−163,92 €**.
+
+## ▶️ Il 20 novembre 2026
 
 **Il 20/11, dopo due settimane di pausa: solo dati, nessun codice.**
 - **Routine completa** (`aggiorna.js`, la prima con le coppe dentro): calendario
@@ -284,8 +319,8 @@ del **23 ottobre** — una giornata lunga — su **dati** e **scheda partita**:
 cd app && npm run dev          # il server di sviluppo non resta acceso fra le sessioni
 ```
 
-**Dati aggiornati il 20/11** (routine completa con le coppe, calendario fino al
-30/11, 275 crediti rimasti: dettaglio in «Dove siamo»). Quello che segue è del 29/10.
+**Dati aggiornati il 24/11** (routine completa, calendario fino al 7/12, 221 crediti
+rimasti: dettaglio in «Dove siamo»). Quello che segue è del 29/10.
 
 **Dati aggiornati il 29/10 a mezzogiorno** (routine completa, 1.326 partite
 dello storico reimportate, `andamento` a 164.063 righe). Primo giro vero della
@@ -297,7 +332,7 @@ risultato — ESPN non la vede fra le finite, quasi certamente rinviata; **7
 importazioni** da decidere nella pagina Importazioni (la nuova: Antwerp 3-0
 Charleroi del 24/10, ESPN la chiama «Royal Charleroi SC»).
 
-⚠️ **Crediti The Odds API: 275 su 500** al 20/11 (un giro ne costa ~51-60). Il 29/10 erano 55: Un giro completo
+⚠️ **Crediti The Odds API: 221 su 500** al 24/11 (un giro ne costa ~54). Il 29/10 erano 55: Un giro completo
 ne costa **51**: **ne resta uno solo** fino al rinnovo — vedi il blocco «I CREDITI»
 più sotto prima di lanciarlo. Fra un giro e l'altro, i risultati si prendono
 gratis con `aggiorna-risultati.js --esegui`.
@@ -384,6 +419,10 @@ leggi "884 partite" o "440 crediti" e siamo a marzo, sono vecchi di mesi.
 
 | | commit |
 |---|---|
+| **Nomi**: «KV Mechelen» e «Sheffield Utd» tradotti, alias prima del nome in ESPN (24/11) | `dba5390` |
+| **RTW, gli aiutanti**: «Visione Admin» in sola lettura, `sql/61` (22/11) | `fa0a009` |
+| **«Domani» è solo domani**; in RTW aggiunta a mano fino a 12 ore dopo (22/11) | `f4d4eb1` |
+| **Filtri col numero che si vede**, RTW e Bet Builder (22/11) | `e407d05` |
 | **La routine aggiorna anche coppe, Olanda 2 e Giappone** da ESPN, prima di collegare il calendario (6/11) | `a0cdb57` |
 | **Passaggio di consegne del 4/11** | `9e33c73` |
 | **Scalata madre**: un metodo solo (pavimenti), quota schedina **2,00**, schedine spezzate da sé appena superano 2,00, spezza a mano fra due gambe | `ea6fd16` |
@@ -425,7 +464,10 @@ state provate simulando uno user e un admin in una transazione annullata.
 |---|---|
 | ~~**Il banco non ha ancora chiuso una giocata vera**~~ | ✅ **20/11**: 11 passi con esito dal 4/11 al 9/11, 2 presi |
 | **«versato −49,46 €» di Admin in Gestione Bilanci** (20/11) | la riga di azzeramento del 4/11 è contata come versamento. Solo estetico, il conto è 0: da escludere le righe con nota «azzeramento» dal versato, se Mattia vuole |
-| **Partite rinviate senza risultato** (20/11) | 3 SP2, Estoril-Maritimo (P1), Kortrijk-Mechelen (23/10): si ricontrollano al prossimo giro, quando ESPN le darà con la data nuova |
+| **Flusso di cassa** (24/11) | piano proposto, aspetta le risposte di Mattia: vedi «Dove siamo» |
+| **`eliminaGiornata` senza la stagione** (24/11) | cancella la stessa week di tutte le stagioni. Da correggere prima di usare Reporting |
+| **La visione Admin degli aiutanti** (22/11) | provata sul database, non a schermo |
+| **Partite rinviate senza risultato** (20/11) | 3 SP2 più Castellon-Eibar, Estoril-Maritimo (P1): si ricontrollano al prossimo giro. Kortrijk-Mechelen ✅ 24/11, giocata il 4/11 |
 | **Lista lunga dei passi per chi segue** | 19 passi sotto la card: da accorciare a 2-3 con «mostra tutti» se a Mattia pesa |
 | **MattiaP doveva seguire il banco?** | Oggi gioca da solo, senza spunta. Decide Mattia |
 | **MattiaP e NickV fuori dal totale** (206 € in RTW) | Se sono soldi del conto reale, va rimessa la spunta in Utenti: decide Mattia |

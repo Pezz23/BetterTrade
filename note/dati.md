@@ -508,3 +508,6 @@ squadra ha attendibilità (dalle quote) ma non VPM.
 
 `aggiorna.js` ora ha sei passi: dopo lo storico, `importa-competizione` per UCL, UEL, UECL, N2 e J1, **prima** di `riconcilia-prossime`. Perché: football-data non copre le coppe, e il 6/11 una routine completa ha lasciato 45 risultati fuori. Quell'ordine conta: senza riconciliazione dopo, il risultato sta in `partite` ma l'app non lo mostra. Zero crediti, e se ESPN non risponde la routine continua.
 
+## I nomi sporchi del calendario (24/11/2026)
+
+Il `fixtures.csv` di football-data del 4/11 aveva «KV Mechelen» e «Sheffield Utd»: sono entrati come squadre nuove. Siccome `nostroNome` prende i nomi dal database, il nome sporco vinceva sull'alias: 3 attese in Importazioni e Kortrijk-Mechelen doppia in archivio. Ora si traducono in `normalizzaSquadra` (`import-storico.js`), e **l'alias viene prima del nome così com'è** (provato su 2.613 nomi: cambia solo quello). ⚠️ `controlla-dati` non li vedeva: li chiamava rinviate.
