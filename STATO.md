@@ -9,7 +9,7 @@
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
 **Ultimo aggiornamento:** 24 novembre 2026 · app alla versione **1.86.01**
-(`7dfc573`, da pushare). Migrazioni `sql/54`-`64` applicate; la funzione `aggiorna-risultati` è alla **versione 7**.
+(`7dfc573`, pushato). Migrazioni `sql/54`-`64` applicate; la funzione `aggiorna-risultati` è alla **versione 7**.
 
 ## ▶️ DOVE SIAMO — 24 novembre 2026, leggi questo per primo
 
@@ -36,7 +36,7 @@
 | **S5** | **Slot**: «% bankroll» e «slot da giocare» dietro «Gestione del bankroll», via da Bilancio per tutti | 1-2 ore |
 | **S6** | **Bilancio**: la card «Bankroll totale aggregato» resta sopra (+ in gioco e disponibile sul conto bet), grafico del conto; Settore ospiti coi singoli importi (slot, RTW, totale) e il grafico di ciascuno; MattiaP e NickV in fondo, «conto separato». Ogni utente vede solo il suo, gli aiutanti niente | una giornata |
 
-Ordine: S4 → S6, S5 quando si vuole. La 1.85.00 è pubblicata, la 1.86.01 no.
+Ordine: S4 → S6, S5 quando si vuole. La 1.86.01 è pubblicata.
 
 **Trovato leggendo codice e dati, e vale ancora:**
 - Un passo tocca il conto solo all'esito: con una giocata aperta il conto reale è
