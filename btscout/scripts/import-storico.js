@@ -121,7 +121,12 @@ const ALIAS = {
   SP2: { 'Leonesa': 'Cultural Leonesa' },
   // Trovati il 16/09/2026 aggiungendo i campionati nuovi. Si mappa sul nome
   // ATTUALE, così le partite future entrano già col nome giusto.
-  B1:  { 'Waasland-Beveren': 'Beveren' },      // rinominato SK Beveren nel 2022
+  // ⚠️ «KV Mechelen» e «Sheffield Utd» sono nel `fixtures.csv` del 4/11/2026, e
+  // solo lì: sono entrati in calendario come squadre nuove (24/11/2026).
+  B1:  { 'Waasland-Beveren': 'Beveren',        // rinominato SK Beveren nel 2022
+         'KV Mechelen': 'Mechelen' },
+  E0:  { 'Sheffield Utd': 'Sheffield United' },
+  E1:  { 'Sheffield Utd': 'Sheffield United' },
   T1:  { 'Erzurum BB': 'Erzurumspor' },        // BB Erzurumspor → Erzurumspor FK
   // NON è un alias: Gaziantepspor (fallito nel 2020) e Gaziantep (ex Gazişehir)
   // sono due club diversi che hanno giocato in T1 in anni diversi.

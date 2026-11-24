@@ -152,9 +152,14 @@ export function nostroNome(squadra, nostri) {
     for (const x of nostri) nostri._piatti.set(senzaAccenti(x).toLowerCase(), x);
   }
   for (const n of squadra.nomi) {
-    if (nostri.has(n)) return n;
+    // ⚠️ **L'alias PRIMA del nome così com'è** (24/11/2026): `nostri` si legge
+    // dal database, e una riga sporca («KV Mechelen» in calendario) bastava a
+    // far riconoscere il nome di ESPN come nostro — tre partite in attesa e un
+    // doppione in archivio. L'alias l'ha scritto una persona, e vale solo se il
+    // nome vero è in quel campionato.
     const a = ALIAS[n];
     if (a && nostri.has(a)) return a;
+    if (nostri.has(n)) return n;
     const piatto = nostri._piatti.get(senzaAccenti(n).toLowerCase());
     if (piatto) return piatto;
   }
