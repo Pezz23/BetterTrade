@@ -482,8 +482,8 @@ state provate simulando uno user e un admin in una transazione annullata.
 | **La visione Admin degli aiutanti** (22/11) | provata sul database, non a schermo |
 | **Partite rinviate senza risultato** (20/11) | 3 SP2 più Castellon-Eibar, Estoril-Maritimo (P1): si ricontrollano al prossimo giro. Kortrijk-Mechelen ✅ 24/11, giocata il 4/11 |
 | **Lista lunga dei passi per chi segue** | 19 passi sotto la card: da accorciare a 2-3 con «mostra tutti» se a Mattia pesa |
-| **MattiaP doveva seguire il banco?** | Oggi gioca da solo, senza spunta. Decide Mattia |
-| **MattiaP e NickV fuori dal totale** (206 € in RTW) | Se sono soldi del conto reale, va rimessa la spunta in Utenti: decide Mattia |
+| ~~MattiaP doveva seguire il banco?~~ | ✅ 24/11: gioca da solo, su un conto suo |
+| ~~MattiaP e NickV fuori dal totale~~ | ✅ 24/11: conti separati (Snai), restano fuori, decisione di Mattia |
 | **Nessuno script di ripristino dal backup** | Un ripristino si fa a mano, tabella per tabella. Da scrivere solo se Mattia lo vuole |
 | ~~**NickV aveva un giro aperto col metodo VECCHIO**~~ | ✅ **29/10**: Mattia, entrato come NickV, ha usato «Azzera tutto» e poi una ricarica di 50 €. Le scalate 48 e 57 non avevano nessun passo giocato, quindi il conto resta 50 € come prima. I 71 passi di piano sono nel registro delle cancellazioni. Era: `regola = 'meta'`, e al primo ✗ `chiudi_giro_perso` l'avrebbe rifiutato |
 | ~~**L'esito delle spin da PROPOSTO ad AUTOMATICO**~~ | ✅ **30/10**, lo stesso giorno (`1.77.00`): automatico, solo nelle caselle vuote |
