@@ -979,10 +979,10 @@ Mattia: *"giocare un unico importo per tutti"*, *"il profilo utente copia le mos
 
 - **Non si copia nessun passo**: esiste il giro del superadmin (`scalate.banco`, messo da un trigger). Alla conferma `conferma_banco` fotografa quanto mette ciascuno in `banco_puntate`; l'esito sta sul passo e i conti si ricalcolano. Perché: copie da sincronizzare vanno disfatte a ogni correzione.
 - **Arrotondamento per utente** (proposta di Mattia, migliore della quota del totale): ognuno `floor(% × suo conto)`, la giocata è la somma; chi non arriva a 1 € salta il passo. Le vincite hanno i centesimi.
-- **I soldi passano dalla cassa**: `trasferisci_rtw` scrive un movimento `rtw` e una riga in `scalata_ricariche` nella stessa transazione. Ognuno muove i propri, il superadmin anche gli altri. Bloccato con una giocata senza esito, e con un giro personale con passi giocati (la catena di `contiPercentuale` si romperebbe). Tolti ricarica libera e «Riparti da 0».
+- **I soldi passano dalla cassa**: `trasferisci_rtw` scrive un movimento `rtw` e una riga in `scalata_ricariche` nella stessa transazione. Ognuno muove i propri, il superadmin anche gli altri. Bloccato con una giocata senza esito, e fino al 24/11 anche con un giro personale con passi giocati (vedi «Un conto solo»). Tolti ricarica libera e «Riparti da 0».
 - **Il totale di Bilancio conta anche RTW**, perché i soldi reali sono gli stessi; `users.in_totale` (spunta in Utenti) toglie un utente, cassa e RTW insieme. Non tocca `in_spin`.
 - **Riservatezza**: chi segue legge solo `banco_utente()`, mai `scalata_passi` del banco: lì la `posta` è il totale.
-- ⚠️ Il conto vero sta in `conto_rtw` (SQL); `contoDi` resta per chi gioca da solo. Il superadmin vede il banco con `stato_banco()`.
+- ⚠️ Il conto vero sta in `conto_rtw` (SQL), per tutti dal 24/11. Il superadmin vede il banco con `stato_banco()`.
 - `azzera-conto-rtw.js` azzera tenendo l'archivio: una riga negativa senza movimento.
 
 ## Segno + over sulla riga del passo (04/11/2026)
@@ -1000,3 +1000,12 @@ Mattia: *"due aiutanti, devono poter operare con me"*; per ora **solo guardare**
 ## Le soglie si confrontano col numero che si vede (22/11/2026)
 
 `pctVisto` e `vpmVisto` in `lib/scalata.js`, per RTW, Bet Builder e criterio A: Cottbus-Hertha aveva 57,62%, a schermo 58%, e il filtro a 58 la escludeva. ⚠️ Una soglia a 58 ora parte da 57,5. La finestra «aggiungi partita» tiene le partite cominciate da meno di `ORE_VISIBILI`: serve a registrare in ritardo.
+
+## Un conto solo, quello del database (24/11/2026, `sql/62`, lotto S2)
+
+Laboratorio aveva **due conti**: 138,39 € nella sua pagina e 73,39 € nel database. `contoDi` (JavaScript) sommava ricariche e giri e non le puntate nel banco, e `contiPercentuale` **ricalcolava** le puntate già giocate da quel numero: anche le puntate nuove venivano sbagliate. Tolte tutte e due.
+- La pagina legge `mio_conto_rtw()`; `contiGiro` (ex `giroBanco`) vale per banco e giri personali: **le puntate giocate sono quelle scritte sul passo**, la prossima nasce dal conto del database.
+- `chiudi_giro` e `chiudi_giro_perso` calcolano da sé finale (`finale_giro`) e conto nuovo; i numeri mandati dalla pagina non si leggono più. Al centesimo **passo per passo**, come l'incasso vero.
+- **Versato** (`versato_rtw` in SQL, `versatoDi` in JS): dall'ultimo «azzeramento» e **senza «allineamento»**, che è risultato (decisione di Mattia). Prima Admin aveva −49,46 di versato e il risultato del banco era sbagliato di altrettanto.
+- Il trasferimento non chiede più di chiudere il giro: un giro non giocato riparte dal conto nuovo, uno giocato resta com'è.
+- ⚠️ `bankroll_iniziale` di un giro aperto **non è** il conto: dice solo da dove era partito il giro.
