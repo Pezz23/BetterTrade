@@ -191,34 +191,20 @@ export function puntataDi(conto, percentuale) {
 }
 
 /**
- * Il conto di un giro a percentuale, **calcolato** dai passi giocati (come
- * le casse di «Metà utile»: un numero scritto a ogni esito andrebbe disfatto
- * a ogni annullamento). Torna `{ live, poste, prossima }`: il conto adesso, la
- * puntata di ogni passo giocato e quella del prossimo.
- */
-export function contiPercentuale(iniziale, passi, percentuale) {
-  let conto = Number(iniziale)
-  const poste = []
-  for (const p of passi || []) {
-    if (!p || p.esito === 'aperto') break
-    const posta = puntataDi(conto, percentuale)
-    poste.push(posta)
-    conto = Math.round((conto + (p.esito === 'vinto' ? posta * (Number(p.quota) - 1) : -posta)) * 100) / 100
-  }
-  return { live: conto, poste, prossima: puntataDi(conto, percentuale) }
-}
-
-/**
- * ⚠️⚠️ **Il giro del BANCO** (`sql/57`, Mattia, 04/11/2026): ognuno punta
- * `puntataDi(suo conto)` e la giocata è la **somma**, non il % del totale. Le
- * puntate giocate non si ricalcolano: sono quelle confermate, scritte sul passo
- * (i conti possono cambiare fra un passo e l'altro, coi trasferimenti).
- * `live` è il bankroll del giro senza i trasferimenti: dice il risultato.
- * Con una giocata senza esito `prossima` è 0, come in `contiPercentuale`.
+ * ⚠️⚠️ **Il giro, dai passi GIOCATI** (`sql/57`; dal 24/11/2026 anche quello
+ * personale). Nel banco ognuno punta `puntataDi(suo conto)` e la giocata è la
+ * **somma**, non il % del totale; nel giro personale `conti` è il proprio conto e
+ * basta. Le puntate giocate non si ricalcolano: sono quelle scritte sul passo.
+ * ⚠️ Prima il giro personale le ricalcolava camminando dal bankroll di partenza,
+ * e quello nasceva da una somma della pagina: Laboratorio aveva **due conti**
+ * (138,39 a schermo, 73,39 nel database) e le puntate venivano da quello sbagliato.
+ * I `conti` sono quelli del database (`conto_rtw`), mai sommati qui.
+ * `live` è il bankroll del giro senza i trasferimenti: dice il risultato del giro.
+ * Con una giocata senza esito `prossima` è 0.
  */
 export const sommaPuntate = (conti, percentuale) => (conti || []).reduce((a, c) => a + puntataDi(c, percentuale), 0)
 
-export function giroBanco(iniziale, conti, passi, percentuale) {
+export function contiGiro(iniziale, conti, passi, percentuale) {
   let live = Number(iniziale)
   const poste = []
   let prossima = sommaPuntate(conti, percentuale)
@@ -522,36 +508,19 @@ export function componiPasso(candidate, { quotaMinima, maxGambe = MAX_GAMBE,
 }
 
 /**
- * ⚠️⚠️ **Il conto della scalata, calcolato e mai scritto** (Mattia,
- * 24/10/2026: *"se perdo 3 bankroll interi, quindi 300 €, e una volta incasso
- * 200 €, devo capire di essere in perdita e non in utile"*).
- *
- *     conto = Σ ricariche + Σ (bankroll_finale − bankroll_iniziale) delle chiuse
- *
- * È la stessa regola del bankroll del gruppo (regola 1), su soldi diversi: un
- * numero memorizzato si può ritoccare, una somma di fatti no. Prima il
- * capitale era *"l'ultimo bankroll_finale"* più i tasti −/+, e quanto ci si
- * era messo dentro non lo sapeva nessuno.
- *
- * `live` è il bankroll live della scalata aperta (`casse.live` nella pagina):
- * con una scalata aperta il conto di adesso è quello fermo più quanto quel
- * giro ha guadagnato o perso finora. ⚠️ Funziona anche se si è ricaricato a
- * scalata aperta: la ricarica entra in `versato`, il giro aperto conta solo la
- * sua differenza.
- *
- * Torna `versato` (quanto è entrato), `fermo` (il conto senza il giro aperto:
- * è il bankroll con cui si apre il prossimo), `conto` (adesso) e `risultato`
- * (`conto − versato`: in rosso se si è in perdita, qualunque sia l'ultimo
- * incasso).
+ * Quanto è entrato nel conto RTW: le ricariche dall'ultimo **azzeramento**, senza
+ * le righe di **allineamento** al conto reale, che sono risultato e non versamento
+ * (24/11/2026). ⚠️ La stessa regola è `versato_rtw` in `sql/62`.
+ * ⚠️ Il **conto** non si calcola qui: è `conto_rtw` del database, che conta anche
+ * le puntate nel banco. `contoDi`, la copia in JavaScript, non le contava ed è
+ * stata tolta. Il risultato è `conto − versato`: *"se perdo 3 bankroll interi e
+ * incasso 200 €, devo capire di essere in perdita"* (Mattia, 24/10/2026).
  */
-export function contoDi({ ricariche = [], storico = [], aperta = null, live = null } = {}) {
-  const versato = ricariche.reduce((a, r) => a + Number(r.importo || 0), 0)
-  const chiusi = storico
-    .filter(s => s.stato !== 'aperta' && s.bankroll_finale != null)
-    .reduce((a, s) => a + Number(s.bankroll_finale) - Number(s.bankroll_iniziale), 0)
-  const fermo = versato + chiusi
-  const conto = aperta && live != null ? fermo + Number(live) - Number(aperta.bankroll_iniziale) : fermo
-  return { versato, fermo, conto, risultato: conto - versato }
+export function versatoDi(ricariche = []) {
+  const quando = (r) => Date.parse(r.fatta_il)
+  const zero = Math.max(-Infinity, ...ricariche.filter(r => r.nota === 'azzeramento').map(quando))
+  return ricariche.filter(r => r.nota !== 'allineamento' && quando(r) > zero)
+    .reduce((a, r) => a + Number(r.importo || 0), 0)
 }
 
 /**

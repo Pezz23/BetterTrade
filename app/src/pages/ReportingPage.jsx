@@ -206,12 +206,17 @@ export default function ReportingPage() {
     const giornata = giornate.find(g => g.id === id)
     if (!giornata) return
     const wn = giornata.week_number
+    // ⚠️⚠️ **Con la stagione** (24/11/2026): `week_number` riparte da 1 ogni anno,
+    // e senza di lei cancellava la stessa settimana di TUTTE le stagioni.
+    const st = giornata.stagione
+    if (!st) return
 
     // Legge tutte le righe con stesso week_number prima di eliminarle
-    const {data:toDelete} = await supabase.from('giornate').select('user_id, tot_saldo').eq('week_number', wn)
+    const {data:toDelete} = await supabase.from('giornate').select('user_id, tot_saldo').eq('week_number', wn).eq('stagione', st)
 
     // Elimina tutte le righe
-    await supabase.from('giornate').delete().eq('week_number', wn)
+    const { error } = await supabase.from('giornate').delete().eq('week_number', wn).eq('stagione', st)
+    if (error) { alert(error.message); return }
     setGiornate(prev => prev.filter(g => g.week_number !== wn))
     setConfirmIdx(null)
 

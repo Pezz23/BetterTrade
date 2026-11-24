@@ -24,7 +24,7 @@
 // una scalata aperta nell'app.
 // ⚠️ Quando la puntata scenderebbe sotto 1 € si **ricarica** 100 €, e la
 // ricarica entra nel versato: il risultato è `conto − versato`, come nella
-// pagina (`contoDi`).
+// pagina (`conto_rtw` e `versatoDi`).
 //
 // Non scrive niente e non spende crediti.
 //

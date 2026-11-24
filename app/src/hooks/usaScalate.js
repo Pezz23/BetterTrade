@@ -79,7 +79,7 @@ async function inseriscipiano(scalataId, piano, primo = 1) {
 
 /** Le scalate dell'utente: la aperta (se c'è) e lo storico. */
 export function usaScalate(userId, { banco = false } = {}) {
-  const [stato, setStato] = useState({ aperta: null, passi: [], gambe: [], storico: null, ricariche: [], banco: [], errore: null })
+  const [stato, setStato] = useState({ aperta: null, passi: [], gambe: [], storico: null, ricariche: [], banco: [], conto: null, errore: null })
   // ⚠️ **`occupato` serve a schermo.** Ogni gesto è un giro al database, e un
   // tasto che per mezzo secondo non dice niente sembra rotto: è il motivo per
   // cui la lentezza di prima si notava più di quanto durasse.
@@ -110,12 +110,14 @@ export function usaScalate(userId, { banco = false } = {}) {
     // Scalate e ricariche non dipendono l'una dall'altra: partono insieme, e
     // il conto costa un'attesa in più solo sulla carta.
     // ⚠️ `banco` (sql/57): solo il superadmin, chi c'è e quanto ha.
-    const [{ data: scalate, error }, { data: ricariche, error: eR }, { data: righeBanco, error: eB }] = await Promise.all([
+    const [{ data: scalate, error }, { data: ricariche, error: eR }, { data: righeBanco, error: eB }, { data: mioConto, error: eC }] = await Promise.all([
       supabase.from('scalate').select('*').eq('user_id', userId).order('aperta_il', { ascending: false }),
       supabase.from('scalata_ricariche').select('*').eq('user_id', userId).order('fatta_il', { ascending: false }),
       banco ? supabase.rpc('stato_banco') : Promise.resolve({ data: [], error: null }),
+      // ⚠️ Il conto è quello del database, l'unico (`sql/62`): qui non si somma.
+      supabase.rpc('mio_conto_rtw'),
     ])
-    if (error || eR || eB) return setStato(s => ({ ...s, errore: (error || eR || eB).message }))
+    if (error || eR || eB || eC) return setStato(s => ({ ...s, errore: (error || eR || eB || eC).message }))
 
     const aperta = (scalate || []).find(s => s.stato === 'aperta') || null
     let passi = [], gambe = []
@@ -128,7 +130,7 @@ export function usaScalate(userId, { banco = false } = {}) {
       passi = (p || []).map(senzaGambe)
       gambe = (p || []).flatMap(r => r.scalata_gambe || []).sort((a, b) => a.id - b.id)
     }
-    setStato({ aperta, passi, gambe, storico: scalate || [], ricariche: ricariche || [], banco: righeBanco || [], errore: null })
+    setStato({ aperta, passi, gambe, storico: scalate || [], ricariche: ricariche || [], banco: righeBanco || [], conto: Number(mioConto || 0), errore: null })
   }, [userId, banco])
 
   useEffect(() => { ricarica() }, [ricarica])
@@ -259,7 +261,7 @@ export function usaScalate(userId, { banco = false } = {}) {
   /**
    * Segna l'esito di un passo.
    * ⚠️⚠️ **Non tocca le casse**: quelle si ricalcolano dalla catena
-   * (`contiPercentuale` in `lib/scalata.js`). Tenerle aggiornate qui voleva dire
+   * (`contiGiro` in `lib/scalata.js`). Tenerle aggiornate qui voleva dire
    * doverle *disfare* a ogni annullamento — ed è il motivo per cui la prima
    * versione proibiva di annullare. Le colonne `cassa`/`accumulo` restano come
    * fotografia, la verità è il calcolo.
@@ -404,7 +406,7 @@ export function usaScalate(userId, { banco = false } = {}) {
    *
    * Le gambe passate restano dove sono, tutte le **altre** scendono in un
    * passo nuovo inserito subito dopo. Da lì in poi sono due schedine distinte,
-   * e la catena del conto se ne accorge da sola — `contiPercentuale` cammina sui
+   * e la catena del conto se ne accorge da sola — `contiGiro` cammina sui
    * passi, quindi la puntata del pezzo nuovo è quella che arriva fin lì.
    *
    * ⚠️⚠️ **Il numero del passo nuovo è un valore DI MEZZO** (3 e 4 → 3,5), ed è
@@ -415,7 +417,7 @@ export function usaScalate(userId, { banco = false } = {}) {
    * misurato in giri.
    * ⚠️ La `posta` si copia da quella del passo spezzato solo perché la colonna
    * non ammette nulli: **non la legge nessuno**, la puntata vera la ricalcola
-   * `contiPercentuale` dalla catena.
+   * `contiGiro` dalla catena.
    */
   const spezzaPasso = useCallback(async (passo, prossimoNumero, gambeGiu) => {
     if (!gambeGiu.length) return { errore: 'niente da spostare' }
@@ -463,7 +465,7 @@ export function usaScalate(userId, { banco = false } = {}) {
    * stesso conto, la stessa percentuale e i passi del piano che restavano.
    * Sotto 1 € di conto non riparte niente: serve una ricarica.
    */
-  const perdi = useCallback(async (passo, { posta, finale, conto }) => {
+  const perdi = useCallback(async (passo, { posta }) => {
     if (!stato.aperta) return { errore: 'nessuna scalata aperta' }
     const errore = primoErrore(await Promise.all([
       supabase.from('scalata_passi').update({
@@ -474,7 +476,7 @@ export function usaScalate(userId, { banco = false } = {}) {
     ]))
     if (errore) { await ricarica(); return { errore } }
     const { error } = await supabase.rpc('chiudi_giro_perso', {
-      p_scalata: stato.aperta.id, p_dopo: Number(passo.numero), p_finale: finale, p_conto: conto,
+      p_scalata: stato.aperta.id, p_dopo: Number(passo.numero),
     })
     await ricarica()
     return error ? { errore: `il passo è segnato perso, ma il giro non si è chiuso: ${error.message}` } : {}
@@ -485,9 +487,9 @@ export function usaScalate(userId, { banco = false } = {}) {
    * archivio col conto di adesso e i passi non giocati si tolgono (`sql/54`).
    * Con una giocata confermata senza esito il database rifiuta.
    */
-  const chiudiGiro = useCallback(async (finale) => {
+  const chiudiGiro = useCallback(async () => {
     if (!stato.aperta) return { errore: 'nessun giro aperto' }
-    const { error } = await supabase.rpc('chiudi_giro', { p_scalata: stato.aperta.id, p_finale: finale })
+    const { error } = await supabase.rpc('chiudi_giro', { p_scalata: stato.aperta.id })
     await ricarica()
     return error ? { errore: error.message } : {}
   }, [stato.aperta, ricarica])

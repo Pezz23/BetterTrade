@@ -26,8 +26,8 @@ import { categoria, SOGLIE_DEFAULT, iniziaDopo } from '../lib/attendibilita'
 import { pct, eur, gg } from '../lib/formato'
 import {
   METODO, NOMI_REGOLA, QUOTA_MINIMA_GAMBA, QUOTA_MINIMA_SCHEDINA, CONSIGLIATO,
-  fasce, FINESTRA_ELENCO_ORE, spezzaFasce, spezzaAlMinimo, giorno, puoSpezzare, contoDi, eCriterioA,
-  PERCENTUALI, PERCENTUALE_DEFAULT, puntataDi, contiPercentuale, giroBanco, sommaPuntate, LINEE_OVER, lineaOver, conOver, quotaMancante, ORE_VISIBILI, giocato,
+  fasce, FINESTRA_ELENCO_ORE, spezzaFasce, spezzaAlMinimo, giorno, puoSpezzare, versatoDi, eCriterioA,
+  PERCENTUALI, PERCENTUALE_DEFAULT, puntataDi, contiGiro, sommaPuntate, LINEE_OVER, lineaOver, conOver, quotaMancante, ORE_VISIBILI, giocato,
   pctVisto, vpmVisto,
 } from '../lib/scalata'
 
@@ -551,7 +551,7 @@ function Passo({ numero, gambe, giorno: gio, ora, posta, colore, classifiche,
         {/* ⚠️⚠️ **Nessun blocco, nemmeno a scalata aperta** (Mattia, 18/10:
             *"tutto troppo vincolante"*). Si può annullare un esito, cambiare
             una quota, togliere o aggiungere una gamba in qualunque momento:
-            le puntate **si ricalcolano dalla catena** (`contiPercentuale`), quindi non
+            le puntate **si ricalcolano dalla catena** (`contiGiro`), quindi non
             c'è niente da disfare. Era il secondo numero memorizzato a rendere
             necessari i divieti, non il registro. */}
         {[['vinto', C.verde], ['perso', C.rosso], [null, C.spento]].map(([e, col]) => (
@@ -1152,7 +1152,7 @@ function ScalataGuida({ guarda = null }) {
     return () => clearTimeout(t)
   }, [armaChiudi])
   // ⚠️⚠️ **Niente più bankroll da regolare a mano** (24/10/2026): il bankroll
-  // è il **conto** (`contoDi`), che si muove solo con le ricariche e i giri.
+  // è il **conto** (`conto_rtw`, sql/62), che si muove solo con le ricariche e i giri.
   // I tasti −/+ cambiavano il capitale senza lasciare traccia, ed è il motivo
   // per cui non si poteva sapere quanto ci si era messo dentro. Il conto della
   // scalata **non è** il bankroll del gruppo: `users.bankroll` non si muove.
@@ -1261,15 +1261,16 @@ function ScalataGuida({ guarda = null }) {
   // c'è, e la puntata è la somma delle puntate arrotondate una per una.
   const inBanco = isSuperAdmin && (!aperta || !!aperta.banco)
   const contiBanco = reg.banco.map(r => Number(r.conto))
-  const totaleBanco = contiBanco.reduce((a, c) => a + c, 0)
-  const contoFermo = inBanco ? totaleBanco : contoDi({ ricariche: reg.ricariche, storico: reg.storico || [] }).fermo
-  const bankrollIniziale = aperta ? Number(aperta.bankroll_iniziale) : Math.round(contoFermo * 100) / 100
+  // ⚠️ Il conto di adesso è **quello del database** (`sql/62`), per tutti.
+  const conti = inBanco ? contiBanco : [Number(reg.conto || 0)]
+  const contoOra = conti.reduce((a, c) => a + c, 0)
+  const bankrollIniziale = aperta ? Number(aperta.bankroll_iniziale) : Math.round(contoOra * 100) / 100
   // ⚠️⚠️ **A percentuale del conto** (29/10/2026, `sql/49`): `posta` è la
-  // puntata del PRIMO passo del giro; quelle dopo le calcola `contiPercentuale`
+  // puntata del PRIMO passo del giro; quelle dopo le calcola `contiGiro`
   // dal conto di quel momento. Un giro vecchio («Metà utile») aperto non
   // esiste più: se ce ne fosse uno, varrebbe la percentuale di fabbrica.
   const percentuale = aperta ? (Number(aperta.percentuale) || PERCENTUALE_DEFAULT) : percScelta
-  const posta = inBanco ? sommaPuntate(contiBanco, percentuale) : puntataDi(bankrollIniziale, percentuale)
+  const posta = sommaPuntate(conti, percentuale)
 
   // ⚠️ Le candidate: **attendibilità E scelta** sopra le soglie, più il
   // pavimento di quota per gamba — che non è prudenza ma misura (sotto 1,30 la
@@ -1535,28 +1536,19 @@ function ScalataGuida({ guarda = null }) {
   // tutti i blocchi — annullare un esito o cambiare una quota si propaga da
   // solo, perché non c'è un secondo numero da disfare.
   // ⚠️⚠️ **Il conto del giro, calcolato dai passi giocati** (29/10/2026):
-  // `contiPercentuale` cammina passo per passo — puntata = % del conto di quel
+  // `contiGiro` cammina passo per passo — puntata = % del conto di quel
   // momento, vinto → +utile, perso → −puntata. `poste[i]` è la puntata del
   // passo i già giocato, `prossima` quella del passo da giocare adesso.
   // Nel piano nessun passo è giocato: la catena dà solo la puntata del passo 1.
-  const giro = useMemo(() => inBanco ? giroBanco(bankrollIniziale, reg.banco.map(r => Number(r.conto)), aperta ? reg.passi : [], percentuale) : contiPercentuale(bankrollIniziale, aperta
-    ? reg.passi
-    : passi.map(f => ({
-      quota: f.partite.reduce((a, g) => a * (Number(quote[g.id] ?? g.quota) || 1), 1),
-      esito: 'aperto',
-    })), percentuale),
-    [inBanco, reg.banco, aperta, reg.passi, passi, quote, percentuale, bankrollIniziale])
+  const giro = useMemo(() => contiGiro(bankrollIniziale, inBanco ? reg.banco.map(r => Number(r.conto)) : [Number(reg.conto || 0)],
+    aperta ? reg.passi : [], percentuale),
+  [inBanco, reg.banco, reg.conto, aperta, reg.passi, percentuale, bankrollIniziale])
   const puntataDel = (i) => (i < giro.poste.length ? giro.poste[i] : i === giro.poste.length ? giro.prossima : 0)
   // `casse` resta come nome per le righe che lo leggono: ora è il giro.
   const casse = { inGioco: giro.prossima, vivi: giro.poste.length, live: giro.live, risultato: giro.live - bankrollIniziale }
 
-  // Il conto di adesso: ricariche, giri chiusi e quanto il giro in corso ha
-  // fatto finora.
-  const versatoBanco = reg.banco.reduce((a, r) => a + Number(r.versato), 0)
-  const conto = inBanco
-    ? { versato: versatoBanco, fermo: totaleBanco, conto: totaleBanco, risultato: totaleBanco - versatoBanco }
-    : contoDi({ ricariche: reg.ricariche, storico: reg.storico || [],
-      aperta: { bankroll_iniziale: bankrollIniziale }, live: casse.live })
+  const versato = inBanco ? reg.banco.reduce((a, r) => a + Number(r.versato), 0) : versatoDi(reg.ricariche)
+  const conto = { versato, conto: contoOra, risultato: contoOra - versato }
   // Arrotondato al centesimo: è un importo, e i decimali della quota non
   // devono finire nel registro.
   const cent = (x) => Math.round(x * 100) / 100
@@ -1750,7 +1742,7 @@ function ScalataGuida({ guarda = null }) {
       <Card style={{ marginBottom: 12 }}>
         <TitoloCard>{inBanco ? 'IL BANCO' : 'GESTIONE BANKROLL'}</TitoloCard>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: SP.m, marginTop: SP.l }}>
-          {[['Conto', conto.conto, C.testo], ['Puntata', casse.inGioco, C.oro]].map(([l, v, col]) => (
+          {[[inBanco ? 'Conto banco' : 'Conto', conto.conto, C.testo], ['Puntata', casse.inGioco, C.oro]].map(([l, v, col]) => (
             <div key={l}>
               <div style={{ fontFamily: F.sans, fontSize: S.minuta, color: C.spento }}>{l}</div>
               <div style={{ fontFamily: F.mono, fontVariantNumeric: 'tabular-nums', fontSize: S.grande, fontWeight: 700, color: col }}>{eur(v)}</div>
@@ -1783,7 +1775,7 @@ function ScalataGuida({ guarda = null }) {
                     onScegli={async (x) => {
                       if (!aperta) { setPercScelta(x); return }
                       setPercScelta(x)
-                      const r = await reg.cambiaPercentuale(x, Math.max(1, puntataDi(bankrollIniziale, x)))
+                      const r = await reg.cambiaPercentuale(x, Math.max(1, sommaPuntate(conti, x)))
                       setAvviso(r?.errore ?? null)
                     }}
                     opzioni={PERCENTUALI.map(x => [x, `${Math.round(x * 100)}%`])} />}
@@ -1870,7 +1862,7 @@ function ScalataGuida({ guarda = null }) {
               // Il piano che si riapre non deve riproporre le partite già giocate.
               const giocati = new Set(giocatiOra.map(x => x.id))
               const usate = reg.gambe.filter(g => giocati.has(g.passo_id)).map(g => g.prossima_id)
-              const x = giocatiOra.length ? await reg.chiudiGiro(cent(casse.live)) : await reg.eliminaGiroVuoto()
+              const x = giocatiOra.length ? await reg.chiudiGiro() : await reg.eliminaGiroVuoto()
               if (x?.errore) setAvviso(x.errore)
               else setTolte(t => [...new Set([...t, ...usate])])
             }} style={{ marginTop: SP.s, padding: '5px 12px', cursor: 'pointer', borderRadius: R.m,
@@ -1878,7 +1870,7 @@ function ScalataGuida({ guarda = null }) {
               border: `1px solid ${alpha(C.ambra, armaChiudi ? 0.7 : 0.35)}`, color: C.ambra,
               fontFamily: F.sans, fontSize: S.minuta }}>
               {armaChiudi
-                ? `Tocca ancora: chiudi il giro a ${eur(cent(casse.live))}`
+                ? `Tocca ancora: chiudi il giro, il conto è ${eur(contoOra)}`
                 : 'Chiudi giro'}
             </button>
           )
@@ -1935,10 +1927,10 @@ function ScalataGuida({ guarda = null }) {
                buchi**: svuotando un passo la riga si cancella, quindi nel
                registro vero di Mattia i passi sono 1, 3, 4… Il numero che
                conta è la **posizione nella catena**: è quello che si vede e
-               quello su cui `contiPercentuale` cammina. */
+               quello su cui `contiGiro` cammina. */
             <QualePasso key={riga.id} tocca={!solaLettura} risultatoDi={risultatoDi} attivo={i === frontiera && !inAnteprima} numero={i + 1} gambe={gambe} giorno={riga.giorno} ora={gambe[0]?.ora?.slice(0, 5)} stelleDi={votiDi} anteprima={inAnteprima}
               fermo={fermo} fissato={eFissato(i)} onFissa={() => fissa(i)}
-              posta={p} conto={i === giro.poste.length ? giro.live : null} colore={coloreDi(i)} classifiche={classifiche}
+              posta={p} conto={i === giro.poste.length ? contoOra : null} colore={coloreDi(i)} classifiche={classifiche}
               quote={quote} setQuote={setQuote} onApri={setApertaId}
               onQuota={(id, v) => reg.cambiaQuota(id, riga.id, v)}
               onGiocata={async (g, v) => {
@@ -1988,11 +1980,7 @@ function ScalataGuida({ guarda = null }) {
                     setAvviso('Prima togli l’esito dei passi dopo questo: un perso chiude il giro qui.')
                     return
                   }
-                  const conPerso = reg.passi.map((r, k) => (k === i ? { ...r, esito: 'perso' } : r))
-                  const finale = cent(inBanco ? giroBanco(bankrollIniziale, [], conPerso, percentuale).live
-                    : contiPercentuale(bankrollIniziale, conPerso, percentuale).live)
-                  const x = await reg.perdi(riga, { posta: p, finale,
-                    conto: cent(inBanco ? totaleBanco + finale - giro.live : contoFermo + finale - bankrollIniziale) })
+                  const x = await reg.perdi(riga, { posta: p })
                   setAvviso(x?.errore ?? null)
                 } else {
                   reg.segna(riga.id, e || 'aperto', e === 'vinto'
@@ -2031,7 +2019,7 @@ function ScalataGuida({ guarda = null }) {
             <QualePasso tocca={!solaLettura} risultatoDi={risultatoDi} attivo={i === frontiera && !inAnteprima} numero={nGiro} gambe={gambeDelPiano(f.partite)} giorno={f.giorno} ora={f.ora} stelleDi={votiDi} anteprima={inAnteprima}
               fissato={eFissato(i)}
               onFissa={() => fissa(i)}
-              posta={p} conto={i === giro.poste.length ? giro.live : null} colore={coloreDi(i)} classifiche={classifiche}
+              posta={p} conto={i === giro.poste.length ? contoOra : null} colore={coloreDi(i)} classifiche={classifiche}
               onApri={setApertaId} prossima={prossimaDi(i)}
               onAggiunge={() => { const n = prossimaDi(i); if (n) setAggiunte(a => ({ ...a, [i]: [...(a[i] || []), n.id] })) }}
               onManuale={() => setManuale({

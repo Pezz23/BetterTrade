@@ -56,6 +56,12 @@ export default function BilancioPage() {
   // Solo chi ha la spunta in Utenti (`in_totale`, sql/56).
   const dentroTotale = new Set(users.filter(u=>u.in_totale!==false).map(u=>u.id))
   const totaleRtw = righeRtw.filter(r=>dentroTotale.has(r.user_id)).reduce((a,r)=>a+Number(r.conto||0),0)
+  // Il conto del banco è quello della pagina RTW; il resto del totale sono i giri
+  // personali di chi sta sul conto comune (24/11/2026: 1089,65 qui e 971,87 là).
+  const nelBanco = new Set(users.filter(u=>u.copia_banco||u.role==='superadmin').map(u=>u.id))
+  const rtwBanco = righeRtw.filter(r=>dentroTotale.has(r.user_id)&&nelBanco.has(r.user_id)).reduce((a,r)=>a+Number(r.conto||0),0)
+  const contoDiUtente = new Map(righeRtw.map(r=>[r.user_id,Number(r.conto||0)]))
+  const rtwFuori = users.filter(u=>dentroTotale.has(u.id)&&!nelBanco.has(u.id)&&contoDiUtente.get(u.id)).map(u=>[u.display_name||u.username,contoDiUtente.get(u.id)])
   const [trasferendo,setTrasferendo]   = useState(false)
   const [esitoDiff,setEsitoDiff]       = useState(null)
 
@@ -224,6 +230,9 @@ export default function BilancioPage() {
               <div>
                 <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans}}>Saldo utenti RTW</div>
                 <div style={{fontSize:S.titolo,fontWeight:700,color:C.testo,fontFamily:F.mono}}>{fmt(totaleRtw)}</div>
+                <div style={{fontSize:S.micro,color:C.fioco,fontFamily:F.sans}}>
+                  banco <span style={{fontFamily:F.mono}}>{fmt(rtwBanco)}</span>{rtwFuori.map(([nome,v])=><span key={nome}> · {nome} <span style={{fontFamily:F.mono}}>{fmt(v)}</span></span>)}
+                </div>
               </div>
             </div>
             <div style={{fontSize:S.minuta,color:C.fioco,fontFamily:F.sans,marginTop:8}}>Utenti con la spunta in Utenti · sola lettura</div>
