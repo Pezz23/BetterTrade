@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
+import GestioneBankroll from '../components/GestioneBankroll'
 import { supabase } from '../supabase'
 import { C, F, alpha, TIPO, S, R } from '../theme'
 import Icona from '../components/Icona'
@@ -550,6 +551,7 @@ export default function SlotPage() {
 
   return (
     <div style={{padding:'16px'}}>
+      {isAdmin&&<GestioneBankroll base={base}/>}
       <div style={{display:'flex',gap:6,marginBottom:14}}>
         {SPIN_LABELS.map((label,i)=>(
           <button key={label} onClick={()=>setActiveSpin(i)} style={{flex:1,padding:'8px 4px',borderRadius:8,cursor:'pointer',fontFamily:F.sans,fontSize:S.base,fontWeight:600,letterSpacing:1,

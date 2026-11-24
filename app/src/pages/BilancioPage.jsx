@@ -7,9 +7,6 @@ import { StatCard, stileCard } from '../components/ui'
 import Icona from '../components/Icona'
 import RegistroSoldi from '../components/RegistroSoldi'
 
-const PERCENTUALI      = [5, 10, 15, 20, 25, 30]
-const NUM_SLOT_OPTIONS = [1, 2, 3, 4]
-
 function fmt(n, showSign=false) {
   if (n===null||n===undefined||isNaN(n)) return '—'
   const abs=Math.abs(n).toFixed(2)
@@ -25,8 +22,8 @@ function fmtPct(a,b) {
 export default function BilancioPage() {
   const {
     currentUser, users, fetchUsers, aggiornaSaldo,
-    isSuperAdmin, isAdmin,
-    pct, numSlot, savePct, saveNumSlot,
+    isSuperAdmin,
+    pct, numSlot,
     getMyBase, getTotalBase, getTotalBankroll, getSpinBankroll, calcSchedule,
   } = useAuth()
 
@@ -46,8 +43,6 @@ export default function BilancioPage() {
   const [movimenti,setMovimenti]     = useState([])
   const [tuttiMovimenti,setTuttiMovimenti] = useState([]) // solo superadmin
   const [loading,setLoading]         = useState(true)
-  const [savingPct,setSavingPct]     = useState(false)
-  const [savingSlot,setSavingSlot]   = useState(false)
   const [showMov,setShowMov]         = useState(false)
   const [movForm,setMovForm]         = useState({tipo:'deposito',importo:'',nota:''})
   const [savingMov,setSavingMov]     = useState(false)
@@ -125,9 +120,6 @@ export default function BilancioPage() {
     setTrasferendo(false)
   }
 
-  async function handleSavePct(val) { setSavingPct(true); await savePct(val); setSavingPct(false) }
-  async function handleSaveNumSlot(val) { setSavingSlot(true); await saveNumSlot(val); setSavingSlot(false) }
-
   async function salvaMovimento() {
     if (!movForm.importo||parseFloat(movForm.importo)<=0) return
     setSavingMov(true)
@@ -171,48 +163,8 @@ export default function BilancioPage() {
         {isSuperAdmin?'Vista SuperAdmin':currentUser?.display_name||currentUser?.username}
       </div>
 
-      {/* ── Selettore % ── */}
-      <div style={stileCard({marginBottom:12})}>
-        <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:10}}>
-          % Bankroll da giocare {!isAdmin&&<span style={{color:C.spento}}> · impostato da SuperAdmin</span>}
-        </div>
-        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-          {PERCENTUALI.map(p=>(
-            <button key={p} onClick={()=>isAdmin&&handleSavePct(p)} style={{
-              padding:'7px 14px',borderRadius:7,cursor:isAdmin?'pointer':'default',
-              fontFamily:F.mono,fontSize:S.media,fontWeight:600,
-              background:pct===p?alpha(C.oro,0.18):'transparent',
-              border:`1px solid ${pct===p?alpha(C.oro,0.5):C.bordo}`,
-              color:pct===p?C.oro:C.fioco,
-              opacity:!isAdmin&&pct!==p?0.4:1,
-            }}>{p}%</button>
-          ))}
-        </div>
-        {savingPct&&<div style={{fontSize:S.minuta,color:C.spento,fontFamily:F.sans,marginTop:6}}>Salvataggio…</div>}
-      </div>
-
-      {/* ── Selettore slot ── */}
-      <div style={stileCard({marginBottom:16})}>
-        <div style={{fontSize:S.micro,color:C.spento,fontFamily:F.sans,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:10}}>
-          Slot da giocare {!isAdmin&&<span style={{color:C.spento}}> · impostato da SuperAdmin</span>}
-        </div>
-        <div style={{display:'flex',gap:8}}>
-          {NUM_SLOT_OPTIONS.map(n=>(
-            <button key={n} onClick={()=>isAdmin&&handleSaveNumSlot(n)} style={{
-              flex:1,padding:'7px 8px',borderRadius:7,cursor:isAdmin?'pointer':'default',
-              fontFamily:F.mono,fontSize:S.titolo,fontWeight:700,
-              background:numSlot===n?alpha(C.oro,0.18):'transparent',
-              border:`1px solid ${numSlot===n?alpha(C.oro,0.5):C.bordo}`,
-              color:numSlot===n?C.oro:C.fioco,
-              opacity:!isAdmin&&numSlot!==n?0.4:1,
-            }}>{n}</button>
-          ))}
-        </div>
-        {savingSlot&&<div style={{fontSize:S.minuta,color:C.spento,fontFamily:F.sans,marginTop:6}}>Salvataggio…</div>}
-        <div style={{fontSize:S.minuta,color:C.fioco,fontFamily:F.sans,marginTop:8}}>
-          Base per slot: {isSuperAdmin?fmt(totalBase):fmt(myBase)}
-        </div>
-      </div>
+      {/* ⚠️ «% bankroll» e «slot da giocare» stanno in Slot dal 24/11/2026
+          (`GestioneBankroll`): qui ci sono i soldi, non come si gioca. */}
 
       {/* ── VISTA SUPERADMIN ── */}
       {isSuperAdmin && (
