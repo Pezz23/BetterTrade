@@ -43,6 +43,7 @@ const ORDINE = {
   voti_partite: ['prossima_id', 'user_id'], flag_partite: ['prossima_id', 'user_id'],
   preferenze: ['ambito', 'user_id'],
   banco_puntate: ['passo_id', 'user_id'],
+  foto_conti: ['user_id', 'fatta_il'],
 };
 
 // Supabase risponde al massimo 1000 righe per volta: si pagina con range().
