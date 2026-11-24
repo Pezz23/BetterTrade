@@ -24,8 +24,16 @@ codice e dati:
 - **Nessuna giornata slot nella 26/27**, ma 8 spin archiviate con «giocata» dal
   24/10 e 3 in griglia: se erano soldi veri, non sono nei conti.
 - **MattiaP 152,66 € e NickV 48,19 €** sono fuori dal totale (`in_totale`).
-- **Laboratorio:** il passo da 11 € dell'8/11 (`1502`) è **vinto e mai segnato**
-  (+21,39 €); `1466` e `1484` sono la stessa schedina, a 26 secondi (16 e 14 €).
+- **Laboratorio:** il passo `1502` è stato segnato vinto da Mattia il 24/11
+  (+21,39 €). Restano `1466` e `1484`, la stessa schedina a 26 secondi (16 e 14 €).
+- ⚠️ **Difetto: due conti RTW per Laboratorio**, 138,39 € nella sua pagina e 73,39 €
+  nel database. `contoDi` (JS) non conta le perdite nel banco (65 € del 4-5/11),
+  `conto_rtw` (SQL) sì: le sue puntate nascono dal numero sbagliato.
+- **GLeRoy (Christian) e MarcoM**: 90,10 contro 100,89. Non è l'arrotondamento:
+  GLeRoy ha nel banco un passo in più (`1125`, 5/11, 11 € persi). Il resto è +0,21 €.
+  Nello stesso passo Laboratorio ha 22 € invece di 11: il passo prima (`1124`) era
+  quasi certamente segnato vinto, e corretto in perso dopo.
+- In Bilancio Mattia vuole **il totale aggregato** (24/11).
 - 8 passi del banco su 19 confermati e segnati nello stesso minuto: la puntata è
   quella del momento in cui si registra, non per forza quella giocata.
 - ⚠️ **Difetto:** `eliminaGiornata` (`ReportingPage`) cancella per `week_number`
