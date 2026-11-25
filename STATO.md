@@ -13,14 +13,21 @@
 
 ## ▶️ DOVE SIAMO — 25 novembre 2026, leggi questo per primo
 
-**Il 25/11** (`1.90.00`-`1.90.01`, `sql/66`-`67`): **la prova vera è riuscita** — due vinte il 24/11 sera,
-conto app **4.097,67 € = bookmaker** (confermato da Mattia). **Candele** in Bilancio al posto
-della linea, per giorno solare (la schedina sta nel giorno della partita); spunta **«Cash out»** nel pop-up. ⚠️ Laboratorio è a **−0,06** in RTW (i centesimi
-del banco): Mattia ci sposta 10 € dalla cassa, e i centesimi restano in RTW. I passi `1926` e `2007` del 24/11
-sono segnati come cash out (Mattia). Il `1954` di MattiaP **no**: pagamento
-anticipato. Il `1926` sì (confermato). **D'ora in poi i cash out li
-traccia Mattia dal pop-up**: non si segnano e non si deducono da qui.
-
+**Il 25/11** (`1.90.00`-`1.90.01`, `sql/66`-`67`, tutto pubblicato):
+- **La prova vera è riuscita**: due giocate incassate il 24/11 sera, conto app
+  **4.097,67 € = bookmaker** (confermato da Mattia). Cassa 2.913,59 + RTW 1.184,08.
+- **Candele** in Bilancio al posto della linea: giorno, settimana, mese **solari**, una
+  per periodo anche piatta. La schedina sta nel **giorno della partita**, gli stoppini
+  nascono solo dagli esiti, un deposito è uno scalino. Viste da Mattia: *«perfetto»*.
+- **Spunta «Cash out»** nel pop-up, sulla ✓. I passi `1926` e `2007` sono segnati; il
+  `1954` di MattiaP no (pagamento anticipato). **Da ora li traccia Mattia**: non si
+  segnano e non si deducono da qui.
+- ⚠️ Laboratorio è a **−0,06** in RTW (i centesimi del banco): Mattia ci sposta 10 €.
+- 🔜 **Chiesto da Mattia: le candele con tutto lo storico RTW.** Si può, 2-3 ore: i 69 passi
+  hanno tutti la data e i conti si ricostruiscono al centesimo dal 30/10. Proposto il
+  **6/11** (primo giorno del banco completo; dal 6/11 la cassa non si è mossa, quindi vale
+  anche per «Tutto»). ⚠️ Prima del 24/11 puntate e quote sono quelle **dell'app**, e
+  l'allineamento (+55,18) va mostrato come scalino, non come guadagno. **Decide lui la data.**
 
 **✅ FATTO il 24/11: il flusso di cassa, lotti S1-S6** (`1.85.00`-`1.89.02`, `sql/62`-`65`),
 tutto pubblicato. **Giorno 1 dei soldi: 24/11/2026**, conto app = conto reale =
