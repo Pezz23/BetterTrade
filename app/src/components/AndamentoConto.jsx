@@ -25,7 +25,7 @@ export default function AndamentoConto({ dati, chi, titolo }) {
   const [conto, setConto] = useState('tutto')
   const [periodo, setPeriodo] = useState('giorno')
   const v = useMemo(() => vistaRegistro(dati, { chi, conto }), [dati, chi, conto])
-  const candele = useMemo(() => candeleDi(v, periodo), [v, periodo])
+  const candele = useMemo(() => candeleDi(v, periodo, dati.dal), [v, periodo, dati.dal])
   return (
     <div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: SP.s, marginBottom: SP.s }}>

@@ -33,7 +33,7 @@ export function vistaRegistro(dati, { chi = 'totale', conto = 'tutto' } = {}) {
 
   const fatti = new Map()
   for (const e of eventi) {
-    const f = fatti.get(e.rif) || { rif: e.rif, quando: e.quando, tipo: e.tipo, motivo: null, importo: 0, mosso: 0, nomi: new Set() }
+    const f = fatti.get(e.rif) || { rif: e.rif, quando: e.quando, giorno: e.giorno, tipo: e.tipo, motivo: null, importo: 0, mosso: 0, nomi: new Set() }
     f.importo += Number(e.importo)
     f.mosso = Math.max(f.mosso, Math.abs(Number(e.importo)))
     f.motivo = f.motivo && e.conto !== 'cassa' ? f.motivo : e.motivo || f.motivo
@@ -59,40 +59,65 @@ export function vistaRegistro(dati, { chi = 'totale', conto = 'tutto' } = {}) {
 
 // ── Le candele (25/11/2026) ─────────────────────────────────────────────────
 const GIORNO_ROMA = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Rome' })
-/** Il periodo di un istante, in ora italiana: il giorno, il lunedì della settimana, il mese. */
-export function periodoDi(quando, periodo) {
-  const g = GIORNO_ROMA.format(new Date(quando))
-  if (periodo === 'mese') return g.slice(0, 7)
-  if (periodo === 'giorno') return g
-  const [a, m, d] = g.split('-').map(Number)
-  const t = new Date(Date.UTC(a, m - 1, d))
+/** Il giorno italiano di un istante, `aaaa-mm-gg`. */
+export const giornoRoma = (quando) => GIORNO_ROMA.format(new Date(quando))
+const utc = (g) => { const [a, m, d] = g.split('-').map(Number); return new Date(Date.UTC(a, m - 1, d)) }
+const testo = (t) => t.toISOString().slice(0, 10)
+
+/** Il periodo di un giorno: il giorno, il lunedì della sua settimana, il mese. */
+export function periodoDi(giorno, periodo) {
+  if (periodo === 'mese') return giorno.slice(0, 7)
+  if (periodo === 'giorno') return giorno
+  const t = utc(giorno)
   t.setUTCDate(t.getUTCDate() - (t.getUTCDay() + 6) % 7)
-  return t.toISOString().slice(0, 10)
+  return testo(t)
+}
+
+/** Tutti i periodi da un giorno a un altro, anche quelli vuoti. */
+export function periodiFra(da, a, periodo) {
+  const l = []
+  const fine = utc(a)
+  for (const t = utc(da); t <= fine; t.setUTCDate(t.getUTCDate() + 1)) {
+    const k = periodoDi(testo(t), periodo)
+    if (l.at(-1) !== k) l.push(k)
+  }
+  return l
 }
 
 /**
- * Le candele di una vista: una per periodo **in cui è successo qualcosa** (come i
- * grafici di borsa, che saltano i giorni chiusi): apertura, massimo, minimo, chiusura.
- * ⚠️⚠️ **Il corpo è il guadagno**: un deposito non fa una candela verde (Mattia: si
- * vede ma non è guadagno). I soldi mossi alzano o abbassano tutto il periodo, quindi
- * la chiusura è sempre il **saldo vero** e fra due candele resta uno scalino, segnato
- * in `mosso`. Senza movimenti l'apertura è la chiusura di prima.
+ * Le candele di una vista, una per **ogni** giorno, settimana o mese solare dal giorno
+ * 1 a oggi (Mattia, 25/11/2026): parte dal saldo con cui il periodo comincia e finisce
+ * con quello con cui si chiude; gli stoppini sono il punto più alto e più basso.
+ * ⚠️⚠️ **Una schedina sta nel giorno della partita** (`giorno`, `sql/67`), non in quello
+ * in cui si segna l'esito: gli eventi si rimettono in fila per giorno, quindi il saldo
+ * si ricammina da qui e non è quello del Registro, che resta per ora di segnatura.
+ * ⚠️⚠️ **Il massimo e il minimo nascono solo dagli esiti**: giocare 10 € da 100 e
+ * vincere fa 100 → 110, e non tocca 90 (Mattia).
+ * ⚠️ **Il corpo è il guadagno**: un deposito non fa una candela verde. Alza tutto il
+ * suo periodo: fra due candele resta uno scalino, segnato in `mosso`.
+ * Un periodo senza eventi è una linea piatta.
  */
-export function candeleDi(vista, periodo) {
+export function candeleDi(vista, periodo, dal, ora = Date.now()) {
+  const giornoDi = (r) => r.giorno || giornoRoma(r.quando)
+  const righe = vista.righe.filter(r => r.importo !== 0)
+    .map(r => ({ ...r, g: giornoDi(r) }))
+    .sort((a, b) => a.g.localeCompare(b.g) || Date.parse(a.quando) - Date.parse(b.quando))
   const gruppi = new Map()
-  let prima = vista.apre
-  for (const r of vista.righe) {
-    if (r.importo === 0) continue
-    const k = periodoDi(r.quando, periodo)
-    const g = gruppi.get(k) || { chiave: k, parte: prima, guadagni: [], mosso: 0 }
+  for (const r of righe) {
+    const k = periodoDi(r.g, periodo)
+    const g = gruppi.get(k) || { guadagni: [], mosso: 0 }
     if (GUADAGNO.has(r.tipo)) g.guadagni.push(r.importo); else g.mosso = cent(g.mosso + r.importo)
     gruppi.set(k, g)
-    prima = r.saldo
   }
-  return [...gruppi.values()].map(g => {
-    const apre = cent(g.parte + g.mosso)
-    let v = apre, alto = apre, basso = apre
-    for (const x of g.guadagni) { v = cent(v + x); alto = Math.max(alto, v); basso = Math.min(basso, v) }
-    return { chiave: g.chiave, apre, chiude: v, alto, basso, mosso: g.mosso, guadagno: cent(v - apre), quante: g.guadagni.length }
+  const primo = [giornoRoma(dal), ...righe.map(r => r.g)].sort()[0]
+  const ultimo = [giornoRoma(Math.max(ora, Date.parse(dal))), ...righe.map(r => r.g)].sort().at(-1)
+  let saldo = vista.apre
+  return periodiFra(primo, ultimo, periodo).map(chiave => {
+    const g = gruppi.get(chiave) || { guadagni: [], mosso: 0 }
+    const apre = cent(saldo + g.mosso)
+    let alto = apre, basso = apre
+    saldo = apre
+    for (const x of g.guadagni) { saldo = cent(saldo + x); alto = Math.max(alto, saldo); basso = Math.min(basso, saldo) }
+    return { chiave, apre, chiude: saldo, alto, basso, mosso: g.mosso, guadagno: cent(saldo - apre), quante: g.guadagni.length }
   })
 }

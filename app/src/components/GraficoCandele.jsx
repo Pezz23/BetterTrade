@@ -3,7 +3,8 @@ import { C, F, S, R, alpha } from '../theme'
 
 // LE CANDELE del saldo (25/11/2026, Mattia: *"candele cinesi: giorno, settimana,
 // mese"*, al posto della linea a gradini, *"inguardabile"*). Verde = il periodo ha
-// guadagnato, rosso = ha perso; gli stoppini sono il massimo e il minimo toccati.
+// guadagnato, rosso = ha perso, linea piatta = niente; gli stoppini sono il massimo e il
+// minimo toccati.
 // ⚠️ SVG a mano e animazione in CSS (`.candela`): niente Motion, *"solo se essenziale"*.
 // ⚠️ Il prezzo sta a **destra**, dove si guarda l'ultima candela. Si disegnano le
 // ultime che ci stanno: per andare più indietro si passa a settimana o mese.
@@ -65,7 +66,8 @@ export default function GraficoCandele({ candele, adesso, periodo, titolo }) {
   const i = sel != null ? Math.min(sel, g.c.length - 1) : g.c.length - 1
   const s = g.c[i]
   const yOra = g.y(adesso)
-  const colOra = s ? (g.c.at(-1).guadagno >= 0 ? C.verde : C.rosso) : C.oro
+  const fine = g.c.at(-1)?.guadagno || 0
+  const colOra = fine > 0 ? C.verde : fine < 0 ? C.rosso : C.oro
   // Le date che ci stanno, senza accavallarsi: la prima, poi una ogni ~60px.
   const salto = Math.max(1, Math.ceil(60 / Math.max(1, g.c.length > 1 ? g.x(1) - g.x(0) : 60)))
   return (
@@ -77,13 +79,13 @@ export default function GraficoCandele({ candele, adesso, periodo, titolo }) {
             <span style={{ color: C.testo }}>{lungo(s.chiave, periodo)}</span>
             {' '}<b style={{ color: s.guadagno > 0 ? C.verde : s.guadagno < 0 ? C.rosso : C.testo }}>
               {conSegno(s.guadagno)}{s.apre > 0 && s.guadagno !== 0 && ` (${s.guadagno > 0 ? '+' : '−'}${Math.abs(s.guadagno / s.apre * 100).toFixed(1)}%)`}</b>
-            {' '}· {s.quante} {s.quante === 1 ? 'evento' : 'eventi'}
+            {' '}· {s.quante === 0 ? 'nessun esito' : s.quante === 1 ? '1 esito' : `${s.quante} esiti`}
             {s.mosso !== 0 && <span style={{ color: C.celeste }}> · mossi {conSegno(s.mosso)}</span>}
           </div>
           <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             A {intero(s.apre)} · max {intero(s.alto)} · min {intero(s.basso)} · C <span style={{ color: C.testo }}>{s.chiude.toFixed(2)}</span>
           </div>
-        </> : <span style={{ fontFamily: F.sans }}>Dal giorno 1 non è ancora successo niente: la prima candela nasce alla prossima giocata.</span>}
+        </> : null}
       </div>
       <div ref={riquadro} tabIndex={0} role="img" aria-label={`${titolo}: ${g.c.length} candele, adesso ${eur(adesso)}`}
         onPointerDown={e => scegli(e.clientX)} onPointerMove={e => scegli(e.clientX)}
@@ -108,11 +110,13 @@ export default function GraficoCandele({ candele, adesso, periodo, titolo }) {
           <g key={`${periodo}${candele.length}`}>
             {g.c.map((q, k) => {
               const col = q.guadagno > 0 ? C.verde : q.guadagno < 0 ? C.rosso : C.spento
-              const a = g.y(Math.max(q.apre, q.chiude)), b = g.y(Math.min(q.apre, q.chiude))
+              const alto = Math.max(2, g.y(Math.min(q.apre, q.chiude)) - g.y(Math.max(q.apre, q.chiude)))
+              // Una linea piatta sta a cavallo del saldo, non sotto.
+              const a = q.guadagno === 0 ? g.y(q.apre) - 1 : g.y(Math.max(q.apre, q.chiude))
               return (
                 <g key={q.chiave} className="candela" style={{ animationDelay: `${Math.min(k * 25, 500)}ms` }}>
                   <line x1={g.x(k)} x2={g.x(k)} y1={g.y(q.alto)} y2={g.y(q.basso)} stroke={col} strokeWidth="1.5" />
-                  <rect x={g.x(k) - g.w / 2} y={a} width={g.w} height={Math.max(2, b - a)} rx={Math.min(2, g.w / 4)} fill={col} />
+                  <rect x={g.x(k) - g.w / 2} y={a} width={g.w} height={alto} rx={Math.min(2, g.w / 4)} fill={col} />
                 </g>
               )
             })}
