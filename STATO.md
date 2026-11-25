@@ -8,12 +8,12 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 25 novembre 2026 · app alla versione **1.90.01**
-(`e37ad71`, pushato). Migrazioni `sql/54`-`67` applicate; la funzione `aggiorna-risultati` è alla **versione 7**.
+**Ultimo aggiornamento:** 25 novembre 2026 · app alla versione **1.91.00**
+(`3bedda1`, pushato). Migrazioni `sql/54`-`68` applicate; la funzione `aggiorna-risultati` è alla **versione 7**.
 
 ## ▶️ DOVE SIAMO — 25 novembre 2026, leggi questo per primo
 
-**Il 25/11** (`1.90.00`-`1.90.01`, `sql/66`-`67`, tutto pubblicato):
+**Il 25/11** (`1.90.00`-`1.91.00`, `sql/66`-`68`, tutto pubblicato):
 - **La prova vera è riuscita**: due giocate incassate il 24/11 sera, conto app
   **4.097,67 € = bookmaker** (confermato da Mattia). Cassa 2.913,59 + RTW 1.184,08.
 - **Candele** in Bilancio al posto della linea: giorno, settimana, mese **solari**, una
@@ -23,11 +23,9 @@
   `1954` di MattiaP no (pagamento anticipato). **Da ora li traccia Mattia**: non si
   segnano e non si deducono da qui.
 - ⚠️ Laboratorio è a **−0,06** in RTW (i centesimi del banco): Mattia ci sposta 10 €.
-- 🔜 **Chiesto da Mattia: le candele con tutto lo storico RTW.** Si può, 2-3 ore: i 69 passi
-  hanno tutti la data e i conti si ricostruiscono al centesimo dal 30/10. Proposto il
-  **6/11** (primo giorno del banco completo; dal 6/11 la cassa non si è mossa, quindi vale
-  anche per «Tutto»). ⚠️ Prima del 24/11 puntate e quote sono quelle **dell'app**, e
-  l'allineamento (+55,18) va mostrato come scalino, non come guadagno. **Decide lui la data.**
+- **Candele dal 6/11** con lo storico di RTW (data di Mattia), per Tutto, Slot e RTW; il
+  Registro resta dal 24/11. L'allineamento è uno scalino. Le candele vecchie non sono
+  segnate diverse. ⚠️ Non ancora viste da Mattia a schermo.
 
 **✅ FATTO il 24/11: il flusso di cassa, lotti S1-S6** (`1.85.00`-`1.89.02`, `sql/62`-`65`),
 tutto pubblicato. **Giorno 1 dei soldi: 24/11/2026**, conto app = conto reale =
@@ -461,6 +459,7 @@ leggi "884 partite" o "440 crediti" e siamo a marzo, sono vecchi di mesi.
 
 | | commit |
 |---|---|
+| **Candele dal 6/11**, storico RTW, `sql/68` (25/11) | `3bedda1` |
 | **Candele per giorno solare**, giorno della partita, `sql/67` (25/11) | `e37ad71` |
 | **Candele** in Bilancio e spunta **«Cash out»**, `sql/66` (25/11) | `dc930e4` |
 | **«Gestione cassa»** a scomparsa nella card del banco (24/11) | `9537f3e` |
