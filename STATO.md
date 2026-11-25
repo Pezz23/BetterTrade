@@ -8,14 +8,14 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 25 novembre 2026 · app alla versione **1.90.00**
-(`dc930e4`, pushato). Migrazioni `sql/54`-`66` applicate; la funzione `aggiorna-risultati` è alla **versione 7**.
+**Ultimo aggiornamento:** 25 novembre 2026 · app alla versione **1.90.01**
+(`e37ad71`, pushato). Migrazioni `sql/54`-`67` applicate; la funzione `aggiorna-risultati` è alla **versione 7**.
 
 ## ▶️ DOVE SIAMO — 25 novembre 2026, leggi questo per primo
 
-**Il 25/11** (`1.90.00`, `sql/66`): **la prova vera è riuscita** — due vinte il 24/11 sera,
+**Il 25/11** (`1.90.00`-`1.90.01`, `sql/66`-`67`): **la prova vera è riuscita** — due vinte il 24/11 sera,
 conto app **4.097,67 € = bookmaker** (confermato da Mattia). **Candele** in Bilancio al posto
-della linea; spunta **«Cash out»** nel pop-up. ⚠️ Laboratorio è a **−0,06** in RTW (i centesimi
+della linea, per giorno solare (la schedina sta nel giorno della partita); spunta **«Cash out»** nel pop-up. ⚠️ Laboratorio è a **−0,06** in RTW (i centesimi
 del banco): Mattia ci sposta 10 € dalla cassa, e i centesimi restano in RTW. I passi `1926` e `2007` del 24/11
 sono segnati come cash out (Mattia). Il `1954` di MattiaP **no**: pagamento
 anticipato. Il `1926` sì (confermato). **D'ora in poi i cash out li
@@ -454,6 +454,7 @@ leggi "884 partite" o "440 crediti" e siamo a marzo, sono vecchi di mesi.
 
 | | commit |
 |---|---|
+| **Candele per giorno solare**, giorno della partita, `sql/67` (25/11) | `e37ad71` |
 | **Candele** in Bilancio e spunta **«Cash out»**, `sql/66` (25/11) | `dc930e4` |
 | **«Gestione cassa»** a scomparsa nella card del banco (24/11) | `9537f3e` |
 | **Gestione Bilanci** risponde nella card, e accetta «117,78 €» (24/11) | `e537c9b` |
