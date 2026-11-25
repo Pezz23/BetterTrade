@@ -1035,3 +1035,10 @@ In Bilancio, dal **giorno 1** (24/11/2026 14:00 UTC, `giorno_uno()`): conto comu
 - **Settore ospiti**: totale in grande, sotto Slot e RTW; toccando un utente il suo grafico. I conti separati (`in_totale = false`) in fondo. Ogni utente ha «Il tuo conto» col solo suo grafico.
 - `usaRegistro` legge una volta per pagina; `vistaRegistro` e `puntiDi` (`lib/registro.js`) fanno i conti; `GraficoSaldo` è SVG a mano, **a gradini** perché fra un evento e l'altro i soldi stanno fermi, **senza riempimento** perché l'asse non parte da zero. Il cerchio celeste è denaro che entra o esce, non guadagno.
 - ⚠️ Si guarda senza entrare nell'app: la pagina montata da sola con `supabase` e `AuthContext` finti (plugin di Vite con `resolveId`), su un server locale. Nessun login, nessun dato vero.
+
+## Candele e cash out (25/11/2026, `1.90.00`, `sql/66`)
+
+- **Le candele** (`GraficoCandele`, `candeleDi` in `lib/registro.js`) al posto della linea a gradini, che Mattia ha trovato «inguardabile»: giorno, settimana (dal lunedì), mese, in **ora italiana**, solo i periodi in cui è successo qualcosa. Niente Motion: CSS (`.candela`), *«solo se essenziale»*.
+- ⚠️ **Il corpo è il guadagno**: un deposito non fa una candela verde. Sposta l'apertura del suo periodo (scalino fra due candele, cerchio celeste), così la chiusura è sempre il saldo vero.
+- **Cash out**: spunta nel pop-up, **solo su ✓** (un cash out ha sempre un incasso, anche in perdita), `scalata_passi.cashout`. Serve solo a contarli: si vede nel passo, nell'Archivio, nel Registro e nella riga sotto le statistiche. I conti li fanno gli importi veri. ⚠️ La quota vera di un cash out **non è la quota della schedina**: non si confronta con quella dell'app per dire quanto sbaglia.
+- ⚠️ Provando la migrazione: dentro una transazione con un `alter table` **non si legge da un'altra connessione**, aspetta per sempre e tiene bloccata la tabella dell'app. Si legge prima, e si mette `set local lock_timeout`.

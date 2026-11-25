@@ -8,10 +8,17 @@
 > siamo, cosa è in corso e cosa è ancora aperto**. Lo storico si apre quando
 > serve capire *perché* una cosa è fatta così, non per sapere cosa manca.
 
-**Ultimo aggiornamento:** 24 novembre 2026 · app alla versione **1.89.02**
-(`9537f3e`, pushato). Migrazioni `sql/54`-`65` applicate; la funzione `aggiorna-risultati` è alla **versione 7**.
+**Ultimo aggiornamento:** 25 novembre 2026 · app alla versione **1.90.00**
+(`dc930e4`, pushato). Migrazioni `sql/54`-`66` applicate; la funzione `aggiorna-risultati` è alla **versione 7**.
 
-## ▶️ DOVE SIAMO — 24 novembre 2026, leggi questo per primo
+## ▶️ DOVE SIAMO — 25 novembre 2026, leggi questo per primo
+
+**Il 25/11** (`1.90.00`, `sql/66`): **la prova vera è riuscita** — due vinte il 24/11 sera,
+conto app **4.097,67 € = bookmaker** (confermato da Mattia). **Candele** in Bilancio al posto
+della linea; spunta **«Cash out»** nel pop-up. ⚠️ Laboratorio è a **−0,06** in RTW (i centesimi
+del banco): Mattia ci sposta 10 € dalla cassa, e i centesimi restano in RTW. ⏳ Da chiedere: quali
+passi del 24/11 erano cash out (il `2007`, 105 → 227,77, quasi certamente), per segnarli.
+
 
 **✅ FATTO il 24/11: il flusso di cassa, lotti S1-S6** (`1.85.00`-`1.89.02`, `sql/62`-`65`),
 tutto pubblicato. **Giorno 1 dei soldi: 24/11/2026**, conto app = conto reale =
@@ -19,8 +26,8 @@ tutto pubblicato. **Giorno 1 dei soldi: 24/11/2026**, conto app = conto reale =
 suoi 117,78 da RTW a cassa), nessuna giocata del banco in corso, MattiaP 17 € su Snai.
 
 **Da provare con Mattia, alla ripresa:**
-1. La prima giocata vera: «Disponibile sul conto bet» = bookmaker dopo la conferma **e**
-   dopo l'esito, e nel Registro «✓ i conti tornano».
+1. ✅ 25/11 — la prima giocata vera: il totale coincide col bookmaker (resta «Disponibile»
+   **durante** una giocata).
 2. La **✗** dal pop-up (la ✓ e la matita le ha provate lui: *«funziona»*; la ✗ solo il database).
 3. «Il tuo conto» visto da chi segue il banco, e la Visione Admin degli aiutanti.
 ⚠️ «Trasferimento a Laboratorio» **non** sottrae le giocate in corso (scelta di Mattia):
@@ -445,6 +452,7 @@ leggi "884 partite" o "440 crediti" e siamo a marzo, sono vecchi di mesi.
 
 | | commit |
 |---|---|
+| **Candele** in Bilancio e spunta **«Cash out»**, `sql/66` (25/11) | `dc930e4` |
 | **«Gestione cassa»** a scomparsa nella card del banco (24/11) | `9537f3e` |
 | **Gestione Bilanci** risponde nella card, e accetta «117,78 €» (24/11) | `e537c9b` |
 | **S6**: dashboard di Bilancio, grafici del conto e di ogni utente (24/11) | `19d27c4` |
