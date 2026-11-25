@@ -18,7 +18,7 @@ const intero = (x) => (Math.abs(x) >= 1000 ? x.toFixed(0) : x.toFixed(2))
 const conSegno = (x) => `${x < 0 ? '−' : x > 0 ? '+' : ''}${eur(Math.abs(x))}`
 const MESI = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic']
 const corto = (k) => (k.length === 7 ? `${MESI[Number(k.slice(5)) - 1]} ${k.slice(2, 4)}` : `${k.slice(8)}/${k.slice(5, 7)}`)
-const lungo = (k, periodo) => (periodo === 'settimana' ? `sett. del ${corto(k)}` : corto(k))
+const lungo = (k, periodo) => (periodo === 'settimana' ? `sett. ${corto(k)}` : corto(k))
 
 /** Tacche «tonde» dentro l'intervallo: 1, 2, 2,5 o 5 per una potenza di dieci. */
 function tacche(min, max, quante = 5) {
@@ -80,7 +80,7 @@ export default function GraficoCandele({ candele, adesso, periodo, titolo }) {
             {' '}<b style={{ color: s.guadagno > 0 ? C.verde : s.guadagno < 0 ? C.rosso : C.testo }}>
               {conSegno(s.guadagno)}{s.apre > 0 && s.guadagno !== 0 && ` (${s.guadagno > 0 ? '+' : '−'}${Math.abs(s.guadagno / s.apre * 100).toFixed(1)}%)`}</b>
             {' '}· {s.quante === 0 ? 'nessun esito' : s.quante === 1 ? '1 esito' : `${s.quante} esiti`}
-            {s.mosso !== 0 && <span style={{ color: C.celeste }}> · mossi {conSegno(s.mosso)}</span>}
+            {s.mosso !== 0 && <span style={{ color: C.celeste }}> · ○ {conSegno(s.mosso)}</span>}
           </div>
           <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             A {intero(s.apre)} · max {intero(s.alto)} · min {intero(s.basso)} · C <span style={{ color: C.testo }}>{s.chiude.toFixed(2)}</span>

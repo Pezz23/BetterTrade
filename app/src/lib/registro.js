@@ -9,6 +9,9 @@
 export const GUADAGNO = new Set(['slot', 'passo', 'correzione'])
 export const NON_GUADAGNO = new Set(['deposito', 'prelievo', 'trasferimento'])
 export const NOMI_TIPO = { slot: 'slot', passo: 'RTW', correzione: 'correzione', deposito: 'deposito', prelievo: 'prelievo', trasferimento: 'trasferimento' }
+const GIORNO_ROMA = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Rome' })
+/** Il giorno italiano di un istante, `aaaa-mm-gg`. */
+export const giornoRoma = (quando) => GIORNO_ROMA.format(new Date(quando))
 const cent = (x) => Math.round(x * 100) / 100
 const somma = (l, f) => cent(l.reduce((a, x) => a + Number(f(x) || 0), 0))
 
@@ -57,10 +60,19 @@ export function vistaRegistro(dati, { chi = 'totale', conto = 'tutto' } = {}) {
   }
 }
 
+/**
+ * La vista delle candele: gli eventi dal 6/11 (`candele` di `registro_soldi`, `sql/68`),
+ * prima del giorno 1 del Registro. ⚠️ L'apertura è **adesso meno gli eventi**: per
+ * quella data non c'è una foto confrontata col bookmaker.
+ */
+export function vistaCandele(dati, scelta) {
+  const eventi = dati?.candele?.eventi ?? dati?.eventi ?? []
+  const v = vistaRegistro({ ...dati, eventi }, scelta)
+  return { ...v, dal: dati?.candele?.dal ?? giornoRoma(dati?.dal), apre: cent(v.adesso - somma(v.righe, r => r.importo)) }
+}
+
 // ── Le candele (25/11/2026) ─────────────────────────────────────────────────
-const GIORNO_ROMA = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Rome' })
-/** Il giorno italiano di un istante, `aaaa-mm-gg`. */
-export const giornoRoma = (quando) => GIORNO_ROMA.format(new Date(quando))
+const GIOCATE = new Set(['slot', 'passo'])
 const utc = (g) => { const [a, m, d] = g.split('-').map(Number); return new Date(Date.UTC(a, m - 1, d)) }
 const testo = (t) => t.toISOString().slice(0, 10)
 
@@ -93,11 +105,12 @@ export function periodiFra(da, a, periodo) {
  * si ricammina da qui e non è quello del Registro, che resta per ora di segnatura.
  * ⚠️⚠️ **Il massimo e il minimo nascono solo dagli esiti**: giocare 10 € da 100 e
  * vincere fa 100 → 110, e non tocca 90 (Mattia).
- * ⚠️ **Il corpo è il guadagno**: un deposito non fa una candela verde. Alza tutto il
- * suo periodo: fra due candele resta uno scalino, segnato in `mosso`.
+ * ⚠️ **Il corpo sono le giocate** (slot e passi): un deposito non fa una candela verde,
+ * e nemmeno l'allineamento al conto reale. Alzano tutto il loro periodo: fra due
+ * candele resta uno scalino, segnato in `mosso`.
  * Un periodo senza eventi è una linea piatta.
  */
-export function candeleDi(vista, periodo, dal, ora = Date.now()) {
+export function candeleDi(vista, periodo, ora = Date.now()) {
   const giornoDi = (r) => r.giorno || giornoRoma(r.quando)
   const righe = vista.righe.filter(r => r.importo !== 0)
     .map(r => ({ ...r, g: giornoDi(r) }))
@@ -106,11 +119,12 @@ export function candeleDi(vista, periodo, dal, ora = Date.now()) {
   for (const r of righe) {
     const k = periodoDi(r.g, periodo)
     const g = gruppi.get(k) || { guadagni: [], mosso: 0 }
-    if (GUADAGNO.has(r.tipo)) g.guadagni.push(r.importo); else g.mosso = cent(g.mosso + r.importo)
+    if (GIOCATE.has(r.tipo)) g.guadagni.push(r.importo); else g.mosso = cent(g.mosso + r.importo)
     gruppi.set(k, g)
   }
-  const primo = [giornoRoma(dal), ...righe.map(r => r.g)].sort()[0]
-  const ultimo = [giornoRoma(Math.max(ora, Date.parse(dal))), ...righe.map(r => r.g)].sort().at(-1)
+  const giorni = righe.map(r => r.g)
+  const primo = [vista.dal, ...giorni].sort()[0]
+  const ultimo = [vista.dal, giornoRoma(ora), ...giorni].sort().at(-1)
   let saldo = vista.apre
   return periodiFra(primo, ultimo, periodo).map(chiave => {
     const g = gruppi.get(chiave) || { guadagni: [], mosso: 0 }
