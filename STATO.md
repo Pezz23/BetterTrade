@@ -18,8 +18,8 @@ conto app **4.097,67 € = bookmaker** (confermato da Mattia). **Candele** in Bi
 della linea; spunta **«Cash out»** nel pop-up. ⚠️ Laboratorio è a **−0,06** in RTW (i centesimi
 del banco): Mattia ci sposta 10 € dalla cassa, e i centesimi restano in RTW. I passi `1926` e `2007` del 24/11
 sono segnati come cash out (Mattia). Il `1954` di MattiaP **no**: pagamento
-anticipato. ⏳ Da chiedere: il `1926` (96 → 185,44, alle 20:49, stesse partite) era cash out o
-pagamento anticipato? L'avevo segnato **per l'orario**, che da solo non lo prova.
+anticipato. Il `1926` sì (confermato). **D'ora in poi i cash out li
+traccia Mattia dal pop-up**: non si segnano e non si deducono da qui.
 
 
 **✅ FATTO il 24/11: il flusso di cassa, lotti S1-S6** (`1.85.00`-`1.89.02`, `sql/62`-`65`),
