@@ -16,8 +16,8 @@
 **Il 25/11** (`1.90.00`, `sql/66`): **la prova vera è riuscita** — due vinte il 24/11 sera,
 conto app **4.097,67 € = bookmaker** (confermato da Mattia). **Candele** in Bilancio al posto
 della linea; spunta **«Cash out»** nel pop-up. ⚠️ Laboratorio è a **−0,06** in RTW (i centesimi
-del banco): Mattia ci sposta 10 € dalla cassa, e i centesimi restano in RTW. ⏳ Da chiedere: quali
-passi del 24/11 erano cash out (il `2007`, 105 → 227,77, quasi certamente), per segnarli.
+del banco): Mattia ci sposta 10 € dalla cassa, e i centesimi restano in RTW. I passi `1926` e `2007` del 24/11
+sono segnati come cash out (Mattia). ⏳ Da chiedere: anche il `1954` di MattiaP (17 → 33,79, alle 20:38)?
 
 
 **✅ FATTO il 24/11: il flusso di cassa, lotti S1-S6** (`1.85.00`-`1.89.02`, `sql/62`-`65`),
