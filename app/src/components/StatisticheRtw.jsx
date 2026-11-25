@@ -46,7 +46,7 @@ export default function StatisticheRtw({ aggiorna = 0, banco = false }) {
           </div>
         ))}
       </div>
-      <div style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco, marginTop: SP.s, textAlign: 'center' }}>dal 4/11/2026</div>
+      <div style={{ fontFamily: F.sans, fontSize: S.micro, color: C.fioco, marginTop: SP.s, textAlign: 'center' }}>dal 4/11/2026{Number(d?.cashout) > 0 && ` · cash out ${d.cashout} su ${d.passi_presi} passi presi`}</div>
     </Card>
   )
 }

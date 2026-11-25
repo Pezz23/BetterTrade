@@ -812,7 +812,7 @@ function PassoRiga(props) {
         <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           fontFamily: F.sans, fontSize: S.minuta, color: C.spento }}>
           {nomeGiorno(gio)} {gg(gio)}{ora ? ` ${ora}` : ''} · {gambe.length} partite
-          {anteprima && !esito ? ' · in anteprima' : ''}{fissato ? ' · fissato' : ''}
+          {anteprima && !esito ? ' · in anteprima' : ''}{fissato ? ' · fissato' : ''}{vero?.cashout ? ' · cash out' : ''}
         </span>
         <span style={{ fontFamily: F.mono, fontVariantNumeric: 'tabular-nums', fontSize: S.media, fontWeight: 700, color: esito ? tinta : C.testo, flexShrink: 0 }}>
           {quota.toFixed(2).replace('.', ',')}
@@ -913,7 +913,7 @@ function GiroArchivio({ s, onResoconto }) {
                     fontFamily: F.sans, fontSize: S.base }}>
                     <span style={{ color: tinta, fontWeight: 600 }}>
                       {p.esito === 'vinto' ? '✓' : p.esito === 'perso' ? '✗' : '·'} PASSO {i + 1}
-                      <span style={{ color: C.spento, fontWeight: 400 }}> · {nomeGiorno(p.giorno)} {gg(p.giorno)}</span>
+                      <span style={{ color: C.spento, fontWeight: 400 }}> · {nomeGiorno(p.giorno)} {gg(p.giorno)}{p.cashout ? ' · cash out' : ''}</span>
                     </span>
                     <span style={{ fontFamily: F.mono, color: C.oro }}>
                       {p.quota_vera != null && virgola(p.quota_vera) !== virgola(p.quota) && (

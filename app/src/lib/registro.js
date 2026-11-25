@@ -57,16 +57,42 @@ export function vistaRegistro(dati, { chi = 'totale', conto = 'tutto' } = {}) {
   }
 }
 
+// ── Le candele (25/11/2026) ─────────────────────────────────────────────────
+const GIORNO_ROMA = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Rome' })
+/** Il periodo di un istante, in ora italiana: il giorno, il lunedì della settimana, il mese. */
+export function periodoDi(quando, periodo) {
+  const g = GIORNO_ROMA.format(new Date(quando))
+  if (periodo === 'mese') return g.slice(0, 7)
+  if (periodo === 'giorno') return g
+  const [a, m, d] = g.split('-').map(Number)
+  const t = new Date(Date.UTC(a, m - 1, d))
+  t.setUTCDate(t.getUTCDate() - (t.getUTCDay() + 6) % 7)
+  return t.toISOString().slice(0, 10)
+}
+
 /**
- * I punti del grafico: il giorno 1, ogni evento che ha mosso il saldo, adesso.
- * ⚠️ L'ultimo è il saldo **del database**: se c'è uno scarto, il gradino si vede.
+ * Le candele di una vista: una per periodo **in cui è successo qualcosa** (come i
+ * grafici di borsa, che saltano i giorni chiusi): apertura, massimo, minimo, chiusura.
+ * ⚠️⚠️ **Il corpo è il guadagno**: un deposito non fa una candela verde (Mattia: si
+ * vede ma non è guadagno). I soldi mossi alzano o abbassano tutto il periodo, quindi
+ * la chiusura è sempre il **saldo vero** e fra due candele resta uno scalino, segnato
+ * in `mosso`. Senza movimenti l'apertura è la chiusura di prima.
  */
-export function puntiDi(vista, dal, ora = Date.now()) {
-  return [
-    { t: Date.parse(dal), saldo: vista.apre, motivo: 'giorno 1' },
-    ...vista.righe.filter(r => r.importo !== 0).map(r => ({
-      t: Date.parse(r.quando), saldo: r.saldo, importo: r.importo, tipo: r.tipo, motivo: r.motivo, rif: r.rif })),
-    // ⚠️ Un telefono con l'orologio indietro non mette «adesso» prima degli eventi.
-    { t: Math.max(ora, Date.parse(dal), ...vista.righe.map(r => Date.parse(r.quando))), saldo: vista.adesso, motivo: 'adesso' },
-  ]
+export function candeleDi(vista, periodo) {
+  const gruppi = new Map()
+  let prima = vista.apre
+  for (const r of vista.righe) {
+    if (r.importo === 0) continue
+    const k = periodoDi(r.quando, periodo)
+    const g = gruppi.get(k) || { chiave: k, parte: prima, guadagni: [], mosso: 0 }
+    if (GUADAGNO.has(r.tipo)) g.guadagni.push(r.importo); else g.mosso = cent(g.mosso + r.importo)
+    gruppi.set(k, g)
+    prima = r.saldo
+  }
+  return [...gruppi.values()].map(g => {
+    const apre = cent(g.parte + g.mosso)
+    let v = apre, alto = apre, basso = apre
+    for (const x of g.guadagni) { v = cent(v + x); alto = Math.max(alto, v); basso = Math.min(basso, v) }
+    return { chiave: g.chiave, apre, chiude: v, alto, basso, mosso: g.mosso, guadagno: cent(v - apre), quante: g.guadagni.length }
+  })
 }

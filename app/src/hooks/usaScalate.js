@@ -272,8 +272,8 @@ export function usaScalate(userId, { banco = false } = {}) {
    * Un perso manda il giro in archivio (Mattia, 29/10/2026: *"a ogni sconfitta
    * deve salvare i passi in archivio, mi servono per studiare"*).
    */
-  const decidi = useCallback(async (passoId, esito, { giocato: importo, incasso }) => {
-    const { error } = await supabase.rpc('decidi_passo', { p_passo: passoId, p_esito: esito, p_giocato: importo, p_incasso: incasso })
+  const decidi = useCallback(async (passoId, esito, { giocato: importo, incasso, cashout = false }) => {
+    const { error } = await supabase.rpc('decidi_passo', { p_passo: passoId, p_esito: esito, p_giocato: importo, p_incasso: incasso, p_cashout: cashout })
     await ricarica()
     return error ? { errore: error.message } : {}
   }, [ricarica])

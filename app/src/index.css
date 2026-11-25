@@ -133,3 +133,10 @@ button:disabled { opacity: .45; cursor: default; }
 .scheda-entra { animation: scheda-entra-da-destra .26s cubic-bezier(.32,.72,0,1); }
 
 @media (prefers-reduced-motion: reduce) { .scheda-entra { animation: none; } }
+
+
+/* Le candele di Bilancio si aprono dal centro, una dopo l'altra (`GraficoCandele`). */
+@keyframes candela-si-apre { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
+.candela { transform-box: fill-box; transform-origin: center; animation: candela-si-apre .45s cubic-bezier(.22,1,.36,1) backwards; }
+
+@media (prefers-reduced-motion: reduce) { .candela { animation: none; } }

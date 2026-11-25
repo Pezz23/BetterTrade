@@ -211,6 +211,7 @@ export const sommaPuntate = (conti, percentuale) => (conti || []).reduce((a, c) 
 export const veroDi = (p) => (p?.giocato_vero == null ? null : {
   giocato: Number(p.giocato_vero), incasso: Number(p.incasso_vero || 0),
   quota: p.quota_vera == null ? null : Number(p.quota_vera),
+  cashout: !!p.cashout,
 })
 
 export function contiGiro(iniziale, conti, passi, percentuale) {

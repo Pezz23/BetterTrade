@@ -23,6 +23,8 @@ export default function SistemaConti({ titolo, esito, posta, quota, banco = fals
   const [giocato, setGiocato] = useState(scrivi(posta))
   // `null` = non ancora toccato: segue l'importo giocato alla quota del passo.
   const [incasso, setIncasso] = useState(null)
+  // «Cash out»: solo un segno per contarli (Mattia, 25/11/2026, `sql/66`).
+  const [cashout, setCashout] = useState(false)
   const [occupato, setOccupato] = useState(false)
   const [errore, setErrore] = useState(null)
 
@@ -47,7 +49,7 @@ export default function SistemaConti({ titolo, esito, posta, quota, banco = fals
   const salva = async () => {
     if (!valido || occupato) return
     setOccupato(true); setErrore(null)
-    const x = await onSalva({ giocato: g, incasso: vinto ? v : null })
+    const x = await onSalva({ giocato: g, incasso: vinto ? v : null, cashout: vinto && cashout })
     if (x?.errore) { setErrore(x.errore); setOccupato(false) }
   }
 
@@ -87,6 +89,13 @@ export default function SistemaConti({ titolo, esito, posta, quota, banco = fals
               {quotaVera != null ? virgola(quotaVera) : '—'}
             </b>
           </div>
+        )}
+        {vinto && (
+          <label style={{ display: 'flex', alignItems: 'center', gap: SP.m, minHeight: 34, marginBottom: SP.s, cursor: 'pointer',
+            fontFamily: F.sans, fontSize: S.media, color: cashout ? C.testo : C.spento }}>
+            <input type="checkbox" checked={cashout} onChange={e => setCashout(e.target.checked)} style={{ width: 18, height: 18, flexShrink: 0, accentColor: C.oro }} />
+            Cash out
+          </label>
         )}
         <div style={{ fontFamily: F.sans, fontSize: S.base, color: C.spento, lineHeight: 1.6, minHeight: 38 }}>
           {valido && <>
